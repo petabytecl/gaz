@@ -118,7 +118,10 @@ func (cm *ConfigManager) loadProfileConfig() error {
 
 // BindFlags binds command line flags to the configuration.
 func (cm *ConfigManager) BindFlags(fs *pflag.FlagSet) error {
-	return fmt.Errorf("failed to bind pflags: %w", cm.v.BindPFlags(fs))
+	if err := cm.v.BindPFlags(fs); err != nil {
+		return fmt.Errorf("failed to bind pflags: %w", err)
+	}
+	return nil
 }
 
 // bindStructEnv recursively binds struct fields to environment variables.
