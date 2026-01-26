@@ -1,5 +1,9 @@
 package gaz
 
+import (
+	"context"
+)
+
 // serviceScope defines the lifecycle scope for a registered service.
 type serviceScope int
 
@@ -20,6 +24,8 @@ type RegistrationBuilder[T any] struct {
 	scope        serviceScope // singleton or transient
 	lazy         bool         // lazy (default) or eager
 	allowReplace bool         // allow overwriting existing
+	startHooks   []func(context.Context, any) error
+	stopHooks    []func(context.Context, any) error
 }
 
 // For returns a registration builder for type T.
@@ -75,6 +81,27 @@ func (b *RegistrationBuilder[T]) Eager() *RegistrationBuilder[T] {
 // This is primarily useful for testing scenarios.
 func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 	b.allowReplace = true
+	return b
+}
+
+// OnStart registers a hook to be executed when the service is started.
+// The hook receives the context and the service instance.
+func (b *RegistrationBuilder[T]) OnStart(fn func(context.Context, T) error, opts ...HookOption) *RegistrationBuilder[T] {
+	wrapper := func(ctx context.Context, instance any) error {
+		// In the future, we can apply opts to a HookConfig here
+		return fn(ctx, instance.(T))
+	}
+	b.startHooks = append(b.startHooks, wrapper)
+	return b
+}
+
+// OnStop registers a hook to be executed when the service is stopped.
+// The hook receives the context and the service instance.
+func (b *RegistrationBuilder[T]) OnStop(fn func(context.Context, T) error, opts ...HookOption) *RegistrationBuilder[T] {
+	wrapper := func(ctx context.Context, instance any) error {
+		return fn(ctx, instance.(T))
+	}
+	b.stopHooks = append(b.stopHooks, wrapper)
 	return b
 }
 
