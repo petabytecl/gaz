@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 4.1 of 6 (Refactor Configuration)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-26 - Completed 04.1-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 - Completed 04.1-02-PLAN.md
 
-Progress: [████████████████████░░░░░] 77%
+Progress: [█████████████████████████] 100% (of defined phases 1-4.1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 6 min
-- Total execution time: 2.5 hours
+- Total execution time: 2.75 hours
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: [████████████████████░░░
 | 2.1 | 5 | 36 min | 7 min |
 | 3 | 4 | 33 min | 8 min |
 | 4 | 2 | 15 min | 7 min |
+| 4.1 | 2 | 30 min | 15 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (10 min), 04-01 (8 min), 04-02 (7 min)
-- Trend: Stable
+- Last 5 plans: 04-01 (8 min), 04-02 (7 min), 04.1-01 (15 min), 04.1-02 (15 min)
+- Trend: Slower (heavier refactoring)
 
 *Updated after each plan completion*
 
@@ -56,6 +57,8 @@ Recent decisions affecting current work:
 - [04-01]: Use spf13/viper in instance mode (no global state)
 - [04-01]: Precedence: Flags > Env > Profile > File > Defaults
 - [04-02]: Bind Cobra flags via PersistentPreRunE hook
+- [04.1-02]: Delegate all config logic from App to ConfigManager
+- [04.1-02]: Remove ConfigOptions struct in favor of functional options
 
 ### Pending Todos
 
@@ -69,9 +72,10 @@ None.
 
 - Phase 4 completed retroactively (code found implemented and verified).
 - Phase 4.1 inserted after Phase 4: Refactor configuration (URGENT)
+- Phase 4.1 complete.
 
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 04.1-01-PLAN.md
+Stopped at: Completed 04.1-02-PLAN.md
 Resume file: None

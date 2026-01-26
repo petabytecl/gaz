@@ -17,7 +17,7 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 - [x] **Phase 2.1: Improve Code Quality** - Validate linter config (INSERTED)
 - [x] **Phase 3: App Builder + Cobra** - Fluent API and CLI integration
 - [x] **Phase 4: Config System** - Multi-source configuration loading
-- [ ] **Phase 4.1: Refactor configuration** - Urgent work (INSERTED)
+- [x] **Phase 4.1: Refactor configuration** - Urgent work (INSERTED)
 - [ ] **Phase 5: Health Checks** - Readiness/liveness probes for production
 - [ ] **Phase 6: Logging (slog)** - Structured logging with context propagation
 
@@ -138,7 +138,7 @@ Plans:
 
 Plans:
 - [x] 04.1-01-PLAN.md — Implement ConfigManager and Options
-- [ ] 04.1-02-PLAN.md — Integrate ConfigManager into App and Cobra
+- [x] 04.1-02-PLAN.md — Integrate ConfigManager into App and Cobra
 
 **Details:**
 Refactors the App struct to remove direct Viper dependency, introducing a dedicated ConfigManager and replacing the config struct options with the Functional Options pattern.
@@ -185,7 +185,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 2.1 Improve Code Quality | 5/5 | Complete | 2026-01-26 |
 | 3. App Builder + Cobra | 4/4 | Complete | 2026-01-26 |
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
-| 4.1 Refactor config | 1/2 | In progress | - |
+| 4.1 Refactor config | 2/2 | Complete | 2026-01-26 |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
 
