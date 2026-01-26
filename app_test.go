@@ -3,6 +3,7 @@ package gaz
 import (
 	"context"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -103,4 +104,29 @@ func (s *AppTestSuite) TestRunAndStop() {
 	defer mu.Unlock()
 	s.Equal([]string{"A", "B"}, startOrder)
 	s.Equal([]string{"B", "A"}, stopOrder)
+}
+
+func (s *AppTestSuite) TestSignalHandling() {
+	c := New()
+	app := NewApp(c)
+
+	// Run in goroutine
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- app.Run(context.Background())
+	}()
+
+	// Wait for startup
+	time.Sleep(50 * time.Millisecond)
+
+	// Send signal
+	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+
+	// Wait for Run to return
+	select {
+	case err := <-runErr:
+		s.NoError(err)
+	case <-time.After(1 * time.Second):
+		s.Fail("Run did not return after SIGTERM")
+	}
 }

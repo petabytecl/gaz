@@ -3,7 +3,10 @@ package gaz
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -117,10 +120,20 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}
 
+	// Signal handling
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
+
 	// Block until stopped
 	select {
 	case <-ctx.Done():
 		// Context cancelled, initiate shutdown
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
+		defer cancel()
+		return a.Stop(shutdownCtx)
+	case <-sigCh:
+		// Signal received, initiate shutdown
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 		defer cancel()
 		return a.Stop(shutdownCtx)
