@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 Phase: 2.1 of 6 (Improve Code Quality)
 Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 02.1-03-PLAN.md
+Last activity: 2026-01-26 — Completed 02.1-02-PLAN.md
 
 Progress: [██████████] 100% (of defined plans)
 
@@ -85,6 +85,9 @@ Recent decisions affecting current work:
 - [02.1-01]: Path-based exclusions over nolint comments — cleaner code
 - [02.1-03]: Wrap Starter/Stopper interface errors with service name for debugging
 - [02.1-03]: Configure exhaustive linter with default-signifies-exhaustive: true
+- [02.1-02]: Extract magic numbers to named constants (defaultShutdownTimeout, decimalBase)
+- [02.1-02]: Use errors.Join for multi-error aggregation instead of fmt.Errorf
+- [02.1-02]: Check type assertions with ok pattern for defensive programming
 
 ### Pending Todos
 
@@ -92,7 +95,7 @@ None.
 
 ### Blockers/Concerns
 
-- Plan 02.1-02 has uncommitted changes in working directory (app.go, container.go, registration.go, test files) — needs completion or cleanup before proceeding
+None yet.
 
 ### Roadmap Evolution
 
@@ -102,6 +105,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-26T19:55:18Z
-Stopped at: Completed 02.1-03-PLAN.md
+Last session: 2026-01-26T19:58:34Z
+Stopped at: Completed 02.1-02-PLAN.md
 Resume file: None
