@@ -1,6 +1,9 @@
 package gaz
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 // serviceWrapper is the internal interface for all service types.
 // It abstracts the differences between lazy singletons, transient services,
@@ -18,6 +21,15 @@ type serviceWrapper interface {
 	// getInstance returns the service instance, creating it if necessary.
 	// The chain parameter tracks the resolution path for cycle detection.
 	getInstance(c *Container, chain []string) (any, error)
+
+	// start executes the OnStart hooks for the service.
+	start(context.Context) error
+
+	// stop executes the OnStop hooks for the service.
+	stop(context.Context) error
+
+	// hasLifecycle returns true if the service has any lifecycle hooks registered.
+	hasLifecycle() bool
 }
 
 // lazySingleton is the default service type - creates instance on first resolve,
@@ -26,6 +38,8 @@ type lazySingleton[T any] struct {
 	serviceName     string
 	serviceTypeName string
 	provider        func(*Container) (T, error)
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
 
 	mu       sync.Mutex
 	instance T
@@ -76,6 +90,34 @@ func (s *lazySingleton[T]) getInstance(c *Container, chain []string) (any, error
 	return instance, nil
 }
 
+func (s *lazySingleton[T]) start(ctx context.Context) error {
+	if !s.built {
+		return nil
+	}
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *lazySingleton[T]) stop(ctx context.Context) error {
+	if !s.built {
+		return nil
+	}
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *lazySingleton[T]) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}
+
 // transientService creates a new instance on every resolve call.
 // No caching is performed.
 type transientService[T any] struct {
@@ -119,6 +161,10 @@ func (s *transientService[T]) getInstance(c *Container, chain []string) (any, er
 
 	return instance, nil
 }
+
+func (s *transientService[T]) start(context.Context) error { return nil }
+func (s *transientService[T]) stop(context.Context) error  { return nil }
+func (s *transientService[T]) hasLifecycle() bool          { return false }
 
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
 // The isEager() method returns true so Build() knows to instantiate it.
@@ -176,6 +222,10 @@ func (s *eagerSingleton[T]) getInstance(c *Container, chain []string) (any, erro
 	return instance, nil
 }
 
+func (s *eagerSingleton[T]) start(context.Context) error { return nil }
+func (s *eagerSingleton[T]) stop(context.Context) error  { return nil }
+func (s *eagerSingleton[T]) hasLifecycle() bool          { return false }
+
 // instanceService wraps a pre-built value. No provider is called.
 // Used by .Instance(val) registration.
 type instanceService[T any] struct {
@@ -208,3 +258,7 @@ func (s *instanceService[T]) isEager() bool {
 func (s *instanceService[T]) getInstance(c *Container, chain []string) (any, error) {
 	return s.value, nil
 }
+
+func (s *instanceService[T]) start(context.Context) error { return nil }
+func (s *instanceService[T]) stop(context.Context) error  { return nil }
+func (s *instanceService[T]) hasLifecycle() bool          { return false }
