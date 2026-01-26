@@ -11,7 +11,7 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Core DI Container** - Type-safe dependency injection with generics
-- [ ] **Phase 1.1: Update Test Framework for Testify** - Migrate to testify assertions (INSERTED)
+- [x] **Phase 1.1: Update Test Framework for Testify** - Migrate to testify assertions (INSERTED)
 - [ ] **Phase 1.2: Create Makefile** - Testing, coverage, formatting, linting (INSERTED)
 - [ ] **Phase 2: Lifecycle Management** - Deterministic startup/shutdown with hooks
 - [ ] **Phase 3: App Builder + Cobra** - Fluent API and CLI integration
@@ -48,8 +48,8 @@ Plans:
 
 Plans:
 - [x] 01.1-01-PLAN.md — Setup testify + migrate types/registration/service tests ✓
-- [ ] 01.1-02-PLAN.md — Migrate inject and resolution tests
-- [ ] 01.1-03-PLAN.md — Migrate container tests + final verification
+- [x] 01.1-02-PLAN.md — Migrate inject and resolution tests ✓
+- [x] 01.1-03-PLAN.md — Migrate container tests + final verification ✓
 
 **Details:**
 Migrate test framework to use https://github.com/stretchr/testify for improved assertions and test utilities.
@@ -142,7 +142,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core DI Container | 6/6 | Complete | 2026-01-26 |
-| 1.1 Update Test Framework | 1/3 | In progress | - |
+| 1.1 Update Test Framework | 3/3 | Complete | 2026-01-26 |
 | 1.2 Create Makefile | 0/? | Not started | - |
 | 2. Lifecycle Management | 0/? | Not started | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |

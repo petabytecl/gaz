@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 1.1 - Update Test Framework for Testify
+**Current focus:** Phase 2 - Lifecycle Management (or Phase 1.2 - Makefile)
 
 ## Current Position
 
 Phase: 1.1 of 6 (Update Test Framework for Testify)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 01.1-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 01.1-03-PLAN.md
 
-Progress: [████░░░░░░] 25%
+Progress: [████░░░░░░] 28%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 4 min
-- Total execution time: 0.5 hours
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 6 | 28 min | 5 min |
-| 1.1 | 2 | 6 min | 3 min |
+| 1.1 | 3 | 11 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (8 min), 01-05 (5 min), 01-06 (4 min), 01.1-01 (3 min), 01.1-02 (3 min)
+- Last 5 plans: 01-05 (5 min), 01-06 (4 min), 01.1-01 (3 min), 01.1-02 (3 min), 01.1-03 (5 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -62,6 +62,7 @@ Recent decisions affecting current work:
 - [01-06]: Build() error includes service name — enables debugging of which eager service failed
 - [01.1-01]: Use suite.Suite for all test files — consistent pattern across codebase
 - [01.1-01]: require for critical assertions, assert for value checks — follows testify best practices
+- [01.1-03]: Use assert.Same for pointer equality, assert.ErrorIs for sentinel errors
 
 ### Pending Todos
 
@@ -78,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T17:00:44Z
-Stopped at: Completed 01.1-02-PLAN.md
+Last session: 2026-01-26T17:03:24Z
+Stopped at: Completed 01.1-03-PLAN.md (Phase 1.1 complete)
 Resume file: None
