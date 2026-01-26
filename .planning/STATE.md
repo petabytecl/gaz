@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 2 - Lifecycle Management (or Phase 1.2 - Makefile)
+**Current focus:** Phase 2 - Lifecycle Management (Next)
 
 ## Current Position
 
-Phase: 1.1 of 6 (Update Test Framework for Testify)
-Plan: 3 of 3 in current phase
+Phase: 01.2 of 6 (Create Makefile)
+Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-01-26 — Completed 01.1-03-PLAN.md
+Last activity: 2026-01-26 — Completed 01.2-01-PLAN.md
 
-Progress: [████░░░░░░] 28%
+Progress: [██████████] 100% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 4 min
-- Total execution time: 0.6 hours
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [████░░░░░░] 28%
 |-------|-------|-------|----------|
 | 1 | 6 | 28 min | 5 min |
 | 1.1 | 3 | 11 min | 4 min |
+| 1.2 | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-05 (5 min), 01-06 (4 min), 01.1-01 (3 min), 01.1-02 (3 min), 01.1-03 (5 min)
+- Last 5 plans: 01-06 (4 min), 01.1-01 (3 min), 01.1-02 (3 min), 01.1-03 (5 min), 01.2-01 (5 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -63,6 +64,9 @@ Recent decisions affecting current work:
 - [01.1-01]: Use suite.Suite for all test files — consistent pattern across codebase
 - [01.1-01]: require for critical assertions, assert for value checks — follows testify best practices
 - [01.1-03]: Use assert.Same for pointer equality, assert.ErrorIs for sentinel errors
+- [01.2-01]: Enforced 90% code coverage threshold in Makefile
+- [01.2-01]: Used golangci-lint-action in CI for caching and speed
+- [01.2-01]: Included goimports in fmt target for import management
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T17:03:24Z
-Stopped at: Completed 01.1-03-PLAN.md (Phase 1.1 complete)
+Last session: 2026-01-26T17:35:00Z
+Stopped at: Completed 01.2-01-PLAN.md (Phase 01.2 complete)
 Resume file: None
