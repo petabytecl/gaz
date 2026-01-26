@@ -474,6 +474,38 @@ func (s *IntegrationSuite) TestCobraWithModulesAndLifecycle() {
 	s.Equal("production-db", dbDSN)
 }
 
+func (s *IntegrationSuite) TestCobraConfigIntegration() {
+	// Test: Cobra flags map to config via WithConfig and WithCobra
+
+	type AppConfig struct {
+		Port int
+		Name string
+	}
+
+	var cfg AppConfig
+	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{})
+
+	rootCmd := &cobra.Command{
+		Use: "app",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return nil
+		},
+	}
+
+	rootCmd.Flags().Int("port", 8080, "port number")
+	rootCmd.Flags().String("name", "default", "app name")
+
+	app.WithCobra(rootCmd)
+
+	// Bind flags override default
+	rootCmd.SetArgs([]string{"--port", "9090", "--name", "override"})
+	err := rootCmd.Execute()
+	s.Require().NoError(err)
+
+	s.Equal(9090, cfg.Port)
+	s.Equal("override", cfg.Name)
+}
+
 // =============================================================================
 // Test Helper Types
 // =============================================================================

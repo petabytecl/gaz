@@ -16,16 +16,16 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 
 ### Active
 
-- [ ] Type-safe generic DI container (no interface{} casting)
-- [ ] Convention-over-configuration defaults (lazy singletons, minimal options)
-- [ ] Flat scope model (no hierarchical scopes)
-- [ ] Struct tag injection (`gaz:"inject"`)
-- [ ] App builder with Cobra integration
-- [ ] Deterministic startup/shutdown (topological ordering)
-- [ ] Signal handling (graceful shutdown on SIGTERM/SIGINT)
+- [x] Type-safe generic DI container (no interface{} casting)
+- [x] Convention-over-configuration defaults (lazy singletons, minimal options)
+- [x] Flat scope model (no hierarchical scopes)
+- [x] Struct tag injection (`gaz:"inject"`)
+- [x] App builder with Cobra integration
+- [x] Deterministic startup/shutdown (topological ordering)
+- [x] Signal handling (graceful shutdown on SIGTERM/SIGINT)
+- [x] Multi-source config management (files, env vars, flags)
+- [x] Config binding to typed structs
 - [ ] Health check subsystem (readiness/liveness probes)
-- [ ] Multi-source config management (files, env vars, flags)
-- [ ] Config binding to typed structs
 - [ ] slog integration (logger via DI, context propagation)
 - [ ] Request-scoped logging with trace IDs
 
@@ -73,10 +73,14 @@ Target: Internal use first, open source viability later.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Drop hierarchical scopes | Not used in practice, adds significant complexity | — Pending |
-| Clean break from dibx/gazx API | Enables ideal API design without legacy constraints | — Pending |
-| Core + subpackages structure | Import only what you need, clear boundaries | — Pending |
-| slog over third-party loggers | Stdlib, sufficient for structured logging | — Pending |
+| Drop hierarchical scopes | Not used in practice, adds significant complexity | Done |
+| Clean break from dibx/gazx API | Enables ideal API design without legacy constraints | Done |
+| Core + subpackages structure | Import only what you need, clear boundaries | Done |
+| slog over third-party loggers | Stdlib, sufficient for structured logging | Pending |
+| Use `spf13/viper` (instance mode) | Integrates natively with Cobra, avoid global state | Done |
+| `Defaulter`/`Validator` interfaces | Prefer logic over tags for robust config lifecycle | Done |
+| Config as Singleton Instance | Config object accessible via DI injection | Done |
+| Auto-bind Env Vars | Reflection-based binding ensures Env overrides work without explicit keys | Done |
 
 ---
 *Last updated: 2026-01-26 after initialization*

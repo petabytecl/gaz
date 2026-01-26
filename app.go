@@ -9,9 +9,12 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 const defaultShutdownTimeout = 30 * time.Second
@@ -56,6 +59,12 @@ type App struct {
 	built       bool            // tracks if Build() was called
 	buildErrors []error         // collects registration errors for Build()
 	modules     map[string]bool // tracks registered module names for duplicate detection
+
+	// Configuration
+	configTarget any
+	configOpts   ConfigOptions
+	configHooks  []func(*viper.Viper) error
+	configLoaded bool
 
 	mu      sync.Mutex
 	running bool
@@ -110,6 +119,44 @@ func NewApp(c *Container, opts ...AppOption) *App {
 // This is useful for advanced use cases or testing.
 func (a *App) Container() *Container {
 	return a.container
+}
+
+// WithConfig configures the application to load configuration into the target struct.
+// The target must be a pointer to a struct.
+//
+// The configuration is loaded from:
+// 1. Defaults (via Defaulter interface)
+// 2. Config files (yaml, json, toml) in specified paths
+// 3. Environment variables (if EnvPrefix is set)
+// 4. Flags (if WithCobra is used)
+//
+// The config object is automatically registered as a singleton instance in the container.
+func (a *App) WithConfig(target any, opts ConfigOptions) *App {
+	if a.built {
+		panic("gaz: cannot configure config after Build()")
+	}
+
+	// Set defaults for options if not provided
+	if opts.Name == "" {
+		opts.Name = "config"
+	}
+	if opts.Type == "" {
+		opts.Type = "yaml"
+	}
+	if len(opts.Paths) == 0 {
+		opts.Paths = []string{"."}
+	}
+
+	a.configTarget = target
+	a.configOpts = opts
+
+	// Register the config object in the container
+	// We register the pointer itself, as that's what will be populated
+	if err := a.registerInstance(target); err != nil {
+		a.buildErrors = append(a.buildErrors, err)
+	}
+
+	return a
 }
 
 // ProvideSingleton registers a provider as a singleton (one instance per container).
@@ -255,6 +302,76 @@ func (a *App) registerInstance(instance any) error {
 	return nil
 }
 
+// loadConfig loads the configuration from all sources.
+func (a *App) loadConfig() error {
+	if a.configLoaded {
+		return nil
+	}
+	if a.configTarget == nil {
+		return nil
+	}
+
+	v := viper.New()
+	v.SetConfigName(a.configOpts.Name)
+	v.SetConfigType(a.configOpts.Type)
+	for _, path := range a.configOpts.Paths {
+		v.AddConfigPath(path)
+	}
+
+	if a.configOpts.EnvPrefix != "" {
+		v.SetEnvPrefix(a.configOpts.EnvPrefix)
+		v.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+		v.AutomaticEnv()
+
+		// Bind struct fields to env vars so Unmarshal works even if config file is missing
+		bindStructEnv(v, a.configTarget, "")
+	}
+
+	// Run hooks (e.g. for flags)
+	for _, hook := range a.configHooks {
+		if err := hook(v); err != nil {
+			return err
+		}
+	}
+
+	if err := v.ReadInConfig(); err != nil {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			return fmt.Errorf("failed to read config: %w", err)
+		}
+	}
+
+	// Load profile config if configured and present
+	if a.configOpts.ProfileEnv != "" {
+		if profile := os.Getenv(a.configOpts.ProfileEnv); profile != "" {
+			v.SetConfigName(a.configOpts.Name + "." + profile)
+			if err := v.MergeInConfig(); err != nil {
+				var configFileNotFoundError viper.ConfigFileNotFoundError
+				if !errors.As(err, &configFileNotFoundError) {
+					return fmt.Errorf("failed to merge profile config: %w", err)
+				}
+			}
+		}
+	}
+
+	if err := v.Unmarshal(a.configTarget); err != nil {
+		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	if d, ok := a.configTarget.(Defaulter); ok {
+		d.Default()
+	}
+
+	if val, ok := a.configTarget.(Validator); ok {
+		if err := val.Validate(); err != nil {
+			return fmt.Errorf("config validation failed: %w", err)
+		}
+	}
+
+	a.configLoaded = true
+	return nil
+}
+
 // Build validates all registrations and instantiates eager services.
 // It aggregates all errors and returns them using errors.Join.
 // Build is idempotent - calling it multiple times after success returns nil.
@@ -264,6 +381,11 @@ func (a *App) Build() error {
 
 	if a.built {
 		return nil // Already built, idempotent
+	}
+
+	// Load configuration first
+	if err := a.loadConfig(); err != nil {
+		return err
 	}
 
 	// Collect any registration errors
@@ -444,4 +566,47 @@ func (a *App) Stop(ctx context.Context) error {
 	}
 
 	return lastErr
+}
+
+// bindStructEnv recursively binds struct fields to environment variables.
+func bindStructEnv(v *viper.Viper, target any, prefix string) {
+	val := reflect.ValueOf(target)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return
+	}
+
+	t := val.Type()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		// Skip unexported fields
+		if field.PkgPath != "" {
+			continue
+		}
+
+		name := field.Name
+		// Use mapstructure tag if present
+		if tag, ok := field.Tag.Lookup("mapstructure"); ok {
+			parts := strings.Split(tag, ",")
+			if len(parts) > 0 && parts[0] != "" {
+				name = parts[0]
+			}
+		}
+
+		key := name
+		if prefix != "" {
+			key = prefix + "." + name
+		}
+
+		if field.Type.Kind() == reflect.Struct {
+			// Recursive bind for nested structs
+			// We pass a zero value of the struct type for type inspection
+			bindStructEnv(v, reflect.New(field.Type).Interface(), key)
+		} else {
+			// Bind the key so AutomaticEnv can find it
+			v.BindEnv(key)
+		}
+	}
 }

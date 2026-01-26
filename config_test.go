@@ -1,0 +1,139 @@
+package gaz_test
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/petabytecl/gaz"
+	"github.com/stretchr/testify/suite"
+)
+
+type ConfigSuite struct {
+	suite.Suite
+}
+
+func TestConfigSuite(t *testing.T) {
+	suite.Run(t, new(ConfigSuite))
+}
+
+type TestConfig struct {
+	Host string
+	Port int
+}
+
+func (c *TestConfig) Default() {
+	if c.Host == "" {
+		c.Host = "localhost"
+	}
+	if c.Port == 0 {
+		c.Port = 8080
+	}
+}
+
+func (c *TestConfig) Validate() error {
+	if c.Port < 0 {
+		return errors.New("port must be positive")
+	}
+	return nil
+}
+
+func (s *ConfigSuite) TestDefaults() {
+	var cfg TestConfig
+	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{})
+
+	err := app.Build()
+	s.NoError(err)
+
+	s.Equal("localhost", cfg.Host)
+	s.Equal(8080, cfg.Port)
+}
+
+func (s *ConfigSuite) TestEnvVars() {
+	os.Setenv("TEST_APP_HOST", "example.com")
+	os.Setenv("TEST_APP_PORT", "9090")
+	defer func() {
+		os.Unsetenv("TEST_APP_HOST")
+		os.Unsetenv("TEST_APP_PORT")
+	}()
+
+	var cfg TestConfig
+	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
+		EnvPrefix: "TEST_APP",
+	})
+
+	err := app.Build()
+	s.NoError(err)
+
+	s.Equal("example.com", cfg.Host)
+	s.Equal(9090, cfg.Port)
+}
+
+func (s *ConfigSuite) TestValidation() {
+	os.Setenv("TEST_APP_PORT", "-1")
+	defer os.Unsetenv("TEST_APP_PORT")
+
+	var cfg TestConfig
+	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
+		EnvPrefix: "TEST_APP",
+	})
+
+	err := app.Build()
+	s.Require().Error(err)
+	s.Contains(err.Error(), "port must be positive")
+}
+
+func (s *ConfigSuite) TestInjection() {
+	var cfg TestConfig
+	var injectedCfg *TestConfig
+
+	app := gaz.New().
+		WithConfig(&cfg, gaz.ConfigOptions{}).
+		ProvideSingleton(func(c *gaz.Container) string {
+			// This service depends on config
+			conf, _ := gaz.Resolve[*TestConfig](c)
+			injectedCfg = conf
+			return "done"
+		})
+
+	err := app.Build()
+	s.NoError(err)
+
+	// Trigger resolution
+	_, err = gaz.Resolve[string](app.Container())
+	s.NoError(err)
+
+	s.NotNil(injectedCfg)
+	s.Same(&cfg, injectedCfg)
+}
+
+func (s *ConfigSuite) TestProfiles() {
+	// Create temp dir for config files
+	tmpDir := s.T().TempDir()
+
+	// Write base config
+	baseConfig := []byte("host: localhost\nport: 8080")
+	err := os.WriteFile(filepath.Join(tmpDir, "config.yaml"), baseConfig, 0644)
+	s.NoError(err)
+
+	// Write profile config
+	prodConfig := []byte("host: prod-host\n") // Overrides host, keeps port
+	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodConfig, 0644)
+	s.NoError(err)
+
+	os.Setenv("TEST_ENV", "prod")
+	defer os.Unsetenv("TEST_ENV")
+
+	var cfg TestConfig
+	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
+		Paths:      []string{tmpDir},
+		ProfileEnv: "TEST_ENV",
+	})
+
+	err = app.Build()
+	s.NoError(err)
+
+	s.Equal("prod-host", cfg.Host)
+	s.Equal(8080, cfg.Port) // Preserved from base
+}
