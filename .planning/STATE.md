@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 2 - Lifecycle Management (Next)
+**Current focus:** Phase 2.1 - Improve Code Quality (Next)
 
 ## Current Position
 
-Phase: 2 of 6 (Lifecycle Management)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-01-26 — Completed 02-04-PLAN.md
+Phase: 2.1 of 6 (Improve Code Quality)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-01-26 — Completed 02.1-01-PLAN.md
 
 Progress: [██████████] 100% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 5 min
-- Total execution time: 1.3 hours
+- Total execution time: 1.35 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: [██████████] 100% (of defined plans)
 | 1.1 | 3 | 11 min | 4 min |
 | 1.2 | 1 | 5 min | 5 min |
 | 2 | 4 | 39 min | 10 min |
+| 2.1 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01.1-03 (5 min), 01.2-01 (5 min), 02-01 (22 min), 02-03 (2 min), 02-04 (15 min)
+- Last 5 plans: 01.2-01 (5 min), 02-01 (22 min), 02-03 (2 min), 02-04 (15 min), 02.1-01 (3 min)
 - Trend: Variable
 
 *Updated after each plan completion*
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [02-04]: Stop() can be called externally to initiate shutdown
 - [02-04]: Fixed startup order bug by ensuring all services are initialized in counts
 - [02-04]: Fixed Build dependency tracking by using resolveByName
+- [02.1-01]: Disabled testpackage linter — tests need internal package access
+- [02.1-01]: Path-based exclusions over nolint comments — cleaner code
 
 ### Pending Todos
 
@@ -93,9 +96,10 @@ None yet.
 
 - Phase 1.1 inserted after Phase 1: update test framework for testify (URGENT)
 - Phase 1.2 inserted after Phase 1: create makefile for testing, coverage, formatting, linting (URGENT)
+- Phase 2.1 inserted after Phase 2: improve code quality validating the linter and the new config (URGENT)
 
 ## Session Continuity
 
-Last session: 2026-01-26T18:50:00Z
-Stopped at: Completed 02-04-PLAN.md (Phase 02 complete)
+Last session: 2026-01-26T19:43:23Z
+Stopped at: Completed 02.1-01-PLAN.md
 Resume file: None
