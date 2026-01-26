@@ -110,9 +110,9 @@ Fix 162 remaining linter issues across production code and test files.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Design App Builder API and Module system
-- [ ] 03-02-PLAN.md — Implement fluent Builder
-- [ ] 03-03-PLAN.md — Integrate with Cobra
+- [ ] 03-01-PLAN.md — Core App refactor (gaz.New(), provider methods, Build validation)
+- [ ] 03-02-PLAN.md — Module composition (Module() method, duplicate detection)
+- [ ] 03-03-PLAN.md — Cobra integration (WithCobra(), FromContext())
 - [ ] 03-04-PLAN.md — End-to-end integration tests
 
 ### Phase 4: Config System
