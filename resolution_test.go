@@ -4,6 +4,10 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 // Test types for resolution tests
@@ -41,96 +45,72 @@ type depC struct {
 	value string
 }
 
-func TestResolve_BasicResolution(t *testing.T) {
+// ResolutionSuite tests service resolution functionality.
+type ResolutionSuite struct {
+	suite.Suite
+}
+
+func TestResolutionSuite(t *testing.T) {
+	suite.Run(t, new(ResolutionSuite))
+}
+
+func (s *ResolutionSuite) TestBasicResolution() {
 	c := New()
 
 	// Register a simple service
 	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
 		return &testServiceA{value: "hello"}
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Resolve it
 	svc, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("resolution failed: %v", err)
-	}
-
-	if svc == nil {
-		t.Fatal("expected non-nil service")
-	}
-
-	if svc.value != "hello" {
-		t.Errorf("expected value 'hello', got %q", svc.value)
-	}
+	require.NoError(s.T(), err, "resolution failed")
+	require.NotNil(s.T(), svc, "expected non-nil service")
+	assert.Equal(s.T(), "hello", svc.value)
 }
 
-func TestResolve_NotFound(t *testing.T) {
+func (s *ResolutionSuite) TestNotFound() {
 	c := New()
 
 	// Try to resolve unregistered type
 	_, err := Resolve[*testServiceA](c)
 
-	if err == nil {
-		t.Fatal("expected error for unregistered service")
-	}
-
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("expected ErrNotFound, got: %v", err)
-	}
+	require.Error(s.T(), err, "expected error for unregistered service")
+	assert.ErrorIs(s.T(), err, ErrNotFound)
 
 	// Verify error message contains type name
-	if !strings.Contains(err.Error(), "testServiceA") {
-		t.Errorf("error should contain type name: %v", err)
-	}
+	assert.Contains(s.T(), err.Error(), "testServiceA", "error should contain type name")
 }
 
-func TestResolve_Named(t *testing.T) {
+func (s *ResolutionSuite) TestNamed() {
 	c := New()
 
 	// Register two services with same type, different names
 	err := For[*testServiceA](c).Named("first").ProviderFunc(func(c *Container) *testServiceA {
 		return &testServiceA{value: "first-value"}
 	})
-	if err != nil {
-		t.Fatalf("first registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "first registration failed")
 
 	err = For[*testServiceA](c).Named("second").ProviderFunc(func(c *Container) *testServiceA {
 		return &testServiceA{value: "second-value"}
 	})
-	if err != nil {
-		t.Fatalf("second registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "second registration failed")
 
 	// Resolve each by name
 	first, err := Resolve[*testServiceA](c, Named("first"))
-	if err != nil {
-		t.Fatalf("first resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "first resolution failed")
 
 	second, err := Resolve[*testServiceA](c, Named("second"))
-	if err != nil {
-		t.Fatalf("second resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "second resolution failed")
 
 	// Assert different instances
-	if first == second {
-		t.Error("expected different instances for different names")
-	}
-
-	if first.value != "first-value" {
-		t.Errorf("expected first value 'first-value', got %q", first.value)
-	}
-
-	if second.value != "second-value" {
-		t.Errorf("expected second value 'second-value', got %q", second.value)
-	}
+	assert.NotSame(s.T(), first, second, "expected different instances for different names")
+	assert.Equal(s.T(), "first-value", first.value)
+	assert.Equal(s.T(), "second-value", second.value)
 }
 
-func TestResolve_CycleDetection(t *testing.T) {
+func (s *ResolutionSuite) TestCycleDetection() {
 	c := New()
 
 	// A depends on B
@@ -141,9 +121,7 @@ func TestResolve_CycleDetection(t *testing.T) {
 		}
 		return &cyclicA{b: b}, nil
 	})
-	if err != nil {
-		t.Fatalf("registration of A failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration of A failed")
 
 	// B depends on A (creates cycle)
 	err = For[*cyclicB](c).Provider(func(c *Container) (*cyclicB, error) {
@@ -153,37 +131,24 @@ func TestResolve_CycleDetection(t *testing.T) {
 		}
 		return &cyclicB{a: a}, nil
 	})
-	if err != nil {
-		t.Fatalf("registration of B failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration of B failed")
 
 	// Attempt to resolve A should detect cycle
 	_, resolveErr := Resolve[*cyclicA](c)
 
-	if resolveErr == nil {
-		t.Fatal("expected cycle detection error")
-	}
-
-	if !errors.Is(resolveErr, ErrCycle) {
-		t.Fatalf("expected ErrCycle, got: %v", resolveErr)
-	}
+	require.Error(s.T(), resolveErr, "expected cycle detection error")
+	assert.ErrorIs(s.T(), resolveErr, ErrCycle)
 
 	// Verify chain is in error message
 	errMsg := resolveErr.Error()
-	if !strings.Contains(errMsg, "->") {
-		t.Errorf("error should contain dependency chain: %v", resolveErr)
-	}
+	assert.Contains(s.T(), errMsg, "->", "error should contain dependency chain")
 
 	// Should contain both type names
-	if !strings.Contains(errMsg, "cyclicA") {
-		t.Errorf("error should contain cyclicA: %v", resolveErr)
-	}
-	if !strings.Contains(errMsg, "cyclicB") {
-		t.Errorf("error should contain cyclicB: %v", resolveErr)
-	}
+	assert.Contains(s.T(), errMsg, "cyclicA", "error should contain cyclicA")
+	assert.Contains(s.T(), errMsg, "cyclicB", "error should contain cyclicB")
 }
 
-func TestResolve_ProviderError_Propagates(t *testing.T) {
+func (s *ResolutionSuite) TestProviderErrorPropagates() {
 	c := New()
 
 	providerErr := errors.New("provider failed")
@@ -192,37 +157,26 @@ func TestResolve_ProviderError_Propagates(t *testing.T) {
 	err := For[*testServiceA](c).Provider(func(c *Container) (*testServiceA, error) {
 		return nil, providerErr
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Resolve should propagate the error
 	_, resolveErr := Resolve[*testServiceA](c)
 
-	if resolveErr == nil {
-		t.Fatal("expected error from provider")
-	}
-
-	if !errors.Is(resolveErr, providerErr) {
-		t.Fatalf("expected provider error to be wrapped, got: %v", resolveErr)
-	}
+	require.Error(s.T(), resolveErr, "expected error from provider")
+	assert.ErrorIs(s.T(), resolveErr, providerErr, "expected provider error to be wrapped")
 
 	// Error should have resolution context
-	if !strings.Contains(resolveErr.Error(), "resolving") {
-		t.Errorf("error should contain resolution context: %v", resolveErr)
-	}
+	assert.Contains(s.T(), resolveErr.Error(), "resolving", "error should contain resolution context")
 }
 
-func TestResolve_DependencyChain(t *testing.T) {
+func (s *ResolutionSuite) TestDependencyChain() {
 	c := New()
 
 	// Register C (leaf dependency)
 	err := For[*depC](c).ProviderFunc(func(c *Container) *depC {
 		return &depC{value: "leaf"}
 	})
-	if err != nil {
-		t.Fatalf("registration of C failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration of C failed")
 
 	// Register B depending on C
 	err = For[*depB](c).Provider(func(c *Container) (*depB, error) {
@@ -232,9 +186,7 @@ func TestResolve_DependencyChain(t *testing.T) {
 		}
 		return &depB{c: depC}, nil
 	})
-	if err != nil {
-		t.Fatalf("registration of B failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration of B failed")
 
 	// Register A depending on B
 	err = For[*depA](c).Provider(func(c *Container) (*depA, error) {
@@ -244,32 +196,20 @@ func TestResolve_DependencyChain(t *testing.T) {
 		}
 		return &depA{b: depB}, nil
 	})
-	if err != nil {
-		t.Fatalf("registration of A failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration of A failed")
 
 	// Resolve A (should build entire chain)
 	a, err := Resolve[*depA](c)
-	if err != nil {
-		t.Fatalf("resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "resolution failed")
 
 	// Verify all three instantiated correctly
-	if a == nil {
-		t.Fatal("expected non-nil A")
-	}
-	if a.b == nil {
-		t.Fatal("expected non-nil B")
-	}
-	if a.b.c == nil {
-		t.Fatal("expected non-nil C")
-	}
-	if a.b.c.value != "leaf" {
-		t.Errorf("expected C value 'leaf', got %q", a.b.c.value)
-	}
+	require.NotNil(s.T(), a, "expected non-nil A")
+	require.NotNil(s.T(), a.b, "expected non-nil B")
+	require.NotNil(s.T(), a.b.c, "expected non-nil C")
+	assert.Equal(s.T(), "leaf", a.b.c.value)
 }
 
-func TestResolve_Transient_NewInstanceEachTime(t *testing.T) {
+func (s *ResolutionSuite) TestTransientNewInstanceEachTime() {
 	c := New()
 
 	callCount := 0
@@ -279,33 +219,23 @@ func TestResolve_Transient_NewInstanceEachTime(t *testing.T) {
 		callCount++
 		return &testServiceA{value: "transient"}
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Resolve twice
 	first, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("first resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "first resolution failed")
 
 	second, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("second resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "second resolution failed")
 
 	// Assert different instances (pointer comparison)
-	if first == second {
-		t.Error("expected different instances for transient service")
-	}
+	assert.NotSame(s.T(), first, second, "expected different instances for transient service")
 
 	// Assert provider called twice
-	if callCount != 2 {
-		t.Errorf("expected provider called 2 times, got %d", callCount)
-	}
+	assert.Equal(s.T(), 2, callCount, "expected provider called 2 times")
 }
 
-func TestResolve_Singleton_SameInstance(t *testing.T) {
+func (s *ResolutionSuite) TestSingletonSameInstance() {
 	c := New()
 
 	callCount := 0
@@ -315,104 +245,72 @@ func TestResolve_Singleton_SameInstance(t *testing.T) {
 		callCount++
 		return &testServiceA{value: "singleton"}
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Resolve twice
 	first, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("first resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "first resolution failed")
 
 	second, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("second resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "second resolution failed")
 
 	// Assert same instance (pointer comparison)
-	if first != second {
-		t.Error("expected same instance for singleton service")
-	}
+	assert.Same(s.T(), first, second, "expected same instance for singleton service")
 
 	// Assert provider called only once
-	if callCount != 1 {
-		t.Errorf("expected provider called 1 time, got %d", callCount)
-	}
+	assert.Equal(s.T(), 1, callCount, "expected provider called 1 time")
 }
 
-func TestResolve_TypeMismatch(t *testing.T) {
+func (s *ResolutionSuite) TestTypeMismatch() {
 	c := New()
 
 	// Register service A
 	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
 		return &testServiceA{value: "a"}
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Try to resolve as B using A's name - this should cause type mismatch
 	// We need to use Named() with the wrong type to force mismatch
 	aTypeName := TypeName[*testServiceA]()
 	_, resolveErr := Resolve[*testServiceB](c, Named(aTypeName))
 
-	if resolveErr == nil {
-		t.Fatal("expected type mismatch error")
-	}
-
-	if !errors.Is(resolveErr, ErrTypeMismatch) {
-		t.Fatalf("expected ErrTypeMismatch, got: %v", resolveErr)
-	}
+	require.Error(s.T(), resolveErr, "expected type mismatch error")
+	assert.ErrorIs(s.T(), resolveErr, ErrTypeMismatch)
 }
 
-func TestResolve_Instance_DirectValue(t *testing.T) {
+func (s *ResolutionSuite) TestInstanceDirectValue() {
 	c := New()
 
 	original := &testServiceA{value: "pre-built"}
 
 	// Register pre-built instance
 	err := For[*testServiceA](c).Instance(original)
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Resolve
 	resolved, err := Resolve[*testServiceA](c)
-	if err != nil {
-		t.Fatalf("resolution failed: %v", err)
-	}
+	require.NoError(s.T(), err, "resolution failed")
 
 	// Should be the exact same instance
-	if resolved != original {
-		t.Error("expected exact same instance as registered")
-	}
+	assert.Same(s.T(), original, resolved, "expected exact same instance as registered")
 }
 
-func TestResolve_NamedNotFound(t *testing.T) {
+func (s *ResolutionSuite) TestNamedNotFound() {
 	c := New()
 
 	// Register with type name (default)
 	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
 		return &testServiceA{value: "default"}
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err, "registration failed")
 
 	// Try to resolve with different name
 	_, resolveErr := Resolve[*testServiceA](c, Named("nonexistent"))
 
-	if resolveErr == nil {
-		t.Fatal("expected error for non-existent name")
-	}
-
-	if !errors.Is(resolveErr, ErrNotFound) {
-		t.Fatalf("expected ErrNotFound, got: %v", resolveErr)
-	}
+	require.Error(s.T(), resolveErr, "expected error for non-existent name")
+	assert.ErrorIs(s.T(), resolveErr, ErrNotFound)
 
 	// Error should contain the name we searched for
-	if !strings.Contains(resolveErr.Error(), "nonexistent") {
-		t.Errorf("error should contain searched name: %v", resolveErr)
-	}
+	assert.True(s.T(), strings.Contains(resolveErr.Error(), "nonexistent"), "error should contain searched name")
 }
