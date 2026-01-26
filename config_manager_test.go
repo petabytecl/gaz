@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/petabytecl/gaz"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/petabytecl/gaz"
 )
 
 type ConfigManagerSuite struct {
@@ -19,7 +20,7 @@ func TestConfigManagerSuite(t *testing.T) {
 	suite.Run(t, new(ConfigManagerSuite))
 }
 
-// Reusing TestConfig from config_test.go if available, or redefining here to be safe and self-contained
+// Reusing TestConfig from config_test.go if available, or redefining here to be safe and self-contained.
 type TestManagerConfig struct {
 	Host string
 	Port int
@@ -49,20 +50,20 @@ func (s *ConfigManagerSuite) TestLoadDefaults() {
 	cm := gaz.NewConfigManager(&cfg)
 
 	err := cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("localhost", cfg.Host)
 	s.Equal(8080, cfg.Port)
 }
 
 func (s *ConfigManagerSuite) TestLoadEnv() {
-	os.Setenv("TEST_APP_HOST", "example.com")
-	os.Setenv("TEST_APP_PORT", "9090")
-	os.Setenv("TEST_APP_DB__USER", "admin")
+	s.Require().NoError(os.Setenv("TEST_APP_HOST", "example.com"))
+	s.Require().NoError(os.Setenv("TEST_APP_PORT", "9090"))
+	s.Require().NoError(os.Setenv("TEST_APP_DB__USER", "admin"))
 	defer func() {
-		os.Unsetenv("TEST_APP_HOST")
-		os.Unsetenv("TEST_APP_PORT")
-		os.Unsetenv("TEST_APP_DB__USER")
+		_ = os.Unsetenv("TEST_APP_HOST")
+		_ = os.Unsetenv("TEST_APP_PORT")
+		_ = os.Unsetenv("TEST_APP_DB__USER")
 	}()
 
 	var cfg TestManagerConfig
@@ -71,7 +72,7 @@ func (s *ConfigManagerSuite) TestLoadEnv() {
 	)
 
 	err := cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("example.com", cfg.Host)
 	s.Equal(9090, cfg.Port)
@@ -81,8 +82,8 @@ func (s *ConfigManagerSuite) TestLoadEnv() {
 func (s *ConfigManagerSuite) TestLoadFile() {
 	tmpDir := s.T().TempDir()
 	configContent := []byte("host: file-host\nport: 7070")
-	err := os.WriteFile(filepath.Join(tmpDir, "testconfig.yaml"), configContent, 0644)
-	s.NoError(err)
+	err := os.WriteFile(filepath.Join(tmpDir, "testconfig.yaml"), configContent, 0o600)
+	s.Require().NoError(err)
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
@@ -91,7 +92,7 @@ func (s *ConfigManagerSuite) TestLoadFile() {
 	)
 
 	err = cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("file-host", cfg.Host)
 	s.Equal(7070, cfg.Port)
@@ -102,16 +103,16 @@ func (s *ConfigManagerSuite) TestLoadProfile() {
 
 	// Base config
 	baseContent := []byte("host: base-host\nport: 8080")
-	err := os.WriteFile(filepath.Join(tmpDir, "config.yaml"), baseContent, 0644)
-	s.NoError(err)
+	err := os.WriteFile(filepath.Join(tmpDir, "config.yaml"), baseContent, 0o600)
+	s.Require().NoError(err)
 
 	// Profile config
 	prodContent := []byte("host: prod-host")
-	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodContent, 0644)
-	s.NoError(err)
+	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodContent, 0o600)
+	s.Require().NoError(err)
 
-	os.Setenv("APP_ENV", "prod")
-	defer os.Unsetenv("APP_ENV")
+	s.Require().NoError(os.Setenv("APP_ENV", "prod"))
+	defer func() { _ = os.Unsetenv("APP_ENV") }()
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
@@ -120,7 +121,7 @@ func (s *ConfigManagerSuite) TestLoadProfile() {
 	)
 
 	err = cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("prod-host", cfg.Host)
 	s.Equal(8080, cfg.Port)
@@ -136,7 +137,7 @@ func (s *ConfigManagerSuite) TestExplicitDefaults() {
 	)
 
 	err := cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("default-host", cfg.Host)
 	s.Equal(9000, cfg.Port)
@@ -151,7 +152,7 @@ func (s *ConfigManagerSuite) TestValidation() {
 	)
 
 	err := cm.Load()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "port must be positive")
 }
 
@@ -162,16 +163,16 @@ func (s *ConfigManagerSuite) TestBindFlags() {
 
 	// Simulate parsing flags
 	err := fs.Parse([]string{"--host", "flag-host"})
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg)
 
 	err = cm.BindFlags(fs)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	err = cm.Load()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("flag-host", cfg.Host)
 }

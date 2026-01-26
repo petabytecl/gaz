@@ -487,7 +487,7 @@ func (s *IntegrationSuite) TestCobraConfigIntegration() {
 
 	rootCmd := &cobra.Command{
 		Use: "app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return nil
 		},
 	}

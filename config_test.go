@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/petabytecl/gaz"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/petabytecl/gaz"
 )
 
 type ConfigSuite struct {
@@ -44,33 +45,33 @@ func (s *ConfigSuite) TestDefaults() {
 	app := gaz.New().WithConfig(&cfg)
 
 	err := app.Build()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("localhost", cfg.Host)
 	s.Equal(8080, cfg.Port)
 }
 
 func (s *ConfigSuite) TestEnvVars() {
-	os.Setenv("TEST_APP_HOST", "example.com")
-	os.Setenv("TEST_APP_PORT", "9090")
+	s.Require().NoError(os.Setenv("TEST_APP_HOST", "example.com"))
+	s.Require().NoError(os.Setenv("TEST_APP_PORT", "9090"))
 	defer func() {
-		os.Unsetenv("TEST_APP_HOST")
-		os.Unsetenv("TEST_APP_PORT")
+		_ = os.Unsetenv("TEST_APP_HOST")
+		_ = os.Unsetenv("TEST_APP_PORT")
 	}()
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
 
 	err := app.Build()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("example.com", cfg.Host)
 	s.Equal(9090, cfg.Port)
 }
 
 func (s *ConfigSuite) TestValidation() {
-	os.Setenv("TEST_APP_PORT", "-1")
-	defer os.Unsetenv("TEST_APP_PORT")
+	s.Require().NoError(os.Setenv("TEST_APP_PORT", "-1"))
+	defer func() { _ = os.Unsetenv("TEST_APP_PORT") }()
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
@@ -94,11 +95,11 @@ func (s *ConfigSuite) TestInjection() {
 		})
 
 	err := app.Build()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Trigger resolution
 	_, err = gaz.Resolve[string](app.Container())
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.NotNil(injectedCfg)
 	s.Same(&cfg, injectedCfg)
@@ -110,16 +111,16 @@ func (s *ConfigSuite) TestProfiles() {
 
 	// Write base config
 	baseConfig := []byte("host: localhost\nport: 8080")
-	err := os.WriteFile(filepath.Join(tmpDir, "config.yaml"), baseConfig, 0644)
-	s.NoError(err)
+	err := os.WriteFile(filepath.Join(tmpDir, "config.yaml"), baseConfig, 0o600)
+	s.Require().NoError(err)
 
 	// Write profile config
 	prodConfig := []byte("host: prod-host\n") // Overrides host, keeps port
-	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodConfig, 0644)
-	s.NoError(err)
+	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodConfig, 0o600)
+	s.Require().NoError(err)
 
-	os.Setenv("TEST_ENV", "prod")
-	defer os.Unsetenv("TEST_ENV")
+	s.Require().NoError(os.Setenv("TEST_ENV", "prod"))
+	defer func() { _ = os.Unsetenv("TEST_ENV") }()
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg,
@@ -128,7 +129,7 @@ func (s *ConfigSuite) TestProfiles() {
 	)
 
 	err = app.Build()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	s.Equal("prod-host", cfg.Host)
 	s.Equal(8080, cfg.Port) // Preserved from base

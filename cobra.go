@@ -66,27 +66,14 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 			}
 		}
 
-		// Bind flags if ConfigManager is available
-		if a.configManager != nil {
-			if err := a.configManager.BindFlags(c.Flags()); err != nil {
-				return fmt.Errorf("failed to bind flags: %w", err)
-			}
-		}
-
-		// Build the app (validates registrations)
-		if err := a.Build(); err != nil {
-			return fmt.Errorf("app build failed: %w", err)
-		}
-
 		// Get context from command (Cobra provides background if none)
 		ctx := c.Context()
 		if ctx == nil {
 			ctx = context.Background()
 		}
 
-		// Start lifecycle hooks
-		if err := a.Start(ctx); err != nil {
-			return fmt.Errorf("app start failed: %w", err)
+		if err := a.bootstrap(ctx, c); err != nil {
+			return err
 		}
 
 		// Store app in context for subcommand access
@@ -113,6 +100,27 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 	}
 
 	return a
+}
+
+func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command) error {
+	// Bind flags if ConfigManager is available
+	if a.configManager != nil {
+		if err := a.configManager.BindFlags(cmd.Flags()); err != nil {
+			return fmt.Errorf("failed to bind flags: %w", err)
+		}
+	}
+
+	// Build the app (validates registrations)
+	if err := a.Build(); err != nil {
+		return fmt.Errorf("app build failed: %w", err)
+	}
+
+	// Start lifecycle hooks
+	if err := a.Start(ctx); err != nil {
+		return fmt.Errorf("app start failed: %w", err)
+	}
+
+	return nil
 }
 
 // Start initiates the application lifecycle.

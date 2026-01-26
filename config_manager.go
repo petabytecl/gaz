@@ -75,16 +75,8 @@ func (cm *ConfigManager) Load() error {
 	}
 
 	// Load profile config
-	if cm.profileEnv != "" {
-		if profile := os.Getenv(cm.profileEnv); profile != "" {
-			cm.v.SetConfigName(cm.fileName + "." + profile)
-			if err := cm.v.MergeInConfig(); err != nil {
-				var configFileNotFoundError viper.ConfigFileNotFoundError
-				if !errors.As(err, &configFileNotFoundError) {
-					return fmt.Errorf("failed to merge profile config: %w", err)
-				}
-			}
-		}
+	if err := cm.loadProfileConfig(); err != nil {
+		return err
 	}
 
 	if err := cm.v.Unmarshal(cm.target); err != nil {
@@ -104,9 +96,29 @@ func (cm *ConfigManager) Load() error {
 	return nil
 }
 
+func (cm *ConfigManager) loadProfileConfig() error {
+	if cm.profileEnv == "" {
+		return nil
+	}
+
+	profile := os.Getenv(cm.profileEnv)
+	if profile == "" {
+		return nil
+	}
+
+	cm.v.SetConfigName(cm.fileName + "." + profile)
+	if err := cm.v.MergeInConfig(); err != nil {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			return fmt.Errorf("failed to merge profile config: %w", err)
+		}
+	}
+	return nil
+}
+
 // BindFlags binds command line flags to the configuration.
 func (cm *ConfigManager) BindFlags(fs *pflag.FlagSet) error {
-	return cm.v.BindPFlags(fs)
+	return fmt.Errorf("failed to bind pflags: %w", cm.v.BindPFlags(fs))
 }
 
 // bindStructEnv recursively binds struct fields to environment variables.
@@ -120,7 +132,7 @@ func (cm *ConfigManager) bindStructEnv(v *viper.Viper, target any, prefix string
 	}
 
 	t := val.Type()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 		// Skip unexported fields
 		if field.PkgPath != "" {
@@ -147,7 +159,7 @@ func (cm *ConfigManager) bindStructEnv(v *viper.Viper, target any, prefix string
 			cm.bindStructEnv(v, reflect.New(field.Type).Interface(), key)
 		} else {
 			// Bind the key so AutomaticEnv can find it
-			v.BindEnv(key)
+			_ = v.BindEnv(key)
 		}
 	}
 }
