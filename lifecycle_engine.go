@@ -14,19 +14,27 @@ func ComputeStartupOrder(graph map[string][]string, services map[string]serviceW
 	// 1. Build reverse graph (dependency -> dependents) and pending counts (dependent -> count)
 	reverseGraph := make(map[string][]string)
 	pendingCounts := make(map[string]int)
-	totalNodes := 0
 
-	// Initialize pending counts for all nodes in graph
+	// Initialize pending counts for all services
+	for name := range services {
+		pendingCounts[name] = 0
+	}
+
+	// Update counts based on dependency graph
 	for node, deps := range graph {
+		// Ensure node exists in pendingCounts (it should if services map is complete)
+		if _, ok := pendingCounts[node]; !ok {
+			// If node is in graph but not in services, it might be an issue, but let's track it
+			pendingCounts[node] = 0
+		}
 		pendingCounts[node] = len(deps)
-		totalNodes++
+
 		for _, dep := range deps {
-			// If dep is not in graph as a key, it might be an external or missing dependency.
-			// Ideally graph is complete. If not, we should handle it?
-			// Assuming graph is complete for now as per container guarantees.
 			reverseGraph[dep] = append(reverseGraph[dep], node)
 		}
 	}
+
+	totalNodes := len(pendingCounts)
 
 	// 2. Initialize queue with nodes having 0 dependencies
 	var currentLayer []string
