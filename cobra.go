@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // contextKey is used to store App in context.
@@ -67,11 +66,12 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 			}
 		}
 
-		// Register hook to bind flags from the executing command
-		// This binds flags (including inherited ones) to the viper instance
-		a.configHooks = append(a.configHooks, func(v *viper.Viper) error {
-			return v.BindPFlags(c.Flags())
-		})
+		// Bind flags if ConfigManager is available
+		if a.configManager != nil {
+			if err := a.configManager.BindFlags(c.Flags()); err != nil {
+				return fmt.Errorf("failed to bind flags: %w", err)
+			}
+		}
 
 		// Build the app (validates registrations)
 		if err := a.Build(); err != nil {
