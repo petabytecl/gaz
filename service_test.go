@@ -77,7 +77,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 
 	// Check no errors
 	for i, err := range errors {
-		s.NoError(err, "goroutine %d got error", i)
+		s.Require().NoError(err, "goroutine %d got error", i)
 	}
 
 	// Check provider called exactly once
@@ -234,10 +234,10 @@ func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
 
 	// start and stop should be no-ops
 	err := svc.start(context.Background())
-	s.NoError(err, "transient start should succeed")
+	s.Require().NoError(err, "transient start should succeed")
 
 	err = svc.stop(context.Background())
-	s.NoError(err, "transient stop should succeed")
+	s.Require().NoError(err, "transient stop should succeed")
 
 	// hasLifecycle should always return false
 	s.False(svc.hasLifecycle(), "transient should not have lifecycle")
@@ -268,11 +268,11 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
 
 	// When not built, start and stop should be no-ops
 	err := svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(startCalled, "start hook should not be called when not built")
 
 	err = svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(stopCalled, "stop hook should not be called when not built")
 }
 
@@ -305,11 +305,11 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
 
 	// Now hooks should be called
 	err = svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(startCalled, "start hook should be called")
 
 	err = svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(stopCalled, "stop hook should be called")
 }
 
@@ -333,7 +333,7 @@ func (s *ServiceSuite) TestLazySingleton_StartError() {
 
 	// start should return the error
 	err = svc.start(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "start failed")
 }
 
@@ -357,7 +357,7 @@ func (s *ServiceSuite) TestLazySingleton_StopError() {
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stop failed")
 }
 
@@ -405,11 +405,11 @@ func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 
 	// When not built, start should be no-op
 	err := svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// stop when not built should also be no-op
 	err = svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StartError() {
@@ -432,7 +432,7 @@ func (s *ServiceSuite) TestEagerSingleton_StartError() {
 
 	// start should return the error
 	err = svc.start(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "start failed")
 }
 
@@ -456,7 +456,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopError() {
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stop failed")
 }
 
@@ -482,11 +482,11 @@ func (s *ServiceSuite) TestInstanceService_LifecycleHooks() {
 	svc := newInstanceService("test", "*gaz.testService", original, startHooks, stopHooks)
 
 	err := svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(startCalled)
 
 	err = svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(stopCalled)
 }
 
@@ -522,7 +522,7 @@ func (s *ServiceSuite) TestInstanceService_StartError() {
 	svc := newInstanceService("test", "*gaz.testService", original, startHooks, nil)
 
 	err := svc.start(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "start failed")
 }
 
@@ -538,7 +538,7 @@ func (s *ServiceSuite) TestInstanceService_StopError() {
 	svc := newInstanceService("test", "*gaz.testService", original, nil, stopHooks)
 
 	err := svc.stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stop failed")
 }
 
@@ -583,7 +583,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 
 	// start should call OnStart
 	err = svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(instance.(*starterService).started)
 }
 
@@ -601,7 +601,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 
 	// stop should call OnStop
 	err = svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(instance.(*stopperService).stopped)
 }
 
@@ -619,7 +619,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
 
 	// start should return the error
 	err = svc.start(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "starter failed")
 }
 
@@ -637,7 +637,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stopper failed")
 }
 
@@ -648,7 +648,7 @@ func (s *ServiceSuite) TestInstanceService_StarterInterface() {
 	svc := newInstanceService("test", "*gaz.starterService", original, nil, nil)
 
 	err := svc.start(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(original.started)
 }
 
@@ -658,7 +658,7 @@ func (s *ServiceSuite) TestInstanceService_StopperInterface() {
 	svc := newInstanceService("test", "*gaz.stopperService", original, nil, nil)
 
 	err := svc.stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(original.stopped)
 }
 
@@ -668,7 +668,7 @@ func (s *ServiceSuite) TestInstanceService_StarterInterfaceError() {
 	svc := newInstanceService("test", "*gaz.failingStarterService", original, nil, nil)
 
 	err := svc.start(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "starter failed")
 }
 
@@ -678,6 +678,6 @@ func (s *ServiceSuite) TestInstanceService_StopperInterfaceError() {
 	svc := newInstanceService("test", "*gaz.failingStopperService", original, nil, nil)
 
 	err := svc.stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stopper failed")
 }

@@ -142,8 +142,8 @@ func (s *InjectionSuite) TestUnexportedFieldReturnsError() {
 	}))
 
 	_, err := Resolve[*BadHandler](c)
-	s.Error(err, "expected error for unexported field")
-	s.ErrorIs(err, ErrNotSettable)
+	s.Require().Error(err, "expected error for unexported field")
+	s.Require().ErrorIs(err, ErrNotSettable)
 }
 
 type HandlerWithMissingDep struct {
@@ -161,8 +161,8 @@ func (s *InjectionSuite) TestMissingDependencyReturnsError() {
 	)
 
 	_, err := Resolve[*HandlerWithMissingDep](c)
-	s.Error(err, "expected error for missing dependency")
-	s.ErrorIs(err, ErrNotFound)
+	s.Require().Error(err, "expected error for missing dependency")
+	s.Require().ErrorIs(err, ErrNotFound)
 }
 
 // Types for cycle detection test.
@@ -185,8 +185,8 @@ func (s *InjectionSuite) TestCycleViaInjection() {
 	}))
 
 	_, err := Resolve[*ServiceA](c)
-	s.Error(err, "expected error for circular dependency")
-	s.ErrorIs(err, ErrCycle)
+	s.Require().Error(err, "expected error for circular dependency")
+	s.Require().ErrorIs(err, ErrCycle)
 }
 
 func (s *InjectionSuite) TestNonStructPointerSkipped() {

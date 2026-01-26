@@ -263,7 +263,7 @@ func (s *ContainerSuite) TestDI09_CycleDetection() {
 	})
 
 	_, err := Resolve[*testCycleA](c)
-	s.ErrorIs(err, ErrCycle)
+	s.Require().ErrorIs(err, ErrCycle)
 }
 
 // =============================================================================

@@ -76,7 +76,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_Cycle() {
 	}
 
 	_, err := ComputeStartupOrder(graph, services)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "circular dependency detected")
 }
 

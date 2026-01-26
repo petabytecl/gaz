@@ -93,12 +93,12 @@ func (s *AppTestSuite) TestRunAndStop() {
 
 	// Stop the app
 	err := app.Stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Wait for Run to return
 	select {
 	case err := <-runErr:
-		s.NoError(err)
+		s.Require().NoError(err)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after Stop")
 	}
@@ -128,7 +128,7 @@ func (s *AppTestSuite) TestSignalHandling() {
 	// Wait for Run to return
 	select {
 	case err := <-runErr:
-		s.NoError(err)
+		s.Require().NoError(err)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after SIGTERM")
 	}
@@ -157,15 +157,15 @@ func (s *AppTestSuite) TestRunAlreadyRunning() {
 
 	// Try to run again - should error
 	err := app.Run(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "already running")
 
 	// Stop the first run
-	s.NoError(app.Stop(context.Background()))
+	s.Require().NoError(app.Stop(context.Background()))
 
 	select {
 	case err := <-runErr:
-		s.NoError(err)
+		s.Require().NoError(err)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after Stop")
 	}
@@ -192,7 +192,7 @@ func (s *AppTestSuite) TestRunContextCancelled() {
 	// Wait for Run to return
 	select {
 	case err := <-runErr:
-		s.NoError(err)
+		s.Require().NoError(err)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after context cancellation")
 	}
@@ -204,7 +204,7 @@ func (s *AppTestSuite) TestStopNotRunning() {
 
 	// Stop when not running should be no-op
 	err := app.Stop(context.Background())
-	s.NoError(err)
+	s.Require().NoError(err)
 }
 
 type FailingStartService struct{}
@@ -222,7 +222,7 @@ func (s *AppTestSuite) TestRunStartError() {
 
 	app := NewApp(c)
 	err := app.Run(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "starting service")
 }
 
@@ -252,7 +252,7 @@ func (s *AppTestSuite) TestStopError() {
 
 	// Stop should collect the error
 	err := app.Stop(context.Background())
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "stopping service")
 
 	select {
