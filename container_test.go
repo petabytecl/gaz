@@ -2,48 +2,49 @@ package gaz
 
 import (
 	"errors"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestNew(t *testing.T) {
-	c := New()
-	if c == nil {
-		t.Fatal("New() returned nil")
-	}
-	if c.services == nil {
-		t.Fatal("New() did not initialize services map")
-	}
-	if c.built {
-		t.Fatal("New container should not be built")
-	}
+// =============================================================================
+// ContainerSuite
+// =============================================================================
+
+type ContainerSuite struct {
+	suite.Suite
 }
 
-func TestNewReturnsDistinctInstances(t *testing.T) {
+func TestContainerSuite(t *testing.T) {
+	suite.Run(t, new(ContainerSuite))
+}
+
+func (s *ContainerSuite) TestNew() {
+	c := New()
+	require.NotNil(s.T(), c)
+	require.NotNil(s.T(), c.services)
+	assert.False(s.T(), c.built, "New container should not be built")
+}
+
+func (s *ContainerSuite) TestNewReturnsDistinctInstances() {
 	c1 := New()
 	c2 := New()
-	if c1 == c2 {
-		t.Fatal("New() should return distinct instances")
-	}
+	assert.NotSame(s.T(), c1, c2, "New() should return distinct instances")
 }
 
 // =============================================================================
 // Build() Tests
 // =============================================================================
 
-func TestBuild_Idempotent(t *testing.T) {
+func (s *ContainerSuite) TestBuild_Idempotent() {
 	c := New()
-	err := c.Build()
-	if err != nil {
-		t.Fatalf("first Build() failed: %v", err)
-	}
-	err = c.Build()
-	if err != nil {
-		t.Fatalf("second Build() failed: %v", err)
-	}
+	require.NoError(s.T(), c.Build())
+	require.NoError(s.T(), c.Build()) // second call also succeeds
 }
 
-func TestBuild_InstantiatesEagerServices(t *testing.T) {
+func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 	c := New()
 	instantiated := false
 	For[*testEagerPool](c).Eager().Provider(func(c *Container) (*testEagerPool, error) {
@@ -51,39 +52,26 @@ func TestBuild_InstantiatesEagerServices(t *testing.T) {
 		return &testEagerPool{}, nil
 	})
 
-	if instantiated {
-		t.Error("should not instantiate before Build()")
-	}
+	assert.False(s.T(), instantiated, "should not instantiate before Build()")
 
-	err := c.Build()
-	if err != nil {
-		t.Fatalf("Build() failed: %v", err)
-	}
+	require.NoError(s.T(), c.Build())
 
-	if !instantiated {
-		t.Error("should instantiate at Build()")
-	}
+	assert.True(s.T(), instantiated, "should instantiate at Build()")
 }
 
-func TestBuild_EagerError_PropagatesWithContext(t *testing.T) {
+func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 	c := New()
 	For[*testFailingService](c).Eager().Provider(func(c *Container) (*testFailingService, error) {
 		return nil, errors.New("startup failed")
 	})
 
 	err := c.Build()
-	if err == nil {
-		t.Fatal("expected error from Build()")
-	}
-	if !strings.Contains(err.Error(), "testFailingService") {
-		t.Errorf("error should contain service name: %v", err)
-	}
-	if !strings.Contains(err.Error(), "startup failed") {
-		t.Errorf("error should contain root cause: %v", err)
-	}
+	require.Error(s.T(), err)
+	assert.Contains(s.T(), err.Error(), "testFailingService")
+	assert.Contains(s.T(), err.Error(), "startup failed")
 }
 
-func TestBuild_ResolveAfterBuild_ReturnsCachedEagerService(t *testing.T) {
+func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService() {
 	c := New()
 	callCount := 0
 	For[*testEagerPool](c).Eager().Provider(func(c *Container) (*testEagerPool, error) {
@@ -91,51 +79,41 @@ func TestBuild_ResolveAfterBuild_ReturnsCachedEagerService(t *testing.T) {
 		return &testEagerPool{id: callCount}, nil
 	})
 
-	c.Build()
+	require.NoError(s.T(), c.Build())
 
 	// Resolve should return cached instance
-	pool1, _ := Resolve[*testEagerPool](c)
-	pool2, _ := Resolve[*testEagerPool](c)
+	pool1, err := Resolve[*testEagerPool](c)
+	require.NoError(s.T(), err)
+	pool2, err := Resolve[*testEagerPool](c)
+	require.NoError(s.T(), err)
 
-	if pool1.id != 1 {
-		t.Errorf("expected id 1, got %d", pool1.id)
-	}
-	if pool1 != pool2 {
-		t.Error("should return same cached instance")
-	}
-	if callCount != 1 {
-		t.Errorf("provider should be called exactly once, got %d", callCount)
-	}
+	assert.Equal(s.T(), 1, pool1.id)
+	assert.Same(s.T(), pool1, pool2, "should return same cached instance")
+	assert.Equal(s.T(), 1, callCount, "provider should be called exactly once")
 }
 
 // =============================================================================
 // DI-01: Register with generics
 // =============================================================================
 
-func TestDI01_RegisterWithGenerics(t *testing.T) {
+func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
 	c := New()
 	err := For[*testDatabase](c).Provider(func(c *Container) (*testDatabase, error) {
 		return &testDatabase{}, nil
 	})
-	if err != nil {
-		t.Fatalf("registration failed: %v", err)
-	}
+	require.NoError(s.T(), err)
 
 	// Verify service is registered
 	db, err := Resolve[*testDatabase](c)
-	if err != nil {
-		t.Fatalf("resolution failed: %v", err)
-	}
-	if db == nil {
-		t.Error("resolved nil database")
-	}
+	require.NoError(s.T(), err)
+	assert.NotNil(s.T(), db)
 }
 
 // =============================================================================
 // DI-02: Lazy instantiation by default
 // =============================================================================
 
-func TestDI02_LazyInstantiation(t *testing.T) {
+func (s *ContainerSuite) TestDI02_LazyInstantiation() {
 	c := New()
 	instantiated := false
 	For[*testLazyService](c).Provider(func(c *Container) (*testLazyService, error) {
@@ -143,21 +121,17 @@ func TestDI02_LazyInstantiation(t *testing.T) {
 		return &testLazyService{}, nil
 	})
 
-	if instantiated {
-		t.Error("should not instantiate before resolve")
-	}
+	assert.False(s.T(), instantiated, "should not instantiate before resolve")
 
 	_, _ = Resolve[*testLazyService](c)
-	if !instantiated {
-		t.Error("should instantiate on first resolve")
-	}
+	assert.True(s.T(), instantiated, "should instantiate on first resolve")
 }
 
 // =============================================================================
 // DI-03: Error propagation with chain context
 // =============================================================================
 
-func TestDI03_ErrorPropagation(t *testing.T) {
+func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 	c := New()
 	For[*testDB](c).Provider(func(c *Container) (*testDB, error) {
 		return nil, errors.New("connection failed")
@@ -171,53 +145,38 @@ func TestDI03_ErrorPropagation(t *testing.T) {
 	})
 
 	_, err := Resolve[*testRepo](c)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	require.Error(s.T(), err)
 	// Error should contain chain context
 	errStr := err.Error()
-	if !strings.Contains(errStr, "testRepo") || !strings.Contains(errStr, "testDB") {
-		t.Errorf("error should contain dependency context: %v", err)
-	}
-	if !strings.Contains(errStr, "connection failed") {
-		t.Errorf("error should contain root cause: %v", err)
-	}
+	assert.Contains(s.T(), errStr, "testRepo")
+	assert.Contains(s.T(), errStr, "testDB")
+	assert.Contains(s.T(), errStr, "connection failed")
 }
 
 // =============================================================================
 // DI-04: Named implementations
 // =============================================================================
 
-func TestDI04_NamedImplementations(t *testing.T) {
+func (s *ContainerSuite) TestDI04_NamedImplementations() {
 	c := New()
 	For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"})
 	For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"})
 
 	primary, err := Resolve[*testNamedDB](c, Named("primary"))
-	if err != nil {
-		t.Fatalf("failed to resolve primary: %v", err)
-	}
+	require.NoError(s.T(), err)
 	replica, err := Resolve[*testNamedDB](c, Named("replica"))
-	if err != nil {
-		t.Fatalf("failed to resolve replica: %v", err)
-	}
+	require.NoError(s.T(), err)
 
-	if primary.name != "primary" {
-		t.Errorf("expected primary, got %s", primary.name)
-	}
-	if replica.name != "replica" {
-		t.Errorf("expected replica, got %s", replica.name)
-	}
-	if primary == replica {
-		t.Error("should be different instances")
-	}
+	assert.Equal(s.T(), "primary", primary.name)
+	assert.Equal(s.T(), "replica", replica.name)
+	assert.NotSame(s.T(), primary, replica, "should be different instances")
 }
 
 // =============================================================================
 // DI-05: Struct field injection
 // =============================================================================
 
-func TestDI05_StructFieldInjection(t *testing.T) {
+func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 	c := New()
 	For[*testInjectDB](c).Instance(&testInjectDB{})
 	For[*testHandler](c).Provider(func(c *Container) (*testHandler, error) {
@@ -225,34 +184,29 @@ func TestDI05_StructFieldInjection(t *testing.T) {
 	})
 
 	h, err := Resolve[*testHandler](c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.DB == nil {
-		t.Error("DB should be injected")
-	}
+	require.NoError(s.T(), err)
+	assert.NotNil(s.T(), h.DB, "DB should be injected")
 }
 
 // =============================================================================
 // DI-06: Override for testing
 // =============================================================================
 
-func TestDI06_Override(t *testing.T) {
+func (s *ContainerSuite) TestDI06_Override() {
 	c := New()
 	For[*testOverrideService](c).Instance(&testOverrideService{name: "original"})
 	For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"})
 
-	s, _ := Resolve[*testOverrideService](c)
-	if s.name != "mock" {
-		t.Errorf("expected mock, got %s", s.name)
-	}
+	svc, err := Resolve[*testOverrideService](c)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), "mock", svc.name)
 }
 
 // =============================================================================
 // DI-07: Transient services
 // =============================================================================
 
-func TestDI07_TransientServices(t *testing.T) {
+func (s *ContainerSuite) TestDI07_TransientServices() {
 	c := New()
 	counter := 0
 	For[*testRequest](c).Transient().Provider(func(c *Container) (*testRequest, error) {
@@ -260,22 +214,21 @@ func TestDI07_TransientServices(t *testing.T) {
 		return &testRequest{id: counter}, nil
 	})
 
-	r1, _ := Resolve[*testRequest](c)
-	r2, _ := Resolve[*testRequest](c)
+	r1, err := Resolve[*testRequest](c)
+	require.NoError(s.T(), err)
+	r2, err := Resolve[*testRequest](c)
+	require.NoError(s.T(), err)
 
-	if r1.id == r2.id {
-		t.Error("should be different instances")
-	}
-	if r1.id != 1 || r2.id != 2 {
-		t.Errorf("expected ids 1 and 2, got %d and %d", r1.id, r2.id)
-	}
+	assert.NotEqual(s.T(), r1.id, r2.id, "should be different instances")
+	assert.Equal(s.T(), 1, r1.id)
+	assert.Equal(s.T(), 2, r2.id)
 }
 
 // =============================================================================
 // DI-08: Eager services
 // =============================================================================
 
-func TestDI08_EagerServices(t *testing.T) {
+func (s *ContainerSuite) TestDI08_EagerServices() {
 	c := New()
 	instantiated := false
 	For[*testPool](c).Eager().Provider(func(c *Container) (*testPool, error) {
@@ -283,22 +236,18 @@ func TestDI08_EagerServices(t *testing.T) {
 		return &testPool{}, nil
 	})
 
-	if instantiated {
-		t.Error("should not instantiate before Build")
-	}
+	assert.False(s.T(), instantiated, "should not instantiate before Build")
 
-	c.Build()
+	require.NoError(s.T(), c.Build())
 
-	if !instantiated {
-		t.Error("should instantiate at Build")
-	}
+	assert.True(s.T(), instantiated, "should instantiate at Build")
 }
 
 // =============================================================================
 // DI-09: Circular dependency detection
 // =============================================================================
 
-func TestDI09_CycleDetection(t *testing.T) {
+func (s *ContainerSuite) TestDI09_CycleDetection() {
 	c := New()
 	For[*testCycleA](c).Provider(func(c *Container) (*testCycleA, error) {
 		b, err := Resolve[*testCycleB](c)
@@ -316,16 +265,14 @@ func TestDI09_CycleDetection(t *testing.T) {
 	})
 
 	_, err := Resolve[*testCycleA](c)
-	if !errors.Is(err, ErrCycle) {
-		t.Errorf("expected ErrCycle, got: %v", err)
-	}
+	assert.ErrorIs(s.T(), err, ErrCycle)
 }
 
 // =============================================================================
 // Integration Tests
 // =============================================================================
 
-func TestIntegration_AllRequirements(t *testing.T) {
+func (s *ContainerSuite) TestIntegration_AllRequirements() {
 	// This test demonstrates a realistic DI setup using all 9 requirements
 	c := New()
 
@@ -377,48 +324,37 @@ func TestIntegration_AllRequirements(t *testing.T) {
 	})
 
 	// Before Build - eager service not started
-	if eagerStarted {
-		t.Error("eager service should not start before Build()")
-	}
+	assert.False(s.T(), eagerStarted, "eager service should not start before Build()")
 
 	// DI-08: Build instantiates eager services
-	if err := c.Build(); err != nil {
-		t.Fatalf("Build() failed: %v", err)
-	}
+	require.NoError(s.T(), c.Build())
 
-	if !eagerStarted {
-		t.Error("eager service should start at Build()")
-	}
+	assert.True(s.T(), eagerStarted, "eager service should start at Build()")
 
 	// DI-04: Named resolution
-	primary, _ := Resolve[*testAppDB](c, Named("primary"))
-	replica, _ := Resolve[*testAppDB](c, Named("replica"))
-	if primary.role != "primary" || replica.role != "replica" {
-		t.Error("named resolution failed")
-	}
+	primary, err := Resolve[*testAppDB](c, Named("primary"))
+	require.NoError(s.T(), err)
+	replica, err := Resolve[*testAppDB](c, Named("replica"))
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), "primary", primary.role)
+	assert.Equal(s.T(), "replica", replica.role)
 
 	// DI-02: Lazy - already resolved via eager dependency
 	// DI-05: Struct field injection
 	handler, err := Resolve[*testAppHandler](c)
-	if err != nil {
-		t.Fatalf("failed to resolve handler: %v", err)
-	}
-	if handler.Pool == nil {
-		t.Error("pool should be injected")
-	}
-	if handler.Pool.poolSize != 10 {
-		t.Error("wrong pool injected")
-	}
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), handler.Pool, "pool should be injected")
+	assert.Equal(s.T(), 10, handler.Pool.poolSize)
 
 	// DI-07: Transient - new instance each time
-	req1, _ := Resolve[*testAppRequest](c)
-	req2, _ := Resolve[*testAppRequest](c)
-	if req1.id == req2.id {
-		t.Error("transient should create new instances")
-	}
+	req1, err := Resolve[*testAppRequest](c)
+	require.NoError(s.T(), err)
+	req2, err := Resolve[*testAppRequest](c)
+	require.NoError(s.T(), err)
+	assert.NotEqual(s.T(), req1.id, req2.id, "transient should create new instances")
 }
 
-func TestIntegration_ErrorChainContext(t *testing.T) {
+func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
 	c := New()
 
 	// Set up a chain: Handler -> Service -> Repository -> Database (fails)
@@ -451,9 +387,7 @@ func TestIntegration_ErrorChainContext(t *testing.T) {
 	})
 
 	_, err := Resolve[*testChainHandler](c)
-	if err == nil {
-		t.Fatal("expected error")
-	}
+	require.Error(s.T(), err)
 
 	// DI-03: Error should contain full chain context
 	errStr := err.Error()
@@ -465,9 +399,7 @@ func TestIntegration_ErrorChainContext(t *testing.T) {
 		"cannot connect to database",
 	}
 	for _, part := range expectedParts {
-		if !strings.Contains(errStr, part) {
-			t.Errorf("error should contain '%s': %v", part, err)
-		}
+		assert.Contains(s.T(), errStr, part)
 	}
 }
 
