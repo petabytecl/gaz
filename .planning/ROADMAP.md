@@ -12,7 +12,7 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 
 - [x] **Phase 1: Core DI Container** - Type-safe dependency injection with generics
 - [x] **Phase 1.1: Update Test Framework for Testify** - Migrate to testify assertions (INSERTED)
-- [ ] **Phase 1.2: Create Makefile** - Testing, coverage, formatting, linting (INSERTED)
+- [x] **Phase 1.2: Create Makefile** - Testing, coverage, formatting, linting (INSERTED)
 - [ ] **Phase 2: Lifecycle Management** - Deterministic startup/shutdown with hooks
 - [ ] **Phase 3: App Builder + Cobra** - Fluent API and CLI integration
 - [ ] **Phase 4: Config System** - Multi-source configuration loading
