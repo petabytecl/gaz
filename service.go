@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"fmt"
 	"sync"
 )
 
@@ -87,7 +88,7 @@ func (s *lazySingleton[T]) getInstance(c *Container, chain []string) (any, error
 	}
 
 	// Auto-inject struct fields tagged with gaz:"inject"
-	if err := injectStruct(c, instance, chain); err != nil {
+	if err = injectStruct(c, instance, chain); err != nil {
 		return nil, err
 	}
 
@@ -164,7 +165,7 @@ func (s *transientService[T]) getInstance(c *Container, chain []string) (any, er
 	}
 
 	// Auto-inject struct fields tagged with gaz:"inject"
-	if err := injectStruct(c, instance, chain); err != nil {
+	if err = injectStruct(c, instance, chain); err != nil {
 		return nil, err
 	}
 
@@ -230,7 +231,7 @@ func (s *eagerSingleton[T]) getInstance(c *Container, chain []string) (any, erro
 	}
 
 	// Auto-inject struct fields tagged with gaz:"inject"
-	if err := injectStruct(c, instance, chain); err != nil {
+	if err = injectStruct(c, instance, chain); err != nil {
 		return nil, err
 	}
 
@@ -256,7 +257,7 @@ func (s *eagerSingleton[T]) start(ctx context.Context) error {
 
 	if starter, ok := any(s.instance).(Starter); ok {
 		if err := starter.OnStart(ctx); err != nil {
-			return err
+			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
 		}
 	}
 
@@ -273,7 +274,7 @@ func (s *eagerSingleton[T]) stop(ctx context.Context) error {
 
 	if stopper, ok := any(s.instance).(Stopper); ok {
 		if err := stopper.OnStop(ctx); err != nil {
-			return err
+			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
 		}
 	}
 
@@ -327,7 +328,7 @@ func (s *instanceService[T]) isEager() bool {
 	return false // Already instantiated, no need for Build()
 }
 
-func (s *instanceService[T]) getInstance(c *Container, chain []string) (any, error) {
+func (s *instanceService[T]) getInstance(_ *Container, _ []string) (any, error) {
 	return s.value, nil
 }
 
@@ -340,7 +341,7 @@ func (s *instanceService[T]) start(ctx context.Context) error {
 
 	if starter, ok := any(s.value).(Starter); ok {
 		if err := starter.OnStart(ctx); err != nil {
-			return err
+			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
 		}
 	}
 
@@ -350,7 +351,7 @@ func (s *instanceService[T]) start(ctx context.Context) error {
 func (s *instanceService[T]) stop(ctx context.Context) error {
 	if stopper, ok := any(s.value).(Stopper); ok {
 		if err := stopper.OnStop(ctx); err != nil {
-			return err
+			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
 		}
 	}
 
