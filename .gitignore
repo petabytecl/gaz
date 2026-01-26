@@ -1,0 +1,27 @@
+# Binaries
+/bin/
+/dist/
+/gaz
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go
+vendor/
+go.sum
+
+# OS
+.DS_Store
+
+# Test artifacts
+coverage.out
+
+# Planning
+.planning/todos/pending/*.md
+.planning/todos/done/*.md
+!.planning/todos/pending/.keep
+!.planning/todos/done/.keep
+.planning/config.json
