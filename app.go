@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const defaultShutdownTimeout = 30 * time.Second
+
 // AppOptions configuration for App.
 type AppOptions struct {
 	ShutdownTimeout time.Duration
@@ -42,7 +44,7 @@ type App struct {
 // NewApp creates a new App with the given container and options.
 func NewApp(c *Container, opts ...AppOption) *App {
 	options := AppOptions{
-		ShutdownTimeout: 30 * time.Second, // Default
+		ShutdownTimeout: defaultShutdownTimeout,
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -98,20 +100,19 @@ func (a *App) Run(ctx context.Context) error {
 		errCh := make(chan error, len(layer))
 
 		for _, name := range layer {
-
 			svc := services[name]
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				if err := svc.start(ctx); err != nil {
-					errCh <- fmt.Errorf("starting service %s: %w", name, err)
+				if startErr := svc.start(ctx); startErr != nil {
+					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
 				}
 			}()
 		}
 		wg.Wait()
 		close(errCh)
 
-		if err := <-errCh; err != nil {
+		if startupErr := <-errCh; startupErr != nil {
 			// Rollback: stop everything we started?
 			// For simplicity, we call Stop() which attempts to stop everything.
 			// Ideally we only stop what started, but Stop() is safe to call on everything.
@@ -119,7 +120,7 @@ func (a *App) Run(ctx context.Context) error {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 			defer cancel()
 			_ = a.Stop(shutdownCtx)
-			return err
+			return startupErr
 		}
 	}
 
@@ -186,13 +187,12 @@ func (a *App) Stop(ctx context.Context) error {
 		errCh := make(chan error, len(layer))
 
 		for _, name := range layer {
-
 			svc := services[name]
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				if err := svc.stop(ctx); err != nil {
-					errCh <- fmt.Errorf("stopping service %s: %w", name, err)
+				if stopErr := svc.stop(ctx); stopErr != nil {
+					errCh <- fmt.Errorf("stopping service %s: %w", name, stopErr)
 				}
 			}()
 		}
@@ -200,11 +200,11 @@ func (a *App) Stop(ctx context.Context) error {
 		close(errCh)
 
 		// Collect errors but continue shutdown
-		for err := range errCh {
+		for shutdownErr := range errCh {
 			if lastErr == nil {
-				lastErr = err
+				lastErr = shutdownErr
 			} else {
-				lastErr = fmt.Errorf("%w; %w", lastErr, err)
+				lastErr = errors.Join(lastErr, shutdownErr)
 			}
 		}
 	}
