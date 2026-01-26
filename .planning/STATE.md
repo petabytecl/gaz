@@ -62,7 +62,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-0 pending todo(s) in `.planning/todos/pending/`:
+1 pending todo(s) in `.planning/todos/pending/`:
+- [ ] Fix lint errors (area: general)
 
 ### Blockers/Concerns
 
