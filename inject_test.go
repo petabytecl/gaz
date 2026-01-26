@@ -34,7 +34,7 @@ func TestInjectionSuite(t *testing.T) {
 }
 
 func (s *InjectionSuite) TestBasicInjection() {
-	c := New()
+	c := NewContainer()
 
 	db := &Database{connStr: "postgres://localhost"}
 	logger := &Logger{level: "debug"}
@@ -65,7 +65,7 @@ type ServiceWithNamedDeps struct {
 }
 
 func (s *InjectionSuite) TestNamed() {
-	c := New()
+	c := NewContainer()
 
 	primary := &DB{name: "primary"}
 	replica := &DB{name: "replica"}
@@ -92,7 +92,7 @@ type HandlerWithOptionalCache struct {
 }
 
 func (s *InjectionSuite) TestOptionalNotRegistered() {
-	c := New()
+	c := NewContainer()
 
 	// Don't register Cache
 	s.Require().NoError(
@@ -110,7 +110,7 @@ func (s *InjectionSuite) TestOptionalNotRegistered() {
 }
 
 func (s *InjectionSuite) TestOptionalRegistered() {
-	c := New()
+	c := NewContainer()
 
 	cache := &Cache{addr: "localhost:6379"}
 	s.Require().NoError(For[*Cache](c).Instance(cache))
@@ -134,7 +134,7 @@ type BadHandler struct {
 }
 
 func (s *InjectionSuite) TestUnexportedFieldReturnsError() {
-	c := New()
+	c := NewContainer()
 
 	s.Require().NoError(For[*Database](c).Instance(&Database{}))
 	s.Require().NoError(For[*BadHandler](c).ProviderFunc(func(_ *Container) *BadHandler {
@@ -151,7 +151,7 @@ type HandlerWithMissingDep struct {
 }
 
 func (s *InjectionSuite) TestMissingDependencyReturnsError() {
-	c := New()
+	c := NewContainer()
 
 	// Don't register Database
 	s.Require().NoError(
@@ -175,7 +175,7 @@ type ServiceB struct {
 }
 
 func (s *InjectionSuite) TestCycleViaInjection() {
-	c := New()
+	c := NewContainer()
 
 	s.Require().NoError(For[*ServiceA](c).ProviderFunc(func(_ *Container) *ServiceA {
 		return &ServiceA{}
@@ -190,7 +190,7 @@ func (s *InjectionSuite) TestCycleViaInjection() {
 }
 
 func (s *InjectionSuite) TestNonStructPointerSkipped() {
-	c := New()
+	c := NewContainer()
 
 	// Register a simple string - not a struct
 	s.Require().NoError(For[string](c).ProviderFunc(func(_ *Container) string {
@@ -243,7 +243,7 @@ type TransientHandler struct {
 }
 
 func (s *InjectionSuite) TestTransientService() {
-	c := New()
+	c := NewContainer()
 
 	db := &Database{connStr: "test"}
 	s.Require().NoError(For[*Database](c).Instance(db))
@@ -273,7 +273,7 @@ type PreBuiltHandler struct {
 }
 
 func (s *InjectionSuite) TestInstanceServiceNoInjection() {
-	c := New()
+	c := NewContainer()
 
 	db := &Database{connStr: "test"}
 	s.Require().NoError(For[*Database](c).Instance(db))

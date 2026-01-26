@@ -2,7 +2,7 @@ package gaz
 
 // TestGraph_Storage tests the internal graph storage mechanisms.
 func (s *ContainerSuite) TestGraph_Storage() {
-	c := New()
+	c := NewContainer()
 
 	// Manually record dependencies to test storage
 	c.recordDependency("parent", "child1")
@@ -23,7 +23,7 @@ func (s *ContainerSuite) TestGraph_Storage() {
 }
 
 func (s *ContainerSuite) TestGraph_CaptureDependencies() {
-	c := New()
+	c := NewContainer()
 
 	type ServiceB struct{}
 	type ServiceA struct{ B *ServiceB }

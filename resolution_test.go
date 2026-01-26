@@ -46,7 +46,7 @@ func TestResolutionSuite(t *testing.T) {
 }
 
 func (s *ResolutionSuite) TestBasicResolution() {
-	c := New()
+	c := NewContainer()
 
 	// Register a simple service
 	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
@@ -62,7 +62,7 @@ func (s *ResolutionSuite) TestBasicResolution() {
 }
 
 func (s *ResolutionSuite) TestNotFound() {
-	c := New()
+	c := NewContainer()
 
 	// Try to resolve unregistered type
 	_, err := Resolve[*testServiceA](c)
@@ -75,7 +75,7 @@ func (s *ResolutionSuite) TestNotFound() {
 }
 
 func (s *ResolutionSuite) TestNamed() {
-	c := New()
+	c := NewContainer()
 
 	// Register two services with same type, different names
 	err := For[*testServiceA](c).Named("first").ProviderFunc(func(_ *Container) *testServiceA {
@@ -102,7 +102,7 @@ func (s *ResolutionSuite) TestNamed() {
 }
 
 func (s *ResolutionSuite) TestCycleDetection() {
-	c := New()
+	c := NewContainer()
 
 	// A depends on B
 	err := For[*cyclicA](c).Provider(func(c *Container) (*cyclicA, error) {
@@ -140,7 +140,7 @@ func (s *ResolutionSuite) TestCycleDetection() {
 }
 
 func (s *ResolutionSuite) TestProviderErrorPropagates() {
-	c := New()
+	c := NewContainer()
 
 	providerErr := errors.New("provider failed")
 
@@ -165,7 +165,7 @@ func (s *ResolutionSuite) TestProviderErrorPropagates() {
 }
 
 func (s *ResolutionSuite) TestDependencyChain() {
-	c := New()
+	c := NewContainer()
 
 	// Register C (leaf dependency)
 	err := For[*depC](c).ProviderFunc(func(_ *Container) *depC {
@@ -205,7 +205,7 @@ func (s *ResolutionSuite) TestDependencyChain() {
 }
 
 func (s *ResolutionSuite) TestTransientNewInstanceEachTime() {
-	c := New()
+	c := NewContainer()
 
 	callCount := 0
 
@@ -231,7 +231,7 @@ func (s *ResolutionSuite) TestTransientNewInstanceEachTime() {
 }
 
 func (s *ResolutionSuite) TestSingletonSameInstance() {
-	c := New()
+	c := NewContainer()
 
 	callCount := 0
 
@@ -257,7 +257,7 @@ func (s *ResolutionSuite) TestSingletonSameInstance() {
 }
 
 func (s *ResolutionSuite) TestTypeMismatch() {
-	c := New()
+	c := NewContainer()
 
 	// Register service A
 	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
@@ -275,7 +275,7 @@ func (s *ResolutionSuite) TestTypeMismatch() {
 }
 
 func (s *ResolutionSuite) TestInstanceDirectValue() {
-	c := New()
+	c := NewContainer()
 
 	original := &testServiceA{value: "pre-built"}
 
@@ -292,7 +292,7 @@ func (s *ResolutionSuite) TestInstanceDirectValue() {
 }
 
 func (s *ResolutionSuite) TestNamedNotFound() {
-	c := New()
+	c := NewContainer()
 
 	// Register with type name (default)
 	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {

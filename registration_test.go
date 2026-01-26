@@ -33,7 +33,7 @@ func TestRegistrationSuite(t *testing.T) {
 }
 
 func (s *RegistrationSuite) TestFor_Provider_RegistersService() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 42}, nil
@@ -43,7 +43,7 @@ func (s *RegistrationSuite) TestFor_Provider_RegistersService() {
 }
 
 func (s *RegistrationSuite) TestFor_ProviderFunc_RegistersService() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	err := gaz.For[*testService](c).ProviderFunc(func(_ *gaz.Container) *testService {
 		return &testService{id: 42}
@@ -53,7 +53,7 @@ func (s *RegistrationSuite) TestFor_ProviderFunc_RegistersService() {
 }
 
 func (s *RegistrationSuite) TestFor_Instance_RegistersValue() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	cfg := &testConfig{value: "test-value"}
 	err := gaz.For[*testConfig](c).Instance(cfg)
@@ -62,7 +62,7 @@ func (s *RegistrationSuite) TestFor_Instance_RegistersValue() {
 }
 
 func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// First registration should succeed
 	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
@@ -78,7 +78,7 @@ func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
 }
 
 func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// First registration should succeed
 	err := gaz.For[*testConfig](c).Instance(&testConfig{value: "first"})
@@ -90,7 +90,7 @@ func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
 }
 
 func (s *RegistrationSuite) TestFor_Replace_AllowsOverwrite() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// First registration
 	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
@@ -106,7 +106,7 @@ func (s *RegistrationSuite) TestFor_Replace_AllowsOverwrite() {
 }
 
 func (s *RegistrationSuite) TestFor_Replace_Instance_AllowsOverwrite() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// First registration
 	err := gaz.For[*testConfig](c).Instance(&testConfig{value: "first"})
@@ -118,7 +118,7 @@ func (s *RegistrationSuite) TestFor_Replace_Instance_AllowsOverwrite() {
 }
 
 func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// Register "primary" named DB
 	err := gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
@@ -134,7 +134,7 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 }
 
 func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// Register "primary" named DB
 	err := gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
@@ -150,7 +150,7 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
 }
 
 func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// Registration with Transient() should succeed
 	err := gaz.For[*testService](
@@ -164,7 +164,7 @@ func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {
 }
 
 func (s *RegistrationSuite) TestFor_Eager_CreatesEagerService() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// Registration with Eager() should succeed
 	err := gaz.For[*testService](c).Eager().Provider(func(_ *gaz.Container) (*testService, error) {
@@ -175,7 +175,7 @@ func (s *RegistrationSuite) TestFor_Eager_CreatesEagerService() {
 }
 
 func (s *RegistrationSuite) TestFor_ChainedOptions_Work() {
-	c := gaz.New()
+	c := gaz.NewContainer()
 
 	// All options can be chained together
 	err := gaz.For[*testDB](c).

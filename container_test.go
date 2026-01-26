@@ -19,17 +19,17 @@ func TestContainerSuite(t *testing.T) {
 	suite.Run(t, new(ContainerSuite))
 }
 
-func (s *ContainerSuite) TestNew() {
-	c := New()
+func (s *ContainerSuite) TestNewContainer() {
+	c := NewContainer()
 	s.Require().NotNil(c)
 	s.Require().NotNil(c.services)
 	s.False(c.built, "New container should not be built")
 }
 
-func (s *ContainerSuite) TestNewReturnsDistinctInstances() {
-	c1 := New()
-	c2 := New()
-	s.NotSame(c1, c2, "New() should return distinct instances")
+func (s *ContainerSuite) TestNewContainerReturnsDistinctInstances() {
+	c1 := NewContainer()
+	c2 := NewContainer()
+	s.NotSame(c1, c2, "NewContainer() should return distinct instances")
 }
 
 // =============================================================================
@@ -37,13 +37,13 @@ func (s *ContainerSuite) TestNewReturnsDistinctInstances() {
 // =============================================================================
 
 func (s *ContainerSuite) TestBuild_Idempotent() {
-	c := New()
+	c := NewContainer()
 	s.Require().NoError(c.Build())
 	s.Require().NoError(c.Build()) // second call also succeeds
 }
 
 func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
-	c := New()
+	c := NewContainer()
 	instantiated := false
 	err := For[*testEagerPool](c).Eager().Provider(func(_ *Container) (*testEagerPool, error) {
 		instantiated = true
@@ -59,7 +59,7 @@ func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 }
 
 func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
-	c := New()
+	c := NewContainer()
 	regErr := For[*testFailingService](
 		c,
 	).Eager().
@@ -75,7 +75,7 @@ func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 }
 
 func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService() {
-	c := New()
+	c := NewContainer()
 	callCount := 0
 	err := For[*testEagerPool](c).Eager().Provider(func(_ *Container) (*testEagerPool, error) {
 		callCount++
@@ -101,7 +101,7 @@ func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService()
 // =============================================================================
 
 func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
-	c := New()
+	c := NewContainer()
 	err := For[*testDatabase](c).Provider(func(_ *Container) (*testDatabase, error) {
 		return &testDatabase{}, nil
 	})
@@ -118,7 +118,7 @@ func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI02_LazyInstantiation() {
-	c := New()
+	c := NewContainer()
 	instantiated := false
 	err := For[*testLazyService](c).Provider(func(_ *Container) (*testLazyService, error) {
 		instantiated = true
@@ -137,7 +137,7 @@ func (s *ContainerSuite) TestDI02_LazyInstantiation() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI03_ErrorPropagation() {
-	c := New()
+	c := NewContainer()
 	err := For[*testDB](c).Provider(func(_ *Container) (*testDB, error) {
 		return nil, errors.New("connection failed")
 	})
@@ -166,7 +166,7 @@ func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI04_NamedImplementations() {
-	c := New()
+	c := NewContainer()
 	s.Require().
 		NoError(For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"}))
 	s.Require().
@@ -187,7 +187,7 @@ func (s *ContainerSuite) TestDI04_NamedImplementations() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI05_StructFieldInjection() {
-	c := New()
+	c := NewContainer()
 	s.Require().NoError(For[*testInjectDB](c).Instance(&testInjectDB{}))
 	err := For[*testHandler](c).Provider(func(_ *Container) (*testHandler, error) {
 		return &testHandler{}, nil
@@ -204,7 +204,7 @@ func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI06_Override() {
-	c := New()
+	c := NewContainer()
 	s.Require().
 		NoError(For[*testOverrideService](c).Instance(&testOverrideService{name: "original"}))
 	s.Require().
@@ -220,7 +220,7 @@ func (s *ContainerSuite) TestDI06_Override() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI07_TransientServices() {
-	c := New()
+	c := NewContainer()
 	counter := 0
 	err := For[*testRequest](c).Transient().Provider(func(_ *Container) (*testRequest, error) {
 		counter++
@@ -243,7 +243,7 @@ func (s *ContainerSuite) TestDI07_TransientServices() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI08_EagerServices() {
-	c := New()
+	c := NewContainer()
 	instantiated := false
 	err := For[*testPool](c).Eager().Provider(func(_ *Container) (*testPool, error) {
 		instantiated = true
@@ -263,7 +263,7 @@ func (s *ContainerSuite) TestDI08_EagerServices() {
 // =============================================================================
 
 func (s *ContainerSuite) TestDI09_CycleDetection() {
-	c := New()
+	c := NewContainer()
 	err := For[*testCycleA](c).Provider(func(c *Container) (*testCycleA, error) {
 		b, resolveErr := Resolve[*testCycleB](c)
 		if resolveErr != nil {
@@ -292,7 +292,7 @@ func (s *ContainerSuite) TestDI09_CycleDetection() {
 
 func (s *ContainerSuite) TestIntegration_AllRequirements() {
 	// This test demonstrates a realistic DI setup using all 9 requirements
-	c := New()
+	c := NewContainer()
 
 	// DI-01: Register with generics
 	// DI-02: Lazy by default (Config is lazy)
@@ -381,7 +381,7 @@ func (s *ContainerSuite) TestIntegration_AllRequirements() {
 }
 
 func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
-	c := New()
+	c := NewContainer()
 
 	// Set up a chain: Handler -> Service -> Repository -> Database (fails)
 	err := For[*testChainDB](c).Provider(func(_ *Container) (*testChainDB, error) {

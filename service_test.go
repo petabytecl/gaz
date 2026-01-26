@@ -33,7 +33,7 @@ func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 	}
 
 	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	instance1, err := svc.getInstance(c, nil)
 	s.Require().NoError(err, "getInstance 1")
@@ -55,7 +55,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 	}
 
 	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	const numGoroutines = 10
 	var wg sync.WaitGroup
@@ -98,7 +98,7 @@ func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 	}
 
 	svc := newTransient("test", "*gaz.testService", provider)
-	c := New()
+	c := NewContainer()
 
 	instance1, err := svc.getInstance(c, nil)
 	s.Require().NoError(err, "getInstance 1")
@@ -136,7 +136,7 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 	original := &testService{id: 42}
 	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	instance, err := svc.getInstance(c, nil)
 	s.Require().NoError(err, "getInstance")
@@ -214,7 +214,7 @@ func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	instance1, err := svc.getInstance(c, nil)
 	s.Require().NoError(err, "getInstance 1")
@@ -299,7 +299,7 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
 	}
 
 	svc := newLazySingleton("test", "*gaz.testService", provider, startHooks, stopHooks)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -327,7 +327,7 @@ func (s *ServiceSuite) TestLazySingleton_StartError() {
 	}
 
 	svc := newLazySingleton("test", "*gaz.testService", provider, startHooks, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -351,7 +351,7 @@ func (s *ServiceSuite) TestLazySingleton_StopError() {
 	}
 
 	svc := newLazySingleton("test", "*gaz.testService", provider, nil, stopHooks)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -426,7 +426,7 @@ func (s *ServiceSuite) TestEagerSingleton_StartError() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.testService", provider, startHooks, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -450,7 +450,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopError() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, stopHooks)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -577,7 +577,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.starterService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	instance, err := svc.getInstance(c, nil)
@@ -597,7 +597,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.stopperService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	instance, err := svc.getInstance(c, nil)
@@ -617,7 +617,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.failingStarterService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
@@ -635,7 +635,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 	}
 
 	svc := newEagerSingleton("test", "*gaz.failingStopperService", provider, nil, nil)
-	c := New()
+	c := NewContainer()
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)

@@ -25,7 +25,7 @@ type (
 )
 
 func (s *AppTestSuite) TestRunAndStop() {
-	c := New()
+	c := NewContainer()
 
 	var startOrder []string
 	var stopOrder []string
@@ -112,7 +112,7 @@ func (s *AppTestSuite) TestRunAndStop() {
 }
 
 func (s *AppTestSuite) TestSignalHandling() {
-	c := New()
+	c := NewContainer()
 	app := NewApp(c)
 
 	// Run in goroutine
@@ -138,7 +138,7 @@ func (s *AppTestSuite) TestSignalHandling() {
 }
 
 func (s *AppTestSuite) TestWithShutdownTimeout() {
-	c := New()
+	c := NewContainer()
 	timeout := 5 * time.Second
 	app := NewApp(c, WithShutdownTimeout(timeout))
 
@@ -146,7 +146,7 @@ func (s *AppTestSuite) TestWithShutdownTimeout() {
 }
 
 func (s *AppTestSuite) TestRunAlreadyRunning() {
-	c := New()
+	c := NewContainer()
 	app := NewApp(c)
 
 	// Start in background
@@ -175,7 +175,7 @@ func (s *AppTestSuite) TestRunAlreadyRunning() {
 }
 
 func (s *AppTestSuite) TestRunContextCancelled() {
-	c := New()
+	c := NewContainer()
 	app := NewApp(c)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -202,7 +202,7 @@ func (s *AppTestSuite) TestRunContextCancelled() {
 }
 
 func (s *AppTestSuite) TestStopNotRunning() {
-	c := New()
+	c := NewContainer()
 	app := NewApp(c)
 
 	// Stop when not running should be no-op
@@ -213,7 +213,7 @@ func (s *AppTestSuite) TestStopNotRunning() {
 type FailingStartService struct{}
 
 func (s *AppTestSuite) TestRunStartError() {
-	c := New()
+	c := NewContainer()
 
 	err := For[*FailingStartService](c).Eager().
 		OnStart(func(_ context.Context, _ *FailingStartService) error {
@@ -233,7 +233,7 @@ func (s *AppTestSuite) TestRunStartError() {
 type FailingStopService struct{}
 
 func (s *AppTestSuite) TestStopError() {
-	c := New()
+	c := NewContainer()
 
 	err := For[*FailingStopService](c).Named("failstop").Eager().
 		OnStop(func(_ context.Context, _ *FailingStopService) error {

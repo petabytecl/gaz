@@ -37,10 +37,10 @@ type Container struct {
 	graphMu         sync.RWMutex
 }
 
-// New creates a new empty Container.
+// NewContainer creates a new empty Container.
 // Register services using For[T](), then call Build() to prepare
 // the container for resolution.
-func New() *Container {
+func NewContainer() *Container {
 	return &Container{
 		services:         make(map[string]any),
 		resolutionChains: make(map[int64][]string),

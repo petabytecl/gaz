@@ -9,7 +9,7 @@ import (
 )
 
 func TestLifecycleHooks(t *testing.T) {
-	c := New()
+	c := NewContainer()
 
 	var startCalled, stopCalled bool
 
@@ -71,7 +71,7 @@ func (s *lifecycleService) OnStop(_ context.Context) error {
 }
 
 func TestInterfaceLifecycle(t *testing.T) {
-	c := New()
+	c := NewContainer()
 
 	svc := &lifecycleService{}
 
