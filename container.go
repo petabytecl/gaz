@@ -174,6 +174,12 @@ func (c *Container) resolveByName(name string, _ []string) (any, error) {
 		return nil, fmt.Errorf("%w: %s", ErrNotFound, name)
 	}
 
+	// Record dependency if we are being resolved by another service
+	if len(chain) > 0 {
+		parent := chain[len(chain)-1]
+		c.recordDependency(parent, name)
+	}
+
 	wrapper := svc.(serviceWrapper)
 
 	// Add current service to chain before getting instance
