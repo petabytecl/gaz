@@ -32,7 +32,7 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 **Plans**: 6 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Foundation (errors, types, container)
+- [x] 01-01-PLAN.md — Foundation (errors, types, container) ✓
 - [ ] 01-02-PLAN.md — Service wrappers (lazy, transient, eager, instance)
 - [ ] 01-03-PLAN.md — Registration API (For[T], fluent builder)
 - [ ] 01-04-PLAN.md — Resolution & cycle detection (Resolve[T])
@@ -115,7 +115,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core DI Container | 0/6 | Planned | - |
+| 1. Core DI Container | 1/6 | In progress | - |
 | 2. Lifecycle Management | 0/? | Not started | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |
 | 4. Config System | 0/? | Not started | - |
