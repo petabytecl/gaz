@@ -66,6 +66,11 @@ func (s *lazySingleton[T]) getInstance(c *Container, chain []string) (any, error
 		return nil, err
 	}
 
+	// Auto-inject struct fields tagged with gaz:"inject"
+	if err := injectStruct(c, instance, chain); err != nil {
+		return nil, err
+	}
+
 	s.instance = instance
 	s.built = true
 	return instance, nil
@@ -102,7 +107,17 @@ func (s *transientService[T]) isEager() bool {
 
 func (s *transientService[T]) getInstance(c *Container, chain []string) (any, error) {
 	// Always call provider - no caching for transient services
-	return s.provider(c)
+	instance, err := s.provider(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// Auto-inject struct fields tagged with gaz:"inject"
+	if err := injectStruct(c, instance, chain); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
 }
 
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
@@ -148,6 +163,11 @@ func (s *eagerSingleton[T]) getInstance(c *Container, chain []string) (any, erro
 
 	instance, err := s.provider(c)
 	if err != nil {
+		return nil, err
+	}
+
+	// Auto-inject struct fields tagged with gaz:"inject"
+	if err := injectStruct(c, instance, chain); err != nil {
 		return nil, err
 	}
 
