@@ -138,7 +138,10 @@ func (c *Container) Build() error {
 
 	// Instantiate each eager service
 	for _, svc := range eagerServices {
-		_, err := svc.getInstance(c, nil)
+		// Use resolveByName to ensure dependency tracking works correctly.
+		// resolveByName manages the resolution chain, which is required for
+		// cycle detection and dependency graph building.
+		_, err := c.resolveByName(svc.name(), nil)
 		if err != nil {
 			return fmt.Errorf("building eager service %s: %w", svc.name(), err)
 		}
