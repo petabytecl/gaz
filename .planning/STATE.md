@@ -84,6 +84,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - [testing] Improve test coverage to 90%
+- [tooling] Add auto-discovery help to Makefile
 
 ### Blockers/Concerns
 
