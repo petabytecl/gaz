@@ -29,10 +29,15 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
   3. Errors from providers propagate through the dependency chain with clear context
   4. Developer can register multiple named implementations of the same type and resolve by name
   5. Developer can inject dependencies into struct fields tagged with `gaz:"inject"`
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Foundation (errors, types, container)
+- [ ] 01-02-PLAN.md — Service wrappers (lazy, transient, eager, instance)
+- [ ] 01-03-PLAN.md — Registration API (For[T], fluent builder)
+- [ ] 01-04-PLAN.md — Resolution & cycle detection (Resolve[T])
+- [ ] 01-05-PLAN.md — Struct tag injection (gaz:"inject")
+- [ ] 01-06-PLAN.md — Build phase & integration tests
 
 ### Phase 2: Lifecycle Management
 **Goal**: App startup and shutdown are deterministic and graceful
@@ -110,7 +115,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core DI Container | 0/? | Not started | - |
+| 1. Core DI Container | 0/6 | Planned | - |
 | 2. Lifecycle Management | 0/? | Not started | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |
 | 4. Config System | 0/? | Not started | - |
