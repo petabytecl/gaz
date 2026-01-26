@@ -79,8 +79,8 @@ Create Makefile with targets for testing, coverage, formatting, linting, and oth
 Plans:
 - [x] 02-01-PLAN.md — Enable container to record dependency graph during resolution ✓
 - [x] 02-02-PLAN.md — Define lifecycle interfaces and update builder API ✓
-- [ ] 02-03-PLAN.md — Implement lifecycle ordering logic (TDD)
-- [ ] 02-04-PLAN.md — Implement gaz.App wrapper with run/stop/signals
+- [x] 02-03-PLAN.md — Implement lifecycle ordering logic (TDD) ✓
+- [x] 02-04-PLAN.md — Implement gaz.App wrapper with run/stop/signals ✓
 
 ### Phase 3: App Builder + Cobra
 **Goal**: Developers can build and run applications with a fluent API
@@ -91,10 +91,13 @@ Plans:
   2. Developer can add providers fluently with `.Provide()` method chain
   3. Developer can compose related services into modules via `.Module()`
   4. Developer can integrate app with cobra.Command for CLI subcommands
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Design App Builder API and Module system
+- [ ] 03-02-PLAN.md — Implement fluent Builder
+- [ ] 03-03-PLAN.md — Integrate with Cobra
+- [ ] 03-04-PLAN.md — End-to-end integration tests
 
 ### Phase 4: Config System
 **Goal**: Applications load configuration from multiple sources
@@ -147,8 +150,8 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 1. Core DI Container | 6/6 | Complete | 2026-01-26 |
 | 1.1 Update Test Framework | 3/3 | Complete | 2026-01-26 |
 | 1.2 Create Makefile | 1/1 | Complete | 2026-01-26 |
-| 2. Lifecycle Management | 2/4 | In Progress | - |
-| 3. App Builder + Cobra | 0/? | Not started | - |
+| 2. Lifecycle Management | 4/4 | Complete | 2026-01-26 |
+| 3. App Builder + Cobra | 0/4 | Not started | - |
 | 4. Config System | 0/? | Not started | - |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
