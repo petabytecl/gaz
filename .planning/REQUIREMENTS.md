@@ -32,12 +32,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### App Builder
 
-- [ ] **APP-01**: Developer can create app with `gaz.New()` entry point
-- [ ] **APP-02**: Developer can add providers with fluent `.Provide()` method
-- [ ] **APP-03**: Developer can compose related services into modules
-- [ ] **APP-04**: Developer can start app with `.Run()` method (blocking)
-- [ ] **APP-05**: Developer can integrate app with cobra.Command for CLI
-- [ ] **APP-06**: Framework provides sensible defaults (shutdown timeout, logger, etc.)
+- [x] **APP-01**: Developer can create app with `gaz.New()` entry point
+- [x] **APP-02**: Developer can add providers with fluent `.Provide()` method
+- [x] **APP-03**: Developer can compose related services into modules
+- [x] **APP-04**: Developer can start app with `.Run()` method (blocking)
+- [x] **APP-05**: Developer can integrate app with cobra.Command for CLI
+- [x] **APP-06**: Framework provides sensible defaults (shutdown timeout, logger, etc.)
 
 ### Health Checks
 
@@ -118,12 +118,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIFE-06 | Phase 2 | Complete |
 | LIFE-07 | Phase 2 | Complete |
 | LIFE-08 | Phase 2 | Complete |
-| APP-01 | Phase 3 | Pending |
-| APP-02 | Phase 3 | Pending |
-| APP-03 | Phase 3 | Pending |
-| APP-04 | Phase 3 | Pending |
-| APP-05 | Phase 3 | Pending |
-| APP-06 | Phase 3 | Pending |
+| APP-01 | Phase 3 | Complete |
+| APP-02 | Phase 3 | Complete |
+| APP-03 | Phase 3 | Complete |
+| APP-04 | Phase 3 | Complete |
+| APP-05 | Phase 3 | Complete |
+| APP-06 | Phase 3 | Complete |
 | CONF-01 | Phase 4 | Pending |
 | CONF-02 | Phase 4 | Pending |
 | CONF-03 | Phase 4 | Pending |
