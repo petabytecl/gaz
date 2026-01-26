@@ -483,7 +483,7 @@ func (s *IntegrationSuite) TestCobraConfigIntegration() {
 	}
 
 	var cfg AppConfig
-	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{})
+	app := gaz.New().WithConfig(&cfg)
 
 	rootCmd := &cobra.Command{
 		Use: "app",

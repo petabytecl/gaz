@@ -41,7 +41,7 @@ func (c *TestConfig) Validate() error {
 
 func (s *ConfigSuite) TestDefaults() {
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{})
+	app := gaz.New().WithConfig(&cfg)
 
 	err := app.Build()
 	s.NoError(err)
@@ -59,9 +59,7 @@ func (s *ConfigSuite) TestEnvVars() {
 	}()
 
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
-		EnvPrefix: "TEST_APP",
-	})
+	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
 
 	err := app.Build()
 	s.NoError(err)
@@ -75,9 +73,7 @@ func (s *ConfigSuite) TestValidation() {
 	defer os.Unsetenv("TEST_APP_PORT")
 
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
-		EnvPrefix: "TEST_APP",
-	})
+	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
 
 	err := app.Build()
 	s.Require().Error(err)
@@ -89,7 +85,7 @@ func (s *ConfigSuite) TestInjection() {
 	var injectedCfg *TestConfig
 
 	app := gaz.New().
-		WithConfig(&cfg, gaz.ConfigOptions{}).
+		WithConfig(&cfg).
 		ProvideSingleton(func(c *gaz.Container) string {
 			// This service depends on config
 			conf, _ := gaz.Resolve[*TestConfig](c)
@@ -126,10 +122,10 @@ func (s *ConfigSuite) TestProfiles() {
 	defer os.Unsetenv("TEST_ENV")
 
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.ConfigOptions{
-		Paths:      []string{tmpDir},
-		ProfileEnv: "TEST_ENV",
-	})
+	app := gaz.New().WithConfig(&cfg,
+		gaz.WithSearchPaths(tmpDir),
+		gaz.WithProfileEnv("TEST_ENV"),
+	)
 
 	err = app.Build()
 	s.NoError(err)
