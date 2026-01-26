@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 2.1 - Improve Code Quality (Next)
+**Current focus:** Phase 2.1 complete - ready for next phase
 
 ## Current Position
 
 Phase: 2.1 of 6 (Improve Code Quality)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 02.1-04-PLAN.md
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 02.1-05-PLAN.md
 
 Progress: [████████████████████] 100% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 5 min
-- Total execution time: 1.7 hours
+- Total execution time: 1.9 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [████████████████████] 100% (o
 | 1.1 | 3 | 11 min | 4 min |
 | 1.2 | 1 | 5 min | 5 min |
 | 2 | 4 | 39 min | 10 min |
-| 2.1 | 4 | 25 min | 6 min |
+| 2.1 | 5 | 36 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04 (15 min), 02.1-01 (3 min), 02.1-02 (3 min), 02.1-03 (7 min), 02.1-04 (12 min)
+- Last 5 plans: 02.1-01 (3 min), 02.1-02 (3 min), 02.1-03 (7 min), 02.1-04 (12 min), 02.1-05 (11 min)
 - Trend: Variable (larger plans take longer)
 
 *Updated after each plan completion*
@@ -91,6 +91,9 @@ Recent decisions affecting current work:
 - [02.1-04]: Use s.Require().Error/NoError/ErrorIs for error assertions to stop test on failure
 - [02.1-04]: Rename unused closure parameters to _ for clarity
 - [02.1-04]: Convert package-level assert.X(s.T()) to suite methods s.X()
+- [02.1-05]: Use resolveErr naming in provider closures to avoid shadowing
+- [02.1-05]: Use nolint comments for intentionally unused test fields
+- [02.1-05]: Use Go 1.22+ integer range loops (for i := range n)
 
 ### Pending Todos
 
@@ -108,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T20:00:30Z
-Stopped at: Completed 02.1-04-PLAN.md
+Last session: 2026-01-26T20:20:35Z
+Stopped at: Completed 02.1-05-PLAN.md (Phase 2.1 complete)
 Resume file: None
