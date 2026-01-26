@@ -28,20 +28,22 @@ func (s *ContainerSuite) TestGraph_CaptureDependencies() {
 	type ServiceB struct{}
 	type ServiceA struct{ B *ServiceB }
 
-	For[*ServiceB](c).Provider(func(c *Container) (*ServiceB, error) {
+	err := For[*ServiceB](c).Provider(func(_ *Container) (*ServiceB, error) {
 		return &ServiceB{}, nil
 	})
+	s.Require().NoError(err)
 
-	For[*ServiceA](c).Provider(func(c *Container) (*ServiceA, error) {
-		b, err := Resolve[*ServiceB](c)
-		if err != nil {
-			return nil, err
+	err = For[*ServiceA](c).Provider(func(c *Container) (*ServiceA, error) {
+		b, resolveErr := Resolve[*ServiceB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &ServiceA{B: b}, nil
 	})
+	s.Require().NoError(err)
 
 	// Resolve A, which resolves B
-	_, err := Resolve[*ServiceA](c)
+	_, err = Resolve[*ServiceA](c)
 	s.Require().NoError(err)
 
 	graph := c.getGraph()

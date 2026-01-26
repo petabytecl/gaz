@@ -109,8 +109,10 @@ func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 	s.Equal(2, callCount, "provider should be called twice")
 
 	// Instances should be different
-	ts1 := instance1.(*testService)
-	ts2 := instance2.(*testService)
+	ts1, ok := instance1.(*testService)
+	s.Require().True(ok, "instance1 should be *testService")
+	ts2, ok := instance2.(*testService)
+	s.Require().True(ok, "instance2 should be *testService")
 	s.NotEqual(ts1.id, ts2.id, "transient instances should be different")
 }
 
@@ -584,7 +586,9 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 	// start should call OnStart
 	err = svc.start(context.Background())
 	s.Require().NoError(err)
-	s.True(instance.(*starterService).started)
+	starterSvc, ok := instance.(*starterService)
+	s.Require().True(ok, "instance should be *starterService")
+	s.True(starterSvc.started)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
@@ -602,7 +606,9 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 	// stop should call OnStop
 	err = svc.stop(context.Background())
 	s.Require().NoError(err)
-	s.True(instance.(*stopperService).stopped)
+	stopperSvc, ok := instance.(*stopperService)
+	s.Require().True(ok, "instance should be *stopperService")
+	s.True(stopperSvc.stopped)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {

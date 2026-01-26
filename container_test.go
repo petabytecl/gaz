@@ -45,10 +45,11 @@ func (s *ContainerSuite) TestBuild_Idempotent() {
 func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 	c := New()
 	instantiated := false
-	For[*testEagerPool](c).Eager().Provider(func(c *Container) (*testEagerPool, error) {
+	err := For[*testEagerPool](c).Eager().Provider(func(_ *Container) (*testEagerPool, error) {
 		instantiated = true
 		return &testEagerPool{}, nil
 	})
+	s.Require().NoError(err)
 
 	s.False(instantiated, "should not instantiate before Build()")
 
@@ -59,9 +60,10 @@ func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 
 func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 	c := New()
-	For[*testFailingService](c).Eager().Provider(func(c *Container) (*testFailingService, error) {
+	regErr := For[*testFailingService](c).Eager().Provider(func(_ *Container) (*testFailingService, error) {
 		return nil, errors.New("startup failed")
 	})
+	s.Require().NoError(regErr)
 
 	err := c.Build()
 	s.Require().Error(err)
@@ -72,10 +74,11 @@ func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService() {
 	c := New()
 	callCount := 0
-	For[*testEagerPool](c).Eager().Provider(func(c *Container) (*testEagerPool, error) {
+	err := For[*testEagerPool](c).Eager().Provider(func(_ *Container) (*testEagerPool, error) {
 		callCount++
 		return &testEagerPool{id: callCount}, nil
 	})
+	s.Require().NoError(err)
 
 	s.Require().NoError(c.Build())
 
@@ -114,10 +117,11 @@ func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
 func (s *ContainerSuite) TestDI02_LazyInstantiation() {
 	c := New()
 	instantiated := false
-	For[*testLazyService](c).Provider(func(c *Container) (*testLazyService, error) {
+	err := For[*testLazyService](c).Provider(func(_ *Container) (*testLazyService, error) {
 		instantiated = true
 		return &testLazyService{}, nil
 	})
+	s.Require().NoError(err)
 
 	s.False(instantiated, "should not instantiate before resolve")
 
@@ -131,18 +135,21 @@ func (s *ContainerSuite) TestDI02_LazyInstantiation() {
 
 func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 	c := New()
-	For[*testDB](c).Provider(func(c *Container) (*testDB, error) {
+	err := For[*testDB](c).Provider(func(_ *Container) (*testDB, error) {
 		return nil, errors.New("connection failed")
 	})
-	For[*testRepo](c).Provider(func(c *Container) (*testRepo, error) {
-		db, err := Resolve[*testDB](c)
-		if err != nil {
-			return nil, err
+	s.Require().NoError(err)
+
+	err = For[*testRepo](c).Provider(func(c *Container) (*testRepo, error) {
+		db, resolveErr := Resolve[*testDB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testRepo{db: db}, nil
 	})
+	s.Require().NoError(err)
 
-	_, err := Resolve[*testRepo](c)
+	_, err = Resolve[*testRepo](c)
 	s.Require().Error(err)
 	// Error should contain chain context
 	errStr := err.Error()
@@ -157,8 +164,8 @@ func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 
 func (s *ContainerSuite) TestDI04_NamedImplementations() {
 	c := New()
-	For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"})
-	For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"})
+	s.Require().NoError(For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"}))
+	s.Require().NoError(For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"}))
 
 	primary, err := Resolve[*testNamedDB](c, Named("primary"))
 	s.Require().NoError(err)
@@ -176,10 +183,11 @@ func (s *ContainerSuite) TestDI04_NamedImplementations() {
 
 func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 	c := New()
-	For[*testInjectDB](c).Instance(&testInjectDB{})
-	For[*testHandler](c).Provider(func(c *Container) (*testHandler, error) {
+	s.Require().NoError(For[*testInjectDB](c).Instance(&testInjectDB{}))
+	err := For[*testHandler](c).Provider(func(_ *Container) (*testHandler, error) {
 		return &testHandler{}, nil
 	})
+	s.Require().NoError(err)
 
 	h, err := Resolve[*testHandler](c)
 	s.Require().NoError(err)
@@ -192,8 +200,8 @@ func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 
 func (s *ContainerSuite) TestDI06_Override() {
 	c := New()
-	For[*testOverrideService](c).Instance(&testOverrideService{name: "original"})
-	For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"})
+	s.Require().NoError(For[*testOverrideService](c).Instance(&testOverrideService{name: "original"}))
+	s.Require().NoError(For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"}))
 
 	svc, err := Resolve[*testOverrideService](c)
 	s.Require().NoError(err)
@@ -207,10 +215,11 @@ func (s *ContainerSuite) TestDI06_Override() {
 func (s *ContainerSuite) TestDI07_TransientServices() {
 	c := New()
 	counter := 0
-	For[*testRequest](c).Transient().Provider(func(c *Container) (*testRequest, error) {
+	err := For[*testRequest](c).Transient().Provider(func(_ *Container) (*testRequest, error) {
 		counter++
 		return &testRequest{id: counter}, nil
 	})
+	s.Require().NoError(err)
 
 	r1, err := Resolve[*testRequest](c)
 	s.Require().NoError(err)
@@ -229,10 +238,11 @@ func (s *ContainerSuite) TestDI07_TransientServices() {
 func (s *ContainerSuite) TestDI08_EagerServices() {
 	c := New()
 	instantiated := false
-	For[*testPool](c).Eager().Provider(func(c *Container) (*testPool, error) {
+	err := For[*testPool](c).Eager().Provider(func(_ *Container) (*testPool, error) {
 		instantiated = true
 		return &testPool{}, nil
 	})
+	s.Require().NoError(err)
 
 	s.False(instantiated, "should not instantiate before Build")
 
@@ -247,22 +257,25 @@ func (s *ContainerSuite) TestDI08_EagerServices() {
 
 func (s *ContainerSuite) TestDI09_CycleDetection() {
 	c := New()
-	For[*testCycleA](c).Provider(func(c *Container) (*testCycleA, error) {
-		b, err := Resolve[*testCycleB](c)
-		if err != nil {
-			return nil, err
+	err := For[*testCycleA](c).Provider(func(c *Container) (*testCycleA, error) {
+		b, resolveErr := Resolve[*testCycleB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testCycleA{b: b}, nil
 	})
-	For[*testCycleB](c).Provider(func(c *Container) (*testCycleB, error) {
-		a, err := Resolve[*testCycleA](c)
-		if err != nil {
-			return nil, err
+	s.Require().NoError(err)
+
+	err = For[*testCycleB](c).Provider(func(c *Container) (*testCycleB, error) {
+		a, resolveErr := Resolve[*testCycleA](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testCycleB{a: a}, nil
 	})
+	s.Require().NoError(err)
 
-	_, err := Resolve[*testCycleA](c)
+	_, err = Resolve[*testCycleA](c)
 	s.Require().ErrorIs(err, ErrCycle)
 }
 
@@ -276,50 +289,55 @@ func (s *ContainerSuite) TestIntegration_AllRequirements() {
 
 	// DI-01: Register with generics
 	// DI-02: Lazy by default (Config is lazy)
-	For[*testAppConfig](c).Instance(&testAppConfig{
+	s.Require().NoError(For[*testAppConfig](c).Instance(&testAppConfig{
 		dbHost: "localhost",
 		dbPort: 5432,
-	})
+	}))
 
 	// DI-04: Named implementations
-	For[*testAppDB](c).Named("primary").Provider(func(c *Container) (*testAppDB, error) {
-		cfg, err := Resolve[*testAppConfig](c)
-		if err != nil {
-			return nil, err
+	err := For[*testAppDB](c).Named("primary").Provider(func(c *Container) (*testAppDB, error) {
+		cfg, resolveErr := Resolve[*testAppConfig](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testAppDB{host: cfg.dbHost, port: cfg.dbPort, role: "primary"}, nil
 	})
+	s.Require().NoError(err)
 
-	For[*testAppDB](c).Named("replica").Provider(func(c *Container) (*testAppDB, error) {
-		cfg, err := Resolve[*testAppConfig](c)
-		if err != nil {
-			return nil, err
+	err = For[*testAppDB](c).Named("replica").Provider(func(c *Container) (*testAppDB, error) {
+		cfg, resolveErr := Resolve[*testAppConfig](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testAppDB{host: cfg.dbHost, port: cfg.dbPort + 1, role: "replica"}, nil
 	})
+	s.Require().NoError(err)
 
 	// DI-08: Eager service
 	eagerStarted := false
-	For[*testConnectionPool](c).Eager().Provider(func(c *Container) (*testConnectionPool, error) {
-		primary, err := Resolve[*testAppDB](c, Named("primary"))
-		if err != nil {
-			return nil, err
+	err = For[*testConnectionPool](c).Eager().Provider(func(c *Container) (*testConnectionPool, error) {
+		primary, resolveErr := Resolve[*testAppDB](c, Named("primary"))
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		eagerStarted = true
 		return &testConnectionPool{db: primary, poolSize: 10}, nil
 	})
+	s.Require().NoError(err)
 
 	// DI-07: Transient service
 	requestCounter := 0
-	For[*testAppRequest](c).Transient().Provider(func(c *Container) (*testAppRequest, error) {
+	err = For[*testAppRequest](c).Transient().Provider(func(_ *Container) (*testAppRequest, error) {
 		requestCounter++
 		return &testAppRequest{id: requestCounter}, nil
 	})
+	s.Require().NoError(err)
 
 	// DI-05: Struct field injection
-	For[*testAppHandler](c).Provider(func(c *Container) (*testAppHandler, error) {
+	err = For[*testAppHandler](c).Provider(func(_ *Container) (*testAppHandler, error) {
 		return &testAppHandler{}, nil
 	})
+	s.Require().NoError(err)
 
 	// Before Build - eager service not started
 	s.False(eagerStarted, "eager service should not start before Build()")
@@ -356,35 +374,39 @@ func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
 	c := New()
 
 	// Set up a chain: Handler -> Service -> Repository -> Database (fails)
-	For[*testChainDB](c).Provider(func(c *Container) (*testChainDB, error) {
+	err := For[*testChainDB](c).Provider(func(_ *Container) (*testChainDB, error) {
 		return nil, errors.New("cannot connect to database")
 	})
+	s.Require().NoError(err)
 
-	For[*testChainRepo](c).Provider(func(c *Container) (*testChainRepo, error) {
-		db, err := Resolve[*testChainDB](c)
-		if err != nil {
-			return nil, err
+	err = For[*testChainRepo](c).Provider(func(c *Container) (*testChainRepo, error) {
+		db, resolveErr := Resolve[*testChainDB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testChainRepo{db: db}, nil
 	})
+	s.Require().NoError(err)
 
-	For[*testChainService](c).Provider(func(c *Container) (*testChainService, error) {
-		repo, err := Resolve[*testChainRepo](c)
-		if err != nil {
-			return nil, err
+	err = For[*testChainService](c).Provider(func(c *Container) (*testChainService, error) {
+		repo, resolveErr := Resolve[*testChainRepo](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testChainService{repo: repo}, nil
 	})
+	s.Require().NoError(err)
 
-	For[*testChainHandler](c).Provider(func(c *Container) (*testChainHandler, error) {
-		svc, err := Resolve[*testChainService](c)
-		if err != nil {
-			return nil, err
+	err = For[*testChainHandler](c).Provider(func(c *Container) (*testChainHandler, error) {
+		svc, resolveErr := Resolve[*testChainService](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &testChainHandler{svc: svc}, nil
 	})
+	s.Require().NoError(err)
 
-	_, err := Resolve[*testChainHandler](c)
+	_, err = Resolve[*testChainHandler](c)
 	s.Require().Error(err)
 
 	// DI-03: Error should contain full chain context
