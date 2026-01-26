@@ -6,13 +6,8 @@ help: ## Show this help message
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  test       Run tests with race detector"
-	@echo "  cover      Run tests with coverage and enforce $(COVERAGE_THRESHOLD)% threshold"
-	@echo "  fmt        Format code (gofmt + goimports)"
-	@echo "  fmt-check  Check formatting (for CI)"
-	@echo "  lint       Run linter"
-	@echo "  clean      Remove generated files"
-	@echo "  help       Show this help message"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
 
 test: ## Run tests
 	go test -race ./...
