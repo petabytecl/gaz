@@ -58,7 +58,7 @@ Migrate test framework to use https://github.com/stretchr/testify for improved a
 
 ### Phase 1.2: Create Makefile (INSERTED)
 **Goal:** Development workflow automation with Makefile targets and GitHub Actions CI
-**Depends on:** Phase 1
+**Depends on**: Phase 1
 **Plans:** 1 plan
 
 Plans:
@@ -132,15 +132,16 @@ Plans:
 
 ### Phase 4.1: Refactor configuration (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
+**Goal:** Decouple configuration logic into ConfigManager with Functional Options
 **Depends on:** Phase 4
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 4.1 to break down)
+- [ ] 04.1-01-PLAN.md — Implement ConfigManager and Options
+- [ ] 04.1-02-PLAN.md — Integrate ConfigManager into App and Cobra
 
 **Details:**
-[To be added during planning]
+Refactors the App struct to remove direct Viper dependency, introducing a dedicated ConfigManager and replacing the config struct options with the Functional Options pattern.
 
 ### Phase 5: Health Checks
 **Goal**: Applications expose production-ready health endpoints
@@ -184,6 +185,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 2.1 Improve Code Quality | 5/5 | Complete | 2026-01-26 |
 | 3. App Builder + Cobra | 4/4 | Complete | 2026-01-26 |
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
+| 4.1 Refactor config | 0/2 | Planned | - |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
 
