@@ -5,32 +5,32 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 1 - Core DI Container
+**Current focus:** Phase 1 - Core DI Container (COMPLETE)
 
 ## Current Position
 
 Phase: 1 of 6 (Core DI Container)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 01-05-PLAN.md
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 01-06-PLAN.md
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 5 min
-- Total execution time: 0.4 hours
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 5 | 24 min | 5 min |
+| 1 | 6 | 28 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (2 min), 01-03 (3 min), 01-04 (8 min), 01-05 (5 min)
+- Last 5 plans: 01-02 (2 min), 01-03 (3 min), 01-04 (8 min), 01-05 (5 min), 01-06 (4 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -57,6 +57,8 @@ Recent decisions affecting current work:
 - [01-05]: Injection after provider returns — keeps provider code simple, injection is automatic
 - [01-05]: instanceService skips injection — pre-built values already have dependencies
 - [01-05]: Silent skip for non-struct pointers — allows injection to work seamlessly with any type
+- [01-06]: Build() is idempotent — calling multiple times is safe
+- [01-06]: Build() error includes service name — enables debugging of which eager service failed
 
 ### Pending Todos
 
@@ -68,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T16:04:35Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-01-26T16:12:44Z
+Stopped at: Completed 01-06-PLAN.md (Phase 1 complete)
 Resume file: None
