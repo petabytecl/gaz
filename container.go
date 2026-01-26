@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -20,6 +21,11 @@ type Container struct {
 	// built tracks whether Build() has been called.
 	// Once built, the container is ready to resolve dependencies.
 	built bool
+
+	// resolutionChains tracks active resolution chains per goroutine.
+	// This enables cycle detection when providers call Resolve[T]().
+	resolutionChains map[int64][]string
+	chainMu          sync.Mutex
 }
 
 // New creates a new empty Container.
@@ -27,7 +33,8 @@ type Container struct {
 // the container for resolution.
 func New() *Container {
 	return &Container{
-		services: make(map[string]any),
+		services:         make(map[string]any),
+		resolutionChains: make(map[int64][]string),
 	}
 }
 
@@ -46,13 +53,62 @@ func (c *Container) hasService(name string) bool {
 	return ok
 }
 
+// getGoroutineID returns a unique identifier for the current goroutine.
+// This is used for tracking resolution chains per-goroutine.
+func getGoroutineID() int64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	// Parse goroutine ID from stack trace: "goroutine 123 [running]:"
+	var id int64
+	for i := 10; i < n; i++ { // Skip "goroutine "
+		if buf[i] == ' ' {
+			break
+		}
+		id = id*10 + int64(buf[i]-'0')
+	}
+	return id
+}
+
+// getChain returns the current resolution chain for this goroutine.
+func (c *Container) getChain() []string {
+	c.chainMu.Lock()
+	defer c.chainMu.Unlock()
+	gid := getGoroutineID()
+	return c.resolutionChains[gid]
+}
+
+// pushChain adds a service name to the resolution chain for this goroutine.
+func (c *Container) pushChain(name string) {
+	c.chainMu.Lock()
+	defer c.chainMu.Unlock()
+	gid := getGoroutineID()
+	c.resolutionChains[gid] = append(c.resolutionChains[gid], name)
+}
+
+// popChain removes the last service from the resolution chain for this goroutine.
+func (c *Container) popChain() {
+	c.chainMu.Lock()
+	defer c.chainMu.Unlock()
+	gid := getGoroutineID()
+	chain := c.resolutionChains[gid]
+	if len(chain) > 0 {
+		c.resolutionChains[gid] = chain[:len(chain)-1]
+	}
+	if len(c.resolutionChains[gid]) == 0 {
+		delete(c.resolutionChains, gid)
+	}
+}
+
 // resolveByName resolves a service by name, tracking the chain for cycle detection.
 // This is the internal resolution method called by Resolve[T] and struct injection.
-func (c *Container) resolveByName(name string, chain []string) (any, error) {
+func (c *Container) resolveByName(name string, _ []string) (any, error) {
+	// Get current chain for this goroutine
+	chain := c.getChain()
+
 	// Cycle detection - check if we're already resolving this service
 	for _, seen := range chain {
 		if seen == name {
-			cycle := append(chain, name)
+			cycle := append(append([]string{}, chain...), name)
 			return nil, fmt.Errorf("%w: %s", ErrCycle, strings.Join(cycle, " -> "))
 		}
 	}
@@ -69,10 +125,12 @@ func (c *Container) resolveByName(name string, chain []string) (any, error) {
 	wrapper := svc.(serviceWrapper)
 
 	// Add current service to chain before getting instance
-	newChain := append(chain, name)
+	c.pushChain(name)
+	defer c.popChain()
 
 	// Get instance (may resolve dependencies via provider)
-	instance, err := wrapper.getInstance(c, newChain)
+	// The provider may call Resolve[T]() which will check the chain
+	instance, err := wrapper.getInstance(c, nil)
 	if err != nil {
 		// Wrap error with resolution context
 		if len(chain) > 0 {
