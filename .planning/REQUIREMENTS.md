@@ -21,14 +21,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Lifecycle
 
-- [ ] **LIFE-01**: Developer can register OnStart hooks that run during app startup
-- [ ] **LIFE-02**: Developer can register OnStop hooks that run during shutdown
-- [ ] **LIFE-03**: App handles SIGTERM/SIGINT signals and initiates graceful shutdown
-- [ ] **LIFE-04**: Developer can configure global shutdown timeout
-- [ ] **LIFE-05**: All lifecycle hooks receive context.Context for cancellation
-- [ ] **LIFE-06**: Services start in topological order based on dependencies
-- [ ] **LIFE-07**: Services stop in LIFO order (reverse of start)
-- [ ] **LIFE-08**: Developer can configure per-hook timeouts
+- [x] **LIFE-01**: Developer can register OnStart hooks that run during app startup
+- [x] **LIFE-02**: Developer can register OnStop hooks that run during shutdown
+- [x] **LIFE-03**: App handles SIGTERM/SIGINT signals and initiates graceful shutdown
+- [x] **LIFE-04**: Developer can configure global shutdown timeout
+- [x] **LIFE-05**: All lifecycle hooks receive context.Context for cancellation
+- [x] **LIFE-06**: Services start in topological order based on dependencies
+- [x] **LIFE-07**: Services stop in LIFO order (reverse of start)
+- [x] **LIFE-08**: Developer can configure per-hook timeouts
 
 ### App Builder
 
@@ -110,14 +110,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DI-07 | Phase 1 | Complete |
 | DI-08 | Phase 1 | Complete |
 | DI-09 | Phase 1 | Complete |
-| LIFE-01 | Phase 2 | Pending |
-| LIFE-02 | Phase 2 | Pending |
-| LIFE-03 | Phase 2 | Pending |
-| LIFE-04 | Phase 2 | Pending |
-| LIFE-05 | Phase 2 | Pending |
-| LIFE-06 | Phase 2 | Pending |
-| LIFE-07 | Phase 2 | Pending |
-| LIFE-08 | Phase 2 | Pending |
+| LIFE-01 | Phase 2 | Complete |
+| LIFE-02 | Phase 2 | Complete |
+| LIFE-03 | Phase 2 | Complete |
+| LIFE-04 | Phase 2 | Complete |
+| LIFE-05 | Phase 2 | Complete |
+| LIFE-06 | Phase 2 | Complete |
+| LIFE-07 | Phase 2 | Complete |
+| LIFE-08 | Phase 2 | Complete |
 | APP-01 | Phase 3 | Pending |
 | APP-02 | Phase 3 | Pending |
 | APP-03 | Phase 3 | Pending |
