@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 3 - App Builder + Cobra (next)
+**Current focus:** Phase 4 - Config System (next)
 
 ## Current Position
 
 Phase: 3 of 6 (App Builder + Cobra)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-01-26 — Completed 03-03-PLAN.md
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-01-26 — Completed 03-04-PLAN.md
 
-Progress: [█████████████████████░░░] 90% (of defined plans)
+Progress: [█████████████████████████] 100% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 5 min
-- Total execution time: 2.1 hours
+- Total plans completed: 21
+- Average duration: 6 min
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [█████████████████████░░
 | 1.2 | 1 | 5 min | 5 min |
 | 2 | 4 | 39 min | 10 min |
 | 2.1 | 5 | 36 min | 7 min |
-| 3 | 3 | 23 min | 8 min |
+| 3 | 4 | 33 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 02.1-05 (11 min), 03-01 (13 min), 03-02 (3 min), 03-03 (7 min)
+- Last 5 plans: 03-01 (13 min), 03-02 (3 min), 03-03 (7 min), 03-04 (10 min)
 - Trend: Variable (larger plans take longer)
 
 *Updated after each plan completion*
@@ -102,10 +102,11 @@ Recent decisions affecting current work:
 - [03-02]: Module accepts func(*Container) error registration functions — enables For[T]() API in modules
 - [03-02]: Empty modules are valid — allows declaring module names before adding providers
 - [03-02]: Panic on late module registration (after Build()) — consistent with fluent API pattern
-
 - [03-03]: Preserve existing Cobra hooks via chaining — don't replace, chain with original
 - [03-03]: Stop() works without Run() for Cobra integration — Cobra uses Start/Stop directly
 - [03-03]: Start() auto-builds if not already built — convenience for users
+- [03-04]: Use gaz_test package for integration tests — tests external API surface like consumer
+- [03-04]: Document pre-existing coverage gap as known issue — *Any wrappers have uncovered lifecycle methods
 
 ### Pending Todos
 
@@ -113,7 +114,7 @@ None.
 
 ### Blockers/Concerns
 
-None yet.
+- **Known issue**: Coverage at 85.2% (below 90% threshold) due to *Any wrapper lifecycle methods that are never called (filtered out by hasLifecycle()). Technical debt from Plan 01.
 
 ### Roadmap Evolution
 
@@ -123,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T21:46:30Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-01-26T22:02:37Z
+Stopped at: Completed 03-04-PLAN.md (Phase 3 complete)
 Resume file: None
