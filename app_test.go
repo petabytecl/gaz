@@ -130,8 +130,8 @@ func (s *AppTestSuite) TestSignalHandling() {
 
 	// Wait for Run to return
 	select {
-	case err := <-runErr:
-		s.Require().NoError(err)
+	case runResult := <-runErr:
+		s.Require().NoError(runResult)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after SIGTERM")
 	}

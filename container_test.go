@@ -60,9 +60,12 @@ func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 
 func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 	c := New()
-	regErr := For[*testFailingService](c).Eager().Provider(func(_ *Container) (*testFailingService, error) {
-		return nil, errors.New("startup failed")
-	})
+	regErr := For[*testFailingService](
+		c,
+	).Eager().
+		Provider(func(_ *Container) (*testFailingService, error) {
+			return nil, errors.New("startup failed")
+		})
 	s.Require().NoError(regErr)
 
 	err := c.Build()
@@ -164,8 +167,10 @@ func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 
 func (s *ContainerSuite) TestDI04_NamedImplementations() {
 	c := New()
-	s.Require().NoError(For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"}))
-	s.Require().NoError(For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"}))
+	s.Require().
+		NoError(For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"}))
+	s.Require().
+		NoError(For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"}))
 
 	primary, err := Resolve[*testNamedDB](c, Named("primary"))
 	s.Require().NoError(err)
@@ -200,8 +205,10 @@ func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 
 func (s *ContainerSuite) TestDI06_Override() {
 	c := New()
-	s.Require().NoError(For[*testOverrideService](c).Instance(&testOverrideService{name: "original"}))
-	s.Require().NoError(For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"}))
+	s.Require().
+		NoError(For[*testOverrideService](c).Instance(&testOverrideService{name: "original"}))
+	s.Require().
+		NoError(For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"}))
 
 	svc, err := Resolve[*testOverrideService](c)
 	s.Require().NoError(err)
@@ -315,14 +322,17 @@ func (s *ContainerSuite) TestIntegration_AllRequirements() {
 
 	// DI-08: Eager service
 	eagerStarted := false
-	err = For[*testConnectionPool](c).Eager().Provider(func(c *Container) (*testConnectionPool, error) {
-		primary, resolveErr := Resolve[*testAppDB](c, Named("primary"))
-		if resolveErr != nil {
-			return nil, resolveErr
-		}
-		eagerStarted = true
-		return &testConnectionPool{db: primary, poolSize: 10}, nil
-	})
+	err = For[*testConnectionPool](
+		c,
+	).Eager().
+		Provider(func(c *Container) (*testConnectionPool, error) {
+			primary, resolveErr := Resolve[*testAppDB](c, Named("primary"))
+			if resolveErr != nil {
+				return nil, resolveErr
+			}
+			eagerStarted = true
+			return &testConnectionPool{db: primary, poolSize: 10}, nil
+		})
 	s.Require().NoError(err)
 
 	// DI-07: Transient service

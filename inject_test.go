@@ -130,7 +130,7 @@ func (s *InjectionSuite) TestOptionalRegistered() {
 }
 
 type BadHandler struct {
-	db *Database `gaz:"inject"` // unexported field!
+	db *Database `gaz:"inject"` //nolint:unused // unexported field for testing injection error
 }
 
 func (s *InjectionSuite) TestUnexportedFieldReturnsError() {

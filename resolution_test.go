@@ -12,13 +12,7 @@ type testServiceA struct {
 	value string
 }
 
-type testServiceB struct {
-	value string
-}
-
-type testServiceC struct {
-	value string
-}
+type testServiceB struct{}
 
 // Circular dependency test types.
 type cyclicA struct {
@@ -112,9 +106,9 @@ func (s *ResolutionSuite) TestCycleDetection() {
 
 	// A depends on B
 	err := For[*cyclicA](c).Provider(func(c *Container) (*cyclicA, error) {
-		b, err := Resolve[*cyclicB](c)
-		if err != nil {
-			return nil, err
+		b, resolveErr := Resolve[*cyclicB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &cyclicA{b: b}, nil
 	})
@@ -122,9 +116,9 @@ func (s *ResolutionSuite) TestCycleDetection() {
 
 	// B depends on A (creates cycle)
 	err = For[*cyclicB](c).Provider(func(c *Container) (*cyclicB, error) {
-		a, err := Resolve[*cyclicA](c)
-		if err != nil {
-			return nil, err
+		a, resolveErr := Resolve[*cyclicA](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &cyclicB{a: a}, nil
 	})
@@ -181,21 +175,21 @@ func (s *ResolutionSuite) TestDependencyChain() {
 
 	// Register B depending on C
 	err = For[*depB](c).Provider(func(c *Container) (*depB, error) {
-		depC, err := Resolve[*depC](c)
-		if err != nil {
-			return nil, err
+		resolvedC, resolveErr := Resolve[*depC](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
-		return &depB{c: depC}, nil
+		return &depB{c: resolvedC}, nil
 	})
 	s.Require().NoError(err, "registration of B failed")
 
 	// Register A depending on B
 	err = For[*depA](c).Provider(func(c *Container) (*depA, error) {
-		depB, err := Resolve[*depB](c)
-		if err != nil {
-			return nil, err
+		resolvedB, resolveErr := Resolve[*depB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
-		return &depA{b: depB}, nil
+		return &depA{b: resolvedB}, nil
 	})
 	s.Require().NoError(err, "registration of A failed")
 

@@ -54,7 +54,7 @@ func injectStruct(c *Container, target any, chain []string) error {
 	structVal := val.Elem()
 	structType := structVal.Type()
 
-	for i := 0; i < structVal.NumField(); i++ {
+	for i := range structVal.NumField() {
 		field := structType.Field(i)
 		fieldVal := structVal.Field(i)
 
