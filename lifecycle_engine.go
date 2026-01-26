@@ -1,7 +1,7 @@
 package gaz
 
 import (
-	"fmt"
+	"errors"
 	"sort"
 )
 
@@ -10,7 +10,10 @@ import (
 //
 // graph: A map where key is the service name and value is the list of dependencies.
 // services: A map of service wrappers to check for lifecycle hooks.
-func ComputeStartupOrder(graph map[string][]string, services map[string]serviceWrapper) ([][]string, error) {
+func ComputeStartupOrder(
+	graph map[string][]string,
+	services map[string]serviceWrapper,
+) ([][]string, error) {
 	// 1. Build reverse graph (dependency -> dependents) and pending counts (dependent -> count)
 	reverseGraph := make(map[string][]string)
 	pendingCounts := make(map[string]int)
@@ -73,7 +76,7 @@ func ComputeStartupOrder(graph map[string][]string, services map[string]serviceW
 
 	// 4. Check for cycles
 	if processedCount < totalNodes {
-		return nil, fmt.Errorf("circular dependency detected")
+		return nil, errors.New("circular dependency detected")
 	}
 
 	// 5. Filter services that don't need lifecycle management

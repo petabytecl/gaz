@@ -134,7 +134,7 @@ linters:
     - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
     - testableexamples # checks if examples are testable (have an expected output)
     - testifylint # checks usage of github.com/stretchr/testify
-    - testpackage # makes you use a separate _test package
+    #- testpackage # [disabled] tests need internal package access to test unexported functionality
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
     - unconvert # removes unnecessary type conversions
     - unparam # reports unused function parameters
@@ -447,4 +447,12 @@ linters:
       - std-error-handling
       - common-false-positives
     # Excluding configuration per-path, per-linter, per-text and per-source.
-    rules: []
+    rules:
+      # resolution.go returns interface by design (generic resolution)
+      - linters: [ireturn]
+        path: resolution\.go
+        text: "returns generic interface"
+      # lifecycle_engine.go has complex but well-structured algorithms
+      - linters: [gocognit]
+        path: lifecycle_engine\.go
+        text: "cognitive complexity"

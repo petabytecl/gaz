@@ -19,8 +19,10 @@ func TestAppTestSuite(t *testing.T) {
 	suite.Run(t, new(AppTestSuite))
 }
 
-type AppTestServiceA struct{}
-type AppTestServiceB struct{ A *AppTestServiceA }
+type (
+	AppTestServiceA struct{}
+	AppTestServiceB struct{ A *AppTestServiceA }
+)
 
 func (s *AppTestSuite) TestRunAndStop() {
 	c := New()

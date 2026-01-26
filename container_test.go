@@ -4,8 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,15 +21,15 @@ func TestContainerSuite(t *testing.T) {
 
 func (s *ContainerSuite) TestNew() {
 	c := New()
-	require.NotNil(s.T(), c)
-	require.NotNil(s.T(), c.services)
-	assert.False(s.T(), c.built, "New container should not be built")
+	s.Require().NotNil(c)
+	s.Require().NotNil(c.services)
+	s.False(c.built, "New container should not be built")
 }
 
 func (s *ContainerSuite) TestNewReturnsDistinctInstances() {
 	c1 := New()
 	c2 := New()
-	assert.NotSame(s.T(), c1, c2, "New() should return distinct instances")
+	s.NotSame(c1, c2, "New() should return distinct instances")
 }
 
 // =============================================================================
@@ -40,8 +38,8 @@ func (s *ContainerSuite) TestNewReturnsDistinctInstances() {
 
 func (s *ContainerSuite) TestBuild_Idempotent() {
 	c := New()
-	require.NoError(s.T(), c.Build())
-	require.NoError(s.T(), c.Build()) // second call also succeeds
+	s.Require().NoError(c.Build())
+	s.Require().NoError(c.Build()) // second call also succeeds
 }
 
 func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
@@ -52,11 +50,11 @@ func (s *ContainerSuite) TestBuild_InstantiatesEagerServices() {
 		return &testEagerPool{}, nil
 	})
 
-	assert.False(s.T(), instantiated, "should not instantiate before Build()")
+	s.False(instantiated, "should not instantiate before Build()")
 
-	require.NoError(s.T(), c.Build())
+	s.Require().NoError(c.Build())
 
-	assert.True(s.T(), instantiated, "should instantiate at Build()")
+	s.True(instantiated, "should instantiate at Build()")
 }
 
 func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
@@ -66,9 +64,9 @@ func (s *ContainerSuite) TestBuild_EagerError_PropagatesWithContext() {
 	})
 
 	err := c.Build()
-	require.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "testFailingService")
-	assert.Contains(s.T(), err.Error(), "startup failed")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "testFailingService")
+	s.Contains(err.Error(), "startup failed")
 }
 
 func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService() {
@@ -79,17 +77,17 @@ func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService()
 		return &testEagerPool{id: callCount}, nil
 	})
 
-	require.NoError(s.T(), c.Build())
+	s.Require().NoError(c.Build())
 
 	// Resolve should return cached instance
 	pool1, err := Resolve[*testEagerPool](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	pool2, err := Resolve[*testEagerPool](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Equal(s.T(), 1, pool1.id)
-	assert.Same(s.T(), pool1, pool2, "should return same cached instance")
-	assert.Equal(s.T(), 1, callCount, "provider should be called exactly once")
+	s.Equal(1, pool1.id)
+	s.Same(pool1, pool2, "should return same cached instance")
+	s.Equal(1, callCount, "provider should be called exactly once")
 }
 
 // =============================================================================
@@ -101,12 +99,12 @@ func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
 	err := For[*testDatabase](c).Provider(func(c *Container) (*testDatabase, error) {
 		return &testDatabase{}, nil
 	})
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Verify service is registered
 	db, err := Resolve[*testDatabase](c)
-	require.NoError(s.T(), err)
-	assert.NotNil(s.T(), db)
+	s.Require().NoError(err)
+	s.NotNil(db)
 }
 
 // =============================================================================
@@ -121,10 +119,10 @@ func (s *ContainerSuite) TestDI02_LazyInstantiation() {
 		return &testLazyService{}, nil
 	})
 
-	assert.False(s.T(), instantiated, "should not instantiate before resolve")
+	s.False(instantiated, "should not instantiate before resolve")
 
 	_, _ = Resolve[*testLazyService](c)
-	assert.True(s.T(), instantiated, "should instantiate on first resolve")
+	s.True(instantiated, "should instantiate on first resolve")
 }
 
 // =============================================================================
@@ -145,12 +143,12 @@ func (s *ContainerSuite) TestDI03_ErrorPropagation() {
 	})
 
 	_, err := Resolve[*testRepo](c)
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 	// Error should contain chain context
 	errStr := err.Error()
-	assert.Contains(s.T(), errStr, "testRepo")
-	assert.Contains(s.T(), errStr, "testDB")
-	assert.Contains(s.T(), errStr, "connection failed")
+	s.Contains(errStr, "testRepo")
+	s.Contains(errStr, "testDB")
+	s.Contains(errStr, "connection failed")
 }
 
 // =============================================================================
@@ -163,13 +161,13 @@ func (s *ContainerSuite) TestDI04_NamedImplementations() {
 	For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"})
 
 	primary, err := Resolve[*testNamedDB](c, Named("primary"))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	replica, err := Resolve[*testNamedDB](c, Named("replica"))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Equal(s.T(), "primary", primary.name)
-	assert.Equal(s.T(), "replica", replica.name)
-	assert.NotSame(s.T(), primary, replica, "should be different instances")
+	s.Equal("primary", primary.name)
+	s.Equal("replica", replica.name)
+	s.NotSame(primary, replica, "should be different instances")
 }
 
 // =============================================================================
@@ -184,8 +182,8 @@ func (s *ContainerSuite) TestDI05_StructFieldInjection() {
 	})
 
 	h, err := Resolve[*testHandler](c)
-	require.NoError(s.T(), err)
-	assert.NotNil(s.T(), h.DB, "DB should be injected")
+	s.Require().NoError(err)
+	s.NotNil(h.DB, "DB should be injected")
 }
 
 // =============================================================================
@@ -198,8 +196,8 @@ func (s *ContainerSuite) TestDI06_Override() {
 	For[*testOverrideService](c).Replace().Instance(&testOverrideService{name: "mock"})
 
 	svc, err := Resolve[*testOverrideService](c)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "mock", svc.name)
+	s.Require().NoError(err)
+	s.Equal("mock", svc.name)
 }
 
 // =============================================================================
@@ -215,13 +213,13 @@ func (s *ContainerSuite) TestDI07_TransientServices() {
 	})
 
 	r1, err := Resolve[*testRequest](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	r2, err := Resolve[*testRequest](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.NotEqual(s.T(), r1.id, r2.id, "should be different instances")
-	assert.Equal(s.T(), 1, r1.id)
-	assert.Equal(s.T(), 2, r2.id)
+	s.NotEqual(r1.id, r2.id, "should be different instances")
+	s.Equal(1, r1.id)
+	s.Equal(2, r2.id)
 }
 
 // =============================================================================
@@ -236,11 +234,11 @@ func (s *ContainerSuite) TestDI08_EagerServices() {
 		return &testPool{}, nil
 	})
 
-	assert.False(s.T(), instantiated, "should not instantiate before Build")
+	s.False(instantiated, "should not instantiate before Build")
 
-	require.NoError(s.T(), c.Build())
+	s.Require().NoError(c.Build())
 
-	assert.True(s.T(), instantiated, "should instantiate at Build")
+	s.True(instantiated, "should instantiate at Build")
 }
 
 // =============================================================================
@@ -265,7 +263,7 @@ func (s *ContainerSuite) TestDI09_CycleDetection() {
 	})
 
 	_, err := Resolve[*testCycleA](c)
-	assert.ErrorIs(s.T(), err, ErrCycle)
+	s.ErrorIs(err, ErrCycle)
 }
 
 // =============================================================================
@@ -324,34 +322,34 @@ func (s *ContainerSuite) TestIntegration_AllRequirements() {
 	})
 
 	// Before Build - eager service not started
-	assert.False(s.T(), eagerStarted, "eager service should not start before Build()")
+	s.False(eagerStarted, "eager service should not start before Build()")
 
 	// DI-08: Build instantiates eager services
-	require.NoError(s.T(), c.Build())
+	s.Require().NoError(c.Build())
 
-	assert.True(s.T(), eagerStarted, "eager service should start at Build()")
+	s.True(eagerStarted, "eager service should start at Build()")
 
 	// DI-04: Named resolution
 	primary, err := Resolve[*testAppDB](c, Named("primary"))
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	replica, err := Resolve[*testAppDB](c, Named("replica"))
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "primary", primary.role)
-	assert.Equal(s.T(), "replica", replica.role)
+	s.Require().NoError(err)
+	s.Equal("primary", primary.role)
+	s.Equal("replica", replica.role)
 
 	// DI-02: Lazy - already resolved via eager dependency
 	// DI-05: Struct field injection
 	handler, err := Resolve[*testAppHandler](c)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), handler.Pool, "pool should be injected")
-	assert.Equal(s.T(), 10, handler.Pool.poolSize)
+	s.Require().NoError(err)
+	s.Require().NotNil(handler.Pool, "pool should be injected")
+	s.Equal(10, handler.Pool.poolSize)
 
 	// DI-07: Transient - new instance each time
 	req1, err := Resolve[*testAppRequest](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	req2, err := Resolve[*testAppRequest](c)
-	require.NoError(s.T(), err)
-	assert.NotEqual(s.T(), req1.id, req2.id, "transient should create new instances")
+	s.Require().NoError(err)
+	s.NotEqual(req1.id, req2.id, "transient should create new instances")
 }
 
 func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
@@ -387,7 +385,7 @@ func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
 	})
 
 	_, err := Resolve[*testChainHandler](c)
-	require.Error(s.T(), err)
+	s.Require().Error(err)
 
 	// DI-03: Error should contain full chain context
 	errStr := err.Error()
@@ -399,7 +397,7 @@ func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
 		"cannot connect to database",
 	}
 	for _, part := range expectedParts {
-		assert.Contains(s.T(), errStr, part)
+		s.Contains(errStr, part)
 	}
 }
 
@@ -407,24 +405,29 @@ func (s *ContainerSuite) TestIntegration_ErrorChainContext() {
 // Test Helper Types
 // =============================================================================
 
-type testEagerPool struct{ id int }
-type testFailingService struct{}
-type testDatabase struct{}
-type testLazyService struct{}
-type testDB struct{}
-type testRepo struct{ db *testDB }
-type testNamedDB struct{ name string }
-type testInjectDB struct{}
-type testHandler struct {
-	DB *testInjectDB `gaz:"inject"`
-}
-type testOverrideService struct{ name string }
-type testRequest struct{ id int }
-type testPool struct{}
-type testCycleA struct{ b *testCycleB }
-type testCycleB struct{ a *testCycleA }
+type (
+	testEagerPool      struct{ id int }
+	testFailingService struct{}
+	testDatabase       struct{}
+	testLazyService    struct{}
+	testDB             struct{}
+	testRepo           struct{ db *testDB }
+	testNamedDB        struct{ name string }
+	testInjectDB       struct{}
+	testHandler        struct {
+		DB *testInjectDB `gaz:"inject"`
+	}
+)
 
-// Integration test types
+type (
+	testOverrideService struct{ name string }
+	testRequest         struct{ id int }
+	testPool            struct{}
+	testCycleA          struct{ b *testCycleB }
+	testCycleB          struct{ a *testCycleA }
+)
+
+// Integration test types.
 type testAppConfig struct {
 	dbHost string
 	dbPort int
@@ -438,13 +441,17 @@ type testConnectionPool struct {
 	db       *testAppDB
 	poolSize int
 }
-type testAppRequest struct{ id int }
-type testAppHandler struct {
-	Pool *testConnectionPool `gaz:"inject"`
-}
+type (
+	testAppRequest struct{ id int }
+	testAppHandler struct {
+		Pool *testConnectionPool `gaz:"inject"`
+	}
+)
 
-// Error chain test types
-type testChainDB struct{}
-type testChainRepo struct{ db *testChainDB }
-type testChainService struct{ repo *testChainRepo }
-type testChainHandler struct{ svc *testChainService }
+// Error chain test types.
+type (
+	testChainDB      struct{}
+	testChainRepo    struct{ db *testChainDB }
+	testChainService struct{ repo *testChainRepo }
+	testChainHandler struct{ svc *testChainService }
+)

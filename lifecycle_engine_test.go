@@ -33,7 +33,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_SimpleLinear() {
 	s.Require().NoError(err)
 
 	// Expected: [[C], [B], [A]]
-	s.Equal(3, len(order))
+	s.Len(order, 3)
 	s.Equal([]string{"C"}, order[0])
 	s.Equal([]string{"B"}, order[1])
 	s.Equal([]string{"A"}, order[2])
@@ -58,7 +58,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_Parallel() {
 	s.Require().NoError(err)
 
 	// Expected: [[C], [A, B]] or [[C], [B, A]]
-	s.Equal(2, len(order))
+	s.Len(order, 2)
 	s.Equal([]string{"C"}, order[0])
 	s.ElementsMatch([]string{"A", "B"}, order[1])
 }
@@ -100,7 +100,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_FilterNoLifecycle() {
 	s.Require().NoError(err)
 
 	// Expected: [[C], [A]]
-	s.Equal(2, len(order))
+	s.Len(order, 2)
 	s.Equal([]string{"C"}, order[0])
 	s.Equal([]string{"A"}, order[1])
 }
@@ -117,23 +117,31 @@ func (s *LifecycleEngineSuite) TestComputeShutdownOrder() {
 	// Expected reverse: [[A], [B, D] (or D, B), [C]]
 	// Actually, strictly reversing the layers is enough.
 	// [[A], [B, D], [C]]
-	s.Equal(3, len(shutdownOrder))
+	s.Len(shutdownOrder, 3)
 	s.Equal([]string{"A"}, shutdownOrder[0])
 	s.ElementsMatch([]string{"B", "D"}, shutdownOrder[1])
 	s.Equal([]string{"C"}, shutdownOrder[2])
 }
 
-// mockServiceWrapper implements serviceWrapper for testing
+// mockServiceWrapper implements serviceWrapper for testing.
 type mockServiceWrapper struct {
 	nameVal         string
 	typeNameVal     string
 	hasLifecycleVal bool
 }
 
-func (m *mockServiceWrapper) name() string                                          { return m.nameVal }
-func (m *mockServiceWrapper) typeName() string                                      { return m.typeNameVal }
-func (m *mockServiceWrapper) isEager() bool                                         { return false }
-func (m *mockServiceWrapper) getInstance(c *Container, chain []string) (any, error) { return nil, nil }
-func (m *mockServiceWrapper) start(context.Context) error                           { return nil }
-func (m *mockServiceWrapper) stop(context.Context) error                            { return nil }
-func (m *mockServiceWrapper) hasLifecycle() bool                                    { return m.hasLifecycleVal }
+func (m *mockServiceWrapper) name() string { return m.nameVal }
+
+func (m *mockServiceWrapper) typeName() string { return m.typeNameVal }
+func (m *mockServiceWrapper) isEager() bool    { return false }
+
+func (m *mockServiceWrapper) getInstance(
+	c *Container,
+	chain []string,
+) (any, error) {
+	return nil, nil
+}
+func (m *mockServiceWrapper) start(context.Context) error { return nil }
+func (m *mockServiceWrapper) stop(context.Context) error  { return nil }
+
+func (m *mockServiceWrapper) hasLifecycle() bool { return m.hasLifecycleVal }

@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -61,7 +62,7 @@ func (a *App) Run(ctx context.Context) error {
 	a.mu.Lock()
 	if a.running {
 		a.mu.Unlock()
-		return fmt.Errorf("app is already running")
+		return errors.New("app is already running")
 	}
 	a.stopCh = make(chan struct{})
 	a.running = true
@@ -95,7 +96,7 @@ func (a *App) Run(ctx context.Context) error {
 		errCh := make(chan error, len(layer))
 
 		for _, name := range layer {
-			name := name
+
 			svc := services[name]
 			wg.Add(1)
 			go func() {
@@ -183,7 +184,7 @@ func (a *App) Stop(ctx context.Context) error {
 		errCh := make(chan error, len(layer))
 
 		for _, name := range layer {
-			name := name
+
 			svc := services[name]
 			wg.Add(1)
 			go func() {
@@ -201,7 +202,7 @@ func (a *App) Stop(ctx context.Context) error {
 			if lastErr == nil {
 				lastErr = err
 			} else {
-				lastErr = fmt.Errorf("%v; %w", lastErr, err)
+				lastErr = fmt.Errorf("%w; %w", lastErr, err)
 			}
 		}
 	}

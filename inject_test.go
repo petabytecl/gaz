@@ -3,12 +3,10 @@ package gaz
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-// Test types for injection tests
+// Test types for injection tests.
 type Database struct {
 	connStr string
 }
@@ -41,22 +39,22 @@ func (s *InjectionSuite) TestBasicInjection() {
 	db := &Database{connStr: "postgres://localhost"}
 	logger := &Logger{level: "debug"}
 
-	require.NoError(s.T(), For[*Database](c).Instance(db))
-	require.NoError(s.T(), For[*Logger](c).Instance(logger))
-	require.NoError(s.T(), For[*Handler](c).ProviderFunc(func(c *Container) *Handler {
+	s.Require().NoError(For[*Database](c).Instance(db))
+	s.Require().NoError(For[*Logger](c).Instance(logger))
+	s.Require().NoError(For[*Handler](c).ProviderFunc(func(c *Container) *Handler {
 		return &Handler{} // Fields auto-injected after provider returns
 	}))
 
 	h, err := Resolve[*Handler](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.NotNil(s.T(), h.DB, "DB field should be injected")
-	assert.NotNil(s.T(), h.Logger, "Logger field should be injected")
-	assert.Same(s.T(), db, h.DB, "DB should be the same instance")
-	assert.Same(s.T(), logger, h.Logger, "Logger should be the same instance")
+	s.NotNil(h.DB, "DB field should be injected")
+	s.NotNil(h.Logger, "Logger field should be injected")
+	s.Same(db, h.DB, "DB should be the same instance")
+	s.Same(logger, h.Logger, "Logger should be the same instance")
 }
 
-// DB type for named injection tests
+// DB type for named injection tests.
 type DB struct {
 	name string
 }
@@ -72,19 +70,21 @@ func (s *InjectionSuite) TestNamed() {
 	primary := &DB{name: "primary"}
 	replica := &DB{name: "replica"}
 
-	require.NoError(s.T(), For[*DB](c).Named("primary").Instance(primary))
-	require.NoError(s.T(), For[*DB](c).Named("replica").Instance(replica))
-	require.NoError(s.T(), For[*ServiceWithNamedDeps](c).ProviderFunc(func(c *Container) *ServiceWithNamedDeps {
-		return &ServiceWithNamedDeps{}
-	}))
+	s.Require().NoError(For[*DB](c).Named("primary").Instance(primary))
+	s.Require().NoError(For[*DB](c).Named("replica").Instance(replica))
+	s.Require().NoError(
+		For[*ServiceWithNamedDeps](c).ProviderFunc(func(c *Container) *ServiceWithNamedDeps {
+			return &ServiceWithNamedDeps{}
+		}),
+	)
 
 	svc, err := Resolve[*ServiceWithNamedDeps](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	require.NotNil(s.T(), svc.Primary, "Primary should be injected")
-	assert.Equal(s.T(), "primary", svc.Primary.name)
-	require.NotNil(s.T(), svc.Replica, "Replica should be injected")
-	assert.Equal(s.T(), "replica", svc.Replica.name)
+	s.Require().NotNil(svc.Primary, "Primary should be injected")
+	s.Equal("primary", svc.Primary.name)
+	s.Require().NotNil(svc.Replica, "Replica should be injected")
+	s.Equal("replica", svc.Replica.name)
 }
 
 type HandlerWithOptionalCache struct {
@@ -95,30 +95,38 @@ func (s *InjectionSuite) TestOptionalNotRegistered() {
 	c := New()
 
 	// Don't register Cache
-	require.NoError(s.T(), For[*HandlerWithOptionalCache](c).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
-		return &HandlerWithOptionalCache{}
-	}))
+	s.Require().NoError(
+		For[*HandlerWithOptionalCache](
+			c,
+		).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
+			return &HandlerWithOptionalCache{}
+		}),
+	)
 
 	h, err := Resolve[*HandlerWithOptionalCache](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Nil(s.T(), h.Cache, "Cache should be nil when not registered")
+	s.Nil(h.Cache, "Cache should be nil when not registered")
 }
 
 func (s *InjectionSuite) TestOptionalRegistered() {
 	c := New()
 
 	cache := &Cache{addr: "localhost:6379"}
-	require.NoError(s.T(), For[*Cache](c).Instance(cache))
-	require.NoError(s.T(), For[*HandlerWithOptionalCache](c).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
-		return &HandlerWithOptionalCache{}
-	}))
+	s.Require().NoError(For[*Cache](c).Instance(cache))
+	s.Require().NoError(
+		For[*HandlerWithOptionalCache](
+			c,
+		).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
+			return &HandlerWithOptionalCache{}
+		}),
+	)
 
 	h, err := Resolve[*HandlerWithOptionalCache](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.NotNil(s.T(), h.Cache, "Cache should be populated when registered")
-	assert.Same(s.T(), cache, h.Cache, "Cache should be the same instance")
+	s.NotNil(h.Cache, "Cache should be populated when registered")
+	s.Same(cache, h.Cache, "Cache should be the same instance")
 }
 
 type BadHandler struct {
@@ -128,14 +136,14 @@ type BadHandler struct {
 func (s *InjectionSuite) TestUnexportedFieldReturnsError() {
 	c := New()
 
-	require.NoError(s.T(), For[*Database](c).Instance(&Database{}))
-	require.NoError(s.T(), For[*BadHandler](c).ProviderFunc(func(c *Container) *BadHandler {
+	s.Require().NoError(For[*Database](c).Instance(&Database{}))
+	s.Require().NoError(For[*BadHandler](c).ProviderFunc(func(c *Container) *BadHandler {
 		return &BadHandler{}
 	}))
 
 	_, err := Resolve[*BadHandler](c)
-	assert.Error(s.T(), err, "expected error for unexported field")
-	assert.ErrorIs(s.T(), err, ErrNotSettable)
+	s.Error(err, "expected error for unexported field")
+	s.ErrorIs(err, ErrNotSettable)
 }
 
 type HandlerWithMissingDep struct {
@@ -146,16 +154,18 @@ func (s *InjectionSuite) TestMissingDependencyReturnsError() {
 	c := New()
 
 	// Don't register Database
-	require.NoError(s.T(), For[*HandlerWithMissingDep](c).ProviderFunc(func(c *Container) *HandlerWithMissingDep {
-		return &HandlerWithMissingDep{}
-	}))
+	s.Require().NoError(
+		For[*HandlerWithMissingDep](c).ProviderFunc(func(c *Container) *HandlerWithMissingDep {
+			return &HandlerWithMissingDep{}
+		}),
+	)
 
 	_, err := Resolve[*HandlerWithMissingDep](c)
-	assert.Error(s.T(), err, "expected error for missing dependency")
-	assert.ErrorIs(s.T(), err, ErrNotFound)
+	s.Error(err, "expected error for missing dependency")
+	s.ErrorIs(err, ErrNotFound)
 }
 
-// Types for cycle detection test
+// Types for cycle detection test.
 type ServiceA struct {
 	B *ServiceB `gaz:"inject"`
 }
@@ -167,30 +177,30 @@ type ServiceB struct {
 func (s *InjectionSuite) TestCycleViaInjection() {
 	c := New()
 
-	require.NoError(s.T(), For[*ServiceA](c).ProviderFunc(func(c *Container) *ServiceA {
+	s.Require().NoError(For[*ServiceA](c).ProviderFunc(func(c *Container) *ServiceA {
 		return &ServiceA{}
 	}))
-	require.NoError(s.T(), For[*ServiceB](c).ProviderFunc(func(c *Container) *ServiceB {
+	s.Require().NoError(For[*ServiceB](c).ProviderFunc(func(c *Container) *ServiceB {
 		return &ServiceB{}
 	}))
 
 	_, err := Resolve[*ServiceA](c)
-	assert.Error(s.T(), err, "expected error for circular dependency")
-	assert.ErrorIs(s.T(), err, ErrCycle)
+	s.Error(err, "expected error for circular dependency")
+	s.ErrorIs(err, ErrCycle)
 }
 
 func (s *InjectionSuite) TestNonStructPointerSkipped() {
 	c := New()
 
 	// Register a simple string - not a struct
-	require.NoError(s.T(), For[string](c).ProviderFunc(func(c *Container) string {
+	s.Require().NoError(For[string](c).ProviderFunc(func(c *Container) string {
 		return "hello"
 	}))
 
 	// Should resolve without error - injection silently skipped for non-struct
 	str, err := Resolve[string](c)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "hello", str)
+	s.Require().NoError(err)
+	s.Equal("hello", str)
 }
 
 func (s *InjectionSuite) TestParseTag() {
@@ -202,23 +212,32 @@ func (s *InjectionSuite) TestParseTag() {
 		{"inject,optional", tagOptions{inject: true, optional: true}},
 		{"inject,name=primary", tagOptions{inject: true, name: "primary"}},
 		{"inject,name=primary,optional", tagOptions{inject: true, name: "primary", optional: true}},
-		{"inject, name=foo , optional", tagOptions{inject: true, name: "foo", optional: true}}, // with spaces
-		{"optional,inject", tagOptions{inject: true, optional: true}},                          // order doesn't matter
-		{"name=foo", tagOptions{name: "foo", inject: false}},                                   // missing inject keyword
+		{
+			"inject, name=foo , optional",
+			tagOptions{inject: true, name: "foo", optional: true},
+		}, // with spaces
+		{
+			"optional,inject",
+			tagOptions{inject: true, optional: true},
+		}, // order doesn't matter
+		{
+			"name=foo",
+			tagOptions{name: "foo", inject: false},
+		}, // missing inject keyword
 		{"", tagOptions{}}, // empty tag
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.tag, func() {
 			opts := parseTag(tt.tag)
-			assert.Equal(s.T(), tt.expected.inject, opts.inject, "inject")
-			assert.Equal(s.T(), tt.expected.name, opts.name, "name")
-			assert.Equal(s.T(), tt.expected.optional, opts.optional, "optional")
+			s.Equal(tt.expected.inject, opts.inject, "inject")
+			s.Equal(tt.expected.name, opts.name, "name")
+			s.Equal(tt.expected.optional, opts.optional, "optional")
 		})
 	}
 }
 
-// Test that transient services also get injection
+// Test that transient services also get injection.
 type TransientHandler struct {
 	DB *Database `gaz:"inject"`
 }
@@ -227,26 +246,28 @@ func (s *InjectionSuite) TestTransientService() {
 	c := New()
 
 	db := &Database{connStr: "test"}
-	require.NoError(s.T(), For[*Database](c).Instance(db))
-	require.NoError(s.T(), For[*TransientHandler](c).Transient().ProviderFunc(func(c *Container) *TransientHandler {
-		return &TransientHandler{}
-	}))
+	s.Require().NoError(For[*Database](c).Instance(db))
+	s.Require().NoError(
+		For[*TransientHandler](c).Transient().ProviderFunc(func(c *Container) *TransientHandler {
+			return &TransientHandler{}
+		}),
+	)
 
 	h1, err := Resolve[*TransientHandler](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	h2, err := Resolve[*TransientHandler](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Different handler instances (transient)
-	assert.NotSame(s.T(), h1, h2, "transient services should return different instances")
+	s.NotSame(h1, h2, "transient services should return different instances")
 	// Both should have DB injected
-	assert.NotNil(s.T(), h1.DB, "first handler should have DB injected")
-	assert.NotNil(s.T(), h2.DB, "second handler should have DB injected")
+	s.NotNil(h1.DB, "first handler should have DB injected")
+	s.NotNil(h2.DB, "second handler should have DB injected")
 	// Same DB instance (singleton)
-	assert.Same(s.T(), h1.DB, h2.DB, "both handlers should have the same DB instance")
+	s.Same(h1.DB, h2.DB, "both handlers should have the same DB instance")
 }
 
-// Test injection doesn't happen on pre-built instances
+// Test injection doesn't happen on pre-built instances.
 type PreBuiltHandler struct {
 	DB *Database `gaz:"inject"`
 }
@@ -255,15 +276,15 @@ func (s *InjectionSuite) TestInstanceServiceNoInjection() {
 	c := New()
 
 	db := &Database{connStr: "test"}
-	require.NoError(s.T(), For[*Database](c).Instance(db))
+	s.Require().NoError(For[*Database](c).Instance(db))
 
 	// Pre-built instance with empty DB field
 	handler := &PreBuiltHandler{}
-	require.NoError(s.T(), For[*PreBuiltHandler](c).Instance(handler))
+	s.Require().NoError(For[*PreBuiltHandler](c).Instance(handler))
 
 	h, err := Resolve[*PreBuiltHandler](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Instance services don't get injection - DB should still be nil
-	assert.Nil(s.T(), h.DB, "pre-built instances should not get injection")
+	s.Nil(h.DB, "pre-built instances should not get injection")
 }

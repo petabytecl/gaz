@@ -1,11 +1,6 @@
 package gaz
 
-import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-// TestGraph_Storage tests the internal graph storage mechanisms
+// TestGraph_Storage tests the internal graph storage mechanisms.
 func (s *ContainerSuite) TestGraph_Storage() {
 	c := New()
 
@@ -16,15 +11,15 @@ func (s *ContainerSuite) TestGraph_Storage() {
 
 	graph := c.getGraph()
 
-	assert.Contains(s.T(), graph, "parent")
-	assert.Contains(s.T(), graph, "other")
-	assert.Equal(s.T(), []string{"child1", "child2"}, graph["parent"])
-	assert.Equal(s.T(), []string{"child3"}, graph["other"])
+	s.Contains(graph, "parent")
+	s.Contains(graph, "other")
+	s.Equal([]string{"child1", "child2"}, graph["parent"])
+	s.Equal([]string{"child3"}, graph["other"])
 
 	// Verify deep copy
 	graph["parent"][0] = "modified"
 	graph2 := c.getGraph()
-	assert.Equal(s.T(), "child1", graph2["parent"][0], "getGraph should return a deep copy")
+	s.Equal("child1", graph2["parent"][0], "getGraph should return a deep copy")
 }
 
 func (s *ContainerSuite) TestGraph_CaptureDependencies() {
@@ -47,7 +42,7 @@ func (s *ContainerSuite) TestGraph_CaptureDependencies() {
 
 	// Resolve A, which resolves B
 	_, err := Resolve[*ServiceA](c)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	graph := c.getGraph()
 
@@ -60,6 +55,6 @@ func (s *ContainerSuite) TestGraph_CaptureDependencies() {
 	nameA := TypeName[*ServiceA]()
 	nameB := TypeName[*ServiceB]()
 
-	assert.Contains(s.T(), graph, nameA)
-	assert.Contains(s.T(), graph[nameA], nameB)
+	s.Contains(graph, nameA)
+	s.Contains(graph[nameA], nameB)
 }

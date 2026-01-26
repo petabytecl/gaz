@@ -86,7 +86,10 @@ func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 
 // OnStart registers a hook to be executed when the service is started.
 // The hook receives the context and the service instance.
-func (b *RegistrationBuilder[T]) OnStart(fn func(context.Context, T) error, opts ...HookOption) *RegistrationBuilder[T] {
+func (b *RegistrationBuilder[T]) OnStart(
+	fn func(context.Context, T) error,
+	opts ...HookOption,
+) *RegistrationBuilder[T] {
 	wrapper := func(ctx context.Context, instance any) error {
 		// In the future, we can apply opts to a HookConfig here
 		return fn(ctx, instance.(T))
@@ -97,7 +100,10 @@ func (b *RegistrationBuilder[T]) OnStart(fn func(context.Context, T) error, opts
 
 // OnStop registers a hook to be executed when the service is stopped.
 // The hook receives the context and the service instance.
-func (b *RegistrationBuilder[T]) OnStop(fn func(context.Context, T) error, opts ...HookOption) *RegistrationBuilder[T] {
+func (b *RegistrationBuilder[T]) OnStop(
+	fn func(context.Context, T) error,
+	opts ...HookOption,
+) *RegistrationBuilder[T] {
 	wrapper := func(ctx context.Context, instance any) error {
 		return fn(ctx, instance.(T))
 	}

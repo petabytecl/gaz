@@ -15,7 +15,7 @@ type tagOptions struct {
 }
 
 // parseTag parses a gaz struct tag value into tagOptions.
-// Tag format: "inject" or "inject,name=foo" or "inject,optional" or "inject,name=foo,optional"
+// Tag format: "inject" or "inject,name=foo" or "inject,optional" or "inject,name=foo,optional".
 func parseTag(tag string) tagOptions {
 	opts := tagOptions{}
 	parts := strings.Split(tag, ",")

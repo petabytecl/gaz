@@ -8,12 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-// testService is a simple service for testing
+// testService is a simple service for testing.
 type testService struct {
 	id int
 }
@@ -38,13 +36,13 @@ func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 1")
+	s.Require().NoError(err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 2")
+	s.Require().NoError(err, "getInstance 2")
 
-	assert.Equal(s.T(), 1, callCount, "provider should be called once")
-	assert.Same(s.T(), instance1, instance2, "instances should be identical")
+	s.Equal(1, callCount, "provider should be called once")
+	s.Same(instance1, instance2, "instances should be identical")
 }
 
 func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
@@ -66,7 +64,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 	instances := make([]any, numGoroutines)
 	errors := make([]error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(idx int) {
 			defer wg.Done()
 			inst, err := svc.getInstance(c, nil)
@@ -79,16 +77,16 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 
 	// Check no errors
 	for i, err := range errors {
-		assert.NoError(s.T(), err, "goroutine %d got error", i)
+		s.NoError(err, "goroutine %d got error", i)
 	}
 
 	// Check provider called exactly once
-	assert.Equal(s.T(), int32(1), callCount, "provider should be called once")
+	s.Equal(int32(1), callCount, "provider should be called once")
 
 	// Check all instances are the same
 	first := instances[0]
 	for i, inst := range instances {
-		assert.Same(s.T(), first, inst, "goroutine %d got different instance", i)
+		s.Same(first, inst, "goroutine %d got different instance", i)
 	}
 }
 
@@ -103,17 +101,17 @@ func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 1")
+	s.Require().NoError(err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 2")
+	s.Require().NoError(err, "getInstance 2")
 
-	assert.Equal(s.T(), 2, callCount, "provider should be called twice")
+	s.Equal(2, callCount, "provider should be called twice")
 
 	// Instances should be different
 	ts1 := instance1.(*testService)
 	ts2 := instance2.(*testService)
-	assert.NotEqual(s.T(), ts1.id, ts2.id, "transient instances should be different")
+	s.NotEqual(ts1.id, ts2.id, "transient instances should be different")
 }
 
 func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
@@ -123,14 +121,14 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 
 	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
 
-	assert.True(s.T(), svc.isEager(), "eagerSingleton.isEager() should return true")
+	s.True(svc.isEager(), "eagerSingleton.isEager() should return true")
 
 	// Verify lazy and transient are NOT eager
 	lazy := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
-	assert.False(s.T(), lazy.isEager(), "lazySingleton.isEager() should return false")
+	s.False(lazy.isEager(), "lazySingleton.isEager() should return false")
 
 	transient := newTransient("test", "*gaz.testService", provider)
-	assert.False(s.T(), transient.isEager(), "transientService.isEager() should return false")
+	s.False(transient.isEager(), "transientService.isEager() should return false")
 }
 
 func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
@@ -139,16 +137,16 @@ func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 	c := New()
 
 	instance, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance")
+	s.Require().NoError(err, "getInstance")
 
 	// Verify we got the exact same value (pointer equality)
-	assert.Same(s.T(), original, instance, "instanceService should return the exact value provided")
+	s.Same(original, instance, "instanceService should return the exact value provided")
 
 	// Call again to confirm same value
 	instance2, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 2")
+	s.Require().NoError(err, "getInstance 2")
 
-	assert.Same(s.T(), original, instance2, "instanceService should always return the same value")
+	s.Same(original, instance2, "instanceService should always return the same value")
 }
 
 func (s *ServiceSuite) TestInstanceService_IsNotEager() {
@@ -157,7 +155,7 @@ func (s *ServiceSuite) TestInstanceService_IsNotEager() {
 
 	// Instance service is already instantiated, so isEager() should be false
 	// (no need to instantiate at Build() time)
-	assert.False(s.T(), svc.isEager(), "instanceService.isEager() should return false")
+	s.False(svc.isEager(), "instanceService.isEager() should return false")
 }
 
 func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
@@ -199,8 +197,8 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			assert.Equal(s.T(), tt.expName, tt.wrapper.name())
-			assert.Equal(s.T(), tt.expType, tt.wrapper.typeName())
+			s.Equal(tt.expName, tt.wrapper.name())
+			s.Equal(tt.expType, tt.wrapper.typeName())
 		})
 	}
 }
@@ -217,16 +215,16 @@ func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 1")
+	s.Require().NoError(err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err, "getInstance 2")
+	s.Require().NoError(err, "getInstance 2")
 
-	assert.Equal(s.T(), 1, callCount, "provider should be called once")
-	assert.Same(s.T(), instance1, instance2, "eager singleton instances should be identical")
+	s.Equal(1, callCount, "provider should be called once")
+	s.Same(instance1, instance2, "eager singleton instances should be identical")
 }
 
-// Test transient service lifecycle methods (no-op but need coverage)
+// Test transient service lifecycle methods (no-op but need coverage).
 func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
 	provider := func(c *Container) (*testService, error) {
 		return &testService{id: 1}, nil
@@ -236,16 +234,16 @@ func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
 
 	// start and stop should be no-ops
 	err := svc.start(context.Background())
-	assert.NoError(s.T(), err, "transient start should succeed")
+	s.NoError(err, "transient start should succeed")
 
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err, "transient stop should succeed")
+	s.NoError(err, "transient stop should succeed")
 
 	// hasLifecycle should always return false
-	assert.False(s.T(), svc.hasLifecycle(), "transient should not have lifecycle")
+	s.False(svc.hasLifecycle(), "transient should not have lifecycle")
 }
 
-// Test lazy singleton lifecycle edge cases
+// Test lazy singleton lifecycle edge cases.
 func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
 	provider := func(c *Container) (*testService, error) {
 		return &testService{id: 1}, nil
@@ -270,12 +268,12 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
 
 	// When not built, start and stop should be no-ops
 	err := svc.start(context.Background())
-	assert.NoError(s.T(), err)
-	assert.False(s.T(), startCalled, "start hook should not be called when not built")
+	s.NoError(err)
+	s.False(startCalled, "start hook should not be called when not built")
 
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err)
-	assert.False(s.T(), stopCalled, "stop hook should not be called when not built")
+	s.NoError(err)
+	s.False(stopCalled, "stop hook should not be called when not built")
 }
 
 func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
@@ -303,16 +301,16 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Now hooks should be called
 	err = svc.start(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), startCalled, "start hook should be called")
+	s.NoError(err)
+	s.True(startCalled, "start hook should be called")
 
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), stopCalled, "stop hook should be called")
+	s.NoError(err)
+	s.True(stopCalled, "stop hook should be called")
 }
 
 func (s *ServiceSuite) TestLazySingleton_StartError() {
@@ -331,12 +329,12 @@ func (s *ServiceSuite) TestLazySingleton_StartError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// start should return the error
 	err = svc.start(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "start failed")
+	s.Error(err)
+	s.Contains(err.Error(), "start failed")
 }
 
 func (s *ServiceSuite) TestLazySingleton_StopError() {
@@ -355,12 +353,12 @@ func (s *ServiceSuite) TestLazySingleton_StopError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "stop failed")
+	s.Error(err)
+	s.Contains(err.Error(), "stop failed")
 }
 
 func (s *ServiceSuite) TestLazySingleton_HasLifecycle() {
@@ -370,22 +368,34 @@ func (s *ServiceSuite) TestLazySingleton_HasLifecycle() {
 
 	// No hooks
 	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
-	assert.False(s.T(), svc.hasLifecycle())
+	s.False(svc.hasLifecycle())
 
 	// With start hook only
-	svc2 := newLazySingleton("test", "*gaz.testService", provider, []func(context.Context, any) error{
-		func(_ context.Context, _ any) error { return nil },
-	}, nil)
-	assert.True(s.T(), svc2.hasLifecycle())
+	svc2 := newLazySingleton(
+		"test",
+		"*gaz.testService",
+		provider,
+		[]func(context.Context, any) error{
+			func(_ context.Context, _ any) error { return nil },
+		},
+		nil,
+	)
+	s.True(svc2.hasLifecycle())
 
 	// With stop hook only
-	svc3 := newLazySingleton("test", "*gaz.testService", provider, nil, []func(context.Context, any) error{
-		func(_ context.Context, _ any) error { return nil },
-	})
-	assert.True(s.T(), svc3.hasLifecycle())
+	svc3 := newLazySingleton(
+		"test",
+		"*gaz.testService",
+		provider,
+		nil,
+		[]func(context.Context, any) error{
+			func(_ context.Context, _ any) error { return nil },
+		},
+	)
+	s.True(svc3.hasLifecycle())
 }
 
-// Test eager singleton lifecycle edge cases
+// Test eager singleton lifecycle edge cases.
 func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 	provider := func(c *Container) (*testService, error) {
 		return &testService{id: 1}, nil
@@ -395,11 +405,11 @@ func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 
 	// When not built, start should be no-op
 	err := svc.start(context.Background())
-	assert.NoError(s.T(), err)
+	s.NoError(err)
 
 	// stop when not built should also be no-op
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err)
+	s.NoError(err)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StartError() {
@@ -418,12 +428,12 @@ func (s *ServiceSuite) TestEagerSingleton_StartError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// start should return the error
 	err = svc.start(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "start failed")
+	s.Error(err)
+	s.Contains(err.Error(), "start failed")
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopError() {
@@ -442,15 +452,15 @@ func (s *ServiceSuite) TestEagerSingleton_StopError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "stop failed")
+	s.Error(err)
+	s.Contains(err.Error(), "stop failed")
 }
 
-// Test instance service lifecycle
+// Test instance service lifecycle.
 func (s *ServiceSuite) TestInstanceService_LifecycleHooks() {
 	original := &testService{id: 42}
 
@@ -472,12 +482,12 @@ func (s *ServiceSuite) TestInstanceService_LifecycleHooks() {
 	svc := newInstanceService("test", "*gaz.testService", original, startHooks, stopHooks)
 
 	err := svc.start(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), startCalled)
+	s.NoError(err)
+	s.True(startCalled)
 
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), stopCalled)
+	s.NoError(err)
+	s.True(stopCalled)
 }
 
 func (s *ServiceSuite) TestInstanceService_HasLifecycle() {
@@ -485,13 +495,19 @@ func (s *ServiceSuite) TestInstanceService_HasLifecycle() {
 
 	// No hooks
 	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
-	assert.False(s.T(), svc.hasLifecycle())
+	s.False(svc.hasLifecycle())
 
 	// With hooks
-	svc2 := newInstanceService("test", "*gaz.testService", original, []func(context.Context, any) error{
-		func(_ context.Context, _ any) error { return nil },
-	}, nil)
-	assert.True(s.T(), svc2.hasLifecycle())
+	svc2 := newInstanceService(
+		"test",
+		"*gaz.testService",
+		original,
+		[]func(context.Context, any) error{
+			func(_ context.Context, _ any) error { return nil },
+		},
+		nil,
+	)
+	s.True(svc2.hasLifecycle())
 }
 
 func (s *ServiceSuite) TestInstanceService_StartError() {
@@ -506,8 +522,8 @@ func (s *ServiceSuite) TestInstanceService_StartError() {
 	svc := newInstanceService("test", "*gaz.testService", original, startHooks, nil)
 
 	err := svc.start(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "start failed")
+	s.Error(err)
+	s.Contains(err.Error(), "start failed")
 }
 
 func (s *ServiceSuite) TestInstanceService_StopError() {
@@ -522,11 +538,11 @@ func (s *ServiceSuite) TestInstanceService_StopError() {
 	svc := newInstanceService("test", "*gaz.testService", original, nil, stopHooks)
 
 	err := svc.stop(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "stop failed")
+	s.Error(err)
+	s.Contains(err.Error(), "stop failed")
 }
 
-// Test Starter/Stopper interfaces for eager singleton
+// Test Starter/Stopper interfaces for eager singleton.
 type starterService struct{ started bool }
 
 func (s *starterService) OnStart(ctx context.Context) error {
@@ -563,12 +579,12 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 
 	// Build the instance
 	instance, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// start should call OnStart
 	err = svc.start(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), instance.(*starterService).started)
+	s.NoError(err)
+	s.True(instance.(*starterService).started)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
@@ -581,12 +597,12 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 
 	// Build the instance
 	instance, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// stop should call OnStop
 	err = svc.stop(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), instance.(*stopperService).stopped)
+	s.NoError(err)
+	s.True(instance.(*stopperService).stopped)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
@@ -599,12 +615,12 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// start should return the error
 	err = svc.start(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "starter failed")
+	s.Error(err)
+	s.Contains(err.Error(), "starter failed")
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
@@ -617,23 +633,23 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 
 	// Build the instance
 	_, err := svc.getInstance(c, nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// stop should return the error
 	err = svc.stop(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "stopper failed")
+	s.Error(err)
+	s.Contains(err.Error(), "stopper failed")
 }
 
-// Test instance service with Starter/Stopper interfaces
+// Test instance service with Starter/Stopper interfaces.
 func (s *ServiceSuite) TestInstanceService_StarterInterface() {
 	original := &starterService{}
 
 	svc := newInstanceService("test", "*gaz.starterService", original, nil, nil)
 
 	err := svc.start(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), original.started)
+	s.NoError(err)
+	s.True(original.started)
 }
 
 func (s *ServiceSuite) TestInstanceService_StopperInterface() {
@@ -642,8 +658,8 @@ func (s *ServiceSuite) TestInstanceService_StopperInterface() {
 	svc := newInstanceService("test", "*gaz.stopperService", original, nil, nil)
 
 	err := svc.stop(context.Background())
-	assert.NoError(s.T(), err)
-	assert.True(s.T(), original.stopped)
+	s.NoError(err)
+	s.True(original.stopped)
 }
 
 func (s *ServiceSuite) TestInstanceService_StarterInterfaceError() {
@@ -652,8 +668,8 @@ func (s *ServiceSuite) TestInstanceService_StarterInterfaceError() {
 	svc := newInstanceService("test", "*gaz.failingStarterService", original, nil, nil)
 
 	err := svc.start(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "starter failed")
+	s.Error(err)
+	s.Contains(err.Error(), "starter failed")
 }
 
 func (s *ServiceSuite) TestInstanceService_StopperInterfaceError() {
@@ -662,6 +678,6 @@ func (s *ServiceSuite) TestInstanceService_StopperInterfaceError() {
 	svc := newInstanceService("test", "*gaz.failingStopperService", original, nil, nil)
 
 	err := svc.stop(context.Background())
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "stopper failed")
+	s.Error(err)
+	s.Contains(err.Error(), "stopper failed")
 }

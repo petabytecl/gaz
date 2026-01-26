@@ -3,7 +3,6 @@ package gaz
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,7 +28,7 @@ func (s *TypesSuite) TestTypeName() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			assert.Equal(s.T(), tt.expected, tt.got)
+			s.Equal(tt.expected, tt.got)
 		})
 	}
 }
@@ -37,17 +36,17 @@ func (s *TypesSuite) TestTypeName() {
 func (s *TypesSuite) TestTypeNamePointer() {
 	got := TypeName[*string]()
 	expected := "*string"
-	assert.Equal(s.T(), expected, got)
+	s.Equal(expected, got)
 }
 
 func (s *TypesSuite) TestTypeNameSlice() {
 	got := TypeName[[]string]()
 	expected := "[]string"
-	assert.Equal(s.T(), expected, got)
+	s.Equal(expected, got)
 }
 
 func (s *TypesSuite) TestTypeNameMap() {
 	got := TypeName[map[string]int]()
 	expected := "map[string]int"
-	assert.Equal(s.T(), expected, got)
+	s.Equal(expected, got)
 }

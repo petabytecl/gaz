@@ -47,7 +47,11 @@ type lazySingleton[T any] struct {
 }
 
 // newLazySingleton creates a new lazy singleton service wrapper.
-func newLazySingleton[T any](name, typeName string, provider func(*Container) (T, error), startHooks, stopHooks []func(context.Context, any) error) *lazySingleton[T] {
+func newLazySingleton[T any](
+	name, typeName string,
+	provider func(*Container) (T, error),
+	startHooks, stopHooks []func(context.Context, any) error,
+) *lazySingleton[T] {
 	return &lazySingleton[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
@@ -129,7 +133,10 @@ type transientService[T any] struct {
 }
 
 // newTransient creates a new transient service wrapper.
-func newTransient[T any](name, typeName string, provider func(*Container) (T, error)) *transientService[T] {
+func newTransient[T any](
+	name, typeName string,
+	provider func(*Container) (T, error),
+) *transientService[T] {
 	return &transientService[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
@@ -183,7 +190,11 @@ type eagerSingleton[T any] struct {
 }
 
 // newEagerSingleton creates a new eager singleton service wrapper.
-func newEagerSingleton[T any](name, typeName string, provider func(*Container) (T, error), startHooks, stopHooks []func(context.Context, any) error) *eagerSingleton[T] {
+func newEagerSingleton[T any](
+	name, typeName string,
+	provider func(*Container) (T, error),
+	startHooks, stopHooks []func(context.Context, any) error,
+) *eagerSingleton[T] {
 	return &eagerSingleton[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
@@ -290,7 +301,11 @@ type instanceService[T any] struct {
 }
 
 // newInstanceService creates a new instance service wrapper with a pre-built value.
-func newInstanceService[T any](name, typeName string, value T, startHooks, stopHooks []func(context.Context, any) error) *instanceService[T] {
+func newInstanceService[T any](
+	name, typeName string,
+	value T,
+	startHooks, stopHooks []func(context.Context, any) error,
+) *instanceService[T] {
 	return &instanceService[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
