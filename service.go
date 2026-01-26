@@ -47,11 +47,13 @@ type lazySingleton[T any] struct {
 }
 
 // newLazySingleton creates a new lazy singleton service wrapper.
-func newLazySingleton[T any](name, typeName string, provider func(*Container) (T, error)) *lazySingleton[T] {
+func newLazySingleton[T any](name, typeName string, provider func(*Container) (T, error), startHooks, stopHooks []func(context.Context, any) error) *lazySingleton[T] {
 	return &lazySingleton[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
 		provider:        provider,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
 	}
 }
 
@@ -172,6 +174,8 @@ type eagerSingleton[T any] struct {
 	serviceName     string
 	serviceTypeName string
 	provider        func(*Container) (T, error)
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
 
 	mu       sync.Mutex
 	instance T
@@ -179,11 +183,13 @@ type eagerSingleton[T any] struct {
 }
 
 // newEagerSingleton creates a new eager singleton service wrapper.
-func newEagerSingleton[T any](name, typeName string, provider func(*Container) (T, error)) *eagerSingleton[T] {
+func newEagerSingleton[T any](name, typeName string, provider func(*Container) (T, error), startHooks, stopHooks []func(context.Context, any) error) *eagerSingleton[T] {
 	return &eagerSingleton[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
 		provider:        provider,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
 	}
 }
 
@@ -222,9 +228,56 @@ func (s *eagerSingleton[T]) getInstance(c *Container, chain []string) (any, erro
 	return instance, nil
 }
 
-func (s *eagerSingleton[T]) start(context.Context) error { return nil }
-func (s *eagerSingleton[T]) stop(context.Context) error  { return nil }
-func (s *eagerSingleton[T]) hasLifecycle() bool          { return false }
+func (s *eagerSingleton[T]) start(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.built {
+		// Should have been built, but just in case
+		return nil
+	}
+
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.instance); err != nil {
+			return err
+		}
+	}
+
+	if starter, ok := any(s.instance).(Starter); ok {
+		if err := starter.OnStart(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *eagerSingleton[T]) stop(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.built {
+		return nil
+	}
+
+	if stopper, ok := any(s.instance).(Stopper); ok {
+		if err := stopper.OnStop(ctx); err != nil {
+			return err
+		}
+	}
+
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.instance); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *eagerSingleton[T]) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}
 
 // instanceService wraps a pre-built value. No provider is called.
 // Used by .Instance(val) registration.
@@ -232,14 +285,18 @@ type instanceService[T any] struct {
 	serviceName     string
 	serviceTypeName string
 	value           T
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
 }
 
 // newInstanceService creates a new instance service wrapper with a pre-built value.
-func newInstanceService[T any](name, typeName string, value T) *instanceService[T] {
+func newInstanceService[T any](name, typeName string, value T, startHooks, stopHooks []func(context.Context, any) error) *instanceService[T] {
 	return &instanceService[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
 		value:           value,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
 	}
 }
 
@@ -259,6 +316,38 @@ func (s *instanceService[T]) getInstance(c *Container, chain []string) (any, err
 	return s.value, nil
 }
 
-func (s *instanceService[T]) start(context.Context) error { return nil }
-func (s *instanceService[T]) stop(context.Context) error  { return nil }
-func (s *instanceService[T]) hasLifecycle() bool          { return false }
+func (s *instanceService[T]) start(ctx context.Context) error {
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.value); err != nil {
+			return err
+		}
+	}
+
+	if starter, ok := any(s.value).(Starter); ok {
+		if err := starter.OnStart(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *instanceService[T]) stop(ctx context.Context) error {
+	if stopper, ok := any(s.value).(Stopper); ok {
+		if err := stopper.OnStop(ctx); err != nil {
+			return err
+		}
+	}
+
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.value); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *instanceService[T]) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}

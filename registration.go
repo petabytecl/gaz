@@ -130,9 +130,9 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 	case b.scope == scopeTransient:
 		svc = newTransient(b.name, b.typeName, fn)
 	case !b.lazy:
-		svc = newEagerSingleton(b.name, b.typeName, fn)
+		svc = newEagerSingleton(b.name, b.typeName, fn, b.startHooks, b.stopHooks)
 	default:
-		svc = newLazySingleton(b.name, b.typeName, fn)
+		svc = newLazySingleton(b.name, b.typeName, fn, b.startHooks, b.stopHooks)
 	}
 
 	b.container.register(b.name, svc)
@@ -168,7 +168,7 @@ func (b *RegistrationBuilder[T]) Instance(val T) error {
 		return ErrDuplicate
 	}
 
-	svc := newInstanceService(b.name, b.typeName, val)
+	svc := newInstanceService(b.name, b.typeName, val, b.startHooks, b.stopHooks)
 	b.container.register(b.name, svc)
 	return nil
 }

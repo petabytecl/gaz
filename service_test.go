@@ -32,7 +32,7 @@ func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 		return &testService{id: callCount}, nil
 	}
 
-	svc := newLazySingleton("test", "*gaz.testService", provider)
+	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
@@ -54,7 +54,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 		return &testService{id: int(callCount)}, nil
 	}
 
-	svc := newLazySingleton("test", "*gaz.testService", provider)
+	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
 	c := New()
 
 	const numGoroutines = 10
@@ -119,12 +119,12 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 		return &testService{id: 1}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider)
+	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
 
 	assert.True(s.T(), svc.isEager(), "eagerSingleton.isEager() should return true")
 
 	// Verify lazy and transient are NOT eager
-	lazy := newLazySingleton("test", "*gaz.testService", provider)
+	lazy := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
 	assert.False(s.T(), lazy.isEager(), "lazySingleton.isEager() should return false")
 
 	transient := newTransient("test", "*gaz.testService", provider)
@@ -133,7 +133,7 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 
 func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 	original := &testService{id: 42}
-	svc := newInstanceService("test", "*gaz.testService", original)
+	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
 	c := New()
 
 	instance, err := svc.getInstance(c, nil)
@@ -151,7 +151,7 @@ func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 
 func (s *ServiceSuite) TestInstanceService_IsNotEager() {
 	original := &testService{id: 1}
-	svc := newInstanceService("test", "*gaz.testService", original)
+	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
 
 	// Instance service is already instantiated, so isEager() should be false
 	// (no need to instantiate at Build() time)
@@ -171,7 +171,7 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 	}{
 		{
 			name:    "lazySingleton",
-			wrapper: newLazySingleton("myService", "*app.MyService", provider),
+			wrapper: newLazySingleton("myService", "*app.MyService", provider, nil, nil),
 			expName: "myService",
 			expType: "*app.MyService",
 		},
@@ -183,13 +183,13 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 		},
 		{
 			name:    "eagerSingleton",
-			wrapper: newEagerSingleton("eager", "*app.Eager", provider),
+			wrapper: newEagerSingleton("eager", "*app.Eager", provider, nil, nil),
 			expName: "eager",
 			expType: "*app.Eager",
 		},
 		{
 			name:    "instanceService",
-			wrapper: newInstanceService("instance", "*app.Instance", &testService{id: 1}),
+			wrapper: newInstanceService("instance", "*app.Instance", &testService{id: 1}, nil, nil),
 			expName: "instance",
 			expType: "*app.Instance",
 		},
@@ -211,7 +211,7 @@ func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 		return &testService{id: callCount}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider)
+	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
