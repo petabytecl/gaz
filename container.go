@@ -99,6 +99,52 @@ func (c *Container) popChain() {
 	}
 }
 
+// Build instantiates all eager services and validates the container.
+// Call this after all registrations and before any resolves.
+// Returns an error if any eager service fails to instantiate.
+// Build() is idempotent - calling it multiple times is safe.
+//
+// Example:
+//
+//	c := gaz.New()
+//	gaz.For[*ConnectionPool](c).Eager().Provider(NewPool)
+//	if err := c.Build(); err != nil {
+//	    log.Fatalf("container build failed: %v", err)
+//	}
+func (c *Container) Build() error {
+	c.mu.Lock()
+	if c.built {
+		c.mu.Unlock()
+		return nil // Already built, idempotent
+	}
+	c.mu.Unlock()
+
+	// Collect eager services
+	var eagerServices []serviceWrapper
+	c.mu.RLock()
+	for _, svc := range c.services {
+		wrapper := svc.(serviceWrapper)
+		if wrapper.isEager() {
+			eagerServices = append(eagerServices, wrapper)
+		}
+	}
+	c.mu.RUnlock()
+
+	// Instantiate each eager service
+	for _, svc := range eagerServices {
+		_, err := svc.getInstance(c, nil)
+		if err != nil {
+			return fmt.Errorf("building eager service %s: %w", svc.name(), err)
+		}
+	}
+
+	c.mu.Lock()
+	c.built = true
+	c.mu.Unlock()
+
+	return nil
+}
+
 // resolveByName resolves a service by name, tracking the chain for cycle detection.
 // This is the internal resolution method called by Resolve[T] and struct injection.
 func (c *Container) resolveByName(name string, _ []string) (any, error) {
