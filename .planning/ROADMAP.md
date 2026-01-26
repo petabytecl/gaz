@@ -77,7 +77,7 @@ Create Makefile with targets for testing, coverage, formatting, linting, and oth
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Enable container to record dependency graph during resolution
+- [x] 02-01-PLAN.md — Enable container to record dependency graph during resolution ✓
 - [ ] 02-02-PLAN.md — Define lifecycle interfaces and update builder API
 - [ ] 02-03-PLAN.md — Implement lifecycle ordering logic (TDD)
 - [ ] 02-04-PLAN.md — Implement gaz.App wrapper with run/stop/signals
@@ -147,7 +147,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 1. Core DI Container | 6/6 | Complete | 2026-01-26 |
 | 1.1 Update Test Framework | 3/3 | Complete | 2026-01-26 |
 | 1.2 Create Makefile | 1/1 | Complete | 2026-01-26 |
-| 2. Lifecycle Management | 0/4 | In Progress | - |
+| 2. Lifecycle Management | 1/4 | In Progress | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |
 | 4. Config System | 0/? | Not started | - |
 | 5. Health Checks | 0/? | Not started | - |
