@@ -1,6 +1,15 @@
 package gaz
 
-import "github.com/spf13/viper"
+import (
+	"errors"
+	"fmt"
+	"os"
+	"reflect"
+	"strings"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+)
 
 // ConfigManager handles configuration loading, binding, and validation.
 type ConfigManager struct {
@@ -12,4 +21,133 @@ type ConfigManager struct {
 	envPrefix   string
 	profileEnv  string
 	defaults    map[string]any
+}
+
+// NewConfigManager creates a new ConfigManager.
+func NewConfigManager(target any, opts ...ConfigOption) *ConfigManager {
+	cm := &ConfigManager{
+		v:           viper.New(),
+		target:      target,
+		fileName:    "config",
+		fileType:    "yaml",
+		searchPaths: []string{"."},
+		defaults:    make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(cm)
+	}
+
+	return cm
+}
+
+// Load reads configuration from files and environment variables.
+func (cm *ConfigManager) Load() error {
+	if cm.target == nil {
+		return nil
+	}
+
+	cm.v.SetConfigName(cm.fileName)
+	cm.v.SetConfigType(cm.fileType)
+	for _, path := range cm.searchPaths {
+		cm.v.AddConfigPath(path)
+	}
+
+	// Apply defaults
+	for k, v := range cm.defaults {
+		cm.v.SetDefault(k, v)
+	}
+
+	if cm.envPrefix != "" {
+		cm.v.SetEnvPrefix(cm.envPrefix)
+		cm.v.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+		cm.v.AutomaticEnv()
+
+		// Bind struct fields to env vars
+		cm.bindStructEnv(cm.v, cm.target, "")
+	}
+
+	if err := cm.v.ReadInConfig(); err != nil {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			return fmt.Errorf("failed to read config: %w", err)
+		}
+	}
+
+	// Load profile config
+	if cm.profileEnv != "" {
+		if profile := os.Getenv(cm.profileEnv); profile != "" {
+			cm.v.SetConfigName(cm.fileName + "." + profile)
+			if err := cm.v.MergeInConfig(); err != nil {
+				var configFileNotFoundError viper.ConfigFileNotFoundError
+				if !errors.As(err, &configFileNotFoundError) {
+					return fmt.Errorf("failed to merge profile config: %w", err)
+				}
+			}
+		}
+	}
+
+	if err := cm.v.Unmarshal(cm.target); err != nil {
+		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	if d, ok := cm.target.(Defaulter); ok {
+		d.Default()
+	}
+
+	if val, ok := cm.target.(Validator); ok {
+		if err := val.Validate(); err != nil {
+			return fmt.Errorf("config validation failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// BindFlags binds command line flags to the configuration.
+func (cm *ConfigManager) BindFlags(fs *pflag.FlagSet) error {
+	return cm.v.BindPFlags(fs)
+}
+
+// bindStructEnv recursively binds struct fields to environment variables.
+func (cm *ConfigManager) bindStructEnv(v *viper.Viper, target any, prefix string) {
+	val := reflect.ValueOf(target)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return
+	}
+
+	t := val.Type()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		// Skip unexported fields
+		if field.PkgPath != "" {
+			continue
+		}
+
+		name := field.Name
+		// Use mapstructure tag if present
+		if tag, ok := field.Tag.Lookup("mapstructure"); ok {
+			parts := strings.Split(tag, ",")
+			if len(parts) > 0 && parts[0] != "" {
+				name = parts[0]
+			}
+		}
+
+		key := name
+		if prefix != "" {
+			key = prefix + "." + name
+		}
+
+		if field.Type.Kind() == reflect.Struct {
+			// Recursive bind for nested structs
+			// We pass a zero value of the struct type for type inspection
+			cm.bindStructEnv(v, reflect.New(field.Type).Interface(), key)
+		} else {
+			// Bind the key so AutomaticEnv can find it
+			v.BindEnv(key)
+		}
+	}
 }
