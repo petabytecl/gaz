@@ -6,7 +6,7 @@ import "reflect"
 // It uses reflection to generate consistent string keys from generic type parameters.
 // Examples:
 //   - TypeName[string]() returns "string"
-//   - TypeName[*Config]() returns "*github.com/petabyte/gaz.Config"
+//   - TypeName[*Config]() returns "*github.com/petabytecl/gaz.Config"
 //   - TypeName[[]byte]() returns "[]uint8"
 func TypeName[T any]() string {
 	var zero T

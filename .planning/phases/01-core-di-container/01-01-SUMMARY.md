@@ -76,7 +76,7 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- `go.mod` - Module definition (github.com/petabyte/gaz)
+- `go.mod` - Module definition (github.com/petabytecl/gaz)
 - `errors.go` - 5 sentinel errors for DI operations
 - `types.go` - TypeName[T]() and typeName() helper for type introspection
 - `types_test.go` - Tests for TypeName with various types
@@ -97,7 +97,7 @@ Each task was committed atomically:
 
 - **Found during:** Task 1 (Create errors.go)
 - **Issue:** Project had no go.mod file, preventing Go build
-- **Fix:** Ran `go mod init github.com/petabyte/gaz`
+- **Fix:** Ran `go mod init github.com/petabytecl/gaz`
 - **Files modified:** go.mod (created)
 - **Verification:** `go build .` succeeds
 - **Committed in:** c6a7626 (part of Task 1 commit)

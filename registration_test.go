@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/petabyte/gaz"
+	"github.com/petabytecl/gaz"
 )
 
 // testService is a simple test service type.

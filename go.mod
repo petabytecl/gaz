@@ -1,4 +1,4 @@
-module github.com/petabyte/gaz
+module github.com/petabytecl/gaz
 
 go 1.25.6
 
