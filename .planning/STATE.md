@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2 of 6 (Lifecycle Management)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 02-02-PLAN.md
+Last activity: 2026-01-26 — Completed 02-03-PLAN.md
 
-Progress: [████████░░] 80% (of defined plans)
+Progress: [█████████░] 93% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 5 min
 - Total execution time: 1.1 hours
 
@@ -30,11 +30,11 @@ Progress: [████████░░] 80% (of defined plans)
 | 1 | 6 | 28 min | 5 min |
 | 1.1 | 3 | 11 min | 4 min |
 | 1.2 | 1 | 5 min | 5 min |
-| 2 | 1 | 22 min | 22 min |
+| 2 | 2 | 24 min | 12 min |
 
 **Recent Trend:**
-- Last 5 plans: 01.1-01 (3 min), 01.1-02 (3 min), 01.1-03 (5 min), 01.2-01 (5 min), 02-01 (22 min)
-- Trend: Slowing (heavy refactor in 02-01)
+- Last 5 plans: 01.1-02 (3 min), 01.1-03 (5 min), 01.2-01 (5 min), 02-01 (22 min), 02-03 (2 min)
+- Trend: Variable (02-01 was heavy, 02-03 was fast)
 
 *Updated after each plan completion*
 
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [02-02]: RegistrationBuilder stores hooks as generic wrappers — type safety at API boundary, flexibility internally
 - [02-02]: Lazy singletons only execute hooks if instantiated — avoids unnecessary startup cost
 - [02-02]: Transient services ignore hooks — avoids resource leaks for untracked instances
+- [02-03]: Used Kahn's algorithm for topological sorting to support parallel startup layers
+- [02-03]: Filtered out services without hooks to optimize startup/shutdown process
+- [02-03]: Sorted layers alphabetically for deterministic behavior
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T18:30:00Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-01-26T18:34:04Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
