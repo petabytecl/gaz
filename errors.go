@@ -17,4 +17,10 @@ var (
 
 	// ErrTypeMismatch is returned when a resolved service cannot be assigned to the target type.
 	ErrTypeMismatch = errors.New("gaz: type mismatch")
+
+	// ErrAlreadyBuilt is returned when attempting to register after Build() was called.
+	ErrAlreadyBuilt = errors.New("gaz: cannot register after Build()")
+
+	// ErrInvalidProvider is returned when a provider function has invalid signature.
+	ErrInvalidProvider = errors.New("gaz: invalid provider signature")
 )

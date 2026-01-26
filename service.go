@@ -367,3 +367,299 @@ func (s *instanceService[T]) stop(ctx context.Context) error {
 func (s *instanceService[T]) hasLifecycle() bool {
 	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
 }
+
+// =============================================================================
+// Non-generic service wrappers for reflection-based registration
+// These are used by App.ProvideSingleton/ProvideTransient/etc. which use
+// reflection to extract types from provider functions.
+// =============================================================================
+
+// lazySingletonAny is a non-generic version of lazySingleton for reflection-based registration.
+type lazySingletonAny struct {
+	serviceName     string
+	serviceTypeName string
+	provider        func(*Container) (any, error)
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
+
+	mu       sync.Mutex
+	instance any
+	built    bool
+}
+
+func newLazySingletonAny(
+	name, typeName string,
+	provider func(*Container) (any, error),
+	startHooks, stopHooks []func(context.Context, any) error,
+) *lazySingletonAny {
+	return &lazySingletonAny{
+		serviceName:     name,
+		serviceTypeName: typeName,
+		provider:        provider,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
+	}
+}
+
+func (s *lazySingletonAny) name() string     { return s.serviceName }
+func (s *lazySingletonAny) typeName() string { return s.serviceTypeName }
+func (s *lazySingletonAny) isEager() bool    { return false }
+
+func (s *lazySingletonAny) getInstance(c *Container, chain []string) (any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.built {
+		return s.instance, nil
+	}
+
+	instance, err := s.provider(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = injectStruct(c, instance, chain); err != nil {
+		return nil, err
+	}
+
+	s.instance = instance
+	s.built = true
+	return instance, nil
+}
+
+func (s *lazySingletonAny) start(ctx context.Context) error {
+	if !s.built {
+		return nil
+	}
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *lazySingletonAny) stop(ctx context.Context) error {
+	if !s.built {
+		return nil
+	}
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *lazySingletonAny) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}
+
+// transientServiceAny is a non-generic version of transientService.
+type transientServiceAny struct {
+	serviceName     string
+	serviceTypeName string
+	provider        func(*Container) (any, error)
+}
+
+func newTransientAny(
+	name, typeName string,
+	provider func(*Container) (any, error),
+) *transientServiceAny {
+	return &transientServiceAny{
+		serviceName:     name,
+		serviceTypeName: typeName,
+		provider:        provider,
+	}
+}
+
+func (s *transientServiceAny) name() string     { return s.serviceName }
+func (s *transientServiceAny) typeName() string { return s.serviceTypeName }
+func (s *transientServiceAny) isEager() bool    { return false }
+
+func (s *transientServiceAny) getInstance(c *Container, chain []string) (any, error) {
+	instance, err := s.provider(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = injectStruct(c, instance, chain); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+func (s *transientServiceAny) start(context.Context) error { return nil }
+func (s *transientServiceAny) stop(context.Context) error  { return nil }
+func (s *transientServiceAny) hasLifecycle() bool          { return false }
+
+// eagerSingletonAny is a non-generic version of eagerSingleton.
+type eagerSingletonAny struct {
+	serviceName     string
+	serviceTypeName string
+	provider        func(*Container) (any, error)
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
+
+	mu       sync.Mutex
+	instance any
+	built    bool
+}
+
+func newEagerSingletonAny(
+	name, typeName string,
+	provider func(*Container) (any, error),
+	startHooks, stopHooks []func(context.Context, any) error,
+) *eagerSingletonAny {
+	return &eagerSingletonAny{
+		serviceName:     name,
+		serviceTypeName: typeName,
+		provider:        provider,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
+	}
+}
+
+func (s *eagerSingletonAny) name() string     { return s.serviceName }
+func (s *eagerSingletonAny) typeName() string { return s.serviceTypeName }
+func (s *eagerSingletonAny) isEager() bool    { return true }
+
+func (s *eagerSingletonAny) getInstance(c *Container, chain []string) (any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.built {
+		return s.instance, nil
+	}
+
+	instance, err := s.provider(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = injectStruct(c, instance, chain); err != nil {
+		return nil, err
+	}
+
+	s.instance = instance
+	s.built = true
+	return instance, nil
+}
+
+func (s *eagerSingletonAny) start(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.built {
+		return nil
+	}
+
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.instance); err != nil {
+			return err
+		}
+	}
+
+	if starter, ok := s.instance.(Starter); ok {
+		if err := starter.OnStart(ctx); err != nil {
+			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *eagerSingletonAny) stop(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.built {
+		return nil
+	}
+
+	if stopper, ok := s.instance.(Stopper); ok {
+		if err := stopper.OnStop(ctx); err != nil {
+			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
+		}
+	}
+
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.instance); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *eagerSingletonAny) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}
+
+// instanceServiceAny is a non-generic version of instanceService.
+type instanceServiceAny struct {
+	serviceName     string
+	serviceTypeName string
+	value           any
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
+}
+
+func newInstanceServiceAny(
+	name, typeName string,
+	value any,
+	startHooks, stopHooks []func(context.Context, any) error,
+) *instanceServiceAny {
+	return &instanceServiceAny{
+		serviceName:     name,
+		serviceTypeName: typeName,
+		value:           value,
+		startHooks:      startHooks,
+		stopHooks:       stopHooks,
+	}
+}
+
+func (s *instanceServiceAny) name() string     { return s.serviceName }
+func (s *instanceServiceAny) typeName() string { return s.serviceTypeName }
+func (s *instanceServiceAny) isEager() bool    { return false }
+
+func (s *instanceServiceAny) getInstance(_ *Container, _ []string) (any, error) {
+	return s.value, nil
+}
+
+func (s *instanceServiceAny) start(ctx context.Context) error {
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, s.value); err != nil {
+			return err
+		}
+	}
+
+	if starter, ok := s.value.(Starter); ok {
+		if err := starter.OnStart(ctx); err != nil {
+			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *instanceServiceAny) stop(ctx context.Context) error {
+	if stopper, ok := s.value.(Stopper); ok {
+		if err := stopper.OnStop(ctx); err != nil {
+			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
+		}
+	}
+
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, s.value); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *instanceServiceAny) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}

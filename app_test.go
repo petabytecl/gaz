@@ -140,7 +140,7 @@ func (s *AppTestSuite) TestSignalHandling() {
 func (s *AppTestSuite) TestWithShutdownTimeout() {
 	c := NewContainer()
 	timeout := 5 * time.Second
-	app := NewApp(c, WithShutdownTimeout(timeout))
+	app := NewApp(c, withShutdownTimeoutLegacy(timeout))
 
 	s.Equal(timeout, app.opts.ShutdownTimeout, "shutdown timeout should be set")
 }
