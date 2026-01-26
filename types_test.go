@@ -1,8 +1,22 @@
 package gaz
 
-import "testing"
+import (
+	"testing"
 
-func TestTypeName(t *testing.T) {
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+)
+
+// TypesSuite tests type-related utilities.
+type TypesSuite struct {
+	suite.Suite
+}
+
+func TestTypesSuite(t *testing.T) {
+	suite.Run(t, new(TypesSuite))
+}
+
+func (s *TypesSuite) TestTypeName() {
 	tests := []struct {
 		name     string
 		got      string
@@ -14,34 +28,26 @@ func TestTypeName(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.got != tt.expected {
-				t.Errorf("TypeName[%s]() = %q, want %q", tt.name, tt.got, tt.expected)
-			}
+		s.Run(tt.name, func() {
+			assert.Equal(s.T(), tt.expected, tt.got)
 		})
 	}
 }
 
-func TestTypeNamePointer(t *testing.T) {
+func (s *TypesSuite) TestTypeNamePointer() {
 	got := TypeName[*string]()
 	expected := "*string"
-	if got != expected {
-		t.Errorf("TypeName[*string]() = %q, want %q", got, expected)
-	}
+	assert.Equal(s.T(), expected, got)
 }
 
-func TestTypeNameSlice(t *testing.T) {
+func (s *TypesSuite) TestTypeNameSlice() {
 	got := TypeName[[]string]()
 	expected := "[]string"
-	if got != expected {
-		t.Errorf("TypeName[[]string]() = %q, want %q", got, expected)
-	}
+	assert.Equal(s.T(), expected, got)
 }
 
-func TestTypeNameMap(t *testing.T) {
+func (s *TypesSuite) TestTypeNameMap() {
 	got := TypeName[map[string]int]()
 	expected := "map[string]int"
-	if got != expected {
-		t.Errorf("TypeName[map[string]int]() = %q, want %q", got, expected)
-	}
+	assert.Equal(s.T(), expected, got)
 }
