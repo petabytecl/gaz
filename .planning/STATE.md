@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2 of 6 (Lifecycle Management)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 02-01-PLAN.md
+Last activity: 2026-01-26 — Completed 02-02-PLAN.md
 
-Progress: [███████░░░] 78% (of defined plans)
+Progress: [████████░░] 80% (of defined plans)
 
 ## Performance Metrics
 
@@ -70,6 +70,9 @@ Recent decisions affecting current work:
 - [01.2-01]: Included goimports in fmt target for import management
 - [02-01]: Used separate graphMu RWMutex for granular locking
 - [02-01]: Return deep copy from getGraph() for thread safety
+- [02-02]: RegistrationBuilder stores hooks as generic wrappers — type safety at API boundary, flexibility internally
+- [02-02]: Lazy singletons only execute hooks if instantiated — avoids unnecessary startup cost
+- [02-02]: Transient services ignore hooks — avoids resource leaks for untracked instances
 
 ### Pending Todos
 
