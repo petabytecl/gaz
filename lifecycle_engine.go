@@ -24,9 +24,6 @@ func ComputeStartupOrder(graph map[string][]string, services map[string]serviceW
 			// If dep is not in graph as a key, it might be an external or missing dependency.
 			// Ideally graph is complete. If not, we should handle it?
 			// Assuming graph is complete for now as per container guarantees.
-			if reverseGraph[dep] == nil {
-				reverseGraph[dep] = []string{}
-			}
 			reverseGraph[dep] = append(reverseGraph[dep], node)
 		}
 	}
