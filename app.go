@@ -375,16 +375,11 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 // Stop initiates graceful shutdown of the application.
+// It executes OnStop hooks for all services in reverse dependency order.
+// Safe to call even if Run() was not used (e.g., Cobra integration).
 func (a *App) Stop(ctx context.Context) error {
 	a.mu.Lock()
-	if !a.running {
-		a.mu.Unlock()
-		return nil
-	}
-	// We do NOT set running=false here. It happens in Run's defer.
-	// We close stopCh to signal Run to exit, BUT we do work first.
-	// Wait, if we do work first, Run is still waiting.
-	// After work, we close stopCh, Run returns.
+	wasRunning := a.running
 	a.mu.Unlock()
 
 	// Compute shutdown order (reverse of startup)
@@ -436,15 +431,17 @@ func (a *App) Stop(ctx context.Context) error {
 		}
 	}
 
-	// Signal Run to exit
-	a.mu.Lock()
-	select {
-	case <-a.stopCh:
-		// Already closed
-	default:
-		close(a.stopCh)
+	// Signal Run to exit (only if Run() was used)
+	if wasRunning {
+		a.mu.Lock()
+		select {
+		case <-a.stopCh:
+			// Already closed
+		default:
+			close(a.stopCh)
+		}
+		a.mu.Unlock()
 	}
-	a.mu.Unlock()
 
 	return lastErr
 }
