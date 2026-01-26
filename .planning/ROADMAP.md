@@ -137,7 +137,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04.1-01-PLAN.md — Implement ConfigManager and Options
+- [x] 04.1-01-PLAN.md — Implement ConfigManager and Options
 - [ ] 04.1-02-PLAN.md — Integrate ConfigManager into App and Cobra
 
 **Details:**
@@ -185,7 +185,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 2.1 Improve Code Quality | 5/5 | Complete | 2026-01-26 |
 | 3. App Builder + Cobra | 4/4 | Complete | 2026-01-26 |
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
-| 4.1 Refactor config | 0/2 | Planned | - |
+| 4.1 Refactor config | 1/2 | In progress | - |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
 
