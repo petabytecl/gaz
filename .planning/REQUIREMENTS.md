@@ -9,15 +9,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### DI Container
 
-- [ ] **DI-01**: Developer can register providers with generic type `Register[T](provider)` syntax
-- [ ] **DI-02**: Container lazily instantiates singletons on first resolution (default behavior)
-- [ ] **DI-03**: Providers can return `(T, error)` and errors propagate through dependency chain
-- [ ] **DI-04**: Developer can register multiple implementations of same type with names
-- [ ] **DI-05**: Developer can inject dependencies into struct fields via `gaz:"inject"` tag
-- [ ] **DI-06**: Developer can override registered services (for testing)
-- [ ] **DI-07**: Developer can register transient services (new instance per resolution)
-- [ ] **DI-08**: Developer can register eager services (instantiate at startup)
-- [ ] **DI-09**: Container detects circular dependencies and fails fast with clear error
+- [x] **DI-01**: Developer can register providers with generic type `Register[T](provider)` syntax
+- [x] **DI-02**: Container lazily instantiates singletons on first resolution (default behavior)
+- [x] **DI-03**: Providers can return `(T, error)` and errors propagate through dependency chain
+- [x] **DI-04**: Developer can register multiple implementations of same type with names
+- [x] **DI-05**: Developer can inject dependencies into struct fields via `gaz:"inject"` tag
+- [x] **DI-06**: Developer can override registered services (for testing)
+- [x] **DI-07**: Developer can register transient services (new instance per resolution)
+- [x] **DI-08**: Developer can register eager services (instantiate at startup)
+- [x] **DI-09**: Container detects circular dependencies and fails fast with clear error
 
 ### Lifecycle
 
@@ -101,15 +101,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DI-01 | Phase 1 | Pending |
-| DI-02 | Phase 1 | Pending |
-| DI-03 | Phase 1 | Pending |
-| DI-04 | Phase 1 | Pending |
-| DI-05 | Phase 1 | Pending |
-| DI-06 | Phase 1 | Pending |
-| DI-07 | Phase 1 | Pending |
-| DI-08 | Phase 1 | Pending |
-| DI-09 | Phase 1 | Pending |
+| DI-01 | Phase 1 | Complete |
+| DI-02 | Phase 1 | Complete |
+| DI-03 | Phase 1 | Complete |
+| DI-04 | Phase 1 | Complete |
+| DI-05 | Phase 1 | Complete |
+| DI-06 | Phase 1 | Complete |
+| DI-07 | Phase 1 | Complete |
+| DI-08 | Phase 1 | Complete |
+| DI-09 | Phase 1 | Complete |
 | LIFE-01 | Phase 2 | Pending |
 | LIFE-02 | Phase 2 | Pending |
 | LIFE-03 | Phase 2 | Pending |
