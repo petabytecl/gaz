@@ -110,8 +110,8 @@ Fix 162 remaining linter issues across production code and test files.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Core App refactor (gaz.New(), provider methods, Build validation)
-- [ ] 03-02-PLAN.md — Module composition (Module() method, duplicate detection)
+- [x] 03-01-PLAN.md — Core App refactor (gaz.New(), provider methods, Build validation) ✓
+- [x] 03-02-PLAN.md — Module composition (Module() method, duplicate detection) ✓
 - [ ] 03-03-PLAN.md — Cobra integration (WithCobra(), FromContext())
 - [ ] 03-04-PLAN.md — End-to-end integration tests
 
@@ -168,7 +168,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 1.2 Create Makefile | 1/1 | Complete | 2026-01-26 |
 | 2. Lifecycle Management | 4/4 | Complete | 2026-01-26 |
 | 2.1 Improve Code Quality | 5/5 | Complete | 2026-01-26 |
-| 3. App Builder + Cobra | 0/4 | Not started | - |
+| 3. App Builder + Cobra | 2/4 | In progress | - |
 | 4. Config System | 0/? | Not started | - |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
