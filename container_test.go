@@ -96,7 +96,7 @@ func (s *ContainerSuite) TestBuild_ResolveAfterBuild_ReturnsCachedEagerService()
 
 func (s *ContainerSuite) TestDI01_RegisterWithGenerics() {
 	c := New()
-	err := For[*testDatabase](c).Provider(func(c *Container) (*testDatabase, error) {
+	err := For[*testDatabase](c).Provider(func(_ *Container) (*testDatabase, error) {
 		return &testDatabase{}, nil
 	})
 	s.Require().NoError(err)

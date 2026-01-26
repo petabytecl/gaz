@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"fmt"
 )
 
 // serviceScope defines the lifecycle scope for a registered service.
@@ -88,11 +89,15 @@ func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 // The hook receives the context and the service instance.
 func (b *RegistrationBuilder[T]) OnStart(
 	fn func(context.Context, T) error,
-	opts ...HookOption,
+	_ ...HookOption, // Reserved for future extensibility
 ) *RegistrationBuilder[T] {
 	wrapper := func(ctx context.Context, instance any) error {
-		// In the future, we can apply opts to a HookConfig here
-		return fn(ctx, instance.(T))
+		typedInstance, ok := instance.(T)
+		if !ok {
+			var zero T
+			return fmt.Errorf("invalid instance type: expected %T", zero)
+		}
+		return fn(ctx, typedInstance)
 	}
 	b.startHooks = append(b.startHooks, wrapper)
 	return b
@@ -102,10 +107,15 @@ func (b *RegistrationBuilder[T]) OnStart(
 // The hook receives the context and the service instance.
 func (b *RegistrationBuilder[T]) OnStop(
 	fn func(context.Context, T) error,
-	opts ...HookOption,
+	_ ...HookOption, // Reserved for future extensibility
 ) *RegistrationBuilder[T] {
 	wrapper := func(ctx context.Context, instance any) error {
-		return fn(ctx, instance.(T))
+		typedInstance, ok := instance.(T)
+		if !ok {
+			var zero T
+			return fmt.Errorf("invalid instance type: expected %T", zero)
+		}
+		return fn(ctx, typedInstance)
 	}
 	b.stopHooks = append(b.stopHooks, wrapper)
 	return b

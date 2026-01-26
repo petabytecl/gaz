@@ -136,8 +136,8 @@ func (m *mockServiceWrapper) typeName() string { return m.typeNameVal }
 func (m *mockServiceWrapper) isEager() bool    { return false }
 
 func (m *mockServiceWrapper) getInstance(
-	c *Container,
-	chain []string,
+	_ *Container,
+	_ []string,
 ) (any, error) {
 	return nil, nil
 }

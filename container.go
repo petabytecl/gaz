@@ -1,11 +1,15 @@
 package gaz
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
 	"sync"
 )
+
+// decimalBase is used for parsing decimal digits from goroutine ID.
+const decimalBase = 10
 
 // Container is the dependency injection container.
 // Use New() to create a new container, register services with For[T](),
@@ -70,7 +74,7 @@ func getGoroutineID() int64 {
 		if buf[i] == ' ' {
 			break
 		}
-		id = id*10 + int64(buf[i]-'0')
+		id = id*decimalBase + int64(buf[i]-'0')
 	}
 	return id
 }
@@ -129,7 +133,11 @@ func (c *Container) Build() error {
 	var eagerServices []serviceWrapper
 	c.mu.RLock()
 	for _, svc := range c.services {
-		wrapper := svc.(serviceWrapper)
+		wrapper, ok := svc.(serviceWrapper)
+		if !ok {
+			c.mu.RUnlock()
+			return errors.New("invalid service wrapper type for service")
+		}
 		if wrapper.isEager() {
 			eagerServices = append(eagerServices, wrapper)
 		}
@@ -183,7 +191,10 @@ func (c *Container) resolveByName(name string, _ []string) (any, error) {
 		c.recordDependency(parent, name)
 	}
 
-	wrapper := svc.(serviceWrapper)
+	wrapper, ok := svc.(serviceWrapper)
+	if !ok {
+		return nil, fmt.Errorf("invalid service wrapper type for %s", name)
+	}
 
 	// Add current service to chain before getting instance
 	c.pushChain(name)

@@ -16,11 +16,11 @@ func TestLifecycleHooks(t *testing.T) {
 	type MyService struct{}
 
 	err := For[*MyService](c).
-		OnStart(func(ctx context.Context, s *MyService) error {
+		OnStart(func(_ context.Context, _ *MyService) error {
 			startCalled = true
 			return nil
 		}).
-		OnStop(func(ctx context.Context, s *MyService) error {
+		OnStop(func(_ context.Context, _ *MyService) error {
 			stopCalled = true
 			return nil
 		}).
@@ -60,12 +60,12 @@ type lifecycleService struct {
 	stopped bool
 }
 
-func (s *lifecycleService) OnStart(ctx context.Context) error {
+func (s *lifecycleService) OnStart(_ context.Context) error {
 	s.started = true
 	return nil
 }
 
-func (s *lifecycleService) OnStop(ctx context.Context) error {
+func (s *lifecycleService) OnStop(_ context.Context) error {
 	s.stopped = true
 	return nil
 }

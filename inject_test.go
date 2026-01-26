@@ -41,7 +41,7 @@ func (s *InjectionSuite) TestBasicInjection() {
 
 	s.Require().NoError(For[*Database](c).Instance(db))
 	s.Require().NoError(For[*Logger](c).Instance(logger))
-	s.Require().NoError(For[*Handler](c).ProviderFunc(func(c *Container) *Handler {
+	s.Require().NoError(For[*Handler](c).ProviderFunc(func(_ *Container) *Handler {
 		return &Handler{} // Fields auto-injected after provider returns
 	}))
 
@@ -73,7 +73,7 @@ func (s *InjectionSuite) TestNamed() {
 	s.Require().NoError(For[*DB](c).Named("primary").Instance(primary))
 	s.Require().NoError(For[*DB](c).Named("replica").Instance(replica))
 	s.Require().NoError(
-		For[*ServiceWithNamedDeps](c).ProviderFunc(func(c *Container) *ServiceWithNamedDeps {
+		For[*ServiceWithNamedDeps](c).ProviderFunc(func(_ *Container) *ServiceWithNamedDeps {
 			return &ServiceWithNamedDeps{}
 		}),
 	)
@@ -98,7 +98,7 @@ func (s *InjectionSuite) TestOptionalNotRegistered() {
 	s.Require().NoError(
 		For[*HandlerWithOptionalCache](
 			c,
-		).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
+		).ProviderFunc(func(_ *Container) *HandlerWithOptionalCache {
 			return &HandlerWithOptionalCache{}
 		}),
 	)
@@ -117,7 +117,7 @@ func (s *InjectionSuite) TestOptionalRegistered() {
 	s.Require().NoError(
 		For[*HandlerWithOptionalCache](
 			c,
-		).ProviderFunc(func(c *Container) *HandlerWithOptionalCache {
+		).ProviderFunc(func(_ *Container) *HandlerWithOptionalCache {
 			return &HandlerWithOptionalCache{}
 		}),
 	)
@@ -137,7 +137,7 @@ func (s *InjectionSuite) TestUnexportedFieldReturnsError() {
 	c := New()
 
 	s.Require().NoError(For[*Database](c).Instance(&Database{}))
-	s.Require().NoError(For[*BadHandler](c).ProviderFunc(func(c *Container) *BadHandler {
+	s.Require().NoError(For[*BadHandler](c).ProviderFunc(func(_ *Container) *BadHandler {
 		return &BadHandler{}
 	}))
 
@@ -155,7 +155,7 @@ func (s *InjectionSuite) TestMissingDependencyReturnsError() {
 
 	// Don't register Database
 	s.Require().NoError(
-		For[*HandlerWithMissingDep](c).ProviderFunc(func(c *Container) *HandlerWithMissingDep {
+		For[*HandlerWithMissingDep](c).ProviderFunc(func(_ *Container) *HandlerWithMissingDep {
 			return &HandlerWithMissingDep{}
 		}),
 	)
@@ -177,10 +177,10 @@ type ServiceB struct {
 func (s *InjectionSuite) TestCycleViaInjection() {
 	c := New()
 
-	s.Require().NoError(For[*ServiceA](c).ProviderFunc(func(c *Container) *ServiceA {
+	s.Require().NoError(For[*ServiceA](c).ProviderFunc(func(_ *Container) *ServiceA {
 		return &ServiceA{}
 	}))
-	s.Require().NoError(For[*ServiceB](c).ProviderFunc(func(c *Container) *ServiceB {
+	s.Require().NoError(For[*ServiceB](c).ProviderFunc(func(_ *Container) *ServiceB {
 		return &ServiceB{}
 	}))
 
@@ -193,7 +193,7 @@ func (s *InjectionSuite) TestNonStructPointerSkipped() {
 	c := New()
 
 	// Register a simple string - not a struct
-	s.Require().NoError(For[string](c).ProviderFunc(func(c *Container) string {
+	s.Require().NoError(For[string](c).ProviderFunc(func(_ *Container) string {
 		return "hello"
 	}))
 
@@ -248,7 +248,7 @@ func (s *InjectionSuite) TestTransientService() {
 	db := &Database{connStr: "test"}
 	s.Require().NoError(For[*Database](c).Instance(db))
 	s.Require().NoError(
-		For[*TransientHandler](c).Transient().ProviderFunc(func(c *Container) *TransientHandler {
+		For[*TransientHandler](c).Transient().ProviderFunc(func(_ *Container) *TransientHandler {
 			return &TransientHandler{}
 		}),
 	)

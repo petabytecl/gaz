@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,7 +55,7 @@ func (s *ResolutionSuite) TestBasicResolution() {
 	c := New()
 
 	// Register a simple service
-	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
 		return &testServiceA{value: "hello"}
 	})
 	s.Require().NoError(err, "registration failed")
@@ -85,12 +84,12 @@ func (s *ResolutionSuite) TestNamed() {
 	c := New()
 
 	// Register two services with same type, different names
-	err := For[*testServiceA](c).Named("first").ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).Named("first").ProviderFunc(func(_ *Container) *testServiceA {
 		return &testServiceA{value: "first-value"}
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	err = For[*testServiceA](c).Named("second").ProviderFunc(func(c *Container) *testServiceA {
+	err = For[*testServiceA](c).Named("second").ProviderFunc(func(_ *Container) *testServiceA {
 		return &testServiceA{value: "second-value"}
 	})
 	s.Require().NoError(err, "second registration failed")
@@ -152,7 +151,7 @@ func (s *ResolutionSuite) TestProviderErrorPropagates() {
 	providerErr := errors.New("provider failed")
 
 	// Register service with provider that returns error
-	err := For[*testServiceA](c).Provider(func(c *Container) (*testServiceA, error) {
+	err := For[*testServiceA](c).Provider(func(_ *Container) (*testServiceA, error) {
 		return nil, providerErr
 	})
 	s.Require().NoError(err, "registration failed")
@@ -175,7 +174,7 @@ func (s *ResolutionSuite) TestDependencyChain() {
 	c := New()
 
 	// Register C (leaf dependency)
-	err := For[*depC](c).ProviderFunc(func(c *Container) *depC {
+	err := For[*depC](c).ProviderFunc(func(_ *Container) *depC {
 		return &depC{value: "leaf"}
 	})
 	s.Require().NoError(err, "registration of C failed")
@@ -217,7 +216,7 @@ func (s *ResolutionSuite) TestTransientNewInstanceEachTime() {
 	callCount := 0
 
 	// Register transient service
-	err := For[*testServiceA](c).Transient().ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).Transient().ProviderFunc(func(_ *Container) *testServiceA {
 		callCount++
 		return &testServiceA{value: "transient"}
 	})
@@ -243,7 +242,7 @@ func (s *ResolutionSuite) TestSingletonSameInstance() {
 	callCount := 0
 
 	// Register singleton service (default)
-	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
 		callCount++
 		return &testServiceA{value: "singleton"}
 	})
@@ -267,7 +266,7 @@ func (s *ResolutionSuite) TestTypeMismatch() {
 	c := New()
 
 	// Register service A
-	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
 		return &testServiceA{value: "a"}
 	})
 	s.Require().NoError(err, "registration failed")
@@ -302,7 +301,7 @@ func (s *ResolutionSuite) TestNamedNotFound() {
 	c := New()
 
 	// Register with type name (default)
-	err := For[*testServiceA](c).ProviderFunc(func(c *Container) *testServiceA {
+	err := For[*testServiceA](c).ProviderFunc(func(_ *Container) *testServiceA {
 		return &testServiceA{value: "default"}
 	})
 	s.Require().NoError(err, "registration failed")
@@ -314,8 +313,7 @@ func (s *ResolutionSuite) TestNamedNotFound() {
 	s.ErrorIs(resolveErr, ErrNotFound)
 
 	// Error should contain the name we searched for
-	assert.Contains(
-		s.T(),
+	s.Contains(
 		resolveErr.Error(), "nonexistent",
 		"error should contain searched name",
 	)

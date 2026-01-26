@@ -27,7 +27,7 @@ func TestServiceSuite(t *testing.T) {
 
 func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 	callCount := 0
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		callCount++
 		return &testService{id: callCount}, nil
 	}
@@ -47,7 +47,7 @@ func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 
 func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 	var callCount int32
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		atomic.AddInt32(&callCount, 1)
 		// Small delay to increase chance of race
 		time.Sleep(10 * time.Millisecond)
@@ -92,7 +92,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 
 func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 	callCount := 0
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		callCount++
 		return &testService{id: callCount}, nil
 	}
@@ -115,7 +115,7 @@ func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -159,7 +159,7 @@ func (s *ServiceSuite) TestInstanceService_IsNotEager() {
 }
 
 func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -206,7 +206,7 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 	// Eager singleton should cache like lazy singleton
 	callCount := 0
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		callCount++
 		return &testService{id: callCount}, nil
 	}
@@ -226,7 +226,7 @@ func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 
 // Test transient service lifecycle methods (no-op but need coverage).
 func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -245,7 +245,7 @@ func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
 
 // Test lazy singleton lifecycle edge cases.
 func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -277,7 +277,7 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
 }
 
 func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -314,7 +314,7 @@ func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
 }
 
 func (s *ServiceSuite) TestLazySingleton_StartError() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -338,7 +338,7 @@ func (s *ServiceSuite) TestLazySingleton_StartError() {
 }
 
 func (s *ServiceSuite) TestLazySingleton_StopError() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -362,7 +362,7 @@ func (s *ServiceSuite) TestLazySingleton_StopError() {
 }
 
 func (s *ServiceSuite) TestLazySingleton_HasLifecycle() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -397,7 +397,7 @@ func (s *ServiceSuite) TestLazySingleton_HasLifecycle() {
 
 // Test eager singleton lifecycle edge cases.
 func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -413,7 +413,7 @@ func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StartError() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -437,7 +437,7 @@ func (s *ServiceSuite) TestEagerSingleton_StartError() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopError() {
-	provider := func(c *Container) (*testService, error) {
+	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
@@ -545,32 +545,32 @@ func (s *ServiceSuite) TestInstanceService_StopError() {
 // Test Starter/Stopper interfaces for eager singleton.
 type starterService struct{ started bool }
 
-func (s *starterService) OnStart(ctx context.Context) error {
+func (s *starterService) OnStart(_ context.Context) error {
 	s.started = true
 	return nil
 }
 
 type stopperService struct{ stopped bool }
 
-func (s *stopperService) OnStop(ctx context.Context) error {
+func (s *stopperService) OnStop(_ context.Context) error {
 	s.stopped = true
 	return nil
 }
 
 type failingStarterService struct{}
 
-func (s *failingStarterService) OnStart(ctx context.Context) error {
+func (s *failingStarterService) OnStart(_ context.Context) error {
 	return errors.New("starter failed")
 }
 
 type failingStopperService struct{}
 
-func (s *failingStopperService) OnStop(ctx context.Context) error {
+func (s *failingStopperService) OnStop(_ context.Context) error {
 	return errors.New("stopper failed")
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
-	provider := func(c *Container) (*starterService, error) {
+	provider := func(_ *Container) (*starterService, error) {
 		return &starterService{}, nil
 	}
 
@@ -588,7 +588,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
-	provider := func(c *Container) (*stopperService, error) {
+	provider := func(_ *Container) (*stopperService, error) {
 		return &stopperService{}, nil
 	}
 
@@ -606,7 +606,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
-	provider := func(c *Container) (*failingStarterService, error) {
+	provider := func(_ *Container) (*failingStarterService, error) {
 		return &failingStarterService{}, nil
 	}
 
@@ -624,7 +624,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
 }
 
 func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
-	provider := func(c *Container) (*failingStopperService, error) {
+	provider := func(_ *Container) (*failingStopperService, error) {
 		return &failingStopperService{}, nil
 	}
 

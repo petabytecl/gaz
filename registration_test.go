@@ -35,7 +35,7 @@ func TestRegistrationSuite(t *testing.T) {
 func (s *RegistrationSuite) TestFor_Provider_RegistersService() {
 	c := gaz.New()
 
-	err := gaz.For[*testService](c).Provider(func(c *gaz.Container) (*testService, error) {
+	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 42}, nil
 	})
 
@@ -45,7 +45,7 @@ func (s *RegistrationSuite) TestFor_Provider_RegistersService() {
 func (s *RegistrationSuite) TestFor_ProviderFunc_RegistersService() {
 	c := gaz.New()
 
-	err := gaz.For[*testService](c).ProviderFunc(func(c *gaz.Container) *testService {
+	err := gaz.For[*testService](c).ProviderFunc(func(_ *gaz.Container) *testService {
 		return &testService{id: 42}
 	})
 
@@ -65,13 +65,13 @@ func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
 	c := gaz.New()
 
 	// First registration should succeed
-	err := gaz.For[*testService](c).Provider(func(c *gaz.Container) (*testService, error) {
+	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	})
 	s.Require().NoError(err, "first registration failed")
 
 	// Second registration of same type should return ErrDuplicate
-	err = gaz.For[*testService](c).Provider(func(c *gaz.Container) (*testService, error) {
+	err = gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 2}, nil
 	})
 	s.ErrorIs(err, gaz.ErrDuplicate)
@@ -93,13 +93,13 @@ func (s *RegistrationSuite) TestFor_Replace_AllowsOverwrite() {
 	c := gaz.New()
 
 	// First registration
-	err := gaz.For[*testService](c).Provider(func(c *gaz.Container) (*testService, error) {
+	err := gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	})
 	s.Require().NoError(err, "first registration failed")
 
 	// Replace() should allow overwriting
-	err = gaz.For[*testService](c).Replace().Provider(func(c *gaz.Container) (*testService, error) {
+	err = gaz.For[*testService](c).Replace().Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 2}, nil
 	})
 	s.NoError(err, "expected no error with Replace()")
@@ -121,13 +121,13 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 	c := gaz.New()
 
 	// Register "primary" named DB
-	err := gaz.For[*testDB](c).Named("primary").Provider(func(c *gaz.Container) (*testDB, error) {
+	err := gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary"}, nil
 	})
 	s.Require().NoError(err, "primary registration failed")
 
 	// Register "replica" named DB - should not conflict
-	err = gaz.For[*testDB](c).Named("replica").Provider(func(c *gaz.Container) (*testDB, error) {
+	err = gaz.For[*testDB](c).Named("replica").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "replica"}, nil
 	})
 	s.NoError(err, "expected no error for differently named services")
@@ -137,13 +137,13 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
 	c := gaz.New()
 
 	// Register "primary" named DB
-	err := gaz.For[*testDB](c).Named("primary").Provider(func(c *gaz.Container) (*testDB, error) {
+	err := gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary"}, nil
 	})
 	s.Require().NoError(err, "first registration failed")
 
 	// Register another "primary" - should return ErrDuplicate
-	err = gaz.For[*testDB](c).Named("primary").Provider(func(c *gaz.Container) (*testDB, error) {
+	err = gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary-2"}, nil
 	})
 	s.ErrorIs(err, gaz.ErrDuplicate)
@@ -156,7 +156,7 @@ func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {
 	err := gaz.For[*testService](
 		c,
 	).Transient().
-		Provider(func(c *gaz.Container) (*testService, error) {
+		Provider(func(_ *gaz.Container) (*testService, error) {
 			return &testService{id: 99}, nil
 		})
 	s.NoError(err)
@@ -167,7 +167,7 @@ func (s *RegistrationSuite) TestFor_Eager_CreatesEagerService() {
 	c := gaz.New()
 
 	// Registration with Eager() should succeed
-	err := gaz.For[*testService](c).Eager().Provider(func(c *gaz.Container) (*testService, error) {
+	err := gaz.For[*testService](c).Eager().Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 100}, nil
 	})
 	s.NoError(err)
@@ -182,7 +182,7 @@ func (s *RegistrationSuite) TestFor_ChainedOptions_Work() {
 		Named("analytics").
 		Eager().
 		Replace(). // Replace() on first registration is a no-op
-		Provider(func(c *gaz.Container) (*testDB, error) {
+		Provider(func(_ *gaz.Container) (*testDB, error) {
 			return &testDB{name: "analytics"}, nil
 		})
 	s.NoError(err, "expected no error with chained options")
