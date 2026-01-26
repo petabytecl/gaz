@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"syscall"
 	"testing"
@@ -128,5 +129,133 @@ func (s *AppTestSuite) TestSignalHandling() {
 		s.NoError(err)
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after SIGTERM")
+	}
+}
+
+func (s *AppTestSuite) TestWithShutdownTimeout() {
+	c := New()
+	timeout := 5 * time.Second
+	app := NewApp(c, WithShutdownTimeout(timeout))
+
+	s.Equal(timeout, app.opts.ShutdownTimeout, "shutdown timeout should be set")
+}
+
+func (s *AppTestSuite) TestRunAlreadyRunning() {
+	c := New()
+	app := NewApp(c)
+
+	// Start in background
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- app.Run(context.Background())
+	}()
+
+	// Wait for startup
+	time.Sleep(50 * time.Millisecond)
+
+	// Try to run again - should error
+	err := app.Run(context.Background())
+	s.Error(err)
+	s.Contains(err.Error(), "already running")
+
+	// Stop the first run
+	s.NoError(app.Stop(context.Background()))
+
+	select {
+	case err := <-runErr:
+		s.NoError(err)
+	case <-time.After(1 * time.Second):
+		s.Fail("Run did not return after Stop")
+	}
+}
+
+func (s *AppTestSuite) TestRunContextCancelled() {
+	c := New()
+	app := NewApp(c)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Run in goroutine
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- app.Run(ctx)
+	}()
+
+	// Wait for startup
+	time.Sleep(50 * time.Millisecond)
+
+	// Cancel the context
+	cancel()
+
+	// Wait for Run to return
+	select {
+	case err := <-runErr:
+		s.NoError(err)
+	case <-time.After(1 * time.Second):
+		s.Fail("Run did not return after context cancellation")
+	}
+}
+
+func (s *AppTestSuite) TestStopNotRunning() {
+	c := New()
+	app := NewApp(c)
+
+	// Stop when not running should be no-op
+	err := app.Stop(context.Background())
+	s.NoError(err)
+}
+
+type FailingStartService struct{}
+
+func (s *AppTestSuite) TestRunStartError() {
+	c := New()
+
+	For[*FailingStartService](c).Eager().
+		OnStart(func(_ context.Context, _ *FailingStartService) error {
+			return errors.New("start failed")
+		}).
+		ProviderFunc(func(_ *Container) *FailingStartService {
+			return &FailingStartService{}
+		})
+
+	app := NewApp(c)
+	err := app.Run(context.Background())
+	s.Error(err)
+	s.Contains(err.Error(), "starting service")
+}
+
+type FailingStopService struct{}
+
+func (s *AppTestSuite) TestStopError() {
+	c := New()
+
+	For[*FailingStopService](c).Named("failstop").Eager().
+		OnStop(func(_ context.Context, _ *FailingStopService) error {
+			return errors.New("stop failed")
+		}).
+		ProviderFunc(func(_ *Container) *FailingStopService {
+			return &FailingStopService{}
+		})
+
+	app := NewApp(c)
+
+	// Run in background
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- app.Run(context.Background())
+	}()
+
+	// Wait for startup
+	time.Sleep(50 * time.Millisecond)
+
+	// Stop should collect the error
+	err := app.Stop(context.Background())
+	s.Error(err)
+	s.Contains(err.Error(), "stopping service")
+
+	select {
+	case <-runErr:
+	case <-time.After(1 * time.Second):
+		s.Fail("Run did not return after Stop")
 	}
 }
