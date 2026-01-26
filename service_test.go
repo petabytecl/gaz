@@ -5,6 +5,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
 // testService is a simple service for testing
@@ -12,7 +16,16 @@ type testService struct {
 	id int
 }
 
-func TestLazySingleton_InstantiatesOnce(t *testing.T) {
+// ServiceSuite tests the service wrapper implementations.
+type ServiceSuite struct {
+	suite.Suite
+}
+
+func TestServiceSuite(t *testing.T) {
+	suite.Run(t, new(ServiceSuite))
+}
+
+func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 	callCount := 0
 	provider := func(c *Container) (*testService, error) {
 		callCount++
@@ -23,25 +36,16 @@ func TestLazySingleton_InstantiatesOnce(t *testing.T) {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 1: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 2: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 2")
 
-	if callCount != 1 {
-		t.Errorf("provider called %d times, want 1", callCount)
-	}
-
-	if instance1 != instance2 {
-		t.Error("instances should be identical")
-	}
+	assert.Equal(s.T(), 1, callCount, "provider should be called once")
+	assert.Same(s.T(), instance1, instance2, "instances should be identical")
 }
 
-func TestLazySingleton_ConcurrentAccess(t *testing.T) {
+func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 	var callCount int32
 	provider := func(c *Container) (*testService, error) {
 		atomic.AddInt32(&callCount, 1)
@@ -73,26 +77,20 @@ func TestLazySingleton_ConcurrentAccess(t *testing.T) {
 
 	// Check no errors
 	for i, err := range errors {
-		if err != nil {
-			t.Errorf("goroutine %d got error: %v", i, err)
-		}
+		assert.NoError(s.T(), err, "goroutine %d got error", i)
 	}
 
 	// Check provider called exactly once
-	if callCount != 1 {
-		t.Errorf("provider called %d times, want 1", callCount)
-	}
+	assert.Equal(s.T(), int32(1), callCount, "provider should be called once")
 
 	// Check all instances are the same
 	first := instances[0]
 	for i, inst := range instances {
-		if inst != first {
-			t.Errorf("goroutine %d got different instance", i)
-		}
+		assert.Same(s.T(), first, inst, "goroutine %d got different instance", i)
 	}
 }
 
-func TestTransientService_NewInstanceEachTime(t *testing.T) {
+func (s *ServiceSuite) TestTransientService_NewInstanceEachTime() {
 	callCount := 0
 	provider := func(c *Container) (*testService, error) {
 		callCount++
@@ -103,88 +101,64 @@ func TestTransientService_NewInstanceEachTime(t *testing.T) {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 1: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 2: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 2")
 
-	if callCount != 2 {
-		t.Errorf("provider called %d times, want 2", callCount)
-	}
+	assert.Equal(s.T(), 2, callCount, "provider should be called twice")
 
 	// Instances should be different
 	ts1 := instance1.(*testService)
 	ts2 := instance2.(*testService)
-	if ts1.id == ts2.id {
-		t.Error("transient instances should be different")
-	}
+	assert.NotEqual(s.T(), ts1.id, ts2.id, "transient instances should be different")
 }
 
-func TestEagerSingleton_IsEagerTrue(t *testing.T) {
+func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 	provider := func(c *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
 	svc := newEagerSingleton("test", "*gaz.testService", provider)
 
-	if !svc.isEager() {
-		t.Error("eagerSingleton.isEager() should return true")
-	}
+	assert.True(s.T(), svc.isEager(), "eagerSingleton.isEager() should return true")
 
 	// Verify lazy and transient are NOT eager
 	lazy := newLazySingleton("test", "*gaz.testService", provider)
-	if lazy.isEager() {
-		t.Error("lazySingleton.isEager() should return false")
-	}
+	assert.False(s.T(), lazy.isEager(), "lazySingleton.isEager() should return false")
 
 	transient := newTransient("test", "*gaz.testService", provider)
-	if transient.isEager() {
-		t.Error("transientService.isEager() should return false")
-	}
+	assert.False(s.T(), transient.isEager(), "transientService.isEager() should return false")
 }
 
-func TestInstanceService_ReturnsValue(t *testing.T) {
+func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 	original := &testService{id: 42}
 	svc := newInstanceService("test", "*gaz.testService", original)
 	c := New()
 
 	instance, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance")
 
 	// Verify we got the exact same value (pointer equality)
-	if instance != original {
-		t.Error("instanceService should return the exact value provided")
-	}
+	assert.Same(s.T(), original, instance, "instanceService should return the exact value provided")
 
 	// Call again to confirm same value
 	instance2, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 2: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 2")
 
-	if instance2 != original {
-		t.Error("instanceService should always return the same value")
-	}
+	assert.Same(s.T(), original, instance2, "instanceService should always return the same value")
 }
 
-func TestInstanceService_IsNotEager(t *testing.T) {
+func (s *ServiceSuite) TestInstanceService_IsNotEager() {
 	original := &testService{id: 1}
 	svc := newInstanceService("test", "*gaz.testService", original)
 
 	// Instance service is already instantiated, so isEager() should be false
 	// (no need to instantiate at Build() time)
-	if svc.isEager() {
-		t.Error("instanceService.isEager() should return false")
-	}
+	assert.False(s.T(), svc.isEager(), "instanceService.isEager() should return false")
 }
 
-func TestServiceWrapper_NameAndTypeName(t *testing.T) {
+func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 	provider := func(c *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
@@ -222,18 +196,14 @@ func TestServiceWrapper_NameAndTypeName(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.wrapper.name(); got != tt.expName {
-				t.Errorf("name() = %q, want %q", got, tt.expName)
-			}
-			if got := tt.wrapper.typeName(); got != tt.expType {
-				t.Errorf("typeName() = %q, want %q", got, tt.expType)
-			}
+		s.Run(tt.name, func() {
+			assert.Equal(s.T(), tt.expName, tt.wrapper.name())
+			assert.Equal(s.T(), tt.expType, tt.wrapper.typeName())
 		})
 	}
 }
 
-func TestEagerSingleton_BehavesLikeLazySingleton(t *testing.T) {
+func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 	// Eager singleton should cache like lazy singleton
 	callCount := 0
 	provider := func(c *Container) (*testService, error) {
@@ -245,20 +215,11 @@ func TestEagerSingleton_BehavesLikeLazySingleton(t *testing.T) {
 	c := New()
 
 	instance1, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 1: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 1")
 
 	instance2, err := svc.getInstance(c, nil)
-	if err != nil {
-		t.Fatalf("getInstance 2: %v", err)
-	}
+	require.NoError(s.T(), err, "getInstance 2")
 
-	if callCount != 1 {
-		t.Errorf("provider called %d times, want 1", callCount)
-	}
-
-	if instance1 != instance2 {
-		t.Error("eager singleton instances should be identical")
-	}
+	assert.Equal(s.T(), 1, callCount, "provider should be called once")
+	assert.Same(s.T(), instance1, instance2, "eager singleton instances should be identical")
 }
