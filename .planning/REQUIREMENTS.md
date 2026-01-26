@@ -49,9 +49,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CONF-01**: Developer can load config from environment variables
-- [ ] **CONF-02**: Developer can load config from CLI flags (Cobra integration)
-- [ ] **CONF-03**: Developer can load config from files (YAML, JSON, TOML)
+- [x] **CONF-01**: Developer can load config from environment variables
+- [x] **CONF-02**: Developer can load config from CLI flags (Cobra integration)
+- [x] **CONF-03**: Developer can load config from files (YAML, JSON, TOML)
 
 ### Logging
 
@@ -124,9 +124,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | APP-04 | Phase 3 | Complete |
 | APP-05 | Phase 3 | Complete |
 | APP-06 | Phase 3 | Complete |
-| CONF-01 | Phase 4 | Pending |
-| CONF-02 | Phase 4 | Pending |
-| CONF-03 | Phase 4 | Pending |
+| CONF-01 | Phase 4 | Complete |
+| CONF-02 | Phase 4 | Complete |
+| CONF-03 | Phase 4 | Complete |
 | HLTH-01 | Phase 5 | Pending |
 | HLTH-02 | Phase 5 | Pending |
 | HLTH-03 | Phase 5 | Pending |

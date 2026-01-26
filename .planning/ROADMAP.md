@@ -16,7 +16,7 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 - [x] **Phase 2: Lifecycle Management** - Deterministic startup/shutdown with hooks
 - [x] **Phase 2.1: Improve Code Quality** - Validate linter config (INSERTED)
 - [x] **Phase 3: App Builder + Cobra** - Fluent API and CLI integration
-- [ ] **Phase 4: Config System** - Multi-source configuration loading
+- [x] **Phase 4: Config System** - Multi-source configuration loading
 - [ ] **Phase 5: Health Checks** - Readiness/liveness probes for production
 - [ ] **Phase 6: Logging (slog)** - Structured logging with context propagation
 
@@ -44,7 +44,7 @@ Plans:
 
 ### Phase 1.1: Update Test Framework for Testify (INSERTED)
 **Goal:** All 6 test files migrated to testify suite pattern with require/assert assertions
-**Depends on:** Phase 1
+**Depends on**: Phase 1
 **Plans:** 3 plans
 
 Plans:
@@ -85,7 +85,7 @@ Plans:
 
 ### Phase 2.1: Improve Code Quality (INSERTED)
 **Goal:** All linter warnings resolved, `make lint` passes cleanly
-**Depends on:** Phase 2
+**Depends on**: Phase 2
 **Plans:** 5 plans
 
 Plans:
@@ -123,10 +123,11 @@ Plans:
   1. Developer can load config from environment variables
   2. Developer can load config from files (YAML, JSON, TOML)
   3. Developer can load config from CLI flags with Cobra integration
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [x] 04-01-PLAN.md — Core Config Infrastructure (Viper, Interfaces, App integration) ✓
+- [x] 04-02-PLAN.md — Cobra Flag Binding & Profile Support ✓
 
 ### Phase 5: Health Checks
 **Goal**: Applications expose production-ready health endpoints
@@ -169,7 +170,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 2. Lifecycle Management | 4/4 | Complete | 2026-01-26 |
 | 2.1 Improve Code Quality | 5/5 | Complete | 2026-01-26 |
 | 3. App Builder + Cobra | 4/4 | Complete | 2026-01-26 |
-| 4. Config System | 0/? | Not started | - |
+| 4. Config System | 2/2 | Complete | 2026-01-26 |
 | 5. Health Checks | 0/? | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
 
