@@ -26,6 +26,11 @@ type Container struct {
 	// This enables cycle detection when providers call Resolve[T]().
 	resolutionChains map[int64][]string
 	chainMu          sync.Mutex
+
+	// dependencyGraph stores the dependency graph as an adjacency list (parent -> children).
+	// This is used for lifecycle management (ordered startup/shutdown).
+	dependencyGraph map[string][]string
+	graphMu         sync.RWMutex
 }
 
 // New creates a new empty Container.
@@ -35,6 +40,7 @@ func New() *Container {
 	return &Container{
 		services:         make(map[string]any),
 		resolutionChains: make(map[int64][]string),
+		dependencyGraph:  make(map[string][]string),
 	}
 }
 
@@ -187,4 +193,29 @@ func (c *Container) resolveByName(name string, _ []string) (any, error) {
 	}
 
 	return instance, nil
+}
+
+// recordDependency records a dependency between a parent service and a child service.
+// This is used to build the dependency graph for lifecycle management.
+func (c *Container) recordDependency(parent, child string) {
+	c.graphMu.Lock()
+	defer c.graphMu.Unlock()
+	c.dependencyGraph[parent] = append(c.dependencyGraph[parent], child)
+}
+
+// getGraph returns a copy of the dependency graph.
+// The returned map keys are parent services, and values are lists of child services.
+func (c *Container) getGraph() map[string][]string {
+	c.graphMu.RLock()
+	defer c.graphMu.RUnlock()
+
+	// Deep copy to prevent races if caller modifies result
+	clone := make(map[string][]string, len(c.dependencyGraph))
+	for k, v := range c.dependencyGraph {
+		// Copy slice
+		deps := make([]string, len(v))
+		copy(deps, v)
+		clone[k] = deps
+	}
+	return clone
 }
