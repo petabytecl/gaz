@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2.1 of 6 (Improve Code Quality)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 02.1-02-PLAN.md
+Last activity: 2026-01-26 — Completed 02.1-04-PLAN.md
 
-Progress: [██████████] 100% (of defined plans)
+Progress: [████████████████████] 100% (of defined plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: 5 min
-- Total execution time: 1.5 hours
+- Total execution time: 1.7 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [██████████] 100% (of defined plans)
 | 1.1 | 3 | 11 min | 4 min |
 | 1.2 | 1 | 5 min | 5 min |
 | 2 | 4 | 39 min | 10 min |
-| 2.1 | 3 | 13 min | 4 min |
+| 2.1 | 4 | 25 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (2 min), 02-04 (15 min), 02.1-01 (3 min), 02.1-02 (3 min), 02.1-03 (7 min)
-- Trend: Variable
+- Last 5 plans: 02-04 (15 min), 02.1-01 (3 min), 02.1-02 (3 min), 02.1-03 (7 min), 02.1-04 (12 min)
+- Trend: Variable (larger plans take longer)
 
 *Updated after each plan completion*
 
@@ -88,6 +88,9 @@ Recent decisions affecting current work:
 - [02.1-02]: Extract magic numbers to named constants (defaultShutdownTimeout, decimalBase)
 - [02.1-02]: Use errors.Join for multi-error aggregation instead of fmt.Errorf
 - [02.1-02]: Check type assertions with ok pattern for defensive programming
+- [02.1-04]: Use s.Require().Error/NoError/ErrorIs for error assertions to stop test on failure
+- [02.1-04]: Rename unused closure parameters to _ for clarity
+- [02.1-04]: Convert package-level assert.X(s.T()) to suite methods s.X()
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T19:58:34Z
-Stopped at: Completed 02.1-02-PLAN.md
+Last session: 2026-01-26T20:00:30Z
+Stopped at: Completed 02.1-04-PLAN.md
 Resume file: None
