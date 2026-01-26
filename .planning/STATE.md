@@ -83,7 +83,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- [testing] Improve test coverage to 90%
 
 ### Blockers/Concerns
 
