@@ -26,3 +26,18 @@ func New() *Container {
 		services: make(map[string]any),
 	}
 }
+
+// register adds a service to the container. Internal use only.
+func (c *Container) register(name string, svc serviceWrapper) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.services[name] = svc
+}
+
+// hasService checks if a service is registered. Internal use only.
+func (c *Container) hasService(name string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	_, ok := c.services[name]
+	return ok
+}
