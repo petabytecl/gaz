@@ -1,0 +1,48 @@
+COVERAGE_THRESHOLD := 90
+
+.PHONY: help test cover fmt fmt-check lint clean
+
+help: ## Show this help message
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  test       Run tests with race detector"
+	@echo "  cover      Run tests with coverage and enforce $(COVERAGE_THRESHOLD)% threshold"
+	@echo "  fmt        Format code (gofmt + goimports)"
+	@echo "  fmt-check  Check formatting (for CI)"
+	@echo "  lint       Run linter"
+	@echo "  clean      Remove generated files"
+	@echo "  help       Show this help message"
+
+test: ## Run tests
+	go test -race ./...
+
+cover: ## Run tests with coverage
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -func=coverage.out
+	@coverage=$$(go tool cover -func=coverage.out | grep total | grep -oE '[0-9]+\.[0-9]+'); \
+	echo "Coverage: $${coverage}%"; \
+	awk -v cover="$${coverage}" -v thresh="$(COVERAGE_THRESHOLD)" 'BEGIN { if (cover < thresh) exit 1 }' || (echo "Coverage below threshold ($(COVERAGE_THRESHOLD)%)" && exit 1)
+
+fmt: ## Format code
+	gofmt -w .
+	goimports -w .
+
+fmt-check: ## Check formatting
+	@if [ -n "$$(gofmt -l .)" ]; then \
+		echo "gofmt check failed"; \
+		gofmt -l .; \
+		exit 1; \
+	fi
+	@if [ -n "$$(goimports -l .)" ]; then \
+		echo "goimports check failed"; \
+		goimports -l .; \
+		exit 1; \
+	fi
+
+lint: ## Run linter
+	@command -v golangci-lint >/dev/null || (echo "golangci-lint not installed. Run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+	golangci-lint run
+
+clean: ## Clean generated files
+	rm -f coverage.out
