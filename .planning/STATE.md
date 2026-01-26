@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 2.1 complete - ready for next phase
+**Current focus:** Phase 3 - App Builder + Cobra (next)
 
 ## Current Position
 
