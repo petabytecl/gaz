@@ -16,12 +16,17 @@ import (
 
 const defaultShutdownTimeout = 30 * time.Second
 
+// providerWithErrorReturnCount is the expected number of return values for a provider
+// that returns (T, error).
+const providerWithErrorReturnCount = 2
+
 // AppOptions configuration for App.
 type AppOptions struct {
 	ShutdownTimeout time.Duration
 }
 
 // AppOption configures AppOptions.
+//
 // Deprecated: Use Option instead.
 type AppOption func(*AppOptions)
 
@@ -83,6 +88,7 @@ func New(opts ...Option) *App {
 }
 
 // NewApp creates a new App with the given container and options.
+//
 // Deprecated: Use New() with fluent provider methods instead.
 func NewApp(c *Container, opts ...AppOption) *App {
 	options := AppOptions{
@@ -170,7 +176,10 @@ func (a *App) registerProvider(provider any, scope serviceScope, lazy bool) erro
 
 	// Validate input: must accept *Container
 	if providerType.NumIn() != 1 {
-		return fmt.Errorf("%w: provider must accept exactly one argument (*Container)", ErrInvalidProvider)
+		return fmt.Errorf(
+			"%w: provider must accept exactly one argument (*Container)",
+			ErrInvalidProvider,
+		)
 	}
 	containerType := reflect.TypeOf((*Container)(nil))
 	if providerType.In(0) != containerType {
@@ -179,10 +188,11 @@ func (a *App) registerProvider(provider any, scope serviceScope, lazy bool) erro
 
 	// Validate output: must return (T) or (T, error)
 	numOut := providerType.NumOut()
+	hasErrorReturn := numOut == providerWithErrorReturnCount
 	if numOut < 1 || numOut > 2 {
 		return fmt.Errorf("%w: provider must return (T) or (T, error)", ErrInvalidProvider)
 	}
-	if numOut == 2 {
+	if hasErrorReturn {
 		errorType := reflect.TypeOf((*error)(nil)).Elem()
 		if !providerType.Out(1).Implements(errorType) {
 			return fmt.Errorf("%w: second return value must be error", ErrInvalidProvider)
@@ -190,36 +200,37 @@ func (a *App) registerProvider(provider any, scope serviceScope, lazy bool) erro
 	}
 
 	returnType := providerType.Out(0)
-	typeName := returnType.String()
+	typeNameStr := typeName(returnType)
 
 	// Create a wrapped provider that handles both (T) and (T, error) signatures
 	providerValue := reflect.ValueOf(provider)
 	wrappedProvider := func(c *Container) (any, error) {
 		results := providerValue.Call([]reflect.Value{reflect.ValueOf(c)})
 		instance := results[0].Interface()
-		if numOut == 2 && !results[1].IsNil() {
-			return nil, results[1].Interface().(error)
+		if hasErrorReturn && !results[1].IsNil() {
+			err, _ := results[1].Interface().(error)
+			return nil, err
 		}
 		return instance, nil
 	}
 
 	// Check for duplicate registration
-	if a.container.hasService(typeName) {
-		return fmt.Errorf("%w: %s", ErrDuplicate, typeName)
+	if a.container.hasService(typeNameStr) {
+		return fmt.Errorf("%w: %s", ErrDuplicate, typeNameStr)
 	}
 
 	// Create appropriate service wrapper
 	var svc serviceWrapper
 	switch {
 	case scope == scopeTransient:
-		svc = newTransientAny(typeName, typeName, wrappedProvider)
+		svc = newTransientAny(typeNameStr, typeNameStr, wrappedProvider)
 	case !lazy:
-		svc = newEagerSingletonAny(typeName, typeName, wrappedProvider, nil, nil)
+		svc = newEagerSingletonAny(typeNameStr, typeNameStr, wrappedProvider, nil, nil)
 	default:
-		svc = newLazySingletonAny(typeName, typeName, wrappedProvider, nil, nil)
+		svc = newLazySingletonAny(typeNameStr, typeNameStr, wrappedProvider, nil, nil)
 	}
 
-	a.container.register(typeName, svc)
+	a.container.register(typeNameStr, svc)
 	return nil
 }
 
@@ -230,22 +241,50 @@ func (a *App) registerInstance(instance any) error {
 		return fmt.Errorf("%w: instance cannot be nil", ErrInvalidProvider)
 	}
 
-	typeName := instanceType.String()
+	typeNameStr := typeName(instanceType)
 
 	// Check for duplicate registration
-	if a.container.hasService(typeName) {
-		return fmt.Errorf("%w: %s", ErrDuplicate, typeName)
+	if a.container.hasService(typeNameStr) {
+		return fmt.Errorf("%w: %s", ErrDuplicate, typeNameStr)
 	}
 
-	svc := newInstanceServiceAny(typeName, typeName, instance, nil, nil)
-	a.container.register(typeName, svc)
+	svc := newInstanceServiceAny(typeNameStr, typeNameStr, instance, nil, nil)
+	a.container.register(typeNameStr, svc)
+	return nil
+}
+
+// Build validates all registrations and instantiates eager services.
+// It aggregates all errors and returns them using errors.Join.
+// Build is idempotent - calling it multiple times after success returns nil.
+func (a *App) Build() error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if a.built {
+		return nil // Already built, idempotent
+	}
+
+	// Collect any registration errors
+	var errs []error
+	errs = append(errs, a.buildErrors...)
+
+	// Delegate to container.Build() for eager instantiation
+	if err := a.container.Build(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	a.built = true
 	return nil
 }
 
 // Run executes the application lifecycle.
 // It builds the container, starts services in order, and waits for a signal or stop call.
 func (a *App) Run(ctx context.Context) error {
-	if err := a.container.Build(); err != nil {
+	if err := a.Build(); err != nil {
 		return err
 	}
 
