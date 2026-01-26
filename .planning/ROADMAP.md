@@ -11,6 +11,8 @@ gaz delivers a unified Go application framework through 6 phases: starting with 
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Core DI Container** - Type-safe dependency injection with generics
+- [ ] **Phase 1.1: Update Test Framework for Testify** - Migrate to testify assertions (INSERTED)
+- [ ] **Phase 1.2: Create Makefile** - Testing, coverage, formatting, linting (INSERTED)
 - [ ] **Phase 2: Lifecycle Management** - Deterministic startup/shutdown with hooks
 - [ ] **Phase 3: App Builder + Cobra** - Fluent API and CLI integration
 - [ ] **Phase 4: Config System** - Multi-source configuration loading
@@ -38,6 +40,30 @@ Plans:
 - [x] 01-04-PLAN.md — Resolution & cycle detection (Resolve[T]) ✓
 - [x] 01-05-PLAN.md — Struct tag injection (gaz:"inject") ✓
 - [x] 01-06-PLAN.md — Build phase & integration tests ✓
+
+### Phase 1.1: Update Test Framework for Testify (INSERTED)
+**Goal:** All 6 test files migrated to testify suite pattern with require/assert assertions
+**Depends on:** Phase 1
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01.1-01-PLAN.md — Setup testify + migrate types/registration/service tests
+- [ ] 01.1-02-PLAN.md — Migrate inject and resolution tests
+- [ ] 01.1-03-PLAN.md — Migrate container tests + final verification
+
+**Details:**
+Migrate test framework to use https://github.com/stretchr/testify for improved assertions and test utilities.
+
+### Phase 1.2: Create Makefile (INSERTED)
+**Goal:** [Urgent work - to be planned]
+**Depends on:** Phase 1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 1.2 to break down)
+
+**Details:**
+Create Makefile with targets for testing, coverage, formatting, linting, and other development workflow tasks.
 
 ### Phase 2: Lifecycle Management
 **Goal**: App startup and shutdown are deterministic and graceful
@@ -116,6 +142,8 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core DI Container | 6/6 | Complete | 2026-01-26 |
+| 1.1 Update Test Framework | 0/3 | Planned | - |
+| 1.2 Create Makefile | 0/? | Not started | - |
 | 2. Lifecycle Management | 0/? | Not started | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |
 | 4. Config System | 0/? | Not started | - |
