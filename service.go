@@ -33,14 +33,73 @@ type serviceWrapper interface {
 	hasLifecycle() bool
 }
 
+// baseService implements common functionality for all service wrappers.
+// It handles metadata (name, type) and lifecycle hook execution.
+type baseService struct {
+	serviceName     string
+	serviceTypeName string
+	startHooks      []func(context.Context, any) error
+	stopHooks       []func(context.Context, any) error
+}
+
+func (s *baseService) name() string {
+	return s.serviceName
+}
+
+func (s *baseService) typeName() string {
+	return s.serviceTypeName
+}
+
+func (s *baseService) hasLifecycle() bool {
+	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+}
+
+func (s *baseService) runStartHooks(ctx context.Context, instance any) error {
+	for _, hook := range s.startHooks {
+		if err := hook(ctx, instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *baseService) runStopHooks(ctx context.Context, instance any) error {
+	for i := len(s.stopHooks) - 1; i >= 0; i-- {
+		if err := s.stopHooks[i](ctx, instance); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error {
+	if err := s.runStartHooks(ctx, instance); err != nil {
+		return err
+	}
+
+	if starter, ok := instance.(Starter); ok {
+		if err := starter.OnStart(ctx); err != nil {
+			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
+		}
+	}
+	return nil
+}
+
+func (s *baseService) runStopLifecycle(ctx context.Context, instance any) error {
+	if stopper, ok := instance.(Stopper); ok {
+		if err := stopper.OnStop(ctx); err != nil {
+			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
+		}
+	}
+
+	return s.runStopHooks(ctx, instance)
+}
+
 // lazySingleton is the default service type - creates instance on first resolve,
 // then caches it for all subsequent calls.
 type lazySingleton[T any] struct {
-	serviceName     string
-	serviceTypeName string
-	provider        func(*Container) (T, error)
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	provider func(*Container) (T, error)
 
 	mu       sync.Mutex
 	instance T
@@ -54,20 +113,14 @@ func newLazySingleton[T any](
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *lazySingleton[T] {
 	return &lazySingleton[T]{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		provider:        provider,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		provider: provider,
 	}
-}
-
-func (s *lazySingleton[T]) name() string {
-	return s.serviceName
-}
-
-func (s *lazySingleton[T]) typeName() string {
-	return s.serviceTypeName
 }
 
 func (s *lazySingleton[T]) isEager() bool {
@@ -101,28 +154,14 @@ func (s *lazySingleton[T]) start(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.instance); err != nil {
-			return err
-		}
-	}
-	return nil
+	return s.runStartHooks(ctx, s.instance)
 }
 
 func (s *lazySingleton[T]) stop(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.instance); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *lazySingleton[T]) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return s.runStopHooks(ctx, s.instance)
 }
 
 // transientService creates a new instance on every resolve call.
@@ -179,11 +218,8 @@ func (s *transientService[T]) hasLifecycle() bool          { return false }
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
 // The isEager() method returns true so Build() knows to instantiate it.
 type eagerSingleton[T any] struct {
-	serviceName     string
-	serviceTypeName string
-	provider        func(*Container) (T, error)
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	provider func(*Container) (T, error)
 
 	mu       sync.Mutex
 	instance T
@@ -197,20 +233,14 @@ func newEagerSingleton[T any](
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *eagerSingleton[T] {
 	return &eagerSingleton[T]{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		provider:        provider,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		provider: provider,
 	}
-}
-
-func (s *eagerSingleton[T]) name() string {
-	return s.serviceName
-}
-
-func (s *eagerSingleton[T]) typeName() string {
-	return s.serviceTypeName
 }
 
 func (s *eagerSingleton[T]) isEager() bool {
@@ -249,19 +279,7 @@ func (s *eagerSingleton[T]) start(ctx context.Context) error {
 		return nil
 	}
 
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.instance); err != nil {
-			return err
-		}
-	}
-
-	if starter, ok := any(s.instance).(Starter); ok {
-		if err := starter.OnStart(ctx); err != nil {
-			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
-		}
-	}
-
-	return nil
+	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *eagerSingleton[T]) stop(ctx context.Context) error {
@@ -272,33 +290,18 @@ func (s *eagerSingleton[T]) stop(ctx context.Context) error {
 		return nil
 	}
 
-	if stopper, ok := any(s.instance).(Stopper); ok {
-		if err := stopper.OnStop(ctx); err != nil {
-			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
-		}
-	}
-
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.instance); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.runStopLifecycle(ctx, s.instance)
 }
 
 func (s *eagerSingleton[T]) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return true
 }
 
 // instanceService wraps a pre-built value. No provider is called.
 // Used by .Instance(val) registration.
 type instanceService[T any] struct {
-	serviceName     string
-	serviceTypeName string
-	value           T
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	value T
 }
 
 // newInstanceService creates a new instance service wrapper with a pre-built value.
@@ -308,20 +311,14 @@ func newInstanceService[T any](
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *instanceService[T] {
 	return &instanceService[T]{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		value:           value,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		value: value,
 	}
-}
-
-func (s *instanceService[T]) name() string {
-	return s.serviceName
-}
-
-func (s *instanceService[T]) typeName() string {
-	return s.serviceTypeName
 }
 
 func (s *instanceService[T]) isEager() bool {
@@ -333,39 +330,15 @@ func (s *instanceService[T]) getInstance(_ *Container, _ []string) (any, error) 
 }
 
 func (s *instanceService[T]) start(ctx context.Context) error {
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.value); err != nil {
-			return err
-		}
-	}
-
-	if starter, ok := any(s.value).(Starter); ok {
-		if err := starter.OnStart(ctx); err != nil {
-			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
-		}
-	}
-
-	return nil
+	return s.runStartLifecycle(ctx, s.value)
 }
 
 func (s *instanceService[T]) stop(ctx context.Context) error {
-	if stopper, ok := any(s.value).(Stopper); ok {
-		if err := stopper.OnStop(ctx); err != nil {
-			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
-		}
-	}
-
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.value); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.runStopLifecycle(ctx, s.value)
 }
 
 func (s *instanceService[T]) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return true
 }
 
 // =============================================================================
@@ -376,11 +349,8 @@ func (s *instanceService[T]) hasLifecycle() bool {
 
 // lazySingletonAny is a non-generic version of lazySingleton for reflection-based registration.
 type lazySingletonAny struct {
-	serviceName     string
-	serviceTypeName string
-	provider        func(*Container) (any, error)
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	provider func(*Container) (any, error)
 
 	mu       sync.Mutex
 	instance any
@@ -393,17 +363,17 @@ func newLazySingletonAny(
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *lazySingletonAny {
 	return &lazySingletonAny{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		provider:        provider,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		provider: provider,
 	}
 }
 
-func (s *lazySingletonAny) name() string     { return s.serviceName }
-func (s *lazySingletonAny) typeName() string { return s.serviceTypeName }
-func (s *lazySingletonAny) isEager() bool    { return false }
+func (s *lazySingletonAny) isEager() bool { return false }
 
 func (s *lazySingletonAny) getInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
@@ -431,28 +401,14 @@ func (s *lazySingletonAny) start(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.instance); err != nil {
-			return err
-		}
-	}
-	return nil
+	return s.runStartHooks(ctx, s.instance)
 }
 
 func (s *lazySingletonAny) stop(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.instance); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *lazySingletonAny) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return s.runStopHooks(ctx, s.instance)
 }
 
 // transientServiceAny is a non-generic version of transientService.
@@ -496,11 +452,8 @@ func (s *transientServiceAny) hasLifecycle() bool          { return false }
 
 // eagerSingletonAny is a non-generic version of eagerSingleton.
 type eagerSingletonAny struct {
-	serviceName     string
-	serviceTypeName string
-	provider        func(*Container) (any, error)
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	provider func(*Container) (any, error)
 
 	mu       sync.Mutex
 	instance any
@@ -513,17 +466,17 @@ func newEagerSingletonAny(
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *eagerSingletonAny {
 	return &eagerSingletonAny{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		provider:        provider,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		provider: provider,
 	}
 }
 
-func (s *eagerSingletonAny) name() string     { return s.serviceName }
-func (s *eagerSingletonAny) typeName() string { return s.serviceTypeName }
-func (s *eagerSingletonAny) isEager() bool    { return true }
+func (s *eagerSingletonAny) isEager() bool { return true }
 
 func (s *eagerSingletonAny) getInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
@@ -555,19 +508,7 @@ func (s *eagerSingletonAny) start(ctx context.Context) error {
 		return nil
 	}
 
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.instance); err != nil {
-			return err
-		}
-	}
-
-	if starter, ok := s.instance.(Starter); ok {
-		if err := starter.OnStart(ctx); err != nil {
-			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
-		}
-	}
-
-	return nil
+	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *eagerSingletonAny) stop(ctx context.Context) error {
@@ -578,32 +519,17 @@ func (s *eagerSingletonAny) stop(ctx context.Context) error {
 		return nil
 	}
 
-	if stopper, ok := s.instance.(Stopper); ok {
-		if err := stopper.OnStop(ctx); err != nil {
-			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
-		}
-	}
-
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.instance); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.runStopLifecycle(ctx, s.instance)
 }
 
 func (s *eagerSingletonAny) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return true
 }
 
 // instanceServiceAny is a non-generic version of instanceService.
 type instanceServiceAny struct {
-	serviceName     string
-	serviceTypeName string
-	value           any
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
+	baseService
+	value any
 }
 
 func newInstanceServiceAny(
@@ -612,54 +538,30 @@ func newInstanceServiceAny(
 	startHooks, stopHooks []func(context.Context, any) error,
 ) *instanceServiceAny {
 	return &instanceServiceAny{
-		serviceName:     name,
-		serviceTypeName: typeName,
-		value:           value,
-		startHooks:      startHooks,
-		stopHooks:       stopHooks,
+		baseService: baseService{
+			serviceName:     name,
+			serviceTypeName: typeName,
+			startHooks:      startHooks,
+			stopHooks:       stopHooks,
+		},
+		value: value,
 	}
 }
 
-func (s *instanceServiceAny) name() string     { return s.serviceName }
-func (s *instanceServiceAny) typeName() string { return s.serviceTypeName }
-func (s *instanceServiceAny) isEager() bool    { return false }
+func (s *instanceServiceAny) isEager() bool { return false }
 
 func (s *instanceServiceAny) getInstance(_ *Container, _ []string) (any, error) {
 	return s.value, nil
 }
 
 func (s *instanceServiceAny) start(ctx context.Context) error {
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, s.value); err != nil {
-			return err
-		}
-	}
-
-	if starter, ok := s.value.(Starter); ok {
-		if err := starter.OnStart(ctx); err != nil {
-			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
-		}
-	}
-
-	return nil
+	return s.runStartLifecycle(ctx, s.value)
 }
 
 func (s *instanceServiceAny) stop(ctx context.Context) error {
-	if stopper, ok := s.value.(Stopper); ok {
-		if err := stopper.OnStop(ctx); err != nil {
-			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
-		}
-	}
-
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, s.value); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.runStopLifecycle(ctx, s.value)
 }
 
 func (s *instanceServiceAny) hasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
+	return true
 }

@@ -114,13 +114,14 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- **Known issue**: Coverage at 85.2% (below 90% threshold) due to *Any wrapper lifecycle methods that are never called (filtered out by hasLifecycle()). Technical debt from Plan 01.
+None.
 
 ### Roadmap Evolution
 
 - Phase 1.1 inserted after Phase 1: update test framework for testify (URGENT)
 - Phase 1.2 inserted after Phase 1: create makefile for testing, coverage, formatting, linting (URGENT)
 - Phase 2.1 inserted after Phase 2: improve code quality validating the linter and the new config (URGENT)
+- 2026-01-26: Improved test coverage to 92.9% by refactoring service wrappers and adding tests for reflection-based registration.
 
 ## Session Continuity
 
