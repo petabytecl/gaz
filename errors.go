@@ -23,4 +23,7 @@ var (
 
 	// ErrInvalidProvider is returned when a provider function has invalid signature.
 	ErrInvalidProvider = errors.New("gaz: invalid provider signature")
+
+	// ErrDuplicateModule is returned when a module with the same name is registered twice.
+	ErrDuplicateModule = errors.New("gaz: duplicate module name")
 )

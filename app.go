@@ -53,8 +53,9 @@ func withShutdownTimeoutLegacy(d time.Duration) AppOption {
 type App struct {
 	container   *Container
 	opts        AppOptions
-	built       bool    // tracks if Build() was called
-	buildErrors []error // collects registration errors for Build()
+	built       bool            // tracks if Build() was called
+	buildErrors []error         // collects registration errors for Build()
+	modules     map[string]bool // tracks registered module names for duplicate detection
 
 	mu      sync.Mutex
 	running bool
@@ -80,6 +81,7 @@ func New(opts ...Option) *App {
 		opts: AppOptions{
 			ShutdownTimeout: defaultShutdownTimeout,
 		},
+		modules: make(map[string]bool),
 	}
 	for _, opt := range opts {
 		opt(app)
