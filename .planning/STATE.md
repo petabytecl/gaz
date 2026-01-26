@@ -110,7 +110,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+1 pending todo(s) in `.planning/todos/pending/`:
+- [testing] Improve test coverage to 90% threshold
 
 ### Blockers/Concerns
 
