@@ -47,7 +47,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01.1-01-PLAN.md — Setup testify + migrate types/registration/service tests
+- [x] 01.1-01-PLAN.md — Setup testify + migrate types/registration/service tests ✓
 - [ ] 01.1-02-PLAN.md — Migrate inject and resolution tests
 - [ ] 01.1-03-PLAN.md — Migrate container tests + final verification
 
@@ -142,7 +142,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core DI Container | 6/6 | Complete | 2026-01-26 |
-| 1.1 Update Test Framework | 0/3 | Planned | - |
+| 1.1 Update Test Framework | 1/3 | In progress | - |
 | 1.2 Create Makefile | 0/? | Not started | - |
 | 2. Lifecycle Management | 0/? | Not started | - |
 | 3. App Builder + Cobra | 0/? | Not started | - |

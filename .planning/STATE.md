@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 2 - Lifecycle Management
+**Current focus:** Phase 1.1 - Update Test Framework for Testify
 
 ## Current Position
 
-Phase: 2 of 6 (Lifecycle Management)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-01-26 — Completed Phase 1 (Core DI Container)
+Phase: 1.1 of 6 (Update Test Framework for Testify)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-26 — Completed 01.1-01-PLAN.md
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 5 min
+- Total plans completed: 7
+- Average duration: 4 min
 - Total execution time: 0.5 hours
 
 **By Phase:**
@@ -28,9 +28,10 @@ Progress: [██░░░░░░░░] 17%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 6 | 28 min | 5 min |
+| 1.1 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 01-03 (3 min), 01-04 (8 min), 01-05 (5 min), 01-06 (4 min)
+- Last 5 plans: 01-03 (3 min), 01-04 (8 min), 01-05 (5 min), 01-06 (4 min), 01.1-01 (3 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -59,6 +60,8 @@ Recent decisions affecting current work:
 - [01-05]: Silent skip for non-struct pointers — allows injection to work seamlessly with any type
 - [01-06]: Build() is idempotent — calling multiple times is safe
 - [01-06]: Build() error includes service name — enables debugging of which eager service failed
+- [01.1-01]: Use suite.Suite for all test files — consistent pattern across codebase
+- [01.1-01]: require for critical assertions, assert for value checks — follows testify best practices
 
 ### Pending Todos
 
@@ -68,8 +71,13 @@ None yet.
 
 None yet.
 
+### Roadmap Evolution
+
+- Phase 1.1 inserted after Phase 1: update test framework for testify (URGENT)
+- Phase 1.2 inserted after Phase 1: create makefile for testing, coverage, formatting, linting (URGENT)
+
 ## Session Continuity
 
-Last session: 2026-01-26T16:12:44Z
-Stopped at: Completed 01-06-PLAN.md (Phase 1 complete)
+Last session: 2026-01-26T16:53:32Z
+Stopped at: Completed 01.1-01-PLAN.md
 Resume file: None
