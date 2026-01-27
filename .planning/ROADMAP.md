@@ -32,11 +32,11 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
   3. All reflection-based helpers (`registerProvider`, `registerInstance`, service wrappers) are removed
   4. All example applications compile and use `For[T]()` registration pattern
   5. All tests pass and use `For[T]()` registration pattern
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
+- [ ] 11-01-PLAN.md — Remove deprecated APIs and migrate tests to For[T]()
+- [ ] 11-02-PLAN.md — Rewrite examples and update documentation
 
 ---
 
