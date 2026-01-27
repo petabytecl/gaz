@@ -8,13 +8,19 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v1.1 Security & Hardening
+## Current State
 
-**Goal:** Improve application robustness with strict configuration validation and reliable shutdown guarantees.
+**Shipped:** v1.1 Security & Hardening (2026-01-27)
 
-**Target features:**
-- Config Validation (struct tags, early exit)
-- Shutdown Hardening (timeout enforcement)
+The framework now provides production-grade robustness:
+- Config validation at startup (struct tags, early exit)
+- Shutdown hardening (timeout enforcement, blame logging)
+- Provider config registration (service-level config)
+- Comprehensive documentation and examples
+
+**Codebase:** 11,319 lines of Go
+
+**Next:** Planning for v2.0
 
 ## Requirements
 
@@ -31,12 +37,14 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 - ✓ Config binding to typed structs — v1.0
 - ✓ Health check subsystem (readiness/liveness probes) — v1.0
 - ✓ slog integration (logger via DI, context propagation) — v1.0
+- ✓ Config validation (struct tags, early exit) — v1.1
+- ✓ Shutdown hardening (timeout enforcement, blame logging) — v1.1
+- ✓ Provider config registration — v1.1
+- ✓ Comprehensive documentation and examples — v1.1
 
 ### Active
 
-- [ ] Config validation (struct tags, early exit)
-- [ ] Shutdown hardening (timeout enforcement)
-- [ ] Request-scoped logging with trace IDs
+(None — ready for next milestone planning)
 
 ### Out of Scope
 
@@ -47,9 +55,9 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 
 ## Context
 
-Shipped v1.0 MVP on 2026-01-26.
-Framework consolidated DI, Lifecycle, Config, Health, and Logging into a single cohesive package.
-Core DI container verified with 100% test coverage.
+Shipped v1.1 on 2026-01-27.
+Framework now includes DI, Lifecycle, Config, Health, Logging, Validation, Shutdown Hardening, and Provider Config.
+All v1.1 requirements verified with comprehensive tests (100% coverage).
 
 This is an extraction and redesign of two internal libraries:
 
@@ -86,15 +94,19 @@ Target: Internal use first, open source viability later.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Drop hierarchical scopes | Not used in practice, adds significant complexity | Done (v1.0) |
-| Clean break from dibx/gazx API | Enables ideal API design without legacy constraints | Done (v1.0) |
-| Core + subpackages structure | Import only what you need, clear boundaries | Done (v1.0) |
-| slog over third-party loggers | Stdlib, sufficient for structured logging | Done (v1.0) |
-| Use `spf13/viper` (instance mode) | Integrates natively with Cobra, avoid global state | Done (v1.0) |
-| `Defaulter`/`Validator` interfaces | Prefer logic over tags for robust config lifecycle | Done (v1.0) |
-| Config as Singleton Instance | Config object accessible via DI injection | Done (v1.0) |
-| Auto-bind Env Vars | Reflection-based binding ensures Env overrides work without explicit keys | Done (v1.0) |
-| Integrated logger into App struct | Reduces cognitive complexity, no separate LifecycleEngine | Done (v1.0) |
+| Drop hierarchical scopes | Not used in practice, adds significant complexity | ✓ Good (v1.0) |
+| Clean break from dibx/gazx API | Enables ideal API design without legacy constraints | ✓ Good (v1.0) |
+| Core + subpackages structure | Import only what you need, clear boundaries | ✓ Good (v1.0) |
+| slog over third-party loggers | Stdlib, sufficient for structured logging | ✓ Good (v1.0) |
+| Use `spf13/viper` (instance mode) | Integrates natively with Cobra, avoid global state | ✓ Good (v1.0) |
+| `Defaulter`/`Validator` interfaces | Prefer logic over tags for robust config lifecycle | ✓ Good (v1.0) |
+| Config as Singleton Instance | Config object accessible via DI injection | ✓ Good (v1.0) |
+| Auto-bind Env Vars | Reflection-based binding ensures Env overrides work without explicit keys | ✓ Good (v1.0) |
+| Integrated logger into App struct | Reduces cognitive complexity, no separate LifecycleEngine | ✓ Good (v1.0) |
+| go-playground/validator for validation | Industry-standard, cross-field support | ✓ Good (v1.1) |
+| Per-hook timeout with blame logging | Debugging hung shutdowns | ✓ Good (v1.1) |
+| exitFunc global for test injection | Necessary for shutdown testing, has nolint | ✓ Good (v1.1) |
+| Skip transient services in config collection | Avoid side effects during Build() | ✓ Good (v1.1) |
 
 ---
-*Last updated: 2026-01-26 after v1.1 milestone start*
+*Last updated: 2026-01-27 after v1.1 milestone*

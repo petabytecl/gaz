@@ -1,36 +1,37 @@
 # Project State
 
 **Project:** gaz
-**Milestone:** v1.1 Security & Hardening
 **Core Value:** Simple, type-safe dependency injection with sane defaults
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-01-27)
+
+**Core value:** Simple, type-safe dependency injection with sane defaults
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-- **Phase:** 10 of 10 (Documentation & Examples) - COMPLETE ✓ Verified
-- **Plan:** 5 of 5 in current phase
-- **Status:** Milestone complete and verified
-- **Last activity:** 2026-01-27 - Completed and verified Phase 10
-- **Next Action:** `/gsd-audit-milestone` or `/gsd-complete-milestone`
+- **Phase:** Ready for next milestone
+- **Status:** v1.1 shipped
+- **Last activity:** 2026-01-27 — v1.1 milestone complete
+- **Next Action:** `/gsd-new-milestone` to define v2.0
 
 ## Progress
 
 ```
-[█████████████████████████] 100% (v1.1) - All 4 phases complete
+v1.0 MVP:       [██████████] 100% - 6 phases, 35 plans (SHIPPED)
+v1.1 Hardening: [██████████] 100% - 4 phases, 12 plans (SHIPPED)
+v2.0:           [ Planning ] 0% - Not started
 ```
 
 ## Context
 
 **Session Focus:**
-v1.1 milestone complete. All documentation and examples created and verified.
+v1.1 milestone shipped. Ready to plan next milestone.
 
 **Recent Decisions:**
-- **Self-contained examples:** Each example independent with own README
-- **Progressive complexity:** basic → lifecycle → config-loading → http-server → modules → cobra-cli
-- **Health integration:** http-server uses health.WithHealthChecks()
-- **Module pattern:** Group related providers under named modules
-- **Documentation style:** Terse, technical, targeting Go experts who are DI newcomers
-- **Go 1.19+ doc syntax:** Using headings (#) and doc links ([Type]) in doc.go
-- **Godoc examples:** 11 testable examples across 3 files, all with Output: comments
+(Accumulated decisions now in PROJECT.md Key Decisions table)
 
 ## Performance Metrics
 
@@ -38,23 +39,21 @@ v1.1 milestone complete. All documentation and examples created and verified.
 |--------|-------|--------|
 | Test Coverage | 100% | 100% |
 | Lint Score | 10/10 | 10/10 |
-| Phase 10 Progress | 5/5 | 100% |
-| Milestone Progress | 4/4 | 100% |
+| v1.0 Progress | 6/6 phases | Complete |
+| v1.1 Progress | 4/4 phases | Complete |
 
 ## Blockers & Risks
 
 - **None**
 
-## Session Continuity
+## Roadmap Summary
 
-- **Last session:** 2026-01-27
-- **Stopped at:** Milestone v1.1 complete
-- **Resume file:** None
+**Shipped:**
+- v1.0 MVP (Phases 1-6, 35 plans) — 2026-01-26
+- v1.1 Security & Hardening (Phases 7-10, 12 plans) — 2026-01-27
 
-## Roadmap Evolution
+**Next:**
+- v2.0 (to be planned)
 
-- Phase 7 complete: 2/2 plans (Validation Engine)
-- Phase 8 complete: 3/3 plans (Hardened Lifecycle)
-- Phase 9 complete: 2/2 plans (Provider Config Registration)
-- Phase 10 complete: 5/5 plans (Documentation & Examples)
-- Milestone v1.1 complete: 12/12 total plans
+For detailed milestone history, see `.planning/MILESTONES.md`
+For archived roadmaps, see `.planning/milestones/`
