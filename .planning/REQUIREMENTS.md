@@ -9,9 +9,9 @@ Requirements for Security & Hardening milestone.
 
 ### Validation Engine
 
-- [ ] **VAL-01**: Config manager validates structs using `validate` tags upon load
-- [ ] **VAL-02**: Application fails to start (exits) if config validation fails
-- [ ] **VAL-03**: Config validation supports cross-field constraints (required_if, etc)
+- [x] **VAL-01**: Config manager validates structs using `validate` tags upon load
+- [x] **VAL-02**: Application fails to start (exits) if config validation fails
+- [x] **VAL-03**: Config validation supports cross-field constraints (required_if, etc)
 
 ### Hardened Lifecycle
 
@@ -45,9 +45,9 @@ Requirements for Security & Hardening milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VAL-01 | Phase 7 | Pending |
-| VAL-02 | Phase 7 | Pending |
-| VAL-03 | Phase 7 | Pending |
+| VAL-01 | Phase 7 | Complete |
+| VAL-02 | Phase 7 | Complete |
+| VAL-03 | Phase 7 | Complete |
 | LIFE-01 | Phase 8 | Pending |
 | LIFE-02 | Phase 8 | Pending |
 | LIFE-03 | Phase 8 | Pending |
@@ -59,8 +59,8 @@ Requirements for Security & Hardening milestone.
 
 **Coverage:**
 - v1.1 requirements: 11 total
-- Complete: 4 (Phase 9)
-- Pending: 7 (Phases 7, 8)
+- Complete: 7 (Phases 7, 9)
+- Pending: 4 (Phase 8)
 
 ---
 *Requirements defined: 2026-01-26*
