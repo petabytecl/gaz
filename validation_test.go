@@ -348,3 +348,300 @@ func (s *ValidationSuite) TestErrorMessageFormat() {
 	// Should contain the tag reference
 	s.Contains(errStr, `validate:"required"`)
 }
+
+// TestGteLteValidation tests gte/lte validation tags.
+func (s *ValidationSuite) TestGteLteValidation() {
+	type RangeConfig struct {
+		Value int `mapstructure:"value" validate:"gte=10,lte=100"`
+	}
+
+	// Value below gte fails
+	belowRange := RangeConfig{Value: 5}
+	app := gaz.New().WithConfig(&belowRange)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be greater than or equal to 10")
+
+	// Value above lte fails
+	aboveRange := RangeConfig{Value: 150}
+	app2 := gaz.New().WithConfig(&aboveRange)
+	err = app2.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be less than or equal to 100")
+
+	// Valid value passes
+	validRange := RangeConfig{Value: 50}
+	app3 := gaz.New().WithConfig(&validRange)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestGtLtValidation tests gt/lt validation tags.
+func (s *ValidationSuite) TestGtLtValidation() {
+	type StrictRangeConfig struct {
+		Value int `mapstructure:"value" validate:"gt=0,lt=10"`
+	}
+
+	// Value at boundary fails gt
+	atLowerBound := StrictRangeConfig{Value: 0}
+	app := gaz.New().WithConfig(&atLowerBound)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be greater than 0")
+
+	// Value at boundary fails lt
+	atUpperBound := StrictRangeConfig{Value: 10}
+	app2 := gaz.New().WithConfig(&atUpperBound)
+	err = app2.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be less than 10")
+
+	// Valid value passes
+	validValue := StrictRangeConfig{Value: 5}
+	app3 := gaz.New().WithConfig(&validValue)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestEmailValidation tests email validation tag.
+func (s *ValidationSuite) TestEmailValidation() {
+	type EmailConfig struct {
+		Email string `mapstructure:"email" validate:"email"`
+	}
+
+	// Invalid email fails
+	invalidEmail := EmailConfig{Email: "not-an-email"}
+	app := gaz.New().WithConfig(&invalidEmail)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be a valid email address")
+
+	// Valid email passes
+	validEmail := EmailConfig{Email: "test@example.com"}
+	app2 := gaz.New().WithConfig(&validEmail)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestURLValidation tests url validation tag.
+func (s *ValidationSuite) TestURLValidation() {
+	type URLConfig struct {
+		URL string `mapstructure:"url" validate:"url"`
+	}
+
+	// Invalid URL fails
+	invalidURL := URLConfig{URL: "not-a-url"}
+	app := gaz.New().WithConfig(&invalidURL)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be a valid URL")
+
+	// Valid URL passes
+	validURL := URLConfig{URL: "https://example.com"}
+	app2 := gaz.New().WithConfig(&validURL)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestIPValidation tests ip, ipv4, ipv6 validation tags.
+func (s *ValidationSuite) TestIPValidation() {
+	type IPConfig struct {
+		IP string `mapstructure:"ip" validate:"ip"`
+	}
+
+	// Invalid IP fails
+	invalidIP := IPConfig{IP: "not-an-ip"}
+	app := gaz.New().WithConfig(&invalidIP)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be a valid IP address")
+
+	// Valid IPv4 passes
+	validIPv4 := IPConfig{IP: "192.168.1.1"}
+	app2 := gaz.New().WithConfig(&validIPv4)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+
+	// Valid IPv6 passes
+	validIPv6 := IPConfig{IP: "::1"}
+	app3 := gaz.New().WithConfig(&validIPv6)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestIPv4Validation tests ipv4 validation tag.
+func (s *ValidationSuite) TestIPv4Validation() {
+	type IPv4Config struct {
+		IP string `mapstructure:"ip" validate:"ipv4"`
+	}
+
+	// IPv6 fails ipv4 validation
+	ipv6Addr := IPv4Config{IP: "::1"}
+	app := gaz.New().WithConfig(&ipv6Addr)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be a valid IPv4 address")
+
+	// Valid IPv4 passes
+	validIPv4 := IPv4Config{IP: "192.168.1.1"}
+	app2 := gaz.New().WithConfig(&validIPv4)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestIPv6Validation tests ipv6 validation tag.
+func (s *ValidationSuite) TestIPv6Validation() {
+	type IPv6Config struct {
+		IP string `mapstructure:"ip" validate:"ipv6"`
+	}
+
+	// IPv4 fails ipv6 validation
+	ipv4Addr := IPv6Config{IP: "192.168.1.1"}
+	app := gaz.New().WithConfig(&ipv4Addr)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "must be a valid IPv6 address")
+
+	// Valid IPv6 passes
+	validIPv6 := IPv6Config{IP: "::1"}
+	app2 := gaz.New().WithConfig(&validIPv6)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestRequiredWithValidation tests required_with cross-field validation.
+func (s *ValidationSuite) TestRequiredWithValidation() {
+	type TLSConfig struct {
+		Enabled bool   `mapstructure:"enabled"`
+		Cert    string `mapstructure:"cert"    validate:"required_with=Enabled"`
+		Key     string `mapstructure:"key"     validate:"required_with=Enabled"`
+	}
+
+	// Enabled=true without cert/key fails
+	enabledNoCert := TLSConfig{Enabled: true}
+	app := gaz.New().WithConfig(&enabledNoCert)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "required when")
+	s.Contains(err.Error(), "is present")
+
+	// Enabled=true with cert/key passes
+	enabledWithCert := TLSConfig{
+		Enabled: true,
+		Cert:    "/path/to/cert",
+		Key:     "/path/to/key",
+	}
+	app2 := gaz.New().WithConfig(&enabledWithCert)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+
+	// Enabled=false without cert/key passes
+	disabled := TLSConfig{Enabled: false}
+	app3 := gaz.New().WithConfig(&disabled)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestRequiredWithoutValidation tests required_without cross-field validation.
+func (s *ValidationSuite) TestRequiredWithoutValidation() {
+	type FallbackConfig struct {
+		Primary  string `mapstructure:"primary"`
+		Fallback string `mapstructure:"fallback" validate:"required_without=Primary"`
+	}
+
+	// No primary and no fallback fails
+	noFallback := FallbackConfig{}
+	app := gaz.New().WithConfig(&noFallback)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "required when")
+	s.Contains(err.Error(), "is absent")
+
+	// Primary set, no fallback passes
+	withPrimary := FallbackConfig{Primary: "main"}
+	app2 := gaz.New().WithConfig(&withPrimary)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+
+	// No primary, fallback set passes
+	withFallback := FallbackConfig{Fallback: "backup"}
+	app3 := gaz.New().WithConfig(&withFallback)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestRequiredUnlessValidation tests required_unless cross-field validation.
+func (s *ValidationSuite) TestRequiredUnlessValidation() {
+	type OptionalConfig struct {
+		Mode   string `mapstructure:"mode"   validate:"required"`
+		Secret string `mapstructure:"secret" validate:"required_unless=Mode dev"`
+	}
+
+	// Mode=prod without secret fails
+	prodNoSecret := OptionalConfig{Mode: "prod"}
+	app := gaz.New().WithConfig(&prodNoSecret)
+	err := app.Build()
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "required unless")
+
+	// Mode=dev without secret passes
+	devNoSecret := OptionalConfig{Mode: "dev"}
+	app2 := gaz.New().WithConfig(&devNoSecret)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+
+	// Mode=prod with secret passes
+	prodWithSecret := OptionalConfig{Mode: "prod", Secret: "mysecret"}
+	app3 := gaz.New().WithConfig(&prodWithSecret)
+	err = app3.Build()
+
+	s.Require().NoError(err)
+}
+
+// TestUnknownTagValidation tests that unknown tags get a generic message.
+func (s *ValidationSuite) TestUnknownTagValidation() {
+	type LenConfig struct {
+		Code string `mapstructure:"code" validate:"len=6"`
+	}
+
+	// len=6 but wrong length fails with generic message
+	wrongLen := LenConfig{Code: "ABC"}
+	app := gaz.New().WithConfig(&wrongLen)
+	err := app.Build()
+
+	s.Require().Error(err)
+	// Default message for unknown tags
+	s.Contains(err.Error(), "failed len validation")
+
+	// Correct length passes
+	correctLen := LenConfig{Code: "ABCDEF"}
+	app2 := gaz.New().WithConfig(&correctLen)
+	err = app2.Build()
+
+	s.Require().NoError(err)
+}
