@@ -8,6 +8,18 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
+## Current Milestone: v2.0 Cleanup & Concurrency
+
+**Goal:** Clean up codebase, extract DI to standalone package, add concurrency primitives.
+
+**Target features:**
+- Delete deprecated code (NewApp, AppOption, reflection-based registration)
+- Extract DI to `gaz/di` for standalone use
+- Background workers with graceful shutdown
+- Worker pool for queued processing
+- Cron/scheduled tasks
+- In-app EventBus (pub/sub)
+
 ## Current State
 
 **Shipped:** v1.1 Security & Hardening (2026-01-27)
@@ -19,8 +31,6 @@ The framework now provides production-grade robustness:
 - Comprehensive documentation and examples
 
 **Codebase:** 11,319 lines of Go
-
-**Next:** Planning for v2.0
 
 ## Requirements
 
@@ -44,14 +54,20 @@ The framework now provides production-grade robustness:
 
 ### Active
 
-(None — ready for next milestone planning)
+- [ ] Delete deprecated APIs (NewApp, AppOption)
+- [ ] Remove reflection-based registration (ProvideSingleton, etc.)
+- [ ] Extract DI to `gaz/di` subpackage
+- [ ] Background workers with lifecycle integration
+- [ ] Worker pool for queued processing
+- [ ] Cron/scheduled task support
+- [ ] EventBus with pub/sub pattern
 
 ### Out of Scope
 
 - Hierarchical scopes — complexity not worth it for current use cases
 - Backward compatibility with dibx/gazx — clean break, fresh API
-- Workers/EventBus in v1 — defer to v2 after core is stable
 - HTTP server integration — keep framework transport-agnostic
+- External message queues (Kafka, RabbitMQ) — EventBus is in-process only
 
 ## Context
 
@@ -109,4 +125,4 @@ Target: Internal use first, open source viability later.
 | Skip transient services in config collection | Avoid side effects during Build() | ✓ Good (v1.1) |
 
 ---
-*Last updated: 2026-01-27 after v1.1 milestone*
+*Last updated: 2026-01-27 after v2.0 milestone started*
