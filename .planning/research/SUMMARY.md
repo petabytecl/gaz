@@ -1,120 +1,182 @@
 # Project Research Summary
 
-**Project:** Security & Hardening v1.1
-**Domain:** Application Robustness (Configuration & Lifecycle)
-**Researched:** Mon Jan 26 2026
+**Project:** gaz v2.0 Cleanup & Concurrency
+**Domain:** Go Application Framework + Concurrency Primitives
+**Researched:** 2026-01-27
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project focuses on enhancing application robustness through configuration validation and hardened lifecycle management. Research indicates that a production-ready Go application must fail fast on invalid configuration and guarantee graceful, bounded shutdown to prevent data loss or "zombie" processes. The industry standard is to treat configuration validity as a precondition for startup and shutdown limits as a hard guarantee.
+gaz v2.0 adds in-process concurrency primitives (workers, worker pools, cron, eventbus) that integrate with the existing lifecycle system. The research reveals that gaz already has the core infrastructure needed—`Starter`/`Stopper` interfaces, dependency-ordered startup/shutdown, and per-hook timeouts. The main work is creating new packages that leverage these primitives, not modifying core architecture. The recommended approach is **stdlib-first for workers** (goroutines + channels are sufficient for most cases), **robfig/cron** for scheduling (only required dependency), and a **custom type-safe eventbus** using Go generics.
 
-The recommended approach introduces two "Hardening Gates": a startup gate using `go-playground/validator` to enforce structural configuration integrity before dependency injection, and a shutdown guard using `context` and `os/signal` to enforce a strict timeout (default 30s) on application stops. This moves validation from runtime checks to startup enforcement and transforms shutdown logic from "best effort" to "guaranteed exit."
+The key differentiator for gaz is **deep lifecycle integration**. Most Go libraries for workers/cron/eventbus are standalone—they don't integrate with DI containers or application lifecycle. gaz can provide seamless integration where workers, cron jobs, and event handlers are automatically managed by the existing lifecycle system, with proper dependency ordering and graceful shutdown.
 
-Key risks include "zero-value ambiguity" where missing config is mistaken for default values, and blocked shutdowns where services hang indefinitely. These are mitigated by using pointer types for optional fields, explicit `required` tags, and wrapping the lifecycle manager in a timeout context that forces `os.Exit(1)` if graceful shutdown fails.
+The critical risks are goroutine leaks (workers that don't respect context cancellation), shutdown hangs (OnStop hooks blocking beyond timeout), and lifecycle ordering issues (workers depending on services that shut down first). These are well-understood pitfalls with established prevention patterns documented in PITFALLS.md. All can be mitigated through careful API design and mandatory patterns like context cancellation, done channels, and panic recovery.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Research strongly favors integrating validation directly with the existing struct-based config loading.
+The stack follows a **minimal dependency** philosophy. Only one new external dependency is required (robfig/cron), with two optional libraries for advanced use cases.
 
 **Core technologies:**
-- **`go-playground/validator` (v10):** Struct-based validation — The de-facto standard for Go; integrates seamlessly with `koanf` struct tags to allow declarative validation rules (e.g., `required`, `min`, `max`).
-- **`context` (Stdlib):** Timeout management — Essential for enforcing bounded execution times during shutdown.
-- **`os/signal` (Stdlib):** Signal handling — Standard mechanism to intercept `SIGTERM`/`SIGINT` for graceful stops.
+- **Go stdlib (goroutines + channels)**: Simple workers — zero dependencies, sufficient for most cases
+- **robfig/cron v3.0.1**: Scheduling — industry standard, graceful shutdown, job wrappers (only required dep)
+- **alitto/pond v2.6.0**: Worker pools (optional) — context-aware, `pool.StopAndWait()` for graceful shutdown
+- **Custom stdlib**: EventBus — type-safe generics, ~50 LOC, full control
+- **jilio/ebu v0.10.1**: EventBus advanced (optional) — if persistence or advanced features needed
+
+**Why NOT other options:**
+- ants v2.11.0: Excellent, but `Release()`/`ReleaseTimeout()` doesn't match gaz's `OnStop(context.Context)`
+- Distributed job queues (asynq, machinery, faktory): Out of scope—gaz targets in-process concurrency
+- Complex eventbus libraries: Either build simple (50 LOC) or use ebu for advanced; middle ground adds deps without clear benefit
 
 ### Expected Features
 
 **Must have (table stakes):**
-- **Struct Tag Validation:** Declarative rules on config structs (e.g., `validate:"required"`).
-- **Fail-Fast Config:** Application must exit immediately if validation fails at startup.
-- **Graceful Shutdown:** `SIGINT`/`SIGTERM` triggers a coordinated stop of all services.
-- **Shutdown Timeout:** Hard limit (default 30s) on how long shutdown can take.
+- Context cancellation for graceful shutdown
+- Error handling without crashing the app
+- Panic recovery in all background work
+- Lifecycle integration (Start/Stop with app)
+- Wait for completion on shutdown
+- Logging integration with existing `*slog.Logger`
+- Concurrency limiting for worker pools
 
-**Should have (competitive):**
-- **Force Kill on Timeout:** Guarantee process exit even if goroutines are stuck.
-- **Cross-Field Validation:** Rules that depend on multiple fields (e.g., "TLS cert required if HTTPS enabled").
-- **Double-Interrupt Exit:** Developer convenience to force exit by pressing Ctrl+C twice.
+**Should have (differentiators):**
+- DI-aware workers, jobs, handlers (inject dependencies from container)
+- Automatic registration (workers implementing interface auto-start in lifecycle)
+- Health check integration (worker status feeds into `/healthz`)
+- Named workers/jobs for logging and debugging
+- Restart policies with backoff for crashed workers
+- SkipIfStillRunning/DelayIfStillRunning for cron jobs
 
 **Defer (v2+):**
-- **Component Blaming:** Complex logic to identify exactly which service stalled the shutdown.
-- **Custom Validators:** User-defined validation logic (stick to standard tags for v1.1).
+- Distributed workers (use asynq for this)
+- Persistent job history
+- Priority queues
+- Metrics/Prometheus integration (complex, phase-specific)
+- Wildcard event subscriptions
 
 ### Architecture Approach
 
-The architecture inserts control gates at the edges of the application lifecycle.
+All new concurrency components integrate via the existing `Starter`/`Stopper` interfaces. Workers spawn goroutines in `OnStart` (never block), signal and wait in `OnStop`. The dependency graph ensures proper ordering—workers depending on DB start after DB, stop before DB. New packages (`worker/`, `cron/`, `eventbus/`) wrap external libraries with lifecycle hooks.
 
 **Major components:**
-1.  **Startup Gate (Validator):** Validates the `Config` struct immediately after unmarshalling. Prevents the DI container from ever seeing an invalid config.
-2.  **Shutdown Guard (Timeout):** Wraps the `Lifecycle.Stop()` method. Races the graceful stop logic against a `context.WithTimeout`.
-3.  **Strict Config Object:** A pattern where consumers (services) receive a config object that is guaranteed to be valid, removing the need for defensive checks inside business logic.
+1. **worker/**: `Worker` interface with `Run(ctx)`, `WorkerManager` for tracking multiple workers, optional `Pool` for queued tasks
+2. **cron/**: `Scheduler` wrapping robfig/cron, DI-aware job registration, panic recovery by default
+3. **eventbus/**: Type-safe generics pub/sub, sync by default with async option, `Publish[T]`/`Subscribe[T]` API
+
+**Data flow:**
+- Workers added to container as eager singletons -> auto-discovered during Build -> started in dependency order during Run -> stopped in reverse order during Stop
+- EventBus is singleton, publishers/subscribers resolve it from container, no lifecycle needed for in-memory version
+- Cron scheduler starts background goroutine in OnStart, returns stop context in OnStop for graceful wait
 
 ### Critical Pitfalls
 
-1.  **Zero-Value Ambiguity:** Missing fields defaulting to `0` or `""`.
-    *   *Avoid by:* Using pointer types (`*int`) for optional fields or `required` tags.
-2.  **Blocked Shutdown:** `OnStop` hooks hanging indefinitely.
-    *   *Avoid by:* The "Shutdown Guard" pattern—always enforcing a `os.Exit(1)` fallback after the timeout.
-3.  **Unfriendly Validation Errors:** Cryptic validator output causing user frustration.
-    *   *Avoid by:* Translating validation errors into human-readable messages before exiting.
+1. **Goroutine leaks (WRK-1, CRITICAL)** — Require `context.Context` in worker interface; all worker loops must check `<-ctx.Done()`
+2. **Blocking OnStart (WRK-2, HIGH)** — Document that OnStart must spawn goroutine and return immediately, never run work synchronously
+3. **No Done channel (WRK-3, HIGH)** — All workers must expose Done() channel; OnStop waits on done OR context timeout
+4. **Panic crashes (WRK-4, CRN-2, HIGH)** — robfig/cron v3 no longer recovers panics by default; gaz cron wrapper MUST include `cron.Recover()` wrapper; workers need defer/recover
+5. **Overlapping cron jobs (CRN-1, HIGH)** — Default to `cron.SkipIfStillRunning()` to prevent jobs from piling up
+6. **Lifecycle ordering (INT-1, CRITICAL)** — Workers must declare dependencies explicitly; design workers to not publish during OnStop
 
 ## Implications for Roadmap
 
-Based on research, the implementation should follow a dependency-based order: Validation -> Lifecycle -> Integration.
+Based on research, suggested phase structure:
 
-### Phase 1: Validation Engine
-**Rationale:** Configuration validity is a dependency for all other components. We must ensure the `Config` object is correct before passing it to the Lifecycle engine or other services.
-**Delivers:** Integration of `go-playground/validator` into the config loader, struct tags on config structs, and friendly error reporting.
-**Addresses:** "Struct Tag Validation" and "Fail-Fast Config" features.
-**Avoids:** "Zero-Value Ambiguity" pitfall.
+### Phase 0: Cleanup & DI Extraction
+**Rationale:** Must clean house before adding new features. Removes deprecated code, extracts DI into `gaz/di` package.
+**Delivers:** Clean foundation, `gaz/di` package
+**Addresses:** Technical debt cleanup, clearer package boundaries
+**Avoids:** Building on top of deprecated patterns
 
-### Phase 2: Hardened Lifecycle
-**Rationale:** Once we can start safely (Phase 1), we focus on stopping safely. This involves the complex concurrency logic of signals and timeouts.
-**Delivers:** `ShutdownGuard` implementation, `context`-propagation for `Stop()` methods, and signal handling.
-**Uses:** `context`, `os/signal`.
-**Implements:** "Shutdown Guard" architecture component.
-**Avoids:** "Blocked Shutdown" and "Just Kill It" anti-patterns.
+### Phase 1: Base Workers
+**Rationale:** Foundation for all background work. No external dependencies. Establishes patterns for other phases.
+**Delivers:** `Worker` interface, `WorkerManager`, lifecycle integration
+**Addresses:** Context cancellation, panic recovery, done channel pattern
+**Avoids:** WRK-1 (goroutine leaks), WRK-2 (blocking OnStart), WRK-3 (no done channel)
 
-### Phase 3: CLI & Entrypoint Integration
-**Rationale:** Wires the new engines into the main application entry point (`main.go` or CLI command).
-**Delivers:** Updates to `app.Run()` to use the new Validation and Lifecycle logic, ensuring the "Gates" are active.
-**Addresses:** "Force Kill on Timeout" and overall wiring.
+### Phase 2: Worker Pools
+**Rationale:** Builds on Phase 1 infrastructure. Optional pond dependency.
+**Delivers:** `Pool` with Submit/StopWait, bounded queue option
+**Uses:** Go stdlib or alitto/pond v2.6.0
+**Addresses:** Concurrency limiting, wait for completion
+**Avoids:** WRK-5 (buffer sizing issues)
+
+### Phase 3: Cron Scheduler
+**Rationale:** Independent of workers, can parallel with Phase 2. Wraps robfig/cron.
+**Delivers:** `Scheduler` with lifecycle, DI-aware jobs, panic recovery
+**Uses:** robfig/cron v3.0.1
+**Implements:** Job registration, SkipIfStillRunning by default, graceful stop pattern
+**Avoids:** CRN-1 (overlapping jobs), CRN-2 (no panic recovery), CRN-3 (improper stop)
+
+### Phase 4: EventBus
+**Rationale:** Independent component. Type-safe generics API matching gaz style.
+**Delivers:** `EventBus` with Publish[T]/Subscribe[T], sync and async modes
+**Uses:** Custom stdlib implementation (or jilio/ebu if advanced features needed)
+**Implements:** Bounded buffer, context propagation
+**Avoids:** EVT-1 (unbounded buffer), EVT-5 (deadlock from sync publish)
+
+### Phase 5: Integration & Polish
+**Rationale:** Polish after core functionality works.
+**Delivers:** Health check integration, examples, documentation
+**Addresses:** Health integration for all components
+**Avoids:** INT-3 (per-hook timeout sizing), INT-5 (dependency ordering)
 
 ### Phase Ordering Rationale
 
-- **Dependencies:** You cannot reliably run a lifecycle engine with invalid configuration, so Validation comes first.
-- **Risk Control:** Lifecycle logic (Phase 2) is harder to test and debug than Validation (Phase 1). Separating them allows focused testing on the concurrency aspects without noise from config errors.
-- **Architecture:** Phase 1 solidifies the "Input" gate, Phase 2 solidifies the "Output" gate, and Phase 3 connects them to the user interface (CLI).
+- **Cleanup first (Phase 0):** Can't build new features on deprecated code
+- **Workers before pools (Phase 1 -> 2):** Pool uses worker patterns, not vice versa
+- **Cron independent (Phase 3):** Can be parallel with Phase 2 since no dependency
+- **EventBus after workers (Phase 4):** Subscribers may be workers, need worker patterns established first
+- **Integration last (Phase 5):** Requires all components to exist
 
 ### Research Flags
 
-**Standard patterns (skip research-phase):**
-- **Phase 1 (Validation):** `go-playground/validator` is extremely well-documented and standard. No deep research needed.
-- **Phase 2 (Lifecycle):** The `context.WithTimeout` + `select` pattern is standard Go concurrency.
+**Phases likely needing deeper research during planning:**
+- **Phase 0 (Cleanup):** Need inventory of deprecated code and migration paths
+- **Phase 5 (Integration):** Metrics interface design, Prometheus integration patterns
+
+**Phases with standard patterns (skip research-phase):**
+- **Phase 1 (Workers):** Well-documented patterns from uber-go/fx, standard Go concurrency
+- **Phase 2 (Worker Pools):** Established pattern from gammazero/workerpool, pond
+- **Phase 3 (Cron):** robfig/cron is mature, Context7 docs comprehensive
+- **Phase 4 (EventBus):** Simple pattern, jilio/ebu provides reference if needed
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | `validator` is the clear industry standard. |
-| Features | HIGH | Table stakes are well-defined for production Go apps. |
-| Architecture | HIGH | The "Gates" pattern is a simplified version of standard frameworks like Uber fx. |
-| Pitfalls | HIGH | Zero-value issues are a known Go specific pain point. |
+| Stack | HIGH | Context7 verified for all libraries, explicit version pins |
+| Features | HIGH | Analyzed multiple established Go frameworks, clear table stakes |
+| Architecture | HIGH | Verified integration with existing gaz Starter/Stopper, uber-go/fx patterns |
+| Pitfalls | HIGH | Context7 docs, official robfig/cron changelog, Watermill troubleshooting |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Validation Error UX:** While we know we *need* friendly errors, the specific format/style isn't defined. Needs a quick design decision during Phase 1.
-- **Timeout Tuning:** The default 30s is a guess. We may need to make this configurable via environment variable immediately if deployment targets vary wildly.
+- **Worker restart policy:** Should crashed workers auto-restart? Needs design decision during Phase 1 planning
+- **Metrics interface:** How to expose worker queue depth, processing time? Defer to Phase 5 or v2.1
+- **Distributed cron:** Leader election for multi-instance deployment is out of scope for v2.0—document as limitation
+- **EventBus cleanup:** Should EventBus have OnStop to wait for async handlers? Clarify during Phase 4
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- **Go Validator:** `go-playground/validator` (GitHub/Godoc) — Standard library for struct validation.
-- **Uber Go Style Guide:** Patterns for zero-value safety and error handling.
-- **Standard Library:** `context` and `os/signal` documentation.
+- Context7: `/robfig/cron` — job wrappers, graceful stop, panic recovery change
+- Context7: `/alitto/pond` — context-aware API, StopAndWait pattern
+- Context7: `/uber-go/fx` — lifecycle hooks, "must not block" semantics
+- Context7: `/threedotslabs/watermill` — router patterns, CloseTimeout, deadlock troubleshooting
+- Context7: `/jilio/ebu` — type-safe generics eventbus API
 
 ### Secondary (MEDIUM confidence)
-- **Internal:** `lifecycle_engine.go` — Analyzed existing LIFO logic to ensure compatibility.
+- GitHub: gammazero/workerpool — worker pool patterns, Submit/StopWait
+- GitHub: panjf2000/ants — evaluated but rejected for API mismatch
+
+### Tertiary (LOW confidence)
+- Worker restart policies — needs design decision, no clear consensus
+
+---
+*Research completed: 2026-01-27*
+*Ready for roadmap: yes*
