@@ -38,18 +38,18 @@ Requirements for Security & Hardening milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VAL-01 | — | Pending |
-| VAL-02 | — | Pending |
-| VAL-03 | — | Pending |
-| LIFE-01 | — | Pending |
-| LIFE-02 | — | Pending |
-| LIFE-03 | — | Pending |
-| LIFE-04 | — | Pending |
+| VAL-01 | Phase 7 | Pending |
+| VAL-02 | Phase 7 | Pending |
+| VAL-03 | Phase 7 | Pending |
+| LIFE-01 | Phase 8 | Pending |
+| LIFE-02 | Phase 8 | Pending |
+| LIFE-03 | Phase 8 | Pending |
+| LIFE-04 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7 ⚠️
+- Mapped to phases: 7
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-26*
