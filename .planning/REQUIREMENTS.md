@@ -15,10 +15,10 @@ Requirements for Security & Hardening milestone.
 
 ### Hardened Lifecycle
 
-- [ ] **LIFE-01**: Application enforces a hard timeout (default 30s) on shutdown
-- [ ] **LIFE-02**: Application forces `os.Exit(1)` if shutdown hooks exceed timeout
-- [ ] **LIFE-03**: Application exits immediately if SIGINT received twice
-- [ ] **LIFE-04**: Application logs which specific lifecycle hook caused a shutdown hang
+- [x] **LIFE-01**: Application enforces a hard timeout (default 30s) on shutdown
+- [x] **LIFE-02**: Application forces `os.Exit(1)` if shutdown hooks exceed timeout
+- [x] **LIFE-03**: Application exits immediately if SIGINT received twice
+- [x] **LIFE-04**: Application logs which specific lifecycle hook caused a shutdown hang
 
 ### Provider Config Registration
 
@@ -48,10 +48,10 @@ Requirements for Security & Hardening milestone.
 | VAL-01 | Phase 7 | Complete |
 | VAL-02 | Phase 7 | Complete |
 | VAL-03 | Phase 7 | Complete |
-| LIFE-01 | Phase 8 | Pending |
-| LIFE-02 | Phase 8 | Pending |
-| LIFE-03 | Phase 8 | Pending |
-| LIFE-04 | Phase 8 | Pending |
+| LIFE-01 | Phase 8 | Complete |
+| LIFE-02 | Phase 8 | Complete |
+| LIFE-03 | Phase 8 | Complete |
+| LIFE-04 | Phase 8 | Complete |
 | PROV-01 | Phase 9 | Complete |
 | PROV-02 | Phase 9 | Complete |
 | PROV-03 | Phase 9 | Complete |
@@ -59,8 +59,8 @@ Requirements for Security & Hardening milestone.
 
 **Coverage:**
 - v1.1 requirements: 11 total
-- Complete: 7 (Phases 7, 9)
-- Pending: 4 (Phase 8)
+- Complete: 11 (Phases 7, 8, 9)
+- Pending: 0
 
 ---
 *Requirements defined: 2026-01-26*
