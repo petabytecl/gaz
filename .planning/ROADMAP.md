@@ -172,7 +172,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Core Infrastructure (slog, tint, ContextHandler)
+- [x] 06-01-PLAN.md — Core Infrastructure (slog, tint, ContextHandler) ✓
 - [ ] 06-02-PLAN.md — Context Middleware (RequestID, context helpers)
 - [ ] 06-03-PLAN.md — Framework Integration (App, Lifecycle)
 - [ ] 06-04-PLAN.md — Cleanup & Linting
@@ -193,8 +193,8 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
 | 4.1 Refactor config | 2/2 | Complete | 2026-01-26 |
 | 5. Health Checks | 3/3 | Complete | 2026-01-27 |
-| 6. Logging (slog) | 0/4 | Planned | - |
+| 6. Logging (slog) | 1/4 | In Progress | - |
 
 ---
 *Created: 2026-01-26*
-*Last updated: 2026-01-26*
+*Last updated: 2026-01-27*
