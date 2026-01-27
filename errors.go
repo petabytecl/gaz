@@ -26,4 +26,7 @@ var (
 
 	// ErrDuplicateModule is returned when a module with the same name is registered twice.
 	ErrDuplicateModule = errors.New("gaz: duplicate module name")
+
+	// ErrConfigKeyCollision is returned when two providers register the same config key.
+	ErrConfigKeyCollision = errors.New("gaz: config key collision")
 )
