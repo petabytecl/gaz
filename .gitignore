@@ -25,3 +25,11 @@ coverage.out
 !.planning/todos/pending/.keep
 !.planning/todos/done/.keep
 .planning/config.json
+
+# Example binaries
+examples/basic/basic
+examples/lifecycle/lifecycle
+examples/config-loading/config-loading
+examples/http-server/http-server
+examples/modules/modules
+examples/cobra-cli/cobra-cli
