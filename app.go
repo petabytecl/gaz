@@ -19,14 +19,19 @@ import (
 )
 
 const defaultShutdownTimeout = 30 * time.Second
+const defaultPerHookTimeout = 10 * time.Second
 
 // providerWithErrorReturnCount is the expected number of return values for a provider
 // that returns (T, error).
 const providerWithErrorReturnCount = 2
 
+// exitFunc is the function called for force exit. Variable for testability.
+var exitFunc = os.Exit
+
 // AppOptions configuration for App.
 type AppOptions struct {
 	ShutdownTimeout time.Duration
+	PerHookTimeout  time.Duration
 	LoggerConfig    *logger.Config
 }
 
@@ -43,6 +48,14 @@ type Option func(*App)
 func WithShutdownTimeout(d time.Duration) Option {
 	return func(a *App) {
 		a.opts.ShutdownTimeout = d
+	}
+}
+
+// WithPerHookTimeout sets the default timeout for each shutdown hook.
+// Default is 10 seconds. Individual hooks can override via WithHookTimeout.
+func WithPerHookTimeout(d time.Duration) Option {
+	return func(a *App) {
+		a.opts.PerHookTimeout = d
 	}
 }
 
@@ -108,6 +121,7 @@ func New(opts ...Option) *App {
 		container: NewContainer(),
 		opts: AppOptions{
 			ShutdownTimeout: defaultShutdownTimeout,
+			PerHookTimeout:  defaultPerHookTimeout,
 		},
 		modules: make(map[string]bool),
 	}
