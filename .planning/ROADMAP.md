@@ -15,6 +15,7 @@ Milestone v1.1 hardens the `gaz` framework for production use by introducing two
 | **7 - Validation Engine** | Users can define struct tags that prevent application startup if configuration is invalid. | VAL-01, VAL-02, VAL-03 | 1. `validate` tags enforce constraints<br>2. App exits on config error<br>3. Cross-field rules work |
 | **8 - Hardened Lifecycle** | Application guarantees process termination within a fixed timeout, preventing zombie processes. | LIFE-01, LIFE-02, LIFE-03, LIFE-04 | 1. Shutdown forces exit after 30s<br>2. Double Ctrl+C exits immediately<br>3. Logs blame hanging hooks |
 | **9 - Provider Config Registration** | Services/providers can register flags/config keys on the app config manager. | PROV-01, PROV-02, PROV-03, PROV-04 | 1. ConfigProvider interface works<br>2. Keys auto-namespaced<br>3. Collisions detected<br>4. Values injectable |
+| **10 - Documentation & Examples** | Comprehensive documentation and examples demonstrating all library features. | DOC-01, DOC-02, DOC-03 | 1. All features documented<br>2. Working examples provided<br>3. API reference complete |
 
 ## Detailed Phases
 
@@ -60,9 +61,9 @@ Plans:
 3. Logs explicitly identify the component name of the hook that caused the timeout.
 4. Pressing Ctrl+C twice triggers an immediate exit without waiting for the graceful timeout.
 
-**Plans:** 3 plans
+**Plans:** 3 plans (1/3 complete)
 Plans:
-- [ ] 08-01-PLAN.md — Shutdown orchestrator with per-hook timeout and blame logging
+- [x] 08-01-PLAN.md — Shutdown orchestrator with per-hook timeout and blame logging
 - [ ] 08-02-PLAN.md — Double-SIGINT force exit handling
 - [ ] 08-03-PLAN.md — Comprehensive shutdown hardening tests
 
@@ -95,10 +96,38 @@ Plans:
 
 ---
 
+### Phase 10: Documentation & Examples
+
+**Goal:** Comprehensive documentation and examples demonstrating all library features.
+
+**Dependencies:** Phase 9 (All features complete before documenting)
+
+**Requirements:**
+- **DOC-01**: All public APIs documented with usage examples
+- **DOC-02**: Working example applications demonstrating common patterns
+- **DOC-03**: API reference with complete type documentation
+
+**Success Criteria:**
+1. README covers installation, quick start, and core concepts.
+2. Each major feature (DI, Config, Lifecycle, Validation, Providers) has dedicated documentation.
+3. Example applications compile and run successfully.
+4. API reference generated and accessible.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 10 to break down)
+
+**Details:**
+[To be added during planning]
+
+---
+
 ## Progress
 
 | Phase | Status | Completion |
 |-------|--------|------------|
 | 7 - Validation Engine | **✓ Complete** | 2/2 plans verified |
-| 8 - Hardened Lifecycle | **Planned** | 0/3 plans |
+| 8 - Hardened Lifecycle | **In Progress** | 1/3 plans |
 | 9 - Provider Config Registration | **✓ Complete** | 2/2 plans verified |
+| 10 - Documentation & Examples | **Not Planned** | 0/0 plans |
