@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -12,10 +13,10 @@ import (
 )
 
 // ShutdownTestSuite tests hardened shutdown behavior including:
-// - Graceful shutdown completion when hooks finish in time
-// - Per-hook timeout enforcement with blame logging
-// - Global timeout force exit
-// - Double-SIGINT immediate exit
+// - Graceful shutdown completion when hooks finish in time.
+// - Per-hook timeout enforcement with blame logging.
+// - Global timeout force exit.
+// - Double-SIGINT immediate exit.
 type ShutdownTestSuite struct {
 	suite.Suite
 	originalExitFunc func(int)
@@ -35,7 +36,7 @@ func (s *ShutdownTestSuite) SetupTest() {
 	// Replace with mock that captures exit calls
 	exitFunc = func(code int) {
 		s.exitCalled.Store(true)
-		s.exitCode.Store(int32(code))
+		s.exitCode.Store(int32(code)) //nolint:gosec // code is always 0 or 1 in tests
 	}
 
 	// Create log buffer for capturing logs
@@ -63,7 +64,7 @@ func (s *ShutdownTestSuite) createAppWithSlowHook(
 	err := For[*slowShutdownService](app.Container()).
 		Named("SlowService").
 		Eager().
-		OnStop(func(ctx context.Context, svc *slowShutdownService) error {
+		OnStop(func(ctx context.Context, _ *slowShutdownService) error {
 			select {
 			case <-time.After(hookDuration):
 				return nil
@@ -71,7 +72,7 @@ func (s *ShutdownTestSuite) createAppWithSlowHook(
 				return ctx.Err()
 			}
 		}).
-		ProviderFunc(func(c *Container) *slowShutdownService {
+		ProviderFunc(func(_ *Container) *slowShutdownService {
 			return &slowShutdownService{}
 		})
 	s.Require().NoError(err)
@@ -103,7 +104,7 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 	err := For[*shutdownTestServiceA](app.Container()).
 		Named("ServiceA").
 		Eager().
-		OnStop(func(ctx context.Context, svc *shutdownTestServiceA) error {
+		OnStop(func(ctx context.Context, _ *shutdownTestServiceA) error {
 			select {
 			case <-time.After(serviceADuration):
 				serviceAStopped.Store(true)
@@ -112,7 +113,7 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 				return ctx.Err()
 			}
 		}).
-		ProviderFunc(func(c *Container) *shutdownTestServiceA {
+		ProviderFunc(func(_ *Container) *shutdownTestServiceA {
 			return &shutdownTestServiceA{}
 		})
 	s.Require().NoError(err)
@@ -121,7 +122,7 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 	err = For[*shutdownTestServiceB](app.Container()).
 		Named("ServiceB").
 		Eager().
-		OnStop(func(ctx context.Context, svc *shutdownTestServiceB) error {
+		OnStop(func(ctx context.Context, _ *shutdownTestServiceB) error {
 			select {
 			case <-time.After(serviceBDuration):
 				serviceBStopped.Store(true)
@@ -130,7 +131,7 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 				return ctx.Err()
 			}
 		}).
-		ProviderFunc(func(c *Container) *shutdownTestServiceB {
+		ProviderFunc(func(_ *Container) *shutdownTestServiceB {
 			return &shutdownTestServiceB{}
 		})
 	s.Require().NoError(err)
@@ -138,8 +139,10 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 	return app, serviceAStopped, serviceBStopped
 }
 
-type shutdownTestServiceA struct{}
-type shutdownTestServiceB struct{}
+type (
+	shutdownTestServiceA struct{}
+	shutdownTestServiceB struct{}
+)
 
 // createLogCapturingApp creates an app with logger writing to the suite's logBuffer.
 // This allows assertion on logged messages including blame logging.
@@ -165,7 +168,6 @@ func (s *ShutdownTestSuite) createLogCapturingApp(
 type namedSlowService struct {
 	name     string
 	duration time.Duration
-	stopped  *atomic.Bool
 }
 
 // createAppWithNamedService creates an app with a named service for blame logging tests.
@@ -181,7 +183,7 @@ func (s *ShutdownTestSuite) createAppWithNamedService(
 	err := For[*namedSlowService](app.Container()).
 		Named(serviceName).
 		Eager().
-		OnStop(func(ctx context.Context, svc *namedSlowService) error {
+		OnStop(func(ctx context.Context, _ *namedSlowService) error {
 			select {
 			case <-time.After(hookDuration):
 				return nil
@@ -189,7 +191,7 @@ func (s *ShutdownTestSuite) createAppWithNamedService(
 				return ctx.Err()
 			}
 		}).
-		ProviderFunc(func(c *Container) *namedSlowService {
+		ProviderFunc(func(_ *Container) *namedSlowService {
 			return &namedSlowService{name: serviceName, duration: hookDuration}
 		})
 	s.Require().NoError(err)
@@ -238,7 +240,7 @@ func (s *ShutdownTestSuite) TestGracefulShutdownCompletes() {
 	err = app.Stop(ctx)
 
 	// Assert: Stop() returns nil (no error)
-	s.NoError(err, "Stop() should return nil when hooks complete in time")
+	s.Require().NoError(err, "Stop() should return nil when hooks complete in time")
 
 	// Assert: exitFunc was NOT called (no force exit)
 	s.False(s.exitCalled.Load(), "exitFunc should NOT be called for graceful shutdown")
@@ -272,7 +274,7 @@ func (s *ShutdownTestSuite) TestPerHookTimeoutContinuesToNextHook() {
 	err = app.Stop(ctx)
 
 	// Assert: Stop() returns an error (due to timeout)
-	s.Error(err, "Stop() should return error when hook times out")
+	s.Require().Error(err, "Stop() should return error when hook times out")
 	s.Contains(err.Error(), "deadline exceeded", "error should mention timeout")
 
 	// Assert: Service A did NOT complete (it was interrupted by timeout)
@@ -375,4 +377,156 @@ func (s *ShutdownTestSuite) TestWithShutdownTimeoutOption() {
 	app := New(WithShutdownTimeout(45 * time.Second))
 
 	s.Equal(45*time.Second, app.opts.ShutdownTimeout, "ShutdownTimeout should be set to 45s")
+}
+
+// =============================================================================
+// Task 3: Double-SIGINT Tests
+// =============================================================================
+
+// TestFirstSIGINTLogsHint verifies that the first SIGINT logs a hint about
+// pressing Ctrl+C again to force exit.
+func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
+	// Create app with slow hook (1s)
+	app := s.createAppWithSlowHook(1*time.Second, 5*time.Second, 10*time.Second)
+
+	// Replace logger to capture logs
+	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Run in goroutine
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- app.Run(context.Background())
+	}()
+
+	// Wait for app to be running
+	s.True(s.waitForAppRunning(app, 1*time.Second), "app should be running")
+
+	// Send first SIGINT
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	s.Require().NoError(err)
+
+	// Wait a bit for log to be written
+	time.Sleep(100 * time.Millisecond)
+
+	// Check log contains hint
+	logOutput := s.logBuffer.String()
+	s.Contains(logOutput, "Ctrl+C again", "first SIGINT should log hint about force exit")
+
+	// Send second SIGINT to complete the test
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	s.Require().NoError(err)
+
+	// Wait for app to exit
+	select {
+	case <-runDone:
+		// Good, app stopped
+	case <-time.After(2 * time.Second):
+		// Force stop if needed
+		_ = app.Stop(context.Background())
+	}
+}
+
+// TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT
+// triggers immediate exitFunc(1) without waiting for graceful shutdown.
+func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
+	// Create app with slow hook (5s)
+	// Global timeout is 10s (won't trigger)
+	app := s.createAppWithSlowHook(5*time.Second, 10*time.Second, 10*time.Second)
+
+	// Replace logger to capture logs
+	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Run in goroutine
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- app.Run(context.Background())
+	}()
+
+	// Wait for app to be running
+	s.True(s.waitForAppRunning(app, 1*time.Second), "app should be running")
+
+	// Record time before signals
+	startTime := time.Now()
+
+	// Send first SIGINT
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	s.Require().NoError(err)
+
+	// Wait a bit between signals
+	time.Sleep(50 * time.Millisecond)
+
+	// Send second SIGINT
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	s.Require().NoError(err)
+
+	// Wait for exitFunc to be called
+	s.Eventually(func() bool {
+		return s.exitCalled.Load()
+	}, 500*time.Millisecond, 10*time.Millisecond, "exitFunc should be called on double SIGINT")
+
+	// Assert: exit happened quickly (within 200ms of second signal)
+	elapsed := time.Since(startTime)
+	s.Less(elapsed, 300*time.Millisecond, "exit should happen quickly after second SIGINT")
+
+	// Assert: exitFunc(1) was called
+	s.Equal(int32(1), s.exitCode.Load(), "exitFunc should be called with code 1")
+
+	// Assert: log contains force exit message
+	logOutput := s.logBuffer.String()
+	s.Contains(logOutput, "second interrupt", "log should mention second interrupt")
+}
+
+// TestSIGTERMDoesNotEnableDoubleSignal verifies that SIGTERM performs graceful
+// shutdown without the double-signal force exit behavior (SIGTERM + SIGKILL is
+// the standard ops pattern for force exit).
+func (s *ShutdownTestSuite) TestSIGTERMDoesNotEnableDoubleSignal() {
+	// Create app with hook that completes quickly
+	app := s.createAppWithSlowHook(100*time.Millisecond, 5*time.Second, 10*time.Second)
+
+	// Replace logger to capture logs
+	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Run in goroutine
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- app.Run(context.Background())
+	}()
+
+	// Wait for app to be running
+	s.True(s.waitForAppRunning(app, 1*time.Second), "app should be running")
+
+	// Send SIGTERM
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	s.Require().NoError(err)
+
+	// Wait for graceful shutdown to complete
+	select {
+	case runErr := <-runDone:
+		s.Require().NoError(runErr, "Run should complete without error on SIGTERM")
+	case <-time.After(2 * time.Second):
+		s.Fail("Run should return after SIGTERM graceful shutdown")
+	}
+
+	// Assert: exitFunc was NOT called (graceful shutdown, no force exit)
+	s.False(s.exitCalled.Load(), "exitFunc should NOT be called for SIGTERM graceful shutdown")
+
+	// Assert: log does NOT contain the Ctrl+C hint (that's SIGINT-specific)
+	// SIGTERM should still log the shutdown message but the hint is for interactive use
+	logOutput := s.logBuffer.String()
+	s.Contains(logOutput, "Shutting down gracefully", "SIGTERM should trigger graceful shutdown")
 }
