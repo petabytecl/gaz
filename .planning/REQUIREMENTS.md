@@ -41,11 +41,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Health Checks
 
-- [ ] **HLTH-01**: Developer can implement HealthChecker interface for custom checks
-- [ ] **HLTH-02**: Framework distinguishes readiness vs liveness checks
-- [ ] **HLTH-03**: Framework auto-discovers health checkers registered in DI container
-- [ ] **HLTH-04**: Framework aggregates multiple health check results
-- [ ] **HLTH-05**: Health checks execute concurrently with configurable timeout
+- [x] **HLTH-01**: Developer can implement HealthChecker interface for custom checks
+- [x] **HLTH-02**: Framework distinguishes readiness vs liveness checks
+- [x] **HLTH-03**: Framework auto-discovers health checkers registered in DI container
+- [x] **HLTH-04**: Framework aggregates multiple health check results
+- [x] **HLTH-05**: Health checks execute concurrently with configurable timeout
 
 ### Configuration
 
@@ -127,11 +127,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-01 | Phase 4 | Complete |
 | CONF-02 | Phase 4 | Complete |
 | CONF-03 | Phase 4 | Complete |
-| HLTH-01 | Phase 5 | Pending |
-| HLTH-02 | Phase 5 | Pending |
-| HLTH-03 | Phase 5 | Pending |
-| HLTH-04 | Phase 5 | Pending |
-| HLTH-05 | Phase 5 | Pending |
+| HLTH-01 | Phase 5 | Complete |
+| HLTH-02 | Phase 5 | Complete |
+| HLTH-03 | Phase 5 | Complete |
+| HLTH-04 | Phase 5 | Complete |
+| HLTH-05 | Phase 5 | Complete |
 | LOG-01 | Phase 6 | Pending |
 | LOG-02 | Phase 6 | Pending |
 | LOG-03 | Phase 6 | Pending |
