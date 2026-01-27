@@ -10,7 +10,7 @@ func TestManager_LivenessChecker(t *testing.T) {
 	m := NewManager()
 
 	called := false
-	m.AddLivenessCheck("test-check", func(ctx context.Context) error {
+	m.AddLivenessCheck("test-check", func(_ context.Context) error {
 		called = true
 		return nil
 	})
@@ -29,7 +29,7 @@ func TestManager_LivenessChecker(t *testing.T) {
 func TestManager_ReadinessChecker(t *testing.T) {
 	m := NewManager()
 
-	m.AddReadinessCheck("fail-check", func(ctx context.Context) error {
+	m.AddReadinessCheck("fail-check", func(_ context.Context) error {
 		return errors.New("oops")
 	})
 
@@ -44,7 +44,7 @@ func TestManager_ReadinessChecker(t *testing.T) {
 func TestManager_StartupChecker(t *testing.T) {
 	m := NewManager()
 
-	m.AddStartupCheck("startup-check", func(ctx context.Context) error {
+	m.AddStartupCheck("startup-check", func(_ context.Context) error {
 		return nil
 	})
 

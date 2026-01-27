@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/petabytecl/gaz"
 )
@@ -20,7 +21,7 @@ func Module(c *gaz.Container) error {
 		ProviderFunc(func(_ *gaz.Container) *ShutdownCheck {
 			return NewShutdownCheck()
 		}); err != nil {
-		return err
+		return fmt.Errorf("register shutdown check: %w", err)
 	}
 
 	// Register Manager
@@ -39,7 +40,7 @@ func Module(c *gaz.Container) error {
 
 			return m, nil
 		}); err != nil {
-		return err
+		return fmt.Errorf("register manager: %w", err)
 	}
 
 	// Register ManagementServer
@@ -69,7 +70,7 @@ func Module(c *gaz.Container) error {
 
 			return NewManagementServer(cfg, manager, shutdownCheck), nil
 		}); err != nil {
-		return err
+		return fmt.Errorf("register management server: %w", err)
 	}
 
 	return nil

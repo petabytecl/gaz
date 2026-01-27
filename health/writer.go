@@ -2,6 +2,7 @@ package health
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,12 +19,20 @@ func NewIETFResultWriter() *IETFResultWriter {
 }
 
 // Write implements the health.ResultWriter interface.
-func (rw *IETFResultWriter) Write(result *health.CheckerResult, statusCode int, w http.ResponseWriter, r *http.Request) error {
+func (rw *IETFResultWriter) Write(
+	result *health.CheckerResult,
+	statusCode int,
+	w http.ResponseWriter,
+	_ *http.Request,
+) error {
 	resp := toIETFResponse(result)
 
 	w.Header().Set("Content-Type", "application/health+json")
 	w.WriteHeader(statusCode)
-	return json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		return fmt.Errorf("encode health response: %w", err)
+	}
+	return nil
 }
 
 // ietfResponse represents the root of the IETF health check response.

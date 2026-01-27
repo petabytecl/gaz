@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 )
 
 // ManagementServer serves health endpoints on a dedicated port.
@@ -15,7 +16,11 @@ type ManagementServer struct {
 }
 
 // NewManagementServer creates a new ManagementServer.
-func NewManagementServer(config Config, manager *Manager, shutdownCheck *ShutdownCheck) *ManagementServer {
+func NewManagementServer(
+	config Config,
+	manager *Manager,
+	shutdownCheck *ShutdownCheck,
+) *ManagementServer {
 	mux := http.NewServeMux()
 	mux.Handle(config.LivenessPath, manager.NewLivenessHandler())
 	mux.Handle(config.ReadinessPath, manager.NewReadinessHandler())
@@ -24,8 +29,9 @@ func NewManagementServer(config Config, manager *Manager, shutdownCheck *Shutdow
 	return &ManagementServer{
 		config: config,
 		server: &http.Server{
-			Addr:    fmt.Sprintf(":%d", config.Port),
-			Handler: mux,
+			Addr:              fmt.Sprintf(":%d", config.Port),
+			Handler:           mux,
+			ReadHeaderTimeout: DefaultReadHeaderTimeout,
 		},
 		shutdownCheck: shutdownCheck,
 	}
@@ -33,12 +39,12 @@ func NewManagementServer(config Config, manager *Manager, shutdownCheck *Shutdow
 
 // Start starts the management server in a background goroutine.
 // It returns immediately.
-func (s *ManagementServer) Start(ctx context.Context) error {
+func (s *ManagementServer) Start(_ context.Context) error {
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// In a real application, we would want to log this error.
 			// Since we don't have a configured logger yet, we just print it.
-			fmt.Printf("Management server error: %v\n", err)
+			_, _ = fmt.Fprintf(os.Stderr, "Management server error: %v\n", err)
 		}
 	}()
 
@@ -54,5 +60,8 @@ func (s *ManagementServer) Stop(ctx context.Context) error {
 	}
 
 	// 2. Stop the server
-	return s.server.Shutdown(ctx)
+	if err := s.server.Shutdown(ctx); err != nil {
+		return fmt.Errorf("shutdown management server: %w", err)
+	}
+	return nil
 }

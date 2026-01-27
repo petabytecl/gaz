@@ -17,7 +17,7 @@ func NewShutdownCheck() *ShutdownCheck {
 }
 
 // Check implements the CheckFunc signature.
-func (c *ShutdownCheck) Check(ctx context.Context) error {
+func (c *ShutdownCheck) Check(_ context.Context) error {
 	if c.shuttingDown.Load() {
 		return errors.New("application is shutting down")
 	}
