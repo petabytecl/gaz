@@ -60,6 +60,12 @@ Plans:
 3. Logs explicitly identify the component name of the hook that caused the timeout.
 4. Pressing Ctrl+C twice triggers an immediate exit without waiting for the graceful timeout.
 
+**Plans:** 3 plans
+Plans:
+- [ ] 08-01-PLAN.md — Shutdown orchestrator with per-hook timeout and blame logging
+- [ ] 08-02-PLAN.md — Double-SIGINT force exit handling
+- [ ] 08-03-PLAN.md — Comprehensive shutdown hardening tests
+
 ---
 
 ### Phase 9: Provider Config Registration
@@ -94,5 +100,5 @@ Plans:
 | Phase | Status | Completion |
 |-------|--------|------------|
 | 7 - Validation Engine | **✓ Complete** | 2/2 plans verified |
-| 8 - Hardened Lifecycle | Pending | - |
+| 8 - Hardened Lifecycle | **Planned** | 0/3 plans |
 | 9 - Provider Config Registration | **✓ Complete** | 2/2 plans verified |
