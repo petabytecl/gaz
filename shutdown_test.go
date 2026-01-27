@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"testing"
@@ -11,6 +12,26 @@ import (
 
 	"github.com/stretchr/testify/suite"
 )
+
+// syncBuffer is a thread-safe wrapper around bytes.Buffer for use in tests
+// where multiple goroutines may write to the log buffer concurrently.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	return b.buf.Write(p) //nolint:wrapcheck // internal test helper, no wrapping needed
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
 
 // ShutdownTestSuite tests hardened shutdown behavior including:
 // - Graceful shutdown completion when hooks finish in time.
@@ -26,26 +47,32 @@ type ShutdownTestSuite struct {
 }
 
 func (s *ShutdownTestSuite) SetupTest() {
-	// Save original exitFunc
+	// Save original exitFunc (with lock)
+	exitFuncMu.Lock()
 	s.originalExitFunc = exitFunc
+	exitFuncMu.Unlock()
 
 	// Reset atomics
 	s.exitCalled.Store(false)
 	s.exitCode.Store(0)
 
-	// Replace with mock that captures exit calls
+	// Replace with mock that captures exit calls (with lock)
+	exitFuncMu.Lock()
 	exitFunc = func(code int) {
 		s.exitCalled.Store(true)
 		s.exitCode.Store(int32(code)) //nolint:gosec // code is always 0 or 1 in tests
 	}
+	exitFuncMu.Unlock()
 
 	// Create log buffer for capturing logs
 	s.logBuffer = &bytes.Buffer{}
 }
 
 func (s *ShutdownTestSuite) TearDownTest() {
-	// Restore original exitFunc
+	// Restore original exitFunc (with lock)
+	exitFuncMu.Lock()
 	exitFunc = s.originalExitFunc
+	exitFuncMu.Unlock()
 }
 
 // createAppWithSlowHook creates an app with a service that has an OnStop hook
@@ -389,8 +416,9 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	// Create app with slow hook (1s)
 	app := s.createAppWithSlowHook(1*time.Second, 5*time.Second, 10*time.Second)
 
-	// Replace logger to capture logs
-	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	// Use thread-safe buffer for concurrent log access
+	logBuf := &syncBuffer{}
+	handler := slog.NewTextHandler(logBuf, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
 
 	// Build the app
@@ -414,21 +442,28 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	time.Sleep(100 * time.Millisecond)
 
 	// Check log contains hint
-	logOutput := s.logBuffer.String()
+	logOutput := logBuf.String()
 	s.Contains(logOutput, "Ctrl+C again", "first SIGINT should log hint about force exit")
 
 	// Send second SIGINT to complete the test
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	s.Require().NoError(err)
 
-	// Wait for app to exit
+	// Wait for app to exit - after second SIGINT, exitFunc is called which
+	// in production would os.Exit. Our mock doesn't exit, so the shutdown
+	// goroutine continues and eventually completes.
 	select {
 	case <-runDone:
 		// Good, app stopped
 	case <-time.After(2 * time.Second):
 		// Force stop if needed
 		_ = app.Stop(context.Background())
+		<-runDone // Must drain the channel to ensure goroutine finishes
 	}
+
+	// Small delay to allow force-exit watcher goroutine to exit
+	// after shutdownDone is signaled
+	time.Sleep(10 * time.Millisecond)
 }
 
 // TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT

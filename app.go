@@ -26,9 +26,21 @@ const (
 const providerWithErrorReturnCount = 2
 
 // exitFunc is the function called for force exit. Variable for testability.
+// Protected by exitFuncMu for thread-safe access during tests.
 //
 //nolint:gochecknoglobals // Package-level for test injection of os.Exit.
-var exitFunc = os.Exit
+var (
+	exitFunc   = os.Exit
+	exitFuncMu sync.RWMutex
+)
+
+// callExitFunc safely calls exitFunc with proper synchronization.
+func callExitFunc(code int) {
+	exitFuncMu.RLock()
+	fn := exitFunc
+	exitFuncMu.RUnlock()
+	fn(code)
+}
 
 // AppOptions configuration for App.
 type AppOptions struct {
@@ -641,7 +653,7 @@ func (a *App) handleSignalShutdown(
 			case <-sigCh:
 				// Second SIGINT received - force exit immediately
 				a.Logger.ErrorContext(ctx, "Received second interrupt, forcing exit")
-				exitFunc(1)
+				callExitFunc(1)
 			case <-shutdownDone:
 				// Normal completion, watcher exits
 			}
@@ -673,7 +685,7 @@ func (a *App) Stop(ctx context.Context) error {
 			)
 			a.Logger.Error(msg)
 			fmt.Fprintln(os.Stderr, msg)
-			exitFunc(1)
+			callExitFunc(1)
 		}
 	}()
 
