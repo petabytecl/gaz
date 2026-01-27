@@ -449,6 +449,11 @@ linters:
     presets:
       - std-error-handling
       - common-false-positives
+    # Path patterns to completely exclude from linting.
+    # Examples are teaching code with intentionally simple patterns.
+    paths:
+      - examples/
+      - example.*_test\.go
     # Excluding configuration per-path, per-linter, per-text and per-source.
     rules:
       # resolution.go returns interface by design (generic resolution)
