@@ -113,13 +113,14 @@ Plans:
 3. Example applications compile and run successfully.
 4. API reference generated and accessible.
 
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 10 to break down)
-
-**Details:**
-[To be added during planning]
+- [ ] 10-01-PLAN.md — README.md and package doc.go
+- [ ] 10-02-PLAN.md — Documentation guides (docs/*.md)
+- [ ] 10-03-PLAN.md — Testable godoc examples
+- [ ] 10-04-PLAN.md — Basic example applications (basic, lifecycle, config-loading)
+- [ ] 10-05-PLAN.md — Advanced example applications (http-server, modules, cobra-cli)
 
 ---
 
@@ -130,4 +131,4 @@ Plans:
 | 7 - Validation Engine | **✓ Complete** | 2/2 plans verified |
 | 8 - Hardened Lifecycle | **✓ Complete** | 3/3 plans verified |
 | 9 - Provider Config Registration | **✓ Complete** | 2/2 plans verified |
-| 10 - Documentation & Examples | **Not Planned** | 0/0 plans |
+| 10 - Documentation & Examples | **Planned** | 0/5 plans |
