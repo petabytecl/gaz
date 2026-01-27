@@ -6,9 +6,11 @@ import (
 	"net/http"
 )
 
+const idLength = 16
+
 // generateID generates a random 16-byte hex string (32 characters).
 func generateID() string {
-	b := make([]byte, 16)
+	b := make([]byte, idLength)
 	if _, err := rand.Read(b); err != nil {
 		// Fallback or panic? For a logger middleware, fallback to empty or handled error is safer,
 		// but rand.Read failing is catastrophic.

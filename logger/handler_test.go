@@ -22,8 +22,8 @@ func (m *mockHandler) Handle(_ context.Context, r slog.Record) error {
 	})
 	return nil
 }
-func (m *mockHandler) WithAttrs(attrs []slog.Attr) slog.Handler { return m }
-func (m *mockHandler) WithGroup(name string) slog.Handler       { return m }
+func (m *mockHandler) WithAttrs(_ []slog.Attr) slog.Handler { return m }
+func (m *mockHandler) WithGroup(_ string) slog.Handler      { return m }
 
 func TestContextHandler_Handle(t *testing.T) {
 	mock := &mockHandler{}

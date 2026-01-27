@@ -27,5 +27,5 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 		}
 	}
 
-	return h.Handler.Handle(ctx, r)
+	return h.Handler.Handle(ctx, r) //nolint:wrapcheck
 }

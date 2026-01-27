@@ -13,20 +13,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// captureOutput captures output of a function that writes to os.Stdout
+// captureOutput captures output of a function that writes to os.Stdout.
 func captureOutput(f func()) string {
 	r, w, _ := os.Pipe()
 	stdout := os.Stdout
-	os.Stdout = w
+	os.Stdout = w //nolint:reassign // mocking stdout for testing
 	defer func() {
-		os.Stdout = stdout
+		os.Stdout = stdout //nolint:reassign // restoring stdout
 	}()
 
 	f()
-	w.Close()
+	_ = w.Close()
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	return buf.String()
 }
 
@@ -42,7 +42,7 @@ func TestNewLogger_JSON(t *testing.T) {
 
 	require.NotEmpty(t, output)
 
-	var logMap map[string]interface{}
+	var logMap map[string]any
 	err := json.Unmarshal([]byte(output), &logMap)
 	require.NoError(t, err, "Output should be valid JSON")
 
@@ -85,7 +85,7 @@ func TestNewLogger_ContextPropagation(t *testing.T) {
 
 	require.NotEmpty(t, output)
 
-	var logMap map[string]interface{}
+	var logMap map[string]any
 	err := json.Unmarshal([]byte(output), &logMap)
 	require.NoError(t, err, "Output should be valid JSON")
 

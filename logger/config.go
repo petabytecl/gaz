@@ -1,3 +1,4 @@
+// Package logger provides structured logging with context support.
 package logger
 
 import "log/slog"
