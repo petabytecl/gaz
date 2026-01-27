@@ -27,6 +27,12 @@ Requirements for Security & Hardening milestone.
 - [x] **PROV-03**: Duplicate config keys from different providers fail at Build() with clear error
 - [x] **PROV-04**: Config values are injectable via ProviderValues type
 
+### Documentation & Examples
+
+- [x] **DOC-01**: All public APIs documented with usage examples
+- [x] **DOC-02**: Working example applications demonstrating common patterns
+- [x] **DOC-03**: API reference with complete type documentation
+
 ## v2 Requirements
 
 ### Advanced Validation
@@ -56,10 +62,13 @@ Requirements for Security & Hardening milestone.
 | PROV-02 | Phase 9 | Complete |
 | PROV-03 | Phase 9 | Complete |
 | PROV-04 | Phase 9 | Complete |
+| DOC-01 | Phase 10 | Complete |
+| DOC-02 | Phase 10 | Complete |
+| DOC-03 | Phase 10 | Complete |
 
 **Coverage:**
-- v1.1 requirements: 11 total
-- Complete: 11 (Phases 7, 8, 9)
+- v1.1 requirements: 14 total
+- Complete: 14 (Phases 7, 8, 9, 10)
 - Pending: 0
 
 ---
