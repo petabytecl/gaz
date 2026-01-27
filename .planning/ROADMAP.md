@@ -77,10 +77,10 @@ Milestone v1.1 hardens the `gaz` framework for production use by introducing two
 5. ProviderValues injectable and provides typed getters (GetString, GetInt, etc)
 6. Env vars work with translated names (redis.host → REDIS_HOST)
 
-**Plans:** 2 plans (1/2 complete)
+**Plans:** 2 plans (2/2 complete)
 Plans:
 - [x] 09-01-PLAN.md — Define ConfigProvider interface, ConfigFlag struct, ErrConfigKeyCollision
-- [ ] 09-02-PLAN.md — App integration, ConfigManager wiring, ProviderValues, comprehensive tests
+- [x] 09-02-PLAN.md — App integration, ConfigManager wiring, ProviderValues, comprehensive tests
 
 ---
 
@@ -90,4 +90,4 @@ Plans:
 |-------|--------|------------|
 | 7 - Validation Engine | **Pending** | - |
 | 8 - Hardened Lifecycle | Pending | - |
-| 9 - Provider Config Registration | **In Progress** | 1/2 plans |
+| 9 - Provider Config Registration | **Complete** | 2/2 plans |
