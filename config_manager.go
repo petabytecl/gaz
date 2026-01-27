@@ -124,6 +124,56 @@ func (cm *ConfigManager) BindFlags(fs *pflag.FlagSet) error {
 	return nil
 }
 
+// Viper returns the underlying viper instance.
+// Used internally for ProviderValues.
+func (cm *ConfigManager) Viper() *viper.Viper {
+	return cm.v
+}
+
+// RegisterProviderFlags registers provider config flags with defaults and env binding.
+// For each flag, it:
+// 1. Sets the default value if specified
+// 2. Binds the key to an environment variable (e.g., redis.host -> REDIS_HOST)
+func (cm *ConfigManager) RegisterProviderFlags(namespace string, flags []ConfigFlag) error {
+	for _, flag := range flags {
+		fullKey := namespace + "." + flag.Key
+
+		// Set default if provided
+		if flag.Default != nil {
+			cm.v.SetDefault(fullKey, flag.Default)
+		}
+
+		// Bind env var with explicit name (redis.host -> REDIS_HOST)
+		envKey := strings.ToUpper(strings.ReplaceAll(fullKey, ".", "_"))
+		if err := cm.v.BindEnv(fullKey, envKey); err != nil {
+			return fmt.Errorf("failed to bind env var %s for key %s: %w", envKey, fullKey, err)
+		}
+	}
+	return nil
+}
+
+// ValidateProviderFlags validates that required provider config flags are set.
+// Returns a slice of errors for all missing required fields (not fail-fast).
+func (cm *ConfigManager) ValidateProviderFlags(namespace string, flags []ConfigFlag) []error {
+	var errs []error
+	for _, flag := range flags {
+		if !flag.Required {
+			continue
+		}
+
+		fullKey := namespace + "." + flag.Key
+
+		// Check if value is set and non-zero
+		if !cm.v.IsSet(fullKey) {
+			errs = append(errs, fmt.Errorf(
+				"provider %q: required config key %q is not set",
+				namespace, fullKey,
+			))
+		}
+	}
+	return errs
+}
+
 // bindStructEnv recursively binds struct fields to environment variables.
 func (cm *ConfigManager) bindStructEnv(v *viper.Viper, target any, prefix string) {
 	val := reflect.ValueOf(target)
