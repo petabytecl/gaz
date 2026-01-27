@@ -14,6 +14,7 @@ Milestone v1.1 hardens the `gaz` framework for production use by introducing two
 |-------|------|--------------|------------------|
 | **7 - Validation Engine** | Users can define struct tags that prevent application startup if configuration is invalid. | VAL-01, VAL-02, VAL-03 | 1. `validate` tags enforce constraints<br>2. App exits on config error<br>3. Cross-field rules work |
 | **8 - Hardened Lifecycle** | Application guarantees process termination within a fixed timeout, preventing zombie processes. | LIFE-01, LIFE-02, LIFE-03, LIFE-04 | 1. Shutdown forces exit after 30s<br>2. Double Ctrl+C exits immediately<br>3. Logs blame hanging hooks |
+| **9 - Provider Config Registration** | Services/providers can register flags/config keys on the app config manager. | PROV-01, PROV-02, PROV-03, PROV-04 | 1. ConfigProvider interface works<br>2. Keys auto-namespaced<br>3. Collisions detected<br>4. Values injectable |
 
 ## Detailed Phases
 
@@ -54,9 +55,39 @@ Milestone v1.1 hardens the `gaz` framework for production use by introducing two
 3. Logs explicitly identify the component name of the hook that caused the timeout.
 4. Pressing Ctrl+C twice triggers an immediate exit without waiting for the graceful timeout.
 
+---
+
+### Phase 9: Provider Config Registration
+
+**Goal:** Services/providers can register flags/config keys on the app config manager.
+
+**Dependencies:** Phase 8
+
+**Requirements:**
+- **PROV-01**: Providers can implement ConfigProvider interface to declare config needs
+- **PROV-02**: Provider config keys are auto-prefixed with declared namespace
+- **PROV-03**: Duplicate config keys from different providers fail at Build() with clear error
+- **PROV-04**: Config values are injectable via ProviderValues type
+
+**Success Criteria:**
+1. Provider implementing ConfigProvider has config collected during Build()
+2. Keys are auto-prefixed (e.g., redis + host = redis.host)
+3. Two providers registering same key fails with ErrConfigKeyCollision
+4. Required flags missing fails Build() with clear error message
+5. ProviderValues injectable and provides typed getters (GetString, GetInt, etc)
+6. Env vars work with translated names (redis.host → REDIS_HOST)
+
+**Plans:** 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — Define ConfigProvider interface, ConfigFlag struct, ErrConfigKeyCollision
+- [ ] 09-02-PLAN.md — App integration, ConfigManager wiring, ProviderValues, comprehensive tests
+
+---
+
 ## Progress
 
 | Phase | Status | Completion |
 |-------|--------|------------|
 | 7 - Validation Engine | **Pending** | - |
 | 8 - Hardened Lifecycle | Pending | - |
+| 9 - Provider Config Registration | **Planned** | - |
