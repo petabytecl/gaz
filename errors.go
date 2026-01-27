@@ -29,4 +29,7 @@ var (
 
 	// ErrConfigKeyCollision is returned when two providers register the same config key.
 	ErrConfigKeyCollision = errors.New("gaz: config key collision")
+
+	// ErrConfigValidation is returned when config struct validation fails.
+	ErrConfigValidation = errors.New("gaz: config validation failed")
 )
