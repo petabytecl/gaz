@@ -8,64 +8,61 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.0 Cleanup & Concurrency
+**Current focus:** v2.0 Cleanup & Concurrency - Phase 11
 
 ## Current Position
 
-- **Phase:** Not started (defining requirements)
-- **Status:** Defining requirements
-- **Last activity:** 2026-01-27 — Milestone v2.0 started
-- **Next Action:** Define requirements, then `/gsd-plan-phase`
+- **Phase:** 11 of 16 (Cleanup)
+- **Plan:** 0 of 2 in current phase
+- **Status:** Ready to plan
+- **Last activity:** 2026-01-27 — Roadmap created for v2.0
 
-## Progress
-
-```
-v1.0 MVP:       [██████████] 100% - 6 phases, 35 plans (SHIPPED)
-v1.1 Hardening: [██████████] 100% - 4 phases, 12 plans (SHIPPED)
-v2.0 Cleanup:   [░░░░░░░░░░] 0% - Not started
-```
-
-## Context
-
-**Session Focus:**
-v2.0 milestone — cleanup deprecated code, extract DI package, add workers/eventbus.
-
-**Accumulated Context:**
-- Generic fluent API (`For[T](c).Provider(...)`) is the preferred registration style
-- Reflection-based `ProvideSingleton`/`ProvideTransient` will be removed
-- DI should work standalone without full gaz framework
-- Workers/EventBus patterns from gazx to be modernized
-
-**Recent Decisions:**
-| Decision | Rationale |
-|----------|-----------|
-| Keep generic fluent API | Type-safe, no reflection overhead |
-| Remove reflection-based registration | Simplify API surface, reduce code duplication |
-| Extract DI to gaz/di | Standalone usability + cleaner imports |
-| Order: Cleanup → DI → Workers | Remove tech debt before adding features |
+Progress: [░░░░░░░░░░] 0% (0/12 plans)
 
 ## Performance Metrics
 
-| Metric | Value | Target |
-|--------|-------|--------|
-| Test Coverage | 100% | 100% |
-| Lint Score | 10/10 | 10/10 |
-| v1.0 Progress | 6/6 phases | Complete |
-| v1.1 Progress | 4/4 phases | Complete |
-| v2.0 Progress | 0/? phases | Starting |
+**Velocity:**
+- Total plans completed: 0 (v2.0)
+- Average duration: - min
+- Total execution time: - hours
 
-## Blockers & Risks
+**By Phase:**
 
-- **None**
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 11. Cleanup | 0/2 | - | - |
 
-## Roadmap Summary
+**Previous Milestones:**
+- v1.0 MVP: 35 plans, 1 day
+- v1.1 Hardening: 12 plans, 2 days
 
-**Shipped:**
-- v1.0 MVP (Phases 1-6, 35 plans) — 2026-01-26
-- v1.1 Security & Hardening (Phases 7-10, 12 plans) — 2026-01-27
+## Accumulated Context
 
-**Current:**
-- v2.0 Cleanup & Concurrency (to be planned)
+### Decisions
 
-For detailed milestone history, see `.planning/MILESTONES.md`
-For archived roadmaps, see `.planning/milestones/`
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- Generic fluent API (`For[T](c).Provider(...)`) is the preferred registration style
+- Reflection-based registration will be removed (CLN-04 to CLN-09)
+- DI should work standalone without full gaz framework (DI-08)
+- Order: Cleanup → DI → Config → Workers/Cron/EventBus
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+None yet.
+
+## Session Continuity
+
+Last session: 2026-01-27
+Stopped at: Roadmap created for v2.0
+Resume file: None
+
+---
+
+*For detailed milestone history, see `.planning/MILESTONES.md`*
+*For archived roadmaps, see `.planning/milestones/`*

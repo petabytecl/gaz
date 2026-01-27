@@ -120,17 +120,68 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLN-01 to CLN-12 | TBD | Pending |
-| DI-01 to DI-10 | TBD | Pending |
-| CFG-01 to CFG-09 | TBD | Pending |
-| WRK-01 to WRK-08 | TBD | Pending |
-| CRN-01 to CRN-10 | TBD | Pending |
-| EVT-01 to EVT-08 | TBD | Pending |
+| CLN-01 | Phase 11 | Pending |
+| CLN-02 | Phase 11 | Pending |
+| CLN-03 | Phase 11 | Pending |
+| CLN-04 | Phase 11 | Pending |
+| CLN-05 | Phase 11 | Pending |
+| CLN-06 | Phase 11 | Pending |
+| CLN-07 | Phase 11 | Pending |
+| CLN-08 | Phase 11 | Pending |
+| CLN-09 | Phase 11 | Pending |
+| CLN-10 | Phase 11 | Pending |
+| CLN-11 | Phase 11 | Pending |
+| CLN-12 | Phase 11 | Pending |
+| DI-01 | Phase 12 | Pending |
+| DI-02 | Phase 12 | Pending |
+| DI-03 | Phase 12 | Pending |
+| DI-04 | Phase 12 | Pending |
+| DI-05 | Phase 12 | Pending |
+| DI-06 | Phase 12 | Pending |
+| DI-07 | Phase 12 | Pending |
+| DI-08 | Phase 12 | Pending |
+| DI-09 | Phase 12 | Pending |
+| DI-10 | Phase 12 | Pending |
+| CFG-01 | Phase 13 | Pending |
+| CFG-02 | Phase 13 | Pending |
+| CFG-03 | Phase 13 | Pending |
+| CFG-04 | Phase 13 | Pending |
+| CFG-05 | Phase 13 | Pending |
+| CFG-06 | Phase 13 | Pending |
+| CFG-07 | Phase 13 | Pending |
+| CFG-08 | Phase 13 | Pending |
+| CFG-09 | Phase 13 | Pending |
+| WRK-01 | Phase 14 | Pending |
+| WRK-02 | Phase 14 | Pending |
+| WRK-03 | Phase 14 | Pending |
+| WRK-04 | Phase 14 | Pending |
+| WRK-05 | Phase 14 | Pending |
+| WRK-06 | Phase 14 | Pending |
+| WRK-07 | Phase 14 | Pending |
+| WRK-08 | Phase 14 | Pending |
+| CRN-01 | Phase 15 | Pending |
+| CRN-02 | Phase 15 | Pending |
+| CRN-03 | Phase 15 | Pending |
+| CRN-04 | Phase 15 | Pending |
+| CRN-05 | Phase 15 | Pending |
+| CRN-06 | Phase 15 | Pending |
+| CRN-07 | Phase 15 | Pending |
+| CRN-08 | Phase 15 | Pending |
+| CRN-09 | Phase 15 | Pending |
+| CRN-10 | Phase 15 | Pending |
+| EVT-01 | Phase 16 | Pending |
+| EVT-02 | Phase 16 | Pending |
+| EVT-03 | Phase 16 | Pending |
+| EVT-04 | Phase 16 | Pending |
+| EVT-05 | Phase 16 | Pending |
+| EVT-06 | Phase 16 | Pending |
+| EVT-07 | Phase 16 | Pending |
+| EVT-08 | Phase 16 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 49 total
-- Mapped to phases: 0
-- Unmapped: 49 ⚠️
+- v2.0 requirements: 57 total
+- Mapped to phases: 57 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-01-27*
