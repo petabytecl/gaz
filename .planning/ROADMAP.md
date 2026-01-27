@@ -152,10 +152,12 @@ Refactors the App struct to remove direct Viper dependency, introducing a dedica
   2. Framework distinguishes readiness probes (ready to serve) from liveness probes (still running)
   3. Health checkers registered in DI are auto-discovered and aggregated
   4. Health checks execute concurrently with configurable timeout
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Core Infrastructure (interfaces, registry, shutdown hook)
+- [ ] 05-02-PLAN.md — Handlers & IETF Formatting (JSON output, status codes)
+- [ ] 05-03-PLAN.md — Management Server (dedicated port, app integration)
 
 ### Phase 6: Logging (slog)
 **Goal**: Applications have structured logging with context propagation
@@ -186,7 +188,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 3. App Builder + Cobra | 4/4 | Complete | 2026-01-26 |
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
 | 4.1 Refactor config | 2/2 | Complete | 2026-01-26 |
-| 5. Health Checks | 0/? | Not started | - |
+| 5. Health Checks | 0/3 | Not started | - |
 | 6. Logging (slog) | 0/? | Not started | - |
 
 ---
