@@ -586,27 +586,72 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}
 
-	// Signal handling
+	return a.waitForShutdownSignal(ctx)
+}
+
+// waitForShutdownSignal blocks until a shutdown trigger (signal, context cancel, or Stop call).
+// Returns the result of graceful shutdown.
+func (a *App) waitForShutdownSignal(ctx context.Context) error {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigCh)
 
-	// Block until stopped
 	select {
 	case <-ctx.Done():
-		// Context cancelled, initiate shutdown
+		// Context cancelled, treat like SIGTERM (graceful, no double-signal)
+		a.Logger.InfoContext(ctx, "Shutting down gracefully...", "reason", "context cancelled")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 		defer cancel()
 		return a.Stop(shutdownCtx)
-	case <-sigCh:
-		// Signal received, initiate shutdown
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
-		defer cancel()
-		return a.Stop(shutdownCtx)
+
+	case sig := <-sigCh:
+		return a.handleSignalShutdown(ctx, sig, sigCh)
+
 	case <-a.stopCh:
 		// Stopped externally (Stop() called)
 		return nil
 	}
+}
+
+// handleSignalShutdown handles graceful shutdown triggered by a signal.
+// For SIGINT, it spawns a force-exit watcher that exits immediately on second SIGINT.
+// For SIGTERM, it performs graceful shutdown without double-signal behavior.
+func (a *App) handleSignalShutdown(
+	ctx context.Context,
+	sig os.Signal,
+	sigCh <-chan os.Signal,
+) error {
+	// Log hint message about force exit option
+	a.Logger.InfoContext(ctx, "Shutting down gracefully...", "hint", "Ctrl+C again to force")
+
+	// Create shutdown context
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
+	defer cancel()
+
+	// Channel to receive shutdown result
+	shutdownDone := make(chan error, 1)
+
+	// Start graceful shutdown in goroutine so we can continue listening for signals
+	go func() {
+		shutdownDone <- a.Stop(shutdownCtx)
+	}()
+
+	// If SIGINT, spawn force-exit watcher goroutine
+	if sig == os.Interrupt {
+		go func() {
+			select {
+			case <-sigCh:
+				// Second SIGINT received - force exit immediately
+				a.Logger.ErrorContext(ctx, "Received second interrupt, forcing exit")
+				exitFunc(1)
+			case <-shutdownDone:
+				// Normal completion, watcher exits
+			}
+		}()
+	}
+
+	// Wait for shutdown to complete
+	return <-shutdownDone
 }
 
 // Stop initiates graceful shutdown of the application.
