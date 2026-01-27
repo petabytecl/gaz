@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 5 of 6 (Health Checks)
-Plan: 1 of 2 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-26 - Completed 05-01-PLAN.md
+Last activity: 2026-01-26 - Completed 05-02-PLAN.md
 
-Progress: [██████████████████████░░░] 86%
+Progress: [██████████████████████████░░] 89%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 26
 - Average duration: 6 min
-- Total execution time: 2.8 hours
+- Total execution time: 3.0 hours
 
 **By Phase:**
 
@@ -35,10 +35,10 @@ Progress: [██████████████████████░
 | 3 | 4 | 33 min | 8 min |
 | 4 | 2 | 15 min | 7 min |
 | 4.1 | 2 | 30 min | 15 min |
-| 5 | 1 | 5 min | 5 min |
+| 5 | 2 | 15 min | 7.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (7 min), 04.1-01 (15 min), 04.1-02 (15 min), 05-01 (5 min)
+- Last 5 plans: 04.1-01 (15 min), 04.1-02 (15 min), 05-01 (5 min), 05-02 (10 min)
 - Trend: Fast (back to implementation)
 
 *Updated after each plan completion*
@@ -50,23 +50,15 @@ Progress: [██████████████████████░
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Init]: Drop hierarchical scopes — flat scope model only (Singleton, Transient)
-- [Init]: Clean break from dibx/gazx API — enables ideal design without legacy constraints
-- [Init]: slog over third-party loggers — stdlib, sufficient for structured logging
-- [04-01]: Use Defaulter interface for logic-based defaults
-- [04-01]: Use Validator interface for self-validating config structs
-- [04-01]: Use spf13/viper in instance mode (no global state)
-- [04-01]: Precedence: Flags > Env > Profile > File > Defaults
-- [04-02]: Bind Cobra flags via PersistentPreRunE hook
-- [04.1-02]: Delegate all config logic from App to ConfigManager
-- [04.1-02]: Remove ConfigOptions struct in favor of functional options
 - [05-01]: Health checks are registered explicitly via Add*Check methods
 - [05-01]: Shutdown check uses atomic.Bool for thread safety
+- [05-02]: Liveness probe returns 200 OK even on failure (body indicates failure)
+- [05-02]: Readiness/Startup probes return 503 on failure
+- [05-02]: Health output follows strict IETF JSON format
 
 ### Pending Todos
 
 0 pending todo(s) in `.planning/todos/pending/`:
-
 
 ### Blockers/Concerns
 
@@ -74,13 +66,10 @@ None.
 
 ### Roadmap Evolution
 
-- Phase 4 completed retroactively (code found implemented and verified).
-- Phase 4.1 inserted after Phase 4: Refactor configuration (URGENT)
-- Phase 4.1 complete.
-- Phase 5 started.
+- Phase 5: 05-02 complete. Ready for 05-03.
 
 ## Session Continuity
 
 Last session: 2026-01-26
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
