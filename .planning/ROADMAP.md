@@ -193,7 +193,7 @@ Phases 1-3 sequential, phases 4-6 can parallelize after phase 3.
 | 4. Config System | 2/2 | Complete | 2026-01-26 |
 | 4.1 Refactor config | 2/2 | Complete | 2026-01-26 |
 | 5. Health Checks | 3/3 | Complete | 2026-01-27 |
-| 6. Logging (slog) | 0/? | Not started | - |
+| 6. Logging (slog) | 0/4 | Planned | - |
 
 ---
 *Created: 2026-01-26*
