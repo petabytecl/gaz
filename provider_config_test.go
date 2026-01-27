@@ -1,7 +1,6 @@
 package gaz_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -31,7 +30,12 @@ func (r *RedisProvider) ConfigNamespace() string {
 
 func (r *RedisProvider) ConfigFlags() []gaz.ConfigFlag {
 	return []gaz.ConfigFlag{
-		{Key: "host", Type: gaz.ConfigFlagTypeString, Default: "localhost", Description: "Redis server host"},
+		{
+			Key:         "host",
+			Type:        gaz.ConfigFlagTypeString,
+			Default:     "localhost",
+			Description: "Redis server host",
+		},
 		{Key: "port", Type: gaz.ConfigFlagTypeInt, Default: 6379, Description: "Redis server port"},
 	}
 }
@@ -45,8 +49,18 @@ func (c *CacheProvider) ConfigNamespace() string {
 
 func (c *CacheProvider) ConfigFlags() []gaz.ConfigFlag {
 	return []gaz.ConfigFlag{
-		{Key: "ttl", Type: gaz.ConfigFlagTypeDuration, Default: time.Minute * 5, Description: "Cache TTL"},
-		{Key: "enabled", Type: gaz.ConfigFlagTypeBool, Default: true, Description: "Enable caching"},
+		{
+			Key:         "ttl",
+			Type:        gaz.ConfigFlagTypeDuration,
+			Default:     time.Minute * 5,
+			Description: "Cache TTL",
+		},
+		{
+			Key:         "enabled",
+			Type:        gaz.ConfigFlagTypeBool,
+			Default:     true,
+			Description: "Enable caching",
+		},
 	}
 }
 
@@ -98,10 +112,20 @@ func (p *AllTypesProvider) ConfigNamespace() string {
 
 func (p *AllTypesProvider) ConfigFlags() []gaz.ConfigFlag {
 	return []gaz.ConfigFlag{
-		{Key: "str", Type: gaz.ConfigFlagTypeString, Default: "default-str", Description: "String value"},
+		{
+			Key:         "str",
+			Type:        gaz.ConfigFlagTypeString,
+			Default:     "default-str",
+			Description: "String value",
+		},
 		{Key: "num", Type: gaz.ConfigFlagTypeInt, Default: 42, Description: "Int value"},
 		{Key: "flag", Type: gaz.ConfigFlagTypeBool, Default: false, Description: "Bool value"},
-		{Key: "timeout", Type: gaz.ConfigFlagTypeDuration, Default: time.Second * 30, Description: "Duration value"},
+		{
+			Key:         "timeout",
+			Type:        gaz.ConfigFlagTypeDuration,
+			Default:     time.Second * 30,
+			Description: "Duration value",
+		},
 		{Key: "rate", Type: gaz.ConfigFlagTypeFloat, Default: 1.5, Description: "Float value"},
 	}
 }
@@ -117,7 +141,7 @@ func (s *ProviderConfigSuite) TestBasicConfigProvider() {
 	// Provider implements ConfigProvider, values accessible via ProviderValues
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_BASIC")).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 
@@ -141,7 +165,7 @@ func (s *ProviderConfigSuite) TestNamespacePrefixing() {
 
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NS")).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 
@@ -160,16 +184,16 @@ func (s *ProviderConfigSuite) TestKeyCollision() {
 	// Two providers with same full key fails Build()
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_COLLISION")).
-		ProvideSingleton(func(c *gaz.Container) *CollidingProvider1 {
+		ProvideSingleton(func(_ *gaz.Container) *CollidingProvider1 {
 			return &CollidingProvider1{}
 		}).
-		ProvideSingleton(func(c *gaz.Container) *CollidingProvider2 {
+		ProvideSingleton(func(_ *gaz.Container) *CollidingProvider2 {
 			return &CollidingProvider2{}
 		})
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.True(errors.Is(err, gaz.ErrConfigKeyCollision))
+	s.Require().ErrorIs(err, gaz.ErrConfigKeyCollision)
 	s.Contains(err.Error(), "cache.host")
 }
 
@@ -177,7 +201,7 @@ func (s *ProviderConfigSuite) TestRequiredMissing() {
 	// Required flag not set fails Build()
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_MISSING")).
-		ProvideSingleton(func(c *gaz.Container) *RequiredConfigProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RequiredConfigProvider {
 			return &RequiredConfigProvider{}
 		})
 
@@ -193,7 +217,7 @@ func (s *ProviderConfigSuite) TestRequiredSet() {
 
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_SET")).
-		ProvideSingleton(func(c *gaz.Container) *RequiredConfigProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RequiredConfigProvider {
 			return &RequiredConfigProvider{}
 		})
 
@@ -209,7 +233,7 @@ func (s *ProviderConfigSuite) TestDefaultValue() {
 	// Default value used when not set
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_DEFAULT")).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 
@@ -234,7 +258,7 @@ func (s *ProviderConfigSuite) TestAllTypes() {
 
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_TYPES")).
-		ProvideSingleton(func(c *gaz.Container) *AllTypesProvider {
+		ProvideSingleton(func(_ *gaz.Container) *AllTypesProvider {
 			return &AllTypesProvider{}
 		})
 
@@ -246,7 +270,7 @@ func (s *ProviderConfigSuite) TestAllTypes() {
 
 	s.Equal("env-string", pv.GetString("types.str"))
 	s.Equal(100, pv.GetInt("types.num"))
-	s.Equal(true, pv.GetBool("types.flag"))
+	s.True(pv.GetBool("types.flag"))
 	s.Equal(90*time.Second, pv.GetDuration("types.timeout"))
 	s.InDelta(3.14, pv.GetFloat64("types.rate"), 0.001)
 }
@@ -258,10 +282,10 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_MULTI")).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		}).
-		ProvideSingleton(func(c *gaz.Container) *CacheProvider {
+		ProvideSingleton(func(_ *gaz.Container) *CacheProvider {
 			return &CacheProvider{}
 		})
 
@@ -277,13 +301,13 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 
 	// Cache provider values
 	s.Equal(10*time.Minute, pv.GetDuration("cache.ttl"))
-	s.Equal(true, pv.GetBool("cache.enabled"))
+	s.True(pv.GetBool("cache.enabled"))
 }
 
 func (s *ProviderConfigSuite) TestNoConfigManager() {
 	// App without WithConfig - provider config features are skipped
 	app := gaz.New().
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 
@@ -294,17 +318,17 @@ func (s *ProviderConfigSuite) TestNoConfigManager() {
 	// ProviderValues should not be registered when no ConfigManager
 	_, err = gaz.Resolve[*gaz.ProviderValues](app.Container())
 	s.Require().Error(err)
-	s.True(errors.Is(err, gaz.ErrNotFound))
+	s.ErrorIs(err, gaz.ErrNotFound)
 }
 
 func (s *ProviderConfigSuite) TestNonConfigProvider() {
 	// Provider that doesn't implement ConfigProvider is ignored
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NON")).
-		ProvideSingleton(func(c *gaz.Container) *NonConfigProvider {
+		ProvideSingleton(func(_ *gaz.Container) *NonConfigProvider {
 			return &NonConfigProvider{}
 		}).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 
@@ -324,7 +348,7 @@ func (s *ProviderConfigSuite) TestEnvVarTranslation() {
 
 	app := gaz.New().
 		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_ENV")).
-		ProvideSingleton(func(c *gaz.Container) *RedisProvider {
+		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
 			return &RedisProvider{}
 		})
 

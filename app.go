@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -347,34 +348,43 @@ func (a *App) loadConfig() error {
 	return a.configManager.Load()
 }
 
+// getSortedServiceNames returns service names in sorted order for deterministic iteration.
+func (a *App) getSortedServiceNames() []string {
+	a.container.mu.RLock()
+	names := make([]string, 0, len(a.container.services))
+	for name := range a.container.services {
+		names = append(names, name)
+	}
+	a.container.mu.RUnlock()
+	sort.Strings(names)
+	return names
+}
+
 // collectProviderConfigs iterates registered services, collects config from ConfigProvider
 // implementers, detects key collisions, registers provider flags with ConfigManager,
 // validates required fields, and registers ProviderValues.
 func (a *App) collectProviderConfigs() error {
-	// Track keys for collision detection: fullKey -> providerName
 	keyOwners := make(map[string]string)
 	var collisionErrors []error
-	var validationErrors []error
 
-	// Iterate all registered services and check if they implement ConfigProvider
-	a.container.mu.RLock()
-	for typeName, svc := range a.container.services {
+	// Iterate in sorted order for deterministic dependency graph recording
+	for _, typeName := range a.getSortedServiceNames() {
+		a.container.mu.RLock()
+		svc, exists := a.container.services[typeName]
+		a.container.mu.RUnlock()
+		if !exists {
+			continue
+		}
+
 		wrapper, ok := svc.(serviceWrapper)
-		if !ok {
+		if !ok || wrapper.isTransient() {
 			continue
 		}
 
-		// Skip transient services - they create new instances on each call
-		// and shouldn't participate in config collection
-		if wrapper.isTransient() {
-			continue
-		}
-
-		// Try to resolve the instance to check if it implements ConfigProvider
-		instance, err := wrapper.getInstance(a.container, nil)
+		// Use resolveByName() instead of getInstance() to ensure dependencies are recorded
+		instance, err := a.container.resolveByName(typeName, nil)
 		if err != nil {
-			// Skip services that fail to resolve (they may have unsatisfied deps)
-			continue
+			continue // Skip services that fail to resolve
 		}
 
 		cp, ok := instance.(ConfigProvider)
@@ -385,17 +395,16 @@ func (a *App) collectProviderConfigs() error {
 		namespace := cp.ConfigNamespace()
 		flags := cp.ConfigFlags()
 
-		// Store the provider config entry
 		a.providerConfigs = append(a.providerConfigs, providerConfigEntry{
 			providerName: typeName,
 			namespace:    namespace,
 			flags:        flags,
 		})
 
-		// Check for collisions and build full keys
+		// Check for collisions
 		for _, flag := range flags {
 			fullKey := namespace + "." + flag.Key
-			if existingProvider, exists := keyOwners[fullKey]; exists {
+			if existingProvider, found := keyOwners[fullKey]; found {
 				collisionErrors = append(collisionErrors, fmt.Errorf(
 					"%w: key %q registered by both %q and %q",
 					ErrConfigKeyCollision, fullKey, existingProvider, typeName,
@@ -405,40 +414,35 @@ func (a *App) collectProviderConfigs() error {
 			}
 		}
 	}
-	a.container.mu.RUnlock()
 
-	// Return early if collisions detected
 	if len(collisionErrors) > 0 {
 		return errors.Join(collisionErrors...)
 	}
 
-	// Register provider flags with ConfigManager and validate required
-	for _, entry := range a.providerConfigs {
-		if a.configManager != nil {
-			// Register defaults and bind env vars
-			if err := a.configManager.RegisterProviderFlags(entry.namespace, entry.flags); err != nil {
-				return err
-			}
+	return a.registerProviderFlags()
+}
 
-			// Validate required flags
-			errs := a.configManager.ValidateProviderFlags(entry.namespace, entry.flags)
-			validationErrors = append(validationErrors, errs...)
+// registerProviderFlags registers collected provider flags with ConfigManager and validates.
+func (a *App) registerProviderFlags() error {
+	if a.configManager == nil {
+		return nil
+	}
+
+	var validationErrors []error
+	for _, entry := range a.providerConfigs {
+		if err := a.configManager.RegisterProviderFlags(entry.namespace, entry.flags); err != nil {
+			return err
 		}
+		errs := a.configManager.ValidateProviderFlags(entry.namespace, entry.flags)
+		validationErrors = append(validationErrors, errs...)
 	}
 
 	if len(validationErrors) > 0 {
 		return errors.Join(validationErrors...)
 	}
 
-	// Create and register ProviderValues
-	if a.configManager != nil {
-		pv := &ProviderValues{v: a.configManager.Viper()}
-		if err := a.registerInstance(pv); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	pv := &ProviderValues{v: a.configManager.Viper()}
+	return a.registerInstance(pv)
 }
 
 // Build validates all registrations and instantiates eager services.

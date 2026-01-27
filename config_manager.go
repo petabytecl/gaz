@@ -132,8 +132,8 @@ func (cm *ConfigManager) Viper() *viper.Viper {
 
 // RegisterProviderFlags registers provider config flags with defaults and env binding.
 // For each flag, it:
-// 1. Sets the default value if specified
-// 2. Binds the key to an environment variable (e.g., redis.host -> REDIS_HOST)
+// 1. Sets the default value if specified.
+// 2. Binds the key to an environment variable (e.g., redis.host -> REDIS_HOST).
 func (cm *ConfigManager) RegisterProviderFlags(namespace string, flags []ConfigFlag) error {
 	for _, flag := range flags {
 		fullKey := namespace + "." + flag.Key
