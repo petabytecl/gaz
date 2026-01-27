@@ -408,6 +408,8 @@ func (a *App) Run(ctx context.Context) error {
 		return err
 	}
 
+	a.Logger.Info("starting application", "services_count", len(services))
+
 	// Start services layer by layer
 	for _, layer := range startupOrder {
 		var wg sync.WaitGroup
@@ -418,8 +420,12 @@ func (a *App) Run(ctx context.Context) error {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+				start := time.Now()
 				if startErr := svc.start(ctx); startErr != nil {
+					a.Logger.Error("failed to start service", "name", name, "error", startErr)
 					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
+				} else {
+					a.Logger.Info("service started", "name", name, "duration", time.Since(start))
 				}
 			}()
 		}
@@ -500,8 +506,12 @@ func (a *App) Stop(ctx context.Context) error {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+				start := time.Now()
 				if stopErr := svc.stop(ctx); stopErr != nil {
+					a.Logger.Error("failed to stop service", "name", name, "error", stopErr)
 					errCh <- fmt.Errorf("stopping service %s: %w", name, stopErr)
+				} else {
+					a.Logger.Info("service stopped", "name", name, "duration", time.Since(start))
 				}
 			}()
 		}
