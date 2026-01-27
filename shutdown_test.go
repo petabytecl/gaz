@@ -215,3 +215,164 @@ func (s *ShutdownTestSuite) waitForAppRunning(app *App, timeout time.Duration) b
 func TestShutdownTestSuite(t *testing.T) {
 	suite.Run(t, new(ShutdownTestSuite))
 }
+
+// =============================================================================
+// Task 2: Graceful and Timeout Tests
+// =============================================================================
+
+// TestGracefulShutdownCompletes verifies that when hooks complete within timeout,
+// no force exit is triggered and Stop() returns nil.
+func (s *ShutdownTestSuite) TestGracefulShutdownCompletes() {
+	// Create app with hook that completes quickly (50ms)
+	// Set generous timeouts: 1s per-hook, 5s global
+	app := s.createAppWithSlowHook(50*time.Millisecond, 1*time.Second, 5*time.Second)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Call Stop directly (not Run, to avoid signal handling complexity)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = app.Stop(ctx)
+
+	// Assert: Stop() returns nil (no error)
+	s.NoError(err, "Stop() should return nil when hooks complete in time")
+
+	// Assert: exitFunc was NOT called (no force exit)
+	s.False(s.exitCalled.Load(), "exitFunc should NOT be called for graceful shutdown")
+}
+
+// TestPerHookTimeoutContinuesToNextHook verifies that when one hook times out,
+// shutdown continues to the next hook rather than blocking forever.
+func (s *ShutdownTestSuite) TestPerHookTimeoutContinuesToNextHook() {
+	// Service A takes 500ms (will timeout with 100ms per-hook timeout)
+	// Service B completes immediately
+	// Global timeout is 5s (won't trigger)
+	app, serviceAStopped, serviceBStopped := s.createAppWithMultipleServices(
+		500*time.Millisecond, // A: slow, will timeout
+		10*time.Millisecond,  // B: fast, should complete
+		100*time.Millisecond, // per-hook timeout
+		5*time.Second,        // global timeout
+	)
+
+	// Replace logger to capture blame logs
+	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Stop the app
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = app.Stop(ctx)
+
+	// Assert: Stop() returns an error (due to timeout)
+	s.Error(err, "Stop() should return error when hook times out")
+	s.Contains(err.Error(), "deadline exceeded", "error should mention timeout")
+
+	// Assert: Service A did NOT complete (it was interrupted by timeout)
+	s.False(serviceAStopped.Load(), "Service A should NOT complete (timed out)")
+
+	// Assert: Service B DID complete (shutdown continued to next hook)
+	s.True(serviceBStopped.Load(), "Service B should complete even though A timed out")
+
+	// Assert: Blame log mentions exceeded timeout
+	logOutput := s.logBuffer.String()
+	s.Contains(logOutput, "exceeded", "log should contain 'exceeded' for timeout blame")
+
+	// Assert: exitFunc NOT called (per-hook timeout doesn't force exit, just logs)
+	s.False(s.exitCalled.Load(), "exitFunc should NOT be called for per-hook timeout")
+}
+
+// TestGlobalTimeoutForcesExit verifies that when shutdown exceeds global timeout,
+// exitFunc(1) is called to force process termination.
+func (s *ShutdownTestSuite) TestGlobalTimeoutForcesExit() {
+	// Create app with hook that takes 2s
+	// Set per-hook timeout to 5s (won't trigger)
+	// Set global timeout to 500ms (will trigger)
+	app := s.createAppWithSlowHook(2*time.Second, 5*time.Second, 500*time.Millisecond)
+
+	// Replace logger to capture logs
+	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Stop the app - this should trigger global timeout force exit
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Run Stop in goroutine since it may block
+	done := make(chan error, 1)
+	go func() {
+		done <- app.Stop(ctx)
+	}()
+
+	// Wait for exitFunc to be called or timeout
+	s.Eventually(func() bool {
+		return s.exitCalled.Load()
+	}, 2*time.Second, 50*time.Millisecond, "exitFunc should be called on global timeout")
+
+	// Assert: exitFunc(1) was called
+	s.Equal(int32(1), s.exitCode.Load(), "exitFunc should be called with code 1")
+
+	// Assert: log contains global timeout message
+	logOutput := s.logBuffer.String()
+	s.Contains(logOutput, "global timeout", "log should mention global timeout")
+}
+
+// TestBlameLoggingFormat verifies that blame logging includes hook name,
+// timeout value, and elapsed time for debugging hanging hooks.
+func (s *ShutdownTestSuite) TestBlameLoggingFormat() {
+	// Create app with named service "DatabasePool" that takes 200ms
+	// Per-hook timeout is 100ms (will trigger blame log)
+	app := s.createAppWithNamedService(
+		"DatabasePool",
+		200*time.Millisecond, // hook takes 200ms
+		100*time.Millisecond, // timeout at 100ms
+		5*time.Second,        // global timeout
+	)
+
+	// Build the app
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Stop the app
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_ = app.Stop(ctx)
+
+	// Check log output for blame information
+	logOutput := s.logBuffer.String()
+
+	// Assert: log contains hook name
+	s.Contains(logOutput, "DatabasePool", "blame log should contain hook name")
+
+	// Assert: log contains "exceeded"
+	s.Contains(logOutput, "exceeded", "blame log should contain 'exceeded'")
+
+	// Assert: log contains timeout value (100ms)
+	s.Contains(logOutput, "100ms", "blame log should contain timeout value")
+}
+
+// TestWithPerHookTimeoutOption verifies the WithPerHookTimeout option sets the value.
+func (s *ShutdownTestSuite) TestWithPerHookTimeoutOption() {
+	app := New(WithPerHookTimeout(2 * time.Second))
+
+	s.Equal(2*time.Second, app.opts.PerHookTimeout, "PerHookTimeout should be set to 2s")
+}
+
+// TestWithShutdownTimeoutOption verifies the WithShutdownTimeout option sets the value.
+func (s *ShutdownTestSuite) TestWithShutdownTimeoutOption() {
+	app := New(WithShutdownTimeout(45 * time.Second))
+
+	s.Equal(45*time.Second, app.opts.ShutdownTimeout, "ShutdownTimeout should be set to 45s")
+}
