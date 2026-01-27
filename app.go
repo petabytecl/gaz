@@ -74,9 +74,19 @@ type App struct {
 	// Configuration
 	configManager *ConfigManager
 
+	// Provider config tracking
+	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
+
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
+}
+
+// providerConfigEntry stores config information from a ConfigProvider.
+type providerConfigEntry struct {
+	providerName string       // type name of the provider
+	namespace    string       // from ConfigNamespace()
+	flags        []ConfigFlag // from ConfigFlags()
 }
 
 // New creates a new App with the given options.
@@ -337,6 +347,94 @@ func (a *App) loadConfig() error {
 	return a.configManager.Load()
 }
 
+// collectProviderConfigs iterates registered services, collects config from ConfigProvider
+// implementers, detects key collisions, registers provider flags with ConfigManager,
+// validates required fields, and registers ProviderValues.
+func (a *App) collectProviderConfigs() error {
+	// Track keys for collision detection: fullKey -> providerName
+	keyOwners := make(map[string]string)
+	var collisionErrors []error
+	var validationErrors []error
+
+	// Iterate all registered services and check if they implement ConfigProvider
+	a.container.mu.RLock()
+	for typeName, svc := range a.container.services {
+		wrapper, ok := svc.(serviceWrapper)
+		if !ok {
+			continue
+		}
+
+		// Try to resolve the instance to check if it implements ConfigProvider
+		instance, err := wrapper.getInstance(a.container, nil)
+		if err != nil {
+			// Skip services that fail to resolve (they may have unsatisfied deps)
+			continue
+		}
+
+		cp, ok := instance.(ConfigProvider)
+		if !ok {
+			continue
+		}
+
+		namespace := cp.ConfigNamespace()
+		flags := cp.ConfigFlags()
+
+		// Store the provider config entry
+		a.providerConfigs = append(a.providerConfigs, providerConfigEntry{
+			providerName: typeName,
+			namespace:    namespace,
+			flags:        flags,
+		})
+
+		// Check for collisions and build full keys
+		for _, flag := range flags {
+			fullKey := namespace + "." + flag.Key
+			if existingProvider, exists := keyOwners[fullKey]; exists {
+				collisionErrors = append(collisionErrors, fmt.Errorf(
+					"%w: key %q registered by both %q and %q",
+					ErrConfigKeyCollision, fullKey, existingProvider, typeName,
+				))
+			} else {
+				keyOwners[fullKey] = typeName
+			}
+		}
+	}
+	a.container.mu.RUnlock()
+
+	// Return early if collisions detected
+	if len(collisionErrors) > 0 {
+		return errors.Join(collisionErrors...)
+	}
+
+	// Register provider flags with ConfigManager and validate required
+	for _, entry := range a.providerConfigs {
+		if a.configManager != nil {
+			// Register defaults and bind env vars
+			if err := a.configManager.RegisterProviderFlags(entry.namespace, entry.flags); err != nil {
+				return err
+			}
+
+			// Validate required flags
+			errs := a.configManager.ValidateProviderFlags(entry.namespace, entry.flags)
+			validationErrors = append(validationErrors, errs...)
+		}
+	}
+
+	if len(validationErrors) > 0 {
+		return errors.Join(validationErrors...)
+	}
+
+	// Create and register ProviderValues
+	if a.configManager != nil {
+		pv := &ProviderValues{v: a.configManager.Viper()}
+		if err := a.registerInstance(pv); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Build validates all registrations and instantiates eager services.
 // It aggregates all errors and returns them using errors.Join.
 // Build is idempotent - calling it multiple times after success returns nil.
@@ -356,6 +454,11 @@ func (a *App) Build() error {
 	// Collect any registration errors
 	var errs []error
 	errs = append(errs, a.buildErrors...)
+
+	// Collect provider configs from registered services
+	if err := a.collectProviderConfigs(); err != nil {
+		errs = append(errs, err)
+	}
 
 	// Delegate to container.Build() for eager instantiation
 	if err := a.container.Build(); err != nil {
