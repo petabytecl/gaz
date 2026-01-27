@@ -8,6 +8,14 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
+## Current Milestone: v1.1 Security & Hardening
+
+**Goal:** Improve application robustness with strict configuration validation and reliable shutdown guarantees.
+
+**Target features:**
+- Config Validation (struct tags, early exit)
+- Shutdown Hardening (timeout enforcement)
+
 ## Requirements
 
 ### Validated
@@ -26,6 +34,8 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 
 ### Active
 
+- [ ] Config validation (struct tags, early exit)
+- [ ] Shutdown hardening (timeout enforcement)
 - [ ] Request-scoped logging with trace IDs
 
 ### Out of Scope
@@ -87,4 +97,4 @@ Target: Internal use first, open source viability later.
 | Integrated logger into App struct | Reduces cognitive complexity, no separate LifecycleEngine | Done (v1.0) |
 
 ---
-*Last updated: 2026-01-26 after v1.0 milestone completion*
+*Last updated: 2026-01-26 after v1.1 milestone start*
