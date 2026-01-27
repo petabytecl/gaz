@@ -1,348 +1,114 @@
-# Feature Landscape: Go Application Frameworks
+# Feature Research: v1.1 Security & Hardening
 
-**Domain:** Go Application Framework (DI, Lifecycle, Config, Logging)
-**Researched:** 2026-01-26
-**Confidence:** HIGH (Context7 + internal code analysis)
+**Domain:** Application Robustness (Configuration & Lifecycle)
+**Researched:** Mon Jan 26 2026
+**Confidence:** HIGH
 
-## Table Stakes
+## Feature Landscape
 
-Features users expect from any Go application framework. Missing these = product feels incomplete or amateurish.
+### Table Stakes (Users Expect These)
 
-| Feature | Why Expected | Complexity | gaz v1 Target | Notes |
-|---------|--------------|------------|---------------|-------|
-| **Dependency Injection** | Core value proposition; eliminates globals, enables testing | High | Yes | fx/wire/samber-do all provide this |
-| **Constructor Registration** | How DI containers know what to build | Medium | Yes | `fx.Provide`, `wire.Build`, `dibx.Register` |
-| **Lazy Instantiation** | Performance - don't build what isn't used | Medium | Yes | fx: lazy by default; Wire: compile-time |
-| **Singleton Scoping** | Most services should be singletons | Low | Yes | Standard pattern in all frameworks |
-| **Error Handling** | Constructors can fail; framework must propagate errors | Medium | Yes | Return `(T, error)` pattern universal |
-| **Lifecycle Hooks (OnStart/OnStop)** | Apps need startup/shutdown orchestration | Medium | Yes | fx.Lifecycle, gazx.LifecycleManager |
-| **Graceful Shutdown** | Signal handling (SIGTERM/SIGINT) | Medium | Yes | All production frameworks include this |
-| **Context Propagation** | Cancellation and deadlines for cleanup | Medium | Yes | Go idiom; required for production |
-| **Shutdown Timeouts** | Prevent hanging on shutdown | Low | Yes | `fx.StopTimeout`, `gazx.ShutdownTimeout` |
-| **Logging Integration** | Observability is mandatory | Medium | Yes | fx: fxevent; gaz: slog integration |
-| **Module System** | Code organization for large apps | Medium | Yes | `fx.Module`, `gazx.ModuleProvider` |
-| **Testing Support** | DI must enable testing | Medium | Yes | fx: fxtest; gazx: NewTestBuilder |
+Features users assume exist in a robust application framework. Missing these = "not production ready".
 
-## Differentiators
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| **Struct Tag Validation** | Standard Go pattern. Reduces boilerplate `if` checks. | LOW | Use `go-playground/validator/v10`. Tags: `required`, `min`, `max`, `email`, `url`. |
+| **Fail-Fast Config** | Invalid config must prevent startup. Silent errors cause runtime outages. | LOW | Panic or `os.Exit(1)` with clear error message immediately after load. |
+| **Graceful Shutdown** | Prevent data loss/corruption on deploy/restart. | MEDIUM | Standard `context` propagation to all services. |
+| **Signal Handling** | Standard Unix behavior (`SIGINT`, `SIGTERM`). | LOW | Use `os/signal` + `NotifyContext`. |
+| **Shutdown Timeout** | Prevent stalled deployments (e.g., K8s `terminationGracePeriodSeconds`). | LOW | Default 30s. |
 
-Features that set gaz apart from alternatives. Not expected, but create competitive advantage.
+### Differentiators (Competitive Advantage)
 
-| Feature | Value Proposition | Complexity | gaz v1 Target | Framework Precedent |
-|---------|-------------------|------------|---------------|---------------------|
-| **Type-Safe Generics DI** | Compile-time safety, no `interface{}` casts, better IDE support | High | Yes | dibx does this; fx uses reflection |
-| **Convention-over-Configuration** | Zero-config works; override when needed | Medium | Yes | Spring Boot influence; fx is explicit |
-| **Cobra CLI Integration** | Unified app builder with CLI | Low | Yes | gazx has this; fx doesn't |
-| **Health Check Subsystem** | Kubernetes-native readiness/liveness | Medium | Yes | gazx.HealthManager provides this |
-| **Deterministic Startup Order** | Predictable initialization | High | Yes | fx has some; we can improve |
-| **Deterministic Shutdown Order** | Reverse of startup; LIFO | High | Yes | gazx has this pattern |
-| **Worker Group Management** | Background tasks with lifecycle | Medium | Yes | gazx.WorkerGroup provides this |
-| **Typed Event Bus** | Inter-component communication | Medium | Yes | gazx.EventBus with generics |
-| **Hierarchical Scopes** | Request-scoped or session-scoped DI | High | Defer | dibx supports; complex to use well |
-| **Transient Registration** | New instance per request | Low | Yes | dibx.AsTransient() |
-| **Eager Registration** | Instantiate immediately at registration | Low | Yes | dibx.AsEager() |
-| **Named Services** | Multiple implementations of same type | Medium | Yes | fx: tags; dibx: WithName() |
-| **Service Override** | Replace services (testing, customization) | Medium | Yes | dibx.Override() |
-| **Struct Tag Injection** | Inject into struct fields by tag | Medium | Yes | dibx `dibx:"name"` tag |
-| **Multi-Source Config** | Env, files, flags, remote sources | High | Yes | Viper-style but unified |
-| **slog Context Propagation** | Structured logging with request context | Medium | Yes | Go 1.21+ slog native |
-| **GOMAXPROCS Auto-Config** | Container-aware CPU limits | Low | Yes | gazx uses automaxprocs |
-| **Memory Limit Auto-Config** | Container-aware memory limits | Low | Yes | gazx uses memlimit |
+Features that set the robustness apart from basic implementations.
 
-### Differentiator Deep-Dive
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| **Force Kill on Timeout** | Guarantees process exit even if goroutines are stuck. Prevents "zombie" processes. | MEDIUM | Framework must enforce `os.Exit(1)` if `Stop()` exceeds timeout. |
+| **Double-Interrupt Exit** | Developer convenience: Ctrl+C twice forces immediate exit during shutdown. | LOW | Watch signal channel during shutdown phase. |
+| **Cross-Field Validation** | Enforces business logic constraints (e.g., `CertFile` required if `TLS=true`). | MEDIUM | `validator` supports `required_with`, `required_if`. |
+| **Custom Validators** | Domain-specific checks (e.g., "valid AWS region", "valid CIDR"). | MEDIUM | Allow users to register custom validation functions. |
+| **Component Blaming** | Identifies *which* service stalled the shutdown. Critical for debugging hangs. | HIGH | Wrap `OnStop` calls with individual timers/logging. |
 
-#### Type-Safe Generics DI (Primary Differentiator)
+### Anti-Features (Commonly Requested, Often Problematic)
 
-**What makes it special:**
-- fx uses reflection and `interface{}` everywhere
-- Wire generates code but still lacks generic elegance
-- dibx/gaz uses Go 1.18+ generics for compile-time type safety
+Features that seem good but create problems.
 
-```go
-// fx approach (runtime type checking)
-fx.Provide(func() *MyService { ... })
-fx.Invoke(func(s *MyService) { ... }) // type mismatch = runtime panic
-
-// gaz approach (compile-time type checking)
-gaz.Provide[*MyService](func(i gaz.Injector) (*MyService, error) { ... })
-var svc *MyService
-gaz.MustResolve(&svc) // type mismatch = compile error
-```
-
-**Confidence:** HIGH (verified in dibx source)
-
-#### Convention-over-Configuration
-
-**What makes it special:**
-- fx requires explicit wiring for everything
-- gaz can auto-wire common patterns
-- Sensible defaults that work out of the box
-
-**Examples:**
-- Auto-register slog logger if none provided
-- Auto-configure GOMAXPROCS for containers
-- Default shutdown timeout (15s)
-- Default health check endpoints
-
-**Confidence:** MEDIUM (planned feature, not yet implemented)
-
-## Anti-Features
-
-Features to explicitly NOT build. Common mistakes in this domain.
-
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Global Container** | Defeats purpose of DI; hides dependencies | Pass injector explicitly; no package-level container |
-| **Service Locator Pattern** | Anti-pattern; hides dependencies | Constructor injection only |
-| **init() Auto-Registration** | Non-deterministic, hard to test | Explicit registration in app builder |
-| **Circular Dependencies** | Design smell; hard to reason about | Detect at registration; fail fast |
-| **Over-Configuration** | Config fatigue; analysis paralysis | Sensible defaults; minimal required config |
-| **Magic String Keys** | Typos cause runtime errors | Type-based registration as primary; named as escape hatch |
-| **Implicit Startup Order** | Non-deterministic bugs | Explicit lifecycle phases |
-| **RPC/Message Broker Built-in** | Scope creep; better as modules | Provide extension points; let users add go-micro |
-| **Service Discovery Built-in** | Infrastructure concern | Integrate with existing (Consul, K8s) |
-| **HTTP Server Built-in** | Many options; not framework concern | Example modules; users choose (std, chi, echo) |
-| **Database Abstraction** | Too many options; not framework concern | Example patterns; users choose driver |
-| **Compile-Time Code Generation** | Friction; requires extra tooling | Wire's approach; runtime DI is more ergonomic |
-
-### Anti-Feature Rationale
-
-#### Why NOT include RPC/Service Discovery
-
-**go-micro** includes these, but:
-- Creates vendor lock-in
-- Forces architecture decisions
-- Most teams have existing infrastructure
-- Better as opt-in modules
-
-**gaz approach:** Provide extension points (health checks, events) that integrate with any RPC framework.
-
-#### Why NOT use Code Generation (Wire approach)
-
-**Wire advantages:**
-- Zero runtime overhead
-- Compile-time validation
-
-**Wire disadvantages:**
-- Requires `go generate` step
-- IDE support limited
-- Can't do runtime reconfiguration
-- More ceremony
-
-**gaz approach:** Accept minimal runtime overhead for better DX. Use generics to catch type errors at compile time where possible.
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| **Silent Validation Failure** | "Keep running if possible" | App runs in undefined state; hard to debug later. | **Fail Fast:** Error & Exit on startup. |
+| **Indefinite Wait** | "Finish all work no matter what" | Blocks deployments; requires manual kill. | **Timeout:** Always enforce a hard deadline (e.g., 30s). |
+| **Partial Config Loading** | "Load what works" | Inconsistent application state. | **Atomic Load:** All valid or nothing starts. |
+| **Global State Validation** | Simplicity | Hard to test; hidden dependencies. | **Scoped Validation:** Validate the struct instance only. |
 
 ## Feature Dependencies
 
 ```
-                    ┌─────────────────────────────────────────────────────────┐
-                    │                    gaz Framework                        │
-                    └─────────────────────────────────────────────────────────┘
-                                              │
-                    ┌─────────────────────────┼─────────────────────────┐
-                    ▼                         ▼                         ▼
-             ┌─────────────┐          ┌─────────────┐          ┌─────────────┐
-             │ DI Container │          │ App Builder │          │   Config    │
-             │   (dibx)     │          │   (gazx)    │          │   System    │
-             └─────────────┘          └─────────────┘          └─────────────┘
-                    │                         │                         │
-        ┌───────────┼───────────┐    ┌───────┼───────┐         ┌───────┼───────┐
-        ▼           ▼           ▼    ▼       ▼       ▼         ▼       ▼       ▼
-   ┌────────┐ ┌────────┐ ┌────────┐ ┌────┐ ┌────┐ ┌────┐  ┌─────┐ ┌─────┐ ┌─────┐
-   │Register│ │Resolve │ │Scopes  │ │Life│ │Work│ │Hlth│  │ Env │ │File │ │Flags│
-   │        │ │        │ │        │ │Cyc │ │Grp │ │Chk │  │     │ │     │ │     │
-   └────────┘ └────────┘ └────────┘ └────┘ └────┘ └────┘  └─────┘ └─────┘ └─────┘
+[Config Loading (Viper)]
+    └──requires──> [Struct Definition]
+                       └──enhances──> [Config Validation (Validator v10)]
+                                          └──enables──> [Safe App Startup]
+
+[Safe App Startup]
+    └──requires──> [Lifecycle Engine]
+                       └──enables──> [Hardened Shutdown]
+                                          └──requires──> [Signal Handling]
+                                          └──requires──> [Timeout Enforcement]
 ```
 
-**Core Dependencies:**
-1. **DI Container** → Required for everything; foundation layer
-2. **Lifecycle** → Requires DI (hooks register via DI)
-3. **App Builder** → Requires DI + Lifecycle
-4. **Health Checks** → Requires Lifecycle (starts/stops with app)
-5. **Worker Groups** → Requires Lifecycle
-6. **Event Bus** → Requires Lifecycle
-7. **Config** → Standalone but registers values into DI
-8. **Logging (slog)** → Standalone; integrates with DI
+### Dependency Notes
 
-**Build Order:**
-1. DI Container (core/dibx)
-2. Lifecycle Management 
-3. Config System
-4. App Builder (core/gazx)
-5. Health Checks
-6. Worker Groups
-7. Event Bus
-8. slog Integration
-9. Cobra Integration
+- **Config Validation requires Config Loading:** Validation happens *after* unmarshaling but *before* the config is used.
+- **Hardened Shutdown requires Lifecycle Engine:** The engine must orchestrate the stop order (LIFO) and enforce the timeout.
 
 ## MVP Definition
 
-### Phase 1: Foundation (Must Have)
+### Launch With (v1.1)
 
-Core functionality that makes the framework usable at all:
+Minimum features to achieve "Security & Hardening" goal.
 
-1. **Type-Safe DI Container**
-   - Generic registration: `Register[T](provider)`
-   - Generic resolution: `Resolve[T]() -> T`
-   - Singleton scoping (lazy by default)
-   - Transient scoping option
-   - Named services
-   - Error propagation
+- [ ] **Struct Tag Validation** — Integrate `go-playground/validator/v10` into `ConfigManager`. Support `required`, `min`, `max`, `email`, `url`.
+- [ ] **Fail-Fast Behavior** — `app.Run()` returns error immediately if validation fails.
+- [ ] **Shutdown Timeout Enforcement** — Ensure `Stop()` respects the timeout context.
+- [ ] **Force Exit** — If shutdown times out, log error and `os.Exit(1)`.
 
-2. **Basic Lifecycle**
-   - OnStart/OnStop hooks
-   - Graceful shutdown (signal handling)
-   - Shutdown timeout
+### Add After Validation (v1.2)
 
-3. **Minimal App Builder**
-   - `gaz.New()` entry point
-   - Provider registration
-   - Run method
+- [ ] **Cross-Field Validation** — When complex dependency configurations arise.
+- [ ] **Custom Validator Registration** — When users need domain-specific rules.
 
-### Phase 2: Production-Ready
+### Future Consideration (v2+)
 
-Features needed for real production use:
+- [ ] **Component Blaming** — If debugging shutdown hangs becomes a common support issue.
 
-1. **Advanced DI**
-   - Struct tag injection
-   - Service override
-   - Circular dependency detection
+## Feature Prioritization Matrix
 
-2. **Advanced Lifecycle**
-   - Deterministic startup order
-   - Deterministic shutdown order (LIFO)
-   - Start/stop timeouts per hook
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| **Struct Tag Validation** | HIGH | LOW | P1 |
+| **Fail-Fast Config** | HIGH | LOW | P1 |
+| **Shutdown Timeout** | HIGH | LOW | P1 |
+| **Force Kill** | HIGH | MEDIUM | P1 |
+| **Double-Interrupt Exit** | MEDIUM | LOW | P2 |
+| **Custom Validators** | MEDIUM | MEDIUM | P2 |
+| **Cross-Field Validation** | MEDIUM | MEDIUM | P2 |
+| **Component Blaming** | MEDIUM | HIGH | P3 |
 
-3. **Health Checks**
-   - Readiness checks
-   - Liveness checks
-   - Health manager
+## Competitor Feature Analysis
 
-4. **Config System**
-   - Environment variables
-   - Flag integration
-   - Type-safe config structs
-
-5. **Cobra Integration**
-   - CLI app builder
-   - Subcommand support
-   - Flag binding
-
-6. **slog Integration**
-   - Default logger setup
-   - Context propagation
-   - Framework event logging
-
-### Defer to Post-MVP
-
-- Hierarchical scopes (complex, niche use case)
-- Event bus (nice-to-have, not essential)
-- Worker groups (can use goroutines directly)
-- Decorator pattern (advanced use case)
-- Value groups (fx feature, advanced)
-- Validation framework (separate concern)
-
-## Competitor Analysis
-
-### Uber fx
-
-**What it does well:**
-- Battle-tested at Uber scale
-- Comprehensive feature set
-- Excellent documentation
-- Good module system
-
-**Where gaz can improve:**
-- Type safety (fx uses reflection)
-- Convention-over-configuration (fx is explicit)
-- Simpler API (fx has many concepts)
-- CLI integration (fx doesn't include)
-- Health checks (fx doesn't include)
-
-**Source:** Context7 /uber-go/fx (HIGH confidence)
-
-### Google Wire
-
-**What it does well:**
-- Zero runtime overhead
-- Compile-time validation
-- No runtime reflection
-
-**Where gaz can improve:**
-- No code generation required
-- Better DX (no go generate step)
-- Runtime flexibility
-- Simpler tooling
-
-**Source:** Context7 /google/wire (HIGH confidence)
-
-### go-micro
-
-**What it does well:**
-- Full microservices framework
-- RPC, messaging, service discovery
-- Pluggable architecture
-
-**Where gaz differs:**
-- gaz is focused on DI + lifecycle (not full microservices)
-- gaz doesn't include transport layer
-- gaz is smaller scope, more composable
-- Teams can add go-micro on top of gaz if needed
-
-**Source:** Context7 /micro/go-micro (HIGH confidence)
-
-### samber/do
-
-**What it does well:**
-- Go 1.18+ generics
-- Simple API
-- Lightweight
-
-**Where gaz can improve:**
-- Lifecycle management (do doesn't include)
-- App framework features (do is just DI)
-- Config integration
-- CLI integration
-- Health checks
-
-**Source:** Training data (MEDIUM confidence - verify with official docs)
-
-## Internal Patterns (from tmp/dibx and tmp/gazx)
-
-### Patterns to Adopt
-
-| Pattern | Source | Description |
-|---------|--------|-------------|
-| Generic Provider | dibx | `Provider[T] func(Injector) (T, error)` |
-| Service Types | dibx | Lazy, Eager, Transient service wrappers |
-| Scope Hierarchy | dibx | Parent-child scope relationships |
-| Lifecycle Interface | gazx | `Start(ctx) error`, `Stop(ctx) error` |
-| Module Provider | gazx | Fluent builder for modules |
-| Health Check Types | gazx | ReadinessHealthType, LivenessHealthType |
-| Event Bus | gazx | Typed events with generics |
-| Worker Group | gazx | Managed background tasks |
-
-### Patterns to Improve
-
-| Current Pattern | Issue | Improvement |
-|-----------------|-------|-------------|
-| Package-level `Provide[T]` | Deprecated in dibx | Method-only: `injector.Register()` |
-| Separate hooks | Multiple hook types | Unified hook system |
-| Reflection for type names | Runtime overhead | Cache type names at registration |
+| Feature | Uber fx | Google Wire | Our Approach (v1.1) |
+|---------|---------|-------------|---------------------|
+| **Validation** | Manual `fx.Option` or `OnStart` checks | Compile-time checks (limited) | **Struct Tags (Validator v10)** |
+| **Shutdown** | `fx.StopTimeout`, context propagation | Manual context handling | **Managed Timeout + Force Kill** |
+| **Config** | External (usually Viper) | External | **Integrated Viper + Validation** |
 
 ## Sources
 
-### High Confidence (Context7/Official)
+- **Go Validator:** `go-playground/validator` (Standard)
+- **Config:** `spf13/viper` (Current)
+- **Pattern:** [Uber Go Style Guide](https://github.com/uber-go/guide) (Zero-value safety, error handling)
+- **Internal:** `lifecycle_engine.go` (Existing LIFO logic)
 
-- uber-go/fx documentation via Context7
-- google/wire documentation via Context7
-- micro/go-micro documentation via Context7
-- Internal dibx source code (tmp/dibx/)
-- Internal gazx source code (tmp/gazx/)
-
-### Medium Confidence (Verified)
-
-- GitHub uber-go/fx README (WebFetch verified)
-
-### Lower Confidence (Training Data)
-
-- samber/do patterns (verify with official docs before implementation)
-- go-kit architecture (verify if comparing)
+---
+*Feature research for: v1.1 Security & Hardening*
+*Researched: Mon Jan 26 2026*
