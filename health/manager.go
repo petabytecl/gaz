@@ -6,7 +6,7 @@ import (
 	"github.com/alexliesenfeld/health"
 )
 
-// Manager implements HealthRegistrar and manages health checkers.
+// Manager implements Registrar and manages health checkers.
 type Manager struct {
 	mu sync.Mutex
 
@@ -51,8 +51,11 @@ func (m *Manager) AddStartupCheck(name string, check CheckFunc) {
 }
 
 // LivenessChecker builds the health.Checker for liveness checks.
+//
+//nolint:ireturn // Returns interface from external library
 func (m *Manager) LivenessChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
+
 	defer m.mu.Unlock()
 
 	finalOpts := make([]health.CheckerOption, 0, len(m.livenessChecks)+len(opts))
@@ -65,8 +68,11 @@ func (m *Manager) LivenessChecker(opts ...health.CheckerOption) health.Checker {
 }
 
 // ReadinessChecker builds the health.Checker for readiness checks.
+//
+//nolint:ireturn // Returns interface from external library
 func (m *Manager) ReadinessChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
+
 	defer m.mu.Unlock()
 
 	finalOpts := make([]health.CheckerOption, 0, len(m.readinessChecks)+len(opts))
@@ -79,8 +85,11 @@ func (m *Manager) ReadinessChecker(opts ...health.CheckerOption) health.Checker 
 }
 
 // StartupChecker builds the health.Checker for startup checks.
+//
+//nolint:ireturn // Returns interface from external library
 func (m *Manager) StartupChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
+
 	defer m.mu.Unlock()
 
 	finalOpts := make([]health.CheckerOption, 0, len(m.startupChecks)+len(opts))

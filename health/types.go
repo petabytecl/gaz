@@ -15,8 +15,8 @@ type CheckOptions struct {
 	Timeout time.Duration
 }
 
-// HealthRegistrar allows services to register their health checks.
-type HealthRegistrar interface {
+// Registrar allows services to register their health checks.
+type Registrar interface {
 	// AddLivenessCheck registers a check for liveness probes (is app running?).
 	// Failures here may cause the orchestrator to restart the container.
 	AddLivenessCheck(name string, check CheckFunc)
