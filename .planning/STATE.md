@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 6 of 6 (Logging (slog))
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-27 - Completed 06-02-SUMMARY.md
+Last activity: 2026-01-26 - Completed 06-03-PLAN.md
 
-Progress: [██████████████████████████████░░] 94%
+Progress: [█████████████████████████████░] 97%
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Recent decisions affecting current work:
 - [06-01]: Used lmittmann/tint for colored development logging
 - [06-01]: Used private context keys for storage, public string keys for log output
 - [06-02]: Use crypto/rand for ID generation (no extra deps)
+- [06-03]: Integrated logger into App struct directly (no LifecycleEngine struct)
+- [06-03]: Default to JSON/Info logger if unconfigured
 
 ### Pending Todos
 
@@ -71,6 +73,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-27
-Stopped at: Completed 06-02-SUMMARY.md
+Last session: 2026-01-26
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
