@@ -18,14 +18,18 @@ import (
 	"github.com/petabytecl/gaz/logger"
 )
 
-const defaultShutdownTimeout = 30 * time.Second
-const defaultPerHookTimeout = 10 * time.Second
+const (
+	defaultShutdownTimeout = 30 * time.Second
+	defaultPerHookTimeout  = 10 * time.Second
+)
 
 // providerWithErrorReturnCount is the expected number of return values for a provider
 // that returns (T, error).
 const providerWithErrorReturnCount = 2
 
 // exitFunc is the function called for force exit. Variable for testability.
+//
+//nolint:gochecknoglobals // Package-level for test injection of os.Exit.
 var exitFunc = os.Exit
 
 // AppOptions configuration for App.
@@ -153,6 +157,7 @@ func New(opts ...Option) *App {
 func NewApp(c *Container, opts ...AppOption) *App {
 	options := AppOptions{
 		ShutdownTimeout: defaultShutdownTimeout,
+		PerHookTimeout:  defaultPerHookTimeout,
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -612,6 +617,23 @@ func (a *App) Stop(ctx context.Context) error {
 	wasRunning := a.running
 	a.mu.Unlock()
 
+	// Start global timeout force-exit goroutine
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-done:
+			return
+		case <-time.After(a.opts.ShutdownTimeout):
+			msg := fmt.Sprintf(
+				"shutdown: global timeout %s exceeded, forcing exit",
+				a.opts.ShutdownTimeout,
+			)
+			a.Logger.Error(msg)
+			fmt.Fprintln(os.Stderr, msg)
+			exitFunc(1)
+		}
+	}()
+
 	// Compute shutdown order (reverse of startup)
 	// We need to re-compute because we don't store it.
 	graph := a.container.getGraph()
@@ -626,12 +648,16 @@ func (a *App) Stop(ctx context.Context) error {
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
+		close(done)
 		// Should not happen if Build passed, unless graph changed (impossible after Build)
 		return err
 	}
 	shutdownOrder := ComputeShutdownOrder(startupOrder)
 
 	lastErr := a.stopServices(ctx, shutdownOrder, services)
+
+	// Cancel the force-exit goroutine
+	close(done)
 
 	// Signal Run to exit (only if Run() was used)
 	if wasRunning {
@@ -648,54 +674,81 @@ func (a *App) Stop(ctx context.Context) error {
 	return lastErr
 }
 
-// stopServices stops services in the given order.
+// stopServices stops services sequentially with per-hook timeout and blame logging.
 func (a *App) stopServices(
 	ctx context.Context,
 	order [][]string,
 	services map[string]serviceWrapper,
 ) error {
-	var lastErr error
+	var errs []error
 
-	// Stop services layer by layer
+	// Stop services layer by layer, sequentially within each layer
 	for _, layer := range order {
-		var wg sync.WaitGroup
-		errCh := make(chan error, len(layer))
-
 		for _, name := range layer {
 			svc := services[name]
-			wg.Add(1)
+
+			// Create per-hook timeout context
+			timeout := a.opts.PerHookTimeout
+			hookCtx, cancel := context.WithTimeout(ctx, timeout)
+
+			// Run hook in goroutine so we can detect timeout
+			start := time.Now()
+			errCh := make(chan error, 1)
 			go func() {
-				defer wg.Done()
-				start := time.Now()
-				if stopErr := svc.stop(ctx); stopErr != nil {
+				errCh <- svc.stop(hookCtx)
+			}()
+
+			// Wait for hook completion or timeout
+			select {
+			case stopErr := <-errCh:
+				cancel()
+				elapsed := time.Since(start)
+				if stopErr != nil {
 					a.Logger.ErrorContext(
 						ctx,
 						"failed to stop service",
 						"name", name,
 						"error", stopErr,
+						"elapsed", elapsed,
 					)
-					errCh <- fmt.Errorf("stopping service %s: %w", name, stopErr)
+					errs = append(errs, fmt.Errorf("stopping service %s: %w", name, stopErr))
 				} else {
 					a.Logger.InfoContext(
 						ctx,
 						"service stopped",
 						"name", name,
-						"duration", time.Since(start),
+						"duration", elapsed,
 					)
 				}
-			}()
-		}
-		wg.Wait()
-		close(errCh)
-
-		// Collect errors but continue shutdown
-		for shutdownErr := range errCh {
-			if lastErr == nil {
-				lastErr = shutdownErr
-			} else {
-				lastErr = errors.Join(lastErr, shutdownErr)
+			case <-hookCtx.Done():
+				cancel()
+				elapsed := time.Since(start)
+				// Blame logging: hook exceeded timeout
+				a.logBlame(name, timeout, elapsed)
+				errs = append(
+					errs,
+					fmt.Errorf("stopping service %s: %w", name, context.DeadlineExceeded),
+				)
+				// Continue to next hook (don't wait for the timed-out hook)
 			}
 		}
 	}
-	return lastErr
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// logBlame logs blame information when a hook exceeds its timeout.
+// Uses Logger first, falls back to stderr if Logger fails.
+func (a *App) logBlame(hookName string, timeout, elapsed time.Duration) {
+	msg := fmt.Sprintf("shutdown: %s exceeded %s timeout (elapsed: %s)", hookName, timeout, elapsed)
+
+	// Try structured logger first
+	if a.Logger != nil {
+		a.Logger.Error(msg, "hook", hookName, "timeout", timeout, "elapsed", elapsed)
+	}
+	// Always write to stderr as fallback (guaranteed output even if logger is broken)
+	fmt.Fprintln(os.Stderr, msg)
 }
