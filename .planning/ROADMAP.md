@@ -169,10 +169,13 @@ Plans:
   2. Logger propagates through context.Context
   3. Framework logs its own events (startup, shutdown, errors) via slog
   4. Developer can provide custom slog.Handler for formatting
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Core Infrastructure (slog, tint, ContextHandler)
+- [ ] 06-02-PLAN.md — Context Middleware (RequestID, context helpers)
+- [ ] 06-03-PLAN.md — Framework Integration (App, Lifecycle)
+- [ ] 06-04-PLAN.md — Cleanup & Linting
 
 ## Progress
 
