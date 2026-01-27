@@ -31,7 +31,7 @@ func TestIETFResultWriter(t *testing.T) {
 
 	// Create a recorder
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/health", nil)
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
 
 	// Call the writer
 	writer := NewIETFResultWriter()
@@ -51,9 +51,9 @@ func TestIETFResultWriter(t *testing.T) {
 	}
 
 	// Verify JSON body
-	var body map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
-		t.Fatalf("failed to unmarshal body: %v", err)
+	var body map[string]any
+	if unmarshalErr := json.Unmarshal(w.Body.Bytes(), &body); unmarshalErr != nil {
+		t.Fatalf("failed to unmarshal body: %v", unmarshalErr)
 	}
 
 	// Check root status
@@ -62,17 +62,20 @@ func TestIETFResultWriter(t *testing.T) {
 	}
 
 	// Check checks
-	checks, ok := body["checks"].(map[string]interface{})
+	checks, ok := body["checks"].(map[string]any)
 	if !ok {
 		t.Fatalf("checks field missing or invalid")
 	}
 
 	// Check DB
-	dbChecks, ok := checks["db"].([]interface{})
+	dbChecks, ok := checks["db"].([]any)
 	if !ok || len(dbChecks) != 1 {
 		t.Fatalf("db checks missing or invalid")
 	}
-	dbCheck := dbChecks[0].(map[string]interface{})
+	dbCheck, ok := dbChecks[0].(map[string]any)
+	if !ok {
+		t.Fatalf("db check result is not a map")
+	}
 	if dbCheck["status"] != "pass" {
 		t.Errorf("expected db status pass, got %v", dbCheck["status"])
 	}
@@ -81,11 +84,14 @@ func TestIETFResultWriter(t *testing.T) {
 	}
 
 	// Check Redis
-	redisChecks, ok := checks["redis"].([]interface{})
+	redisChecks, ok := checks["redis"].([]any)
 	if !ok || len(redisChecks) != 1 {
 		t.Fatalf("redis checks missing or invalid")
 	}
-	redisCheck := redisChecks[0].(map[string]interface{})
+	redisCheck, ok := redisChecks[0].(map[string]any)
+	if !ok {
+		t.Fatalf("redis check result is not a map")
+	}
 	if redisCheck["status"] != "fail" {
 		t.Errorf("expected redis status fail, got %v", redisCheck["status"])
 	}

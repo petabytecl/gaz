@@ -12,15 +12,15 @@ import (
 func TestHandlers(t *testing.T) {
 	// 1. Setup Manager with failing checks
 	m := NewManager()
-	m.AddLivenessCheck("live_fail", func(ctx context.Context) error { return errors.New("fail") })
-	m.AddReadinessCheck("ready_fail", func(ctx context.Context) error { return errors.New("fail") })
-	m.AddStartupCheck("startup_fail", func(ctx context.Context) error { return errors.New("fail") })
+	m.AddLivenessCheck("live_fail", func(_ context.Context) error { return errors.New("fail") })
+	m.AddReadinessCheck("ready_fail", func(_ context.Context) error { return errors.New("fail") })
+	m.AddStartupCheck("startup_fail", func(_ context.Context) error { return errors.New("fail") })
 
 	// 2. Test Liveness (Expect 200 on failure)
 	t.Run("Liveness", func(t *testing.T) {
 		h := m.NewLivenessHandler()
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/live", nil)
+		r := httptest.NewRequest(http.MethodGet, "/live", nil)
 
 		h.ServeHTTP(w, r)
 
@@ -39,7 +39,7 @@ func TestHandlers(t *testing.T) {
 	t.Run("Readiness", func(t *testing.T) {
 		h := m.NewReadinessHandler()
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/ready", nil)
+		r := httptest.NewRequest(http.MethodGet, "/ready", nil)
 
 		h.ServeHTTP(w, r)
 
@@ -55,7 +55,7 @@ func TestHandlers(t *testing.T) {
 	t.Run("Startup", func(t *testing.T) {
 		h := m.NewStartupHandler()
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/startup", nil)
+		r := httptest.NewRequest(http.MethodGet, "/startup", nil)
 
 		h.ServeHTTP(w, r)
 
@@ -71,13 +71,13 @@ func TestHandlers(t *testing.T) {
 func TestHandlersSuccess(t *testing.T) {
 	// 1. Setup Manager with passing checks
 	m := NewManager()
-	m.AddLivenessCheck("live_pass", func(ctx context.Context) error { return nil })
+	m.AddLivenessCheck("live_pass", func(_ context.Context) error { return nil })
 
 	// 2. Test Liveness (Expect 200)
 	t.Run("LivenessSuccess", func(t *testing.T) {
 		h := m.NewLivenessHandler()
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/live", nil)
+		r := httptest.NewRequest(http.MethodGet, "/live", nil)
 
 		h.ServeHTTP(w, r)
 

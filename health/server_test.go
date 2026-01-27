@@ -32,7 +32,11 @@ func TestManagementServer_StartStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	url := fmt.Sprintf("http://localhost:%d/live", config.Port)
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to request liveness: %v", err)
 	}
@@ -45,8 +49,7 @@ func TestManagementServer_StartStop(t *testing.T) {
 	// Stop
 	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	if err := server.Stop(stopCtx); err != nil {
-		t.Errorf("Stop failed: %v", err)
+	if stopErr := server.Stop(stopCtx); stopErr != nil {
+		t.Errorf("Stop failed: %v", stopErr)
 	}
-
 }

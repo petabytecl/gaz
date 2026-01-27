@@ -1,3 +1,4 @@
+//nolint:cyclop // Integration tests are naturally complex
 package tests
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/petabytecl/gaz/health"
 )
 
+//nolint:gocognit // Integration tests are naturally complex
 func TestHealthIntegration(t *testing.T) {
 	// Configure app
 	cfg := health.DefaultConfig()
@@ -42,10 +44,14 @@ func TestHealthIntegration(t *testing.T) {
 		case <-timeout:
 			t.Fatal("Timeout waiting for health server to start")
 		case <-ticker.C:
-			resp, err := http.Get(url)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+			if err != nil {
+				continue
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err == nil {
-				resp.Body.Close()
-				if resp.StatusCode == 200 {
+				_ = resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
 					ready = true
 				}
 			}
@@ -65,14 +71,19 @@ func TestHealthIntegration(t *testing.T) {
 
 	for _, path := range endpoints {
 		fullURL := fmt.Sprintf("http://localhost:%d%s", cfg.Port, path)
-		resp, err := http.Get(fullURL)
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
+		if err != nil {
+			t.Errorf("NewRequest %s failed: %v", fullURL, err)
+			continue
+		}
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Errorf("GET %s failed: %v", fullURL, err)
 			continue
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			t.Errorf("GET %s status: got %d, want 200", fullURL, resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("GET %s status: got %d, want %d", fullURL, resp.StatusCode, http.StatusOK)
 		}
 	}
 

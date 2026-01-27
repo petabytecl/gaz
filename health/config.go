@@ -1,4 +1,14 @@
+// Package health provides health check mechanisms for the application,
+// including liveness, readiness, and startup probes.
 package health
+
+import "time"
+
+// DefaultPort is the default port for the management server.
+const DefaultPort = 9090
+
+// DefaultReadHeaderTimeout is the default timeout for reading headers.
+const DefaultReadHeaderTimeout = 5 * time.Second
 
 // Config holds configuration for the management server.
 type Config struct {
@@ -22,7 +32,7 @@ type Config struct {
 // DefaultConfig returns a Config with safe defaults.
 func DefaultConfig() Config {
 	return Config{
-		Port:          9090,
+		Port:          DefaultPort,
 		LivenessPath:  "/live",
 		ReadinessPath: "/ready",
 		StartupPath:   "/startup",
