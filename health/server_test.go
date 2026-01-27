@@ -17,8 +17,9 @@ func TestManagementServer_StartStop(t *testing.T) {
 		StartupPath:   "/startup",
 	}
 	manager := NewManager() // Assuming default manager works
+	shutdownCheck := NewShutdownCheck()
 
-	server := NewManagementServer(config, manager)
+	server := NewManagementServer(config, manager, shutdownCheck)
 
 	// Start
 	ctx := context.Background()
@@ -47,4 +48,5 @@ func TestManagementServer_StartStop(t *testing.T) {
 	if err := server.Stop(stopCtx); err != nil {
 		t.Errorf("Stop failed: %v", err)
 	}
+
 }

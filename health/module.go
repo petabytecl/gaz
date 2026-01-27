@@ -45,10 +45,10 @@ func Module(c *gaz.Container) error {
 	// Register ManagementServer
 	if err := gaz.For[*ManagementServer](c).
 		OnStart(func(ctx context.Context, s *ManagementServer) error {
-			return s.OnStart(ctx)
+			return s.Start(ctx)
 		}).
 		OnStop(func(ctx context.Context, s *ManagementServer) error {
-			return s.OnStop(ctx)
+			return s.Stop(ctx)
 		}).
 		Eager().
 		Provider(func(c *gaz.Container) (*ManagementServer, error) {
