@@ -3,6 +3,7 @@ package gaz
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"syscall"
 	"testing"
@@ -484,4 +485,22 @@ func (s *AppTestSuite) TestContainerAccessor() {
 
 	s.NotNil(container)
 	s.Same(app.container, container)
+}
+
+func (s *AppTestSuite) TestLoggerInjection() {
+	app := New()
+	s.Require().NoError(app.Build())
+
+	// Verify logger is resolvable
+	logger, err := Resolve[*slog.Logger](app.Container())
+	s.Require().NoError(err)
+	s.NotNil(logger)
+
+	// Verify it's the same instance as app.Logger
+	s.Same(app.Logger, logger)
+
+	// Verify we can log without panic
+	s.NotPanics(func() {
+		logger.Info("test log message")
+	})
 }
