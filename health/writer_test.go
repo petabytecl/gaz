@@ -34,7 +34,11 @@ func TestIETFResultWriter(t *testing.T) {
 	r := httptest.NewRequest("GET", "/health", nil)
 
 	// Call the writer
-	IETFResultWriter(w, r, http.StatusServiceUnavailable, result)
+	writer := NewIETFResultWriter()
+	err := writer.Write(result, http.StatusServiceUnavailable, w, r)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Verify status code
 	if w.Code != http.StatusServiceUnavailable {

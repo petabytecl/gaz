@@ -10,12 +10,20 @@ import (
 
 // IETFResultWriter implements health.ResultWriter using the IETF JSON format.
 // See: https://tools.ietf.org/id/draft-inadarei-api-health-check-06.html
-func IETFResultWriter(w http.ResponseWriter, r *http.Request, status int, result *health.CheckerResult) {
+type IETFResultWriter struct{}
+
+// NewIETFResultWriter creates a new IETFResultWriter.
+func NewIETFResultWriter() *IETFResultWriter {
+	return &IETFResultWriter{}
+}
+
+// Write implements the health.ResultWriter interface.
+func (rw *IETFResultWriter) Write(result *health.CheckerResult, statusCode int, w http.ResponseWriter, r *http.Request) error {
 	resp := toIETFResponse(result)
 
 	w.Header().Set("Content-Type", "application/health+json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resp)
+	w.WriteHeader(statusCode)
+	return json.NewEncoder(w).Encode(resp)
 }
 
 // ietfResponse represents the root of the IETF health check response.
