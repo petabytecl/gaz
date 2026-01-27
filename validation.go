@@ -9,29 +9,37 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// Package-level singleton validator - thread-safe, caches struct info.
-var validate = validator.New(validator.WithRequiredStructEnabled())
+// configValidator provides a singleton validator instance for config validation.
+// Thread-safe and caches struct info for performance.
+//
+//nolint:gochecknoglobals // Singleton pattern for validator efficiency
+var configValidator = newConfigValidator()
 
-func init() {
+// newConfigValidator creates and configures the validator instance.
+func newConfigValidator() *validator.Validate {
+	v := validator.New(validator.WithRequiredStructEnabled())
+
 	// Register tag name function to use mapstructure tags for field names in error messages.
 	// Falls back to json tag, then to Go field name.
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get("mapstructure"), ",", 2)[0]
+	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name, _, _ := strings.Cut(fld.Tag.Get("mapstructure"), ",")
 		if name != "-" && name != "" {
 			return name
 		}
-		name = strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		name, _, _ = strings.Cut(fld.Tag.Get("json"), ",")
 		if name != "-" && name != "" {
 			return name
 		}
 		return fld.Name
 	})
+
+	return v
 }
 
 // validateConfigTags validates a config struct using validate tags.
 // Returns nil if validation passes, or a formatted error if validation fails.
 func validateConfigTags(cfg any) error {
-	err := validate.Struct(cfg)
+	err := configValidator.Struct(cfg)
 	if err == nil {
 		return nil
 	}
@@ -48,12 +56,13 @@ func validateConfigTags(cfg any) error {
 		return formatValidationErrors(validationErrors)
 	}
 
-	return err
+	// Wrap unknown errors from validator
+	return fmt.Errorf("validation error: %w", err)
 }
 
 // formatValidationErrors converts validator.ValidationErrors into a human-readable error.
 func formatValidationErrors(errs validator.ValidationErrors) error {
-	var messages []string
+	messages := make([]string, 0, len(errs))
 	for _, e := range errs {
 		// e.Namespace() = "Config.database.host"
 		// e.Tag() = "required"
