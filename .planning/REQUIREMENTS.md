@@ -20,6 +20,13 @@ Requirements for Security & Hardening milestone.
 - [ ] **LIFE-03**: Application exits immediately if SIGINT received twice
 - [ ] **LIFE-04**: Application logs which specific lifecycle hook caused a shutdown hang
 
+### Provider Config Registration
+
+- [x] **PROV-01**: Providers can implement ConfigProvider interface to declare config needs
+- [x] **PROV-02**: Provider config keys are auto-prefixed with declared namespace
+- [x] **PROV-03**: Duplicate config keys from different providers fail at Build() with clear error
+- [x] **PROV-04**: Config values are injectable via ProviderValues type
+
 ## v2 Requirements
 
 ### Advanced Validation
@@ -45,11 +52,15 @@ Requirements for Security & Hardening milestone.
 | LIFE-02 | Phase 8 | Pending |
 | LIFE-03 | Phase 8 | Pending |
 | LIFE-04 | Phase 8 | Pending |
+| PROV-01 | Phase 9 | Complete |
+| PROV-02 | Phase 9 | Complete |
+| PROV-03 | Phase 9 | Complete |
+| PROV-04 | Phase 9 | Complete |
 
 **Coverage:**
-- v1 requirements: 7 total
-- Mapped to phases: 7
-- Unmapped: 0 ✓
+- v1.1 requirements: 11 total
+- Complete: 4 (Phase 9)
+- Pending: 7 (Phases 7, 8)
 
 ---
 *Requirements defined: 2026-01-26*
