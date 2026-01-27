@@ -87,6 +87,11 @@ func (cm *ConfigManager) Load() error {
 		d.Default()
 	}
 
+	// Validate struct tags (required, min, max, etc.)
+	if err := validateConfigTags(cm.target); err != nil {
+		return err // Already formatted with ErrConfigValidation
+	}
+
 	if val, ok := cm.target.(Validator); ok {
 		if err := val.Validate(); err != nil {
 			return fmt.Errorf("config validation failed: %w", err)
