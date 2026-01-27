@@ -408,7 +408,7 @@ func (a *App) Run(ctx context.Context) error {
 		return err
 	}
 
-	a.Logger.Info("starting application", "services_count", len(services))
+	a.Logger.InfoContext(ctx, "starting application", "services_count", len(services))
 
 	// Start services layer by layer
 	for _, layer := range startupOrder {
@@ -422,10 +422,20 @@ func (a *App) Run(ctx context.Context) error {
 				defer wg.Done()
 				start := time.Now()
 				if startErr := svc.start(ctx); startErr != nil {
-					a.Logger.Error("failed to start service", "name", name, "error", startErr)
+					a.Logger.ErrorContext(
+						ctx,
+						"failed to start service",
+						"name", name,
+						"error", startErr,
+					)
 					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
 				} else {
-					a.Logger.Info("service started", "name", name, "duration", time.Since(start))
+					a.Logger.InfoContext(
+						ctx,
+						"service started",
+						"name", name,
+						"duration", time.Since(start),
+					)
 				}
 			}()
 		}
@@ -494,10 +504,33 @@ func (a *App) Stop(ctx context.Context) error {
 	}
 	shutdownOrder := ComputeShutdownOrder(startupOrder)
 
+	lastErr := a.stopServices(ctx, shutdownOrder, services)
+
+	// Signal Run to exit (only if Run() was used)
+	if wasRunning {
+		a.mu.Lock()
+		select {
+		case <-a.stopCh:
+			// Already closed
+		default:
+			close(a.stopCh)
+		}
+		a.mu.Unlock()
+	}
+
+	return lastErr
+}
+
+// stopServices stops services in the given order.
+func (a *App) stopServices(
+	ctx context.Context,
+	order [][]string,
+	services map[string]serviceWrapper,
+) error {
 	var lastErr error
 
 	// Stop services layer by layer
-	for _, layer := range shutdownOrder {
+	for _, layer := range order {
 		var wg sync.WaitGroup
 		errCh := make(chan error, len(layer))
 
@@ -508,10 +541,20 @@ func (a *App) Stop(ctx context.Context) error {
 				defer wg.Done()
 				start := time.Now()
 				if stopErr := svc.stop(ctx); stopErr != nil {
-					a.Logger.Error("failed to stop service", "name", name, "error", stopErr)
+					a.Logger.ErrorContext(
+						ctx,
+						"failed to stop service",
+						"name", name,
+						"error", stopErr,
+					)
 					errCh <- fmt.Errorf("stopping service %s: %w", name, stopErr)
 				} else {
-					a.Logger.Info("service stopped", "name", name, "duration", time.Since(start))
+					a.Logger.InfoContext(
+						ctx,
+						"service stopped",
+						"name", name,
+						"duration", time.Since(start),
+					)
 				}
 			}()
 		}
@@ -527,18 +570,5 @@ func (a *App) Stop(ctx context.Context) error {
 			}
 		}
 	}
-
-	// Signal Run to exit (only if Run() was used)
-	if wasRunning {
-		a.mu.Lock()
-		select {
-		case <-a.stopCh:
-			// Already closed
-		default:
-			close(a.stopCh)
-		}
-		a.mu.Unlock()
-	}
-
 	return lastErr
 }
