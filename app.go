@@ -6,12 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"reflect"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/petabytecl/gaz/logger"
 )
 
 const defaultShutdownTimeout = 30 * time.Second
@@ -23,6 +26,7 @@ const providerWithErrorReturnCount = 2
 // AppOptions configuration for App.
 type AppOptions struct {
 	ShutdownTimeout time.Duration
+	LoggerConfig    *logger.Config
 }
 
 // AppOption configures AppOptions.
@@ -41,6 +45,13 @@ func WithShutdownTimeout(d time.Duration) Option {
 	}
 }
 
+// WithLoggerConfig sets the logger configuration.
+func WithLoggerConfig(cfg *logger.Config) Option {
+	return func(a *App) {
+		a.opts.LoggerConfig = cfg
+	}
+}
+
 // withShutdownTimeoutLegacy is the legacy version for NewApp().
 func withShutdownTimeoutLegacy(d time.Duration) AppOption {
 	return func(o *AppOptions) {
@@ -56,6 +67,9 @@ type App struct {
 	built       bool            // tracks if Build() was called
 	buildErrors []error         // collects registration errors for Build()
 	modules     map[string]bool // tracks registered module names for duplicate detection
+
+	// Logger instance
+	Logger *slog.Logger
 
 	// Configuration
 	configManager *ConfigManager
@@ -89,6 +103,22 @@ func New(opts ...Option) *App {
 	for _, opt := range opts {
 		opt(app)
 	}
+
+	// Initialize Logger
+	if app.opts.LoggerConfig == nil {
+		app.opts.LoggerConfig = &logger.Config{
+			Level:  slog.LevelInfo,
+			Format: "json",
+		}
+	}
+	app.Logger = logger.NewLogger(app.opts.LoggerConfig)
+
+	// Register Logger in container
+	if err := app.registerInstance(app.Logger); err != nil {
+		// Should not happen as container is empty
+		panic(fmt.Errorf("failed to register logger: %w", err))
+	}
+
 	return app
 }
 
@@ -103,10 +133,25 @@ func NewApp(c *Container, opts ...AppOption) *App {
 		opt(&options)
 	}
 
-	return &App{
+	// For legacy NewApp, use default logger since we can't easily configure it via AppOption
+	// without breaking changes or adding new AppOption types.
+	// We'll create a default logger here.
+	defaultLogger := logger.NewLogger(&logger.Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+	})
+
+	app := &App{
 		container: c,
 		opts:      options,
+		Logger:    defaultLogger,
 	}
+
+	// Register Logger in container
+	// Ignore error if already registered (user might have put one in container)
+	_ = app.registerInstance(defaultLogger)
+
+	return app
 }
 
 // Container returns the underlying container.
