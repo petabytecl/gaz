@@ -1,5 +1,3 @@
-// Package gaz provides a simple, type-safe dependency injection container
-// with lifecycle management for Go applications.
 package gaz
 
 import (
