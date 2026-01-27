@@ -35,10 +35,10 @@ Milestone v1.1 hardens the `gaz` framework for production use by introducing two
 3. User sees a human-readable error message listing specifically which fields failed validation.
 4. User can use complex rules like `required_if` to validate dependencies between config fields.
 
-**Plans:** 2 plans (1/2 complete)
+**Plans:** 2 plans (2/2 complete)
 Plans:
 - [x] 07-01-PLAN.md — Core implementation: validator dependency, validation.go, ConfigManager integration
-- [ ] 07-02-PLAN.md — Comprehensive tests: basic tags, cross-field, nested structs, error formatting
+- [x] 07-02-PLAN.md — Comprehensive tests: basic tags, cross-field, nested structs, error formatting
 
 ---
 
@@ -93,6 +93,6 @@ Plans:
 
 | Phase | Status | Completion |
 |-------|--------|------------|
-| 7 - Validation Engine | **In Progress** | 1/2 plans |
+| 7 - Validation Engine | **✓ Complete** | 2/2 plans |
 | 8 - Hardened Lifecycle | Pending | - |
 | 9 - Provider Config Registration | **✓ Complete** | 2/2 plans verified |
