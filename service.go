@@ -19,6 +19,9 @@ type serviceWrapper interface {
 	// isEager returns true if this service should be instantiated at Build() time.
 	isEager() bool
 
+	// isTransient returns true if this service creates a new instance on every resolve.
+	isTransient() bool
+
 	// getInstance returns the service instance, creating it if necessary.
 	// The chain parameter tracks the resolution path for cycle detection.
 	getInstance(c *Container, chain []string) (any, error)
@@ -127,6 +130,10 @@ func (s *lazySingleton[T]) isEager() bool {
 	return false
 }
 
+func (s *lazySingleton[T]) isTransient() bool {
+	return false
+}
+
 func (s *lazySingleton[T]) getInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -196,6 +203,10 @@ func (s *transientService[T]) isEager() bool {
 	return false
 }
 
+func (s *transientService[T]) isTransient() bool {
+	return true
+}
+
 func (s *transientService[T]) getInstance(c *Container, chain []string) (any, error) {
 	// Always call provider - no caching for transient services
 	instance, err := s.provider(c)
@@ -245,6 +256,10 @@ func newEagerSingleton[T any](
 
 func (s *eagerSingleton[T]) isEager() bool {
 	return true
+}
+
+func (s *eagerSingleton[T]) isTransient() bool {
+	return false
 }
 
 func (s *eagerSingleton[T]) getInstance(c *Container, chain []string) (any, error) {
@@ -325,6 +340,10 @@ func (s *instanceService[T]) isEager() bool {
 	return false // Already instantiated, no need for Build()
 }
 
+func (s *instanceService[T]) isTransient() bool {
+	return false
+}
+
 func (s *instanceService[T]) getInstance(_ *Container, _ []string) (any, error) {
 	return s.value, nil
 }
@@ -373,7 +392,8 @@ func newLazySingletonAny(
 	}
 }
 
-func (s *lazySingletonAny) isEager() bool { return false }
+func (s *lazySingletonAny) isEager() bool     { return false }
+func (s *lazySingletonAny) isTransient() bool { return false }
 
 func (s *lazySingletonAny) getInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
@@ -429,9 +449,10 @@ func newTransientAny(
 	}
 }
 
-func (s *transientServiceAny) name() string     { return s.serviceName }
-func (s *transientServiceAny) typeName() string { return s.serviceTypeName }
-func (s *transientServiceAny) isEager() bool    { return false }
+func (s *transientServiceAny) name() string      { return s.serviceName }
+func (s *transientServiceAny) typeName() string  { return s.serviceTypeName }
+func (s *transientServiceAny) isEager() bool     { return false }
+func (s *transientServiceAny) isTransient() bool { return true }
 
 func (s *transientServiceAny) getInstance(c *Container, chain []string) (any, error) {
 	instance, err := s.provider(c)
@@ -476,7 +497,8 @@ func newEagerSingletonAny(
 	}
 }
 
-func (s *eagerSingletonAny) isEager() bool { return true }
+func (s *eagerSingletonAny) isEager() bool     { return true }
+func (s *eagerSingletonAny) isTransient() bool { return false }
 
 func (s *eagerSingletonAny) getInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
@@ -548,7 +570,8 @@ func newInstanceServiceAny(
 	}
 }
 
-func (s *instanceServiceAny) isEager() bool { return false }
+func (s *instanceServiceAny) isEager() bool     { return false }
+func (s *instanceServiceAny) isTransient() bool { return false }
 
 func (s *instanceServiceAny) getInstance(_ *Container, _ []string) (any, error) {
 	return s.value, nil

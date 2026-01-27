@@ -132,8 +132,9 @@ type mockServiceWrapper struct {
 
 func (m *mockServiceWrapper) name() string { return m.nameVal }
 
-func (m *mockServiceWrapper) typeName() string { return m.typeNameVal }
-func (m *mockServiceWrapper) isEager() bool    { return false }
+func (m *mockServiceWrapper) typeName() string  { return m.typeNameVal }
+func (m *mockServiceWrapper) isEager() bool     { return false }
+func (m *mockServiceWrapper) isTransient() bool { return false }
 
 func (m *mockServiceWrapper) getInstance(
 	_ *Container,

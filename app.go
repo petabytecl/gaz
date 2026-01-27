@@ -364,6 +364,12 @@ func (a *App) collectProviderConfigs() error {
 			continue
 		}
 
+		// Skip transient services - they create new instances on each call
+		// and shouldn't participate in config collection
+		if wrapper.isTransient() {
+			continue
+		}
+
 		// Try to resolve the instance to check if it implements ConfigProvider
 		instance, err := wrapper.getInstance(a.container, nil)
 		if err != nil {
