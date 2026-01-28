@@ -3,7 +3,6 @@ package gaz
 import (
 	"errors"
 
-	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -39,8 +38,4 @@ var (
 	// ErrConfigKeyCollision is returned when two providers register the same config key.
 	// This error is specific to gaz (not in di or config packages).
 	ErrConfigKeyCollision = errors.New("gaz: config key collision")
-
-	// ErrConfigValidation is returned when config struct validation fails.
-	// This is an alias to config.ErrConfigValidation for backward compatibility.
-	ErrConfigValidation = config.ErrConfigValidation
 )

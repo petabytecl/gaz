@@ -15,7 +15,7 @@ import (
 type Container = di.Container
 
 // NewContainer creates a new empty Container.
-// Deprecated: Use di.New() for standalone DI usage.
+// For standalone DI usage, you may also use di.New() directly.
 func NewContainer() *Container {
 	return di.New()
 }
