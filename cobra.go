@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/petabytecl/gaz/di"
 	"github.com/spf13/cobra"
 )
 
@@ -139,15 +140,11 @@ func (a *App) Start(ctx context.Context) error {
 	a.mu.Unlock()
 
 	// Compute startup order
-	graph := a.container.getGraph()
-	services := make(map[string]serviceWrapper)
-	a.container.mu.RLock()
-	for k, v := range a.container.services {
-		if w, ok := v.(serviceWrapper); ok {
-			services[k] = w
-		}
-	}
-	a.container.mu.RUnlock()
+	graph := a.container.GetGraph()
+	services := make(map[string]di.ServiceWrapper)
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		services[name] = svc
+	})
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
@@ -158,7 +155,7 @@ func (a *App) Start(ctx context.Context) error {
 	for _, layer := range startupOrder {
 		for _, name := range layer {
 			svc := services[name]
-			if startErr := svc.start(ctx); startErr != nil {
+			if startErr := svc.Start(ctx); startErr != nil {
 				return fmt.Errorf("starting service %s: %w", name, startErr)
 			}
 		}

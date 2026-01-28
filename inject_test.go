@@ -203,39 +203,7 @@ func (s *InjectionSuite) TestNonStructPointerSkipped() {
 	s.Equal("hello", str)
 }
 
-func (s *InjectionSuite) TestParseTag() {
-	tests := []struct {
-		tag      string
-		expected tagOptions
-	}{
-		{"inject", tagOptions{inject: true}},
-		{"inject,optional", tagOptions{inject: true, optional: true}},
-		{"inject,name=primary", tagOptions{inject: true, name: "primary"}},
-		{"inject,name=primary,optional", tagOptions{inject: true, name: "primary", optional: true}},
-		{
-			"inject, name=foo , optional",
-			tagOptions{inject: true, name: "foo", optional: true},
-		}, // with spaces
-		{
-			"optional,inject",
-			tagOptions{inject: true, optional: true},
-		}, // order doesn't matter
-		{
-			"name=foo",
-			tagOptions{name: "foo", inject: false},
-		}, // missing inject keyword
-		{"", tagOptions{}}, // empty tag
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.tag, func() {
-			opts := parseTag(tt.tag)
-			s.Equal(tt.expected.inject, opts.inject, "inject")
-			s.Equal(tt.expected.name, opts.name, "name")
-			s.Equal(tt.expected.optional, opts.optional, "optional")
-		})
-	}
-}
+// NOTE: TestParseTag was moved to di package as parseTag and tagOptions are now internal to di
 
 // Test that transient services also get injection.
 type TransientHandler struct {

@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
-	"sort"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/logger"
 )
 
@@ -188,12 +188,12 @@ func (a *App) registerInstance(instance any) error {
 	typeNameStr := typeName(instanceType)
 
 	// Check for duplicate registration
-	if a.container.hasService(typeNameStr) {
+	if a.container.HasService(typeNameStr) {
 		return fmt.Errorf("%w: %s", ErrDuplicate, typeNameStr)
 	}
 
-	svc := newInstanceServiceAny(typeNameStr, typeNameStr, instance, nil, nil)
-	a.container.register(typeNameStr, svc)
+	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance, nil, nil)
+	a.container.Register(typeNameStr, svc)
 	return nil
 }
 
@@ -207,14 +207,7 @@ func (a *App) loadConfig() error {
 
 // getSortedServiceNames returns service names in sorted order for deterministic iteration.
 func (a *App) getSortedServiceNames() []string {
-	a.container.mu.RLock()
-	names := make([]string, 0, len(a.container.services))
-	for name := range a.container.services {
-		names = append(names, name)
-	}
-	a.container.mu.RUnlock()
-	sort.Strings(names)
-	return names
+	return a.container.List()
 }
 
 // collectProviderConfigs iterates registered services, collects config from ConfigProvider
@@ -226,20 +219,17 @@ func (a *App) collectProviderConfigs() error {
 
 	// Iterate in sorted order for deterministic dependency graph recording
 	for _, typeName := range a.getSortedServiceNames() {
-		a.container.mu.RLock()
-		svc, exists := a.container.services[typeName]
-		a.container.mu.RUnlock()
+		wrapper, exists := a.container.GetService(typeName)
 		if !exists {
 			continue
 		}
 
-		wrapper, ok := svc.(serviceWrapper)
-		if !ok || wrapper.isTransient() {
+		if wrapper.IsTransient() {
 			continue
 		}
 
-		// Use resolveByName() instead of getInstance() to ensure dependencies are recorded
-		instance, err := a.container.resolveByName(typeName, nil)
+		// Use ResolveByName() instead of GetInstance() to ensure dependencies are recorded
+		instance, err := a.container.ResolveByName(typeName, nil)
 		if err != nil {
 			continue // Skip services that fail to resolve
 		}
@@ -363,15 +353,11 @@ func (a *App) Run(ctx context.Context) error {
 	}()
 
 	// Compute startup order
-	graph := a.container.getGraph()
-	services := make(map[string]serviceWrapper)
-	a.container.mu.RLock()
-	for k, v := range a.container.services {
-		if w, ok := v.(serviceWrapper); ok {
-			services[k] = w
-		}
-	}
-	a.container.mu.RUnlock()
+	graph := a.container.GetGraph()
+	services := make(map[string]di.ServiceWrapper)
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		services[name] = svc
+	})
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
@@ -391,7 +377,7 @@ func (a *App) Run(ctx context.Context) error {
 			go func() {
 				defer wg.Done()
 				start := time.Now()
-				if startErr := svc.start(ctx); startErr != nil {
+				if startErr := svc.Start(ctx); startErr != nil {
 					a.Logger.ErrorContext(
 						ctx,
 						"failed to start service",
@@ -519,15 +505,11 @@ func (a *App) Stop(ctx context.Context) error {
 
 	// Compute shutdown order (reverse of startup)
 	// We need to re-compute because we don't store it.
-	graph := a.container.getGraph()
-	services := make(map[string]serviceWrapper)
-	a.container.mu.RLock()
-	for k, v := range a.container.services {
-		if w, ok := v.(serviceWrapper); ok {
-			services[k] = w
-		}
-	}
-	a.container.mu.RUnlock()
+	graph := a.container.GetGraph()
+	services := make(map[string]di.ServiceWrapper)
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		services[name] = svc
+	})
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
@@ -561,7 +543,7 @@ func (a *App) Stop(ctx context.Context) error {
 func (a *App) stopServices(
 	ctx context.Context,
 	order [][]string,
-	services map[string]serviceWrapper,
+	services map[string]di.ServiceWrapper,
 ) error {
 	var errs []error
 
@@ -578,7 +560,7 @@ func (a *App) stopServices(
 			start := time.Now()
 			errCh := make(chan error, 1)
 			go func() {
-				errCh <- svc.stop(hookCtx)
+				errCh <- svc.Stop(hookCtx)
 			}()
 
 			// Wait for hook completion or timeout

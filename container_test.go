@@ -22,8 +22,8 @@ func TestContainerSuite(t *testing.T) {
 func (s *ContainerSuite) TestNewContainer() {
 	c := NewContainer()
 	s.Require().NotNil(c)
-	s.Require().NotNil(c.services)
-	s.False(c.built, "New container should not be built")
+	// Container is now an alias to di.Container - check via public API
+	s.Equal(0, len(c.List()), "New container should have no services")
 }
 
 func (s *ContainerSuite) TestNewContainerReturnsDistinctInstances() {

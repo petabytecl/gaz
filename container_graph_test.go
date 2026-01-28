@@ -1,25 +1,59 @@
 package gaz
 
-// TestGraph_Storage tests the internal graph storage mechanisms.
+// TestGraph_Storage tests the internal graph storage mechanisms via public API.
 func (s *ContainerSuite) TestGraph_Storage() {
 	c := NewContainer()
 
-	// Manually record dependencies to test storage
-	c.recordDependency("parent", "child1")
-	c.recordDependency("parent", "child2")
-	c.recordDependency("other", "child3")
+	// Register services with dependencies to test graph recording
+	type child1 struct{}
+	type child2 struct{}
+	type child3 struct{}
+	type parent struct{}
+	type other struct{}
 
-	graph := c.getGraph()
+	// Register children
+	_ = For[*child1](c).Instance(&child1{})
+	_ = For[*child2](c).Instance(&child2{})
+	_ = For[*child3](c).Instance(&child3{})
 
-	s.Contains(graph, "parent")
-	s.Contains(graph, "other")
-	s.Equal([]string{"child1", "child2"}, graph["parent"])
-	s.Equal([]string{"child3"}, graph["other"])
+	// Parent depends on child1 and child2
+	_ = For[*parent](c).Provider(func(c *Container) (*parent, error) {
+		_, _ = Resolve[*child1](c)
+		_, _ = Resolve[*child2](c)
+		return &parent{}, nil
+	})
+
+	// Other depends on child3
+	_ = For[*other](c).Provider(func(c *Container) (*other, error) {
+		_, _ = Resolve[*child3](c)
+		return &other{}, nil
+	})
+
+	// Resolve to populate graph
+	_, _ = Resolve[*parent](c)
+	_, _ = Resolve[*other](c)
+
+	graph := c.GetGraph()
+
+	// Verify graph contains expected dependencies
+	parentName := TypeName[*parent]()
+	otherName := TypeName[*other]()
+	child1Name := TypeName[*child1]()
+	child2Name := TypeName[*child2]()
+	child3Name := TypeName[*child3]()
+
+	s.Contains(graph, parentName)
+	s.Contains(graph, otherName)
+	s.Contains(graph[parentName], child1Name)
+	s.Contains(graph[parentName], child2Name)
+	s.Contains(graph[otherName], child3Name)
 
 	// Verify deep copy
-	graph["parent"][0] = "modified"
-	graph2 := c.getGraph()
-	s.Equal("child1", graph2["parent"][0], "getGraph should return a deep copy")
+	if len(graph[parentName]) > 0 {
+		graph[parentName][0] = "modified"
+		graph2 := c.GetGraph()
+		s.Equal(child1Name, graph2[parentName][0], "GetGraph should return a deep copy")
+	}
 }
 
 func (s *ContainerSuite) TestGraph_CaptureDependencies() {
@@ -46,7 +80,7 @@ func (s *ContainerSuite) TestGraph_CaptureDependencies() {
 	_, err = Resolve[*ServiceA](c)
 	s.Require().NoError(err)
 
-	graph := c.getGraph()
+	graph := c.GetGraph()
 
 	// Check that A -> B is recorded
 	// Note: We need the exact string names used by the container

@@ -3,6 +3,8 @@ package gaz
 import (
 	"errors"
 	"sort"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // ComputeStartupOrder calculates the order in which services should be started.
@@ -12,7 +14,7 @@ import (
 // services: A map of service wrappers to check for lifecycle hooks.
 func ComputeStartupOrder(
 	graph map[string][]string,
-	services map[string]serviceWrapper,
+	services map[string]di.ServiceWrapper,
 ) ([][]string, error) {
 	// 1. Build reverse graph (dependency -> dependents) and pending counts (dependent -> count)
 	reverseGraph := make(map[string][]string)
@@ -86,7 +88,7 @@ func ComputeStartupOrder(
 		for _, name := range layer {
 			svc, exists := services[name]
 			// Only include if service exists and has lifecycle hooks
-			if exists && svc.hasLifecycle() {
+			if exists && svc.HasLifecycle() {
 				filteredLayer = append(filteredLayer, name)
 			}
 		}

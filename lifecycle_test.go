@@ -32,25 +32,21 @@ func TestLifecycleHooks(t *testing.T) {
 	_, err = Resolve[*MyService](c)
 	require.NoError(t, err)
 
-	// Access the service wrapper internally
-	// Since we are in package gaz, we can access private fields
+	// Access the service wrapper using public API
 	svcName := TypeName[*MyService]()
-	svc, ok := c.services[svcName]
+	wrapper, ok := c.GetService(svcName)
 	require.True(t, ok)
 
-	wrapper, ok := svc.(serviceWrapper)
-	require.True(t, ok)
+	// Verify HasLifecycle
+	assert.True(t, wrapper.HasLifecycle())
 
-	// Verify hasLifecycle
-	assert.True(t, wrapper.hasLifecycle())
-
-	// Invoke start
-	err = wrapper.start(context.Background())
+	// Invoke Start
+	err = wrapper.Start(context.Background())
 	require.NoError(t, err)
 	assert.True(t, startCalled, "OnStart hook should have been called")
 
-	// Invoke stop
-	err = wrapper.stop(context.Background())
+	// Invoke Stop
+	err = wrapper.Stop(context.Background())
 	require.NoError(t, err)
 	assert.True(t, stopCalled, "OnStop hook should have been called")
 }
@@ -79,15 +75,15 @@ func TestInterfaceLifecycle(t *testing.T) {
 		Instance(svc)
 	require.NoError(t, err)
 
-	wrapper, ok := c.services[TypeName[*lifecycleService]()].(serviceWrapper)
+	wrapper, ok := c.GetService(TypeName[*lifecycleService]())
 	require.True(t, ok)
 
-	// Instance service start() should call OnStart interface method
-	err = wrapper.start(context.Background())
+	// Instance service Start() should call OnStart interface method
+	err = wrapper.Start(context.Background())
 	require.NoError(t, err)
 	assert.True(t, svc.started)
 
-	err = wrapper.stop(context.Background())
+	err = wrapper.Stop(context.Background())
 	require.NoError(t, err)
 	assert.True(t, svc.stopped)
 }

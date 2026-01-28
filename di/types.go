@@ -13,6 +13,15 @@ func TypeName[T any]() string {
 	return typeName(reflect.TypeOf(&zero).Elem())
 }
 
+// TypeNameReflect returns a string representation of the given reflect.Type.
+// This is exported for use by the root gaz package for reflection-based registration.
+func TypeNameReflect(t any) string {
+	if rt, ok := t.(reflect.Type); ok {
+		return typeName(rt)
+	}
+	return typeName(reflect.TypeOf(t))
+}
+
 // typeName returns a string representation of the given reflect.Type.
 // It handles named types with package paths, pointers, slices, maps, and interfaces.
 func typeName(t reflect.Type) string {

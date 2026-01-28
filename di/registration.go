@@ -136,7 +136,7 @@ func (b *RegistrationBuilder[T]) OnStop(
 //	})
 func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error {
 	// Check for duplicate registration
-	if !b.allowReplace && b.container.hasService(b.name) {
+	if !b.allowReplace && b.container.HasService(b.name) {
 		return ErrDuplicate
 	}
 
@@ -151,7 +151,7 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 		svc = newLazySingleton(b.name, b.typeName, fn, b.startHooks, b.stopHooks)
 	}
 
-	b.container.register(b.name, svc)
+	b.container.Register(b.name, svc)
 	return nil
 }
 
@@ -180,11 +180,11 @@ func (b *RegistrationBuilder[T]) ProviderFunc(fn func(*Container) T) error {
 //	err := di.For[*Config](c).Instance(cfg)
 func (b *RegistrationBuilder[T]) Instance(val T) error {
 	// Check for duplicate registration
-	if !b.allowReplace && b.container.hasService(b.name) {
+	if !b.allowReplace && b.container.HasService(b.name) {
 		return ErrDuplicate
 	}
 
 	svc := newInstanceService(b.name, b.typeName, val, b.startHooks, b.stopHooks)
-	b.container.register(b.name, svc)
+	b.container.Register(b.name, svc)
 	return nil
 }

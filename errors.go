@@ -1,35 +1,45 @@
 package gaz
 
-import "errors"
+import (
+	"errors"
 
+	"github.com/petabytecl/gaz/di"
+)
+
+// Re-export di errors for backward compatibility.
+// Code that uses errors.Is(err, gaz.ErrNotFound) will work correctly
+// since these are aliases to the actual error values in di.
 var (
 	// ErrNotFound is returned when a requested service is not registered in the container.
-	ErrNotFound = errors.New("gaz: service not found")
+	ErrNotFound = di.ErrNotFound
 
 	// ErrCycle is returned when a circular dependency is detected during resolution.
-	ErrCycle = errors.New("gaz: circular dependency detected")
+	ErrCycle = di.ErrCycle
 
 	// ErrDuplicate is returned when attempting to register a service that already exists.
-	ErrDuplicate = errors.New("gaz: service already registered")
+	ErrDuplicate = di.ErrDuplicate
 
 	// ErrNotSettable is returned when a struct field cannot be set during injection.
-	ErrNotSettable = errors.New("gaz: field is not settable")
+	ErrNotSettable = di.ErrNotSettable
 
 	// ErrTypeMismatch is returned when a resolved service cannot be assigned to the target type.
-	ErrTypeMismatch = errors.New("gaz: type mismatch")
+	ErrTypeMismatch = di.ErrTypeMismatch
 
 	// ErrAlreadyBuilt is returned when attempting to register after Build() was called.
-	ErrAlreadyBuilt = errors.New("gaz: cannot register after Build()")
+	ErrAlreadyBuilt = di.ErrAlreadyBuilt
 
 	// ErrInvalidProvider is returned when a provider function has invalid signature.
-	ErrInvalidProvider = errors.New("gaz: invalid provider signature")
+	ErrInvalidProvider = di.ErrInvalidProvider
 
 	// ErrDuplicateModule is returned when a module with the same name is registered twice.
+	// This error is specific to gaz (not in di package).
 	ErrDuplicateModule = errors.New("gaz: duplicate module name")
 
 	// ErrConfigKeyCollision is returned when two providers register the same config key.
+	// This error is specific to gaz (not in di package).
 	ErrConfigKeyCollision = errors.New("gaz: config key collision")
 
 	// ErrConfigValidation is returned when config struct validation fails.
+	// This error is specific to gaz (not in di package).
 	ErrConfigValidation = errors.New("gaz: config validation failed")
 )

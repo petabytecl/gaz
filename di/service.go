@@ -370,7 +370,9 @@ type instanceServiceAny struct {
 	value any
 }
 
-func newInstanceServiceAny(
+// NewInstanceServiceAny creates a non-generic instance service wrapper.
+// Exported for use by gaz.App for reflection-based registration (WithConfig, etc.)
+func NewInstanceServiceAny(
 	name, typeName string,
 	value any,
 	startHooks, stopHooks []func(context.Context, any) error,

@@ -81,7 +81,7 @@ func injectStruct(c *Container, target any, chain []string) error {
 		}
 
 		// Resolve the dependency
-		instance, err := c.resolveByName(serviceName, chain)
+		instance, err := c.ResolveByName(serviceName, chain)
 		if err != nil {
 			if opts.optional && errors.Is(err, ErrNotFound) {
 				continue // Leave as zero value

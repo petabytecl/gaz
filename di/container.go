@@ -58,15 +58,17 @@ func New() *Container {
 	}
 }
 
-// register adds a service to the container. Internal use only.
-func (c *Container) register(name string, svc ServiceWrapper) {
+// Register adds a service to the container.
+// Exported for use by gaz.App for reflection-based registration.
+func (c *Container) Register(name string, svc ServiceWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.services[name] = svc
 }
 
-// hasService checks if a service is registered. Internal use only.
-func (c *Container) hasService(name string) bool {
+// HasService checks if a service is registered by name.
+// Exported for use by gaz.App for duplicate detection.
+func (c *Container) HasService(name string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	_, ok := c.services[name]
@@ -186,7 +188,7 @@ func (c *Container) Build() error {
 		// Use resolveByName to ensure dependency tracking works correctly.
 		// resolveByName manages the resolution chain, which is required for
 		// cycle detection and dependency graph building.
-		_, err := c.resolveByName(svc.Name(), nil)
+		_, err := c.ResolveByName(svc.Name(), nil)
 		if err != nil {
 			return fmt.Errorf("building eager service %s: %w", svc.Name(), err)
 		}
@@ -199,9 +201,9 @@ func (c *Container) Build() error {
 	return nil
 }
 
-// resolveByName resolves a service by name, tracking the chain for cycle detection.
-// This is the internal resolution method called by Resolve[T] and struct injection.
-func (c *Container) resolveByName(name string, _ []string) (any, error) {
+// ResolveByName resolves a service by name, tracking the chain for cycle detection.
+// Exported for use by gaz.App for config provider collection.
+func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 	// Get current chain for this goroutine
 	chain := c.getChain()
 
@@ -304,5 +306,5 @@ func (c *Container) List() []string {
 //	    db, _ := di.Resolve[*Database](c)
 //	}
 func Has[T any](c *Container) bool {
-	return c.hasService(TypeName[T]())
+	return c.HasService(TypeName[T]())
 }

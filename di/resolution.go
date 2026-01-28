@@ -31,7 +31,7 @@ func Resolve[T any](c *Container, opts ...ResolveOption) (T, error) {
 	}
 
 	// Start resolution with empty chain for cycle detection
-	instance, err := c.resolveByName(name, nil)
+	instance, err := c.ResolveByName(name, nil)
 	if err != nil {
 		var zero T
 		return zero, err

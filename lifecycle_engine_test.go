@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/petabytecl/gaz/di"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,7 +24,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_SimpleLinear() {
 		"C": {},
 	}
 
-	services := map[string]serviceWrapper{
+	services := map[string]di.ServiceWrapper{
 		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
 		"B": &mockServiceWrapper{nameVal: "B", hasLifecycleVal: true},
 		"C": &mockServiceWrapper{nameVal: "C", hasLifecycleVal: true},
@@ -48,7 +49,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_Parallel() {
 		"C": {},
 	}
 
-	services := map[string]serviceWrapper{
+	services := map[string]di.ServiceWrapper{
 		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
 		"B": &mockServiceWrapper{nameVal: "B", hasLifecycleVal: true},
 		"C": &mockServiceWrapper{nameVal: "C", hasLifecycleVal: true},
@@ -70,7 +71,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_Cycle() {
 		"B": {"A"},
 	}
 
-	services := map[string]serviceWrapper{
+	services := map[string]di.ServiceWrapper{
 		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
 		"B": &mockServiceWrapper{nameVal: "B", hasLifecycleVal: true},
 	}
@@ -90,7 +91,7 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_FilterNoLifecycle() {
 		"C": {},
 	}
 
-	services := map[string]serviceWrapper{
+	services := map[string]di.ServiceWrapper{
 		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
 		"B": &mockServiceWrapper{nameVal: "B", hasLifecycleVal: false},
 		"C": &mockServiceWrapper{nameVal: "C", hasLifecycleVal: true},
@@ -123,26 +124,24 @@ func (s *LifecycleEngineSuite) TestComputeShutdownOrder() {
 	s.Equal([]string{"C"}, shutdownOrder[2])
 }
 
-// mockServiceWrapper implements serviceWrapper for testing.
+// mockServiceWrapper implements di.ServiceWrapper for testing.
 type mockServiceWrapper struct {
 	nameVal         string
 	typeNameVal     string
 	hasLifecycleVal bool
 }
 
-func (m *mockServiceWrapper) name() string { return m.nameVal }
+func (m *mockServiceWrapper) Name() string      { return m.nameVal }
+func (m *mockServiceWrapper) TypeName() string  { return m.typeNameVal }
+func (m *mockServiceWrapper) IsEager() bool     { return false }
+func (m *mockServiceWrapper) IsTransient() bool { return false }
 
-func (m *mockServiceWrapper) typeName() string  { return m.typeNameVal }
-func (m *mockServiceWrapper) isEager() bool     { return false }
-func (m *mockServiceWrapper) isTransient() bool { return false }
-
-func (m *mockServiceWrapper) getInstance(
-	_ *Container,
+func (m *mockServiceWrapper) GetInstance(
+	_ *di.Container,
 	_ []string,
 ) (any, error) {
 	return nil, nil //nolint:nilnil // mock implementation for testing lifecycle ordering
 }
-func (m *mockServiceWrapper) start(context.Context) error { return nil }
-func (m *mockServiceWrapper) stop(context.Context) error  { return nil }
-
-func (m *mockServiceWrapper) hasLifecycle() bool { return m.hasLifecycleVal }
+func (m *mockServiceWrapper) Start(context.Context) error { return nil }
+func (m *mockServiceWrapper) Stop(context.Context) error  { return nil }
+func (m *mockServiceWrapper) HasLifecycle() bool          { return m.hasLifecycleVal }
