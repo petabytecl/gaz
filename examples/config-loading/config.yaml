@@ -1,4 +1,4 @@
 server:
-  port: 8080
   host: localhost
-debug: true
+  port: 8080
+  debug: true
