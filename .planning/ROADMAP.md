@@ -16,6 +16,8 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
 - [x] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [x] **Phase 14: Workers** - Background workers with lifecycle integration
+- [ ] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
+- [ ] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 
@@ -101,6 +103,32 @@ Plans:
 
 ---
 
+### Phase 14.1: Cleanup Deprecated Re-exports (INSERTED)
+
+**Goal**: Remove backward compatibility re-exports from root gaz package, only keep methods that make sense and we plan to maintain long-term.
+**Depends on**: Phase 14 (all package extractions complete)
+**Plans**: 2 plans
+
+Plans:
+- [ ] 14.1-01-PLAN.md — Remove deprecated config re-exports (delete options.go, config.go, update errors.go)
+- [ ] 14.1-02-PLAN.md — Update tests and documentation to use config.* imports
+
+---
+
+### Phase 14.2: Update All Relevant Documentation and Examples (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Depends on:** Phase 14.1
+**Plans**: 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 14.2 to break down)
+
+**Details:**
+[To be added during planning]
+
+---
+
 ### Phase 15: Cron
 
 **Goal**: Add scheduled task support wrapping robfig/cron with DI-aware jobs and graceful shutdown.
@@ -149,6 +177,8 @@ Plans:
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
+| 14.1 Cleanup Re-exports | 0/? | Not started | - |
+| 14.2 Update Docs/Examples | 0/? | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 
