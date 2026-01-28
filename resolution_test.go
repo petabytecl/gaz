@@ -312,3 +312,55 @@ func (s *ResolutionSuite) TestNamedNotFound() {
 		"error should contain searched name",
 	)
 }
+
+// =============================================================================
+// MustResolve[T]() Backward Compatibility Tests
+// =============================================================================
+
+func (s *ResolutionSuite) TestMustResolve_Success() {
+	c := NewContainer()
+
+	err := For[*testServiceA](c).Instance(&testServiceA{value: "test"})
+	s.Require().NoError(err)
+
+	// MustResolve should return the instance
+	svc := MustResolve[*testServiceA](c)
+	s.NotNil(svc)
+	s.Equal("test", svc.value)
+}
+
+func (s *ResolutionSuite) TestMustResolve_PanicsOnNotFound() {
+	c := NewContainer()
+
+	// MustResolve should panic when service is not found
+	s.Panics(func() {
+		MustResolve[*testServiceA](c)
+	}, "MustResolve should panic when service not found")
+}
+
+func (s *ResolutionSuite) TestMustResolve_WithNamed() {
+	c := NewContainer()
+
+	err := For[*testServiceA](c).Named("special").Instance(&testServiceA{value: "named"})
+	s.Require().NoError(err)
+
+	// MustResolve with Named option - verify gaz.Named() works with gaz.MustResolve()
+	svc := MustResolve[*testServiceA](c, Named("special"))
+	s.NotNil(svc)
+	s.Equal("named", svc.value)
+}
+
+// =============================================================================
+// Has[T]() Backward Compatibility Tests
+// =============================================================================
+
+func (s *ResolutionSuite) TestHas_NotRegistered() {
+	c := NewContainer()
+	s.False(Has[*testServiceA](c), "should return false for unregistered type")
+}
+
+func (s *ResolutionSuite) TestHas_Registered() {
+	c := NewContainer()
+	s.Require().NoError(For[*testServiceA](c).Instance(&testServiceA{value: "test"}))
+	s.True(Has[*testServiceA](c), "should return true for registered type")
+}
