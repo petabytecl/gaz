@@ -193,6 +193,13 @@ func (b *Backend) AddConfigPath(path string) {
 	b.v.AddConfigPath(path)
 }
 
+// SetConfigFile sets an explicit config file path.
+// Unlike SetConfigName + AddConfigPath, this uses the exact file path.
+// The file type is inferred from the extension.
+func (b *Backend) SetConfigFile(path string) {
+	b.v.SetConfigFile(path)
+}
+
 // ReadInConfig reads the config file from disk.
 func (b *Backend) ReadInConfig() error {
 	return b.v.ReadInConfig()

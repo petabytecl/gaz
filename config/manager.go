@@ -20,6 +20,7 @@ type Manager struct {
 	envPrefix   string
 	profileEnv  string
 	defaults    map[string]any
+	configFile  string // explicit config file path (if set, ignores search paths)
 }
 
 // New creates a new Manager with the given options.
@@ -102,12 +103,20 @@ func NewWithBackend(backend Backend, opts ...Option) *Manager {
 // This method configures the backend and reads the config file, but does not
 // unmarshal into a target struct. Use LoadInto for combined load + unmarshal.
 func (m *Manager) Load() error {
-	// Configure backend for file reading via viperConfigurable interface
-	if vc, ok := m.backend.(viperConfigurable); ok {
-		vc.SetConfigName(m.fileName)
-		vc.SetConfigType(m.fileType)
-		for _, path := range m.searchPaths {
-			vc.AddConfigPath(path)
+	// Handle explicit config file path vs search paths
+	if m.configFile != "" {
+		// Use explicit config file path if backend supports it
+		if cfs, ok := m.backend.(configFileSetter); ok {
+			cfs.SetConfigFile(m.configFile)
+		}
+	} else {
+		// Configure backend for file reading via viperConfigurable interface
+		if vc, ok := m.backend.(viperConfigurable); ok {
+			vc.SetConfigName(m.fileName)
+			vc.SetConfigType(m.fileType)
+			for _, path := range m.searchPaths {
+				vc.AddConfigPath(path)
+			}
 		}
 	}
 
@@ -346,6 +355,11 @@ type viperConfigurable interface {
 	SetConfigName(name string)
 	SetConfigType(t string)
 	AddConfigPath(path string)
+}
+
+// configFileSetter is implemented by backends that support explicit config file paths.
+type configFileSetter interface {
+	SetConfigFile(path string)
 }
 
 // configReader is implemented by backends that can read config files.

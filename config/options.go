@@ -67,3 +67,12 @@ func WithBackend(backend Backend) Option {
 		m.backend = backend
 	}
 }
+
+// WithConfigFile sets an explicit config file path.
+// If set, this path is used instead of searching for config files in search paths.
+// The file type is inferred from the extension.
+func WithConfigFile(path string) Option {
+	return func(m *Manager) {
+		m.configFile = path
+	}
+}
