@@ -16,6 +16,7 @@ import (
 	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/logger"
+	"github.com/petabytecl/gaz/worker"
 )
 
 const (
@@ -94,6 +95,9 @@ type App struct {
 	// Provider config tracking
 	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
 
+	// Worker management
+	workerMgr *worker.Manager
+
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
@@ -139,6 +143,17 @@ func New(opts ...Option) *App {
 		}
 	}
 	app.Logger = logger.NewLogger(app.opts.LoggerConfig)
+
+	// Initialize WorkerManager
+	app.workerMgr = worker.NewManager(app.Logger)
+	app.workerMgr.SetCriticalFailHandler(func() {
+		app.Logger.Error("critical worker failed, initiating shutdown")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), app.opts.ShutdownTimeout)
+			defer cancel()
+			_ = app.Stop(ctx)
+		}()
+	})
 
 	// Register Logger in container using For[T]() pattern
 	if err := For[*slog.Logger](app.container).Instance(app.Logger); err != nil {
@@ -312,6 +327,35 @@ func (a *App) registerProviderFlags() error {
 	return a.registerInstance(pv)
 }
 
+// discoverWorkers iterates registered services and registers those implementing
+// worker.Worker interface with the WorkerManager.
+func (a *App) discoverWorkers() error {
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		// Skip transient services
+		if svc.IsTransient() {
+			return
+		}
+
+		// Try to resolve and check for Worker interface
+		instance, err := a.container.ResolveByName(name, nil)
+		if err != nil {
+			return // Skip services that fail to resolve
+		}
+
+		if w, ok := instance.(worker.Worker); ok {
+			// Register with default options
+			// Providers can customize via WithWorkerOptions in future
+			if regErr := a.workerMgr.Register(w); regErr != nil {
+				a.Logger.Warn("failed to register worker",
+					"name", name,
+					"error", regErr,
+				)
+			}
+		}
+	})
+	return nil
+}
+
 // Build validates all registrations and instantiates eager services.
 // It aggregates all errors and returns them using errors.Join.
 // Build is idempotent - calling it multiple times after success returns nil.
@@ -334,6 +378,11 @@ func (a *App) Build() error {
 
 	// Collect provider configs from registered services
 	if err := a.collectProviderConfigs(); err != nil {
+		errs = append(errs, err)
+	}
+
+	// Discover workers from registered services
+	if err := a.discoverWorkers(); err != nil {
 		errs = append(errs, err)
 	}
 
