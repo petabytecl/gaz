@@ -16,7 +16,7 @@ type ConfigManager struct {
 
 // NewConfigManager creates a new ConfigManager.
 // Deprecated: Use config.New or config.NewWithBackend directly.
-func NewConfigManager(target any, opts ...ConfigOption) *ConfigManager {
+func NewConfigManager(target any, opts ...config.Option) *ConfigManager {
 	// Create config.Manager with viper backend
 	configOpts := make([]config.Option, 0, len(opts)+1)
 	configOpts = append(configOpts, config.WithBackend(cfgviper.New()))

@@ -180,13 +180,12 @@ func (a *App) Container() *Container {
 // 4. Flags (if WithCobra is used)
 //
 // The config object is automatically registered as a singleton instance in the container.
-func (a *App) WithConfig(target any, opts ...ConfigOption) *App {
+func (a *App) WithConfig(target any, opts ...config.Option) *App {
 	if a.built {
 		panic("gaz: cannot configure config after Build()")
 	}
 
 	// Create config.Manager with viper backend
-	// ConfigOption is now an alias for config.Option, so we can pass directly
 	configOpts := make([]config.Option, 0, len(opts)+1)
 	configOpts = append(configOpts, config.WithBackend(cfgviper.New()))
 	configOpts = append(configOpts, opts...)

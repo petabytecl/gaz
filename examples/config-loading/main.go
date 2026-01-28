@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 // Config holds application configuration loaded from config.yaml and env vars.
@@ -32,9 +33,9 @@ func main() {
 	// - WithSearchPaths("."): looks in current directory
 	// - WithEnvPrefix("APP"): binds env vars like APP_SERVER_PORT
 	app.WithConfig(cfg,
-		gaz.WithName("config"),
-		gaz.WithSearchPaths("."),
-		gaz.WithEnvPrefix("APP"),
+		config.WithName("config"),
+		config.WithSearchPaths("."),
+		config.WithEnvPrefix("APP"),
 	)
 
 	// Build triggers config loading and validation
