@@ -25,10 +25,11 @@ func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
 	app := New()
 
 	var buildCalled bool
-	app.ProvideSingleton(func(_ *Container) (*cobraTestService, error) {
+	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
 		buildCalled = true
 		return &cobraTestService{name: "test"}, nil
 	})
+	s.Require().NoError(err)
 
 	rootCmd := &cobra.Command{
 		Use: "test",
@@ -52,8 +53,8 @@ func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
 
 	// Execute command
 	rootCmd.SetArgs([]string{})
-	err := rootCmd.Execute()
-	s.Require().NoError(err)
+	execErr := rootCmd.Execute()
+	s.Require().NoError(execErr)
 	s.True(buildCalled, "provider should be called during execution")
 }
 
@@ -105,9 +106,10 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 	app := New()
 
 	// Register a service
-	app.ProvideSingleton(func(_ *Container) (*cobraTestService, error) {
+	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
 		return &cobraTestService{name: "from-app"}, nil
 	})
+	s.Require().NoError(err)
 
 	var resolvedName string
 
@@ -129,33 +131,25 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 	app.WithCobra(rootCmd)
 
 	rootCmd.SetArgs([]string{"sub"})
-	err := rootCmd.Execute()
-	s.Require().NoError(err)
+	execErr := rootCmd.Execute()
+	s.Require().NoError(execErr)
 	s.Equal("from-app", resolvedName)
 }
 
 func (s *CobraSuite) TestWithCobraBuildError() {
 	app := New()
 
-	// Register duplicate to cause build error
-	app.ProvideSingleton(func(_ *Container) (*cobraTestService, error) {
+	// Register duplicate to cause build error - second registration fails
+	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
 		return &cobraTestService{}, nil
 	})
-	app.ProvideSingleton(func(_ *Container) (*cobraTestService, error) {
+	s.Require().NoError(err)
+
+	err = For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
 		return &cobraTestService{}, nil
 	})
-
-	rootCmd := &cobra.Command{
-		Use:  "test",
-		RunE: func(_ *cobra.Command, _ []string) error { return nil },
-	}
-
-	app.WithCobra(rootCmd)
-
-	rootCmd.SetArgs([]string{})
-	err := rootCmd.Execute()
-	s.Require().Error(err)
-	s.Contains(err.Error(), "app build failed")
+	s.Require().Error(err) // Duplicate error on registration
+	s.Require().ErrorIs(err, ErrDuplicate)
 }
 
 func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {
@@ -193,9 +187,10 @@ func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {
 func (s *CobraSuite) TestStartWithoutBuildCallsBuild() {
 	app := New()
 
-	app.ProvideSingleton(func(_ *Container) (*cobraTestService, error) {
+	regErr := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
 		return &cobraTestService{name: "auto-built"}, nil
 	})
+	s.Require().NoError(regErr)
 
 	// Call Start without Build first - should auto-build
 	err := app.Start(context.Background())
