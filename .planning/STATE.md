@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 14 of 16 (Workers)
-- **Plan:** 2 of 4 in current phase
+- **Plan:** 3 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-28 — Completed 14-02-PLAN.md (WorkerManager and Supervisor)
+- **Last activity:** 2026-01-28 — Completed 14-03-PLAN.md (App integration)
 
-Progress: [████████████░] 92% (12/13 plans)
+Progress: [████████████░] 92% (13/14 plans)
 
 ## Performance Metrics
 
@@ -33,7 +33,7 @@ Progress: [████████████░] 92% (12/13 plans)
 | 11. Cleanup | 2/2 | 50 min | 25 min |
 | 12. DI Package | 4/4 | 100 min | 25 min |
 | 13. Config Package | 4/4 | 26 min | 7 min |
-| 14. Workers | 2/4 | 6 min | 3 min |
+| 14. Workers | 3/4 | 8 min | 2.6 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -69,6 +69,8 @@ Recent decisions affecting current work:
 - jpillora/backoff for restart delays with jitter (14-01)
 - Supervisor is internal, Manager exported for App integration (14-02)
 - Circuit breaker hand-rolled (counter+window) per RESEARCH.md (14-02)
+- Workers discovered during Build() via Worker interface check (14-03)
+- Workers start after Starter hooks, stop before Stopper hooks (14-03)
 
 ### Phase 14 Progress
 
@@ -78,7 +80,7 @@ Workers package foundation:
 |------|------|--------|
 | 14-01 | Worker interface, options, backoff | ✅ Complete |
 | 14-02 | WorkerManager and Supervisor | ✅ Complete |
-| 14-03 | App integration | ⏳ Pending |
+| 14-03 | App integration | ✅ Complete |
 | 14-04 | Tests and verification | ⏳ Pending |
 
 ### Phase 13 Complete
@@ -107,8 +109,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 14-02-PLAN.md (WorkerManager and Supervisor)
-Resume file: .planning/phases/14-workers/14-03-PLAN.md
+Stopped at: Completed 14-03-PLAN.md (App integration)
+Resume file: .planning/phases/14-workers/14-04-PLAN.md
 
 ---
 
