@@ -46,3 +46,21 @@ func Resolve[T any](c *Container, opts ...ResolveOption) (T, error) {
 
 	return result, nil
 }
+
+// MustResolve resolves a service or panics if resolution fails.
+// Use only in test setup or main() initialization where failure is fatal.
+//
+// Example:
+//
+//	func TestSomething(t *testing.T) {
+//	    c := di.NewTestContainer()
+//	    di.For[*MockDB](c).Instance(&MockDB{})
+//	    db := di.MustResolve[*MockDB](c) // panics if not found
+//	}
+func MustResolve[T any](c *Container, opts ...ResolveOption) T {
+	result, err := Resolve[T](c, opts...)
+	if err != nil {
+		panic(fmt.Sprintf("di.MustResolve[%s]: %v", TypeName[T](), err))
+	}
+	return result
+}
