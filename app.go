@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/petabytecl/gaz/config"
+	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/logger"
 )
@@ -86,7 +88,8 @@ type App struct {
 	Logger *slog.Logger
 
 	// Configuration
-	configManager *ConfigManager
+	configMgr    *config.Manager
+	configTarget any
 
 	// Provider config tracking
 	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
@@ -167,7 +170,14 @@ func (a *App) WithConfig(target any, opts ...ConfigOption) *App {
 		panic("gaz: cannot configure config after Build()")
 	}
 
-	a.configManager = NewConfigManager(target, opts...)
+	// Create config.Manager with viper backend
+	// ConfigOption is now an alias for config.Option, so we can pass directly
+	configOpts := make([]config.Option, 0, len(opts)+1)
+	configOpts = append(configOpts, config.WithBackend(cfgviper.New()))
+	configOpts = append(configOpts, opts...)
+
+	a.configMgr = config.New(configOpts...)
+	a.configTarget = target
 
 	// Register the config object in the container
 	// We register the pointer itself, as that's what will be populated
@@ -199,10 +209,10 @@ func (a *App) registerInstance(instance any) error {
 
 // loadConfig loads the configuration from all sources.
 func (a *App) loadConfig() error {
-	if a.configManager == nil {
+	if a.configMgr == nil {
 		return nil
 	}
-	return a.configManager.Load()
+	return a.configMgr.LoadInto(a.configTarget)
 }
 
 // getSortedServiceNames returns service names in sorted order for deterministic iteration.
@@ -271,16 +281,26 @@ func (a *App) collectProviderConfigs() error {
 
 // registerProviderFlags registers collected provider flags with ConfigManager and validates.
 func (a *App) registerProviderFlags() error {
-	if a.configManager == nil {
+	if a.configMgr == nil {
 		return nil
 	}
 
 	var validationErrors []error
 	for _, entry := range a.providerConfigs {
-		if err := a.configManager.RegisterProviderFlags(entry.namespace, entry.flags); err != nil {
+		// Convert gaz.ConfigFlag to config.ConfigFlag
+		cfgFlags := make([]config.ConfigFlag, len(entry.flags))
+		for i, f := range entry.flags {
+			cfgFlags[i] = config.ConfigFlag{
+				Key:      f.Key,
+				Default:  f.Default,
+				Required: f.Required,
+			}
+		}
+
+		if err := a.configMgr.RegisterProviderFlags(entry.namespace, cfgFlags); err != nil {
 			return err
 		}
-		errs := a.configManager.ValidateProviderFlags(entry.namespace, entry.flags)
+		errs := a.configMgr.ValidateProviderFlags(entry.namespace, cfgFlags)
 		validationErrors = append(validationErrors, errs...)
 	}
 
@@ -288,7 +308,7 @@ func (a *App) registerProviderFlags() error {
 		return errors.Join(validationErrors...)
 	}
 
-	pv := &ProviderValues{v: a.configManager.Viper()}
+	pv := &ProviderValues{backend: a.configMgr.Backend()}
 	return a.registerInstance(pv)
 }
 

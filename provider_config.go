@@ -3,7 +3,7 @@ package gaz
 import (
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/petabytecl/gaz/config"
 )
 
 // ConfigFlagType represents the type of a configuration flag value.
@@ -116,30 +116,30 @@ type ConfigProvider interface {
 //	    return &RedisClient{Host: host, Port: port}, nil
 //	}
 type ProviderValues struct {
-	v *viper.Viper
+	backend config.Backend
 }
 
 // GetString returns a string config value by its full key (e.g., "redis.host").
 func (pv *ProviderValues) GetString(key string) string {
-	return pv.v.GetString(key)
+	return pv.backend.GetString(key)
 }
 
 // GetInt returns an int config value by its full key.
 func (pv *ProviderValues) GetInt(key string) int {
-	return pv.v.GetInt(key)
+	return pv.backend.GetInt(key)
 }
 
 // GetBool returns a bool config value by its full key.
 func (pv *ProviderValues) GetBool(key string) bool {
-	return pv.v.GetBool(key)
+	return pv.backend.GetBool(key)
 }
 
 // GetDuration returns a duration config value by its full key.
 func (pv *ProviderValues) GetDuration(key string) time.Duration {
-	return pv.v.GetDuration(key)
+	return pv.backend.GetDuration(key)
 }
 
 // GetFloat64 returns a float64 config value by its full key.
 func (pv *ProviderValues) GetFloat64(key string) float64 {
-	return pv.v.GetFloat64(key)
+	return pv.backend.GetFloat64(key)
 }

@@ -105,8 +105,8 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 
 func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command) error {
 	// Bind flags if ConfigManager is available
-	if a.configManager != nil {
-		if err := a.configManager.BindFlags(cmd.Flags()); err != nil {
+	if a.configMgr != nil {
+		if err := a.configMgr.BindFlags(cmd.Flags()); err != nil {
 			return fmt.Errorf("failed to bind flags: %w", err)
 		}
 	}

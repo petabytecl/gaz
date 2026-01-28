@@ -230,3 +230,9 @@ func IsConfigFileNotFoundError(err error) bool {
 	_, ok := err.(viper.ConfigFileNotFoundError)
 	return ok
 }
+
+// IsConfigFileNotFoundError returns true if the given error indicates a missing config file.
+// This implements the configFileNotFoundChecker interface for the Manager.
+func (b *Backend) IsConfigFileNotFoundError(err error) bool {
+	return IsConfigFileNotFoundError(err)
+}

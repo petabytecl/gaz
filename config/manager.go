@@ -373,6 +373,6 @@ func isConfigFileNotFoundError(backend any, err error) bool {
 	if checker, ok := backend.(configFileNotFoundChecker); ok {
 		return checker.IsConfigFileNotFoundError(err)
 	}
-	// Fallback: check error message
-	return strings.Contains(err.Error(), "not found")
+	// Fallback: check error message (case-insensitive for viper compatibility)
+	return strings.Contains(strings.ToLower(err.Error()), "not found")
 }
