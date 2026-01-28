@@ -2,12 +2,16 @@
 //
 // This example shows the recommended pattern where services declare their config
 // requirements via the ConfigProvider interface (ConfigNamespace + ConfigFlags).
-// Config values are accessed via ProviderValues AFTER app.Build() completes.
+//
+// Key pattern: ProviderValues can be injected inside provider functions because
+// it is registered BEFORE providers are instantiated during Build(). This allows
+// providers to resolve config values at construction time.
 //
 // Key concepts:
 //   - ConfigProvider declares config requirements (namespace + flags)
 //   - ConfigFlags define typed config keys with defaults and descriptions
 //   - ProviderValues provides typed access to resolved config values
+//   - ProviderValues can be injected in providers (not just after Build)
 //   - Values can come from config files, environment variables, or defaults
 //
 // By default, gaz looks for config.yaml in the current directory. No explicit
@@ -27,9 +31,10 @@ import (
 )
 
 // ServerConfig implements ConfigProvider to declare its configuration requirements.
-// The struct itself is simple - it just satisfies the interface.
-// Config values are accessed via ProviderValues, not stored in the struct.
-type ServerConfig struct{}
+// It stores the injected ProviderValues to provide typed accessor methods.
+type ServerConfig struct {
+	pv *gaz.ProviderValues
+}
 
 // ConfigNamespace returns the namespace prefix for all config keys.
 // Keys returned by ConfigFlags() are prefixed with this namespace.
@@ -48,11 +53,30 @@ func (s *ServerConfig) ConfigFlags() []gaz.ConfigFlag {
 	}
 }
 
-// NewServerConfig is a simple constructor that returns the ConfigProvider.
-// IMPORTANT: Do NOT resolve ProviderValues here - it's not registered yet.
-// ProviderValues is only available AFTER app.Build() completes.
+// Host returns the server host configuration value.
+func (s *ServerConfig) Host() string {
+	return s.pv.GetString("server.host")
+}
+
+// Port returns the server port configuration value.
+func (s *ServerConfig) Port() int {
+	return s.pv.GetInt("server.port")
+}
+
+// Debug returns the debug mode configuration value.
+func (s *ServerConfig) Debug() bool {
+	return s.pv.GetBool("server.debug")
+}
+
+// NewServerConfig injects ProviderValues during Build().
+// This is now possible because ProviderValues is registered BEFORE providers run.
+// The provider can resolve and store ProviderValues at construction time.
 func NewServerConfig(c *gaz.Container) (*ServerConfig, error) {
-	return &ServerConfig{}, nil
+	pv, err := gaz.Resolve[*gaz.ProviderValues](c)
+	if err != nil {
+		return nil, err
+	}
+	return &ServerConfig{pv: pv}, nil
 }
 
 func main() {
@@ -63,33 +87,34 @@ func main() {
 	app := gaz.New()
 
 	// Register the ConfigProvider. During Build(), the framework will:
-	// 1. Call ConfigNamespace() and ConfigFlags() to collect requirements
-	// 2. Register defaults and bind environment variables
-	// 3. Validate required flags are set
-	// 4. Register ProviderValues for resolving config values
+	// 1. Load config and register ProviderValues EARLY
+	// 2. Call provider functions (can now inject ProviderValues)
+	// 3. Call ConfigNamespace() and ConfigFlags() to collect requirements
+	// 4. Register defaults and bind environment variables
+	// 5. Validate required flags are set
 	if err := gaz.For[*ServerConfig](app.Container()).Provider(NewServerConfig); err != nil {
 		log.Fatalf("Failed to register config provider: %v", err)
 	}
 
-	// Build triggers config collection, loading, and validation.
-	// After this, ProviderValues is registered and config values are accessible.
+	// Build triggers config loading and provider instantiation.
+	// ProviderValues is registered BEFORE providers run, so NewServerConfig
+	// can inject it as a dependency.
 	if err := app.Build(); err != nil {
 		log.Fatalf("Failed to build app: %v", err)
 	}
 
-	// NOW we can resolve ProviderValues (after Build completed).
-	// Access config values using the full key: "namespace.key"
-	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+	// Get the ServerConfig - it already has ProviderValues injected
+	cfg := gaz.MustResolve[*ServerConfig](app.Container())
 
-	// Get typed config values
-	host := pv.GetString("server.host")
-	port := pv.GetInt("server.port")
-	debug := pv.GetBool("server.debug")
-
-	// Display loaded configuration
+	// Use the accessor methods on ServerConfig
 	fmt.Println("Configuration loaded via ConfigProvider pattern:")
-	fmt.Printf("  Server: %s:%d\n", host, port)
-	fmt.Printf("  Debug:  %v\n", debug)
+	fmt.Printf("  Server: %s:%d\n", cfg.Host(), cfg.Port())
+	fmt.Printf("  Debug:  %v\n", cfg.Debug())
+	fmt.Println()
+	fmt.Println("Key pattern: ProviderValues injected in provider constructor")
+	fmt.Println("  - NewServerConfig receives *ProviderValues via DI")
+	fmt.Println("  - Accessor methods (Host, Port, Debug) use stored ProviderValues")
+	fmt.Println("  - No need to resolve ProviderValues in main()")
 	fmt.Println()
 	fmt.Println("Config sources (in priority order):")
 	fmt.Println("  1. Environment variables (e.g., SERVER_HOST, SERVER_PORT)")

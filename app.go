@@ -251,6 +251,17 @@ func (a *App) loadConfig() error {
 	return a.configMgr.Load()
 }
 
+// registerProviderValuesEarly registers ProviderValues as an instance
+// immediately after config loading, BEFORE providers are instantiated.
+// This allows providers to inject *ProviderValues as a dependency.
+func (a *App) registerProviderValuesEarly() error {
+	if a.configMgr == nil {
+		return nil
+	}
+	pv := &ProviderValues{backend: a.configMgr.Backend()}
+	return a.registerInstance(pv)
+}
+
 // getSortedServiceNames returns service names in sorted order for deterministic iteration.
 func (a *App) getSortedServiceNames() []string {
 	return a.container.List()
@@ -316,6 +327,7 @@ func (a *App) collectProviderConfigs() error {
 }
 
 // registerProviderFlags registers collected provider flags with ConfigManager and validates.
+// Note: ProviderValues is already registered by registerProviderValuesEarly().
 func (a *App) registerProviderFlags() error {
 	if a.configMgr == nil {
 		return nil
@@ -344,8 +356,7 @@ func (a *App) registerProviderFlags() error {
 		return errors.Join(validationErrors...)
 	}
 
-	pv := &ProviderValues{backend: a.configMgr.Backend()}
-	return a.registerInstance(pv)
+	return nil
 }
 
 // discoverWorkers iterates registered services and registers those implementing
@@ -397,7 +408,13 @@ func (a *App) Build() error {
 	var errs []error
 	errs = append(errs, a.buildErrors...)
 
+	// Register ProviderValues EARLY so providers can inject it
+	if err := a.registerProviderValuesEarly(); err != nil {
+		errs = append(errs, err)
+	}
+
 	// Collect provider configs from registered services
+	// Now providers can inject *ProviderValues as a dependency
 	if err := a.collectProviderConfigs(); err != nil {
 		errs = append(errs, err)
 	}
