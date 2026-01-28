@@ -57,8 +57,10 @@
 //	    Host string `mapstructure:"host" validate:"required"`
 //	}
 //
+//	import "github.com/petabytecl/gaz/config"
+//
 //	app := gaz.New()
-//	app.WithConfig(&Config{}, gaz.WithEnvPrefix("APP"))
+//	app.WithConfig(&Config{}, config.WithEnvPrefix("APP"))
 //
 // The config struct is automatically registered in the container. Use
 // [ConfigManager] for advanced scenarios. Config values are validated

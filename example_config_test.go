@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 // AppConfig demonstrates configuration with validation tags.
@@ -52,14 +53,14 @@ func ExampleConfigManager() {
 }
 
 // ExampleNewConfigManager demonstrates configuring the ConfigManager.
-// Options include WithName, WithSearchPaths, WithEnvPrefix, and WithDefaults.
+// Options include config.WithName, config.WithSearchPaths, config.WithEnvPrefix, and config.WithDefaults.
 func ExampleNewConfigManager() {
 	var cfg ServerConfig
 
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithName("server"),             // look for server.yaml, server.json, etc.
-		gaz.WithSearchPaths(".", "config"), // search in current dir and config/
-		gaz.WithDefaults(map[string]any{
+		config.WithName("server"),             // look for server.yaml, server.json, etc.
+		config.WithSearchPaths(".", "config"), // search in current dir and config/
+		config.WithDefaults(map[string]any{
 			"name":    "default-server",
 			"timeout": 30,
 		}),
