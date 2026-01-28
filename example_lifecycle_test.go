@@ -61,9 +61,13 @@ func Example_lifecycle() {
 	app := gaz.New()
 
 	// Register Server - it implements Starter and Stopper interfaces
-	app.ProvideSingleton(func(c *gaz.Container) (*Server, error) {
+	err := gaz.For[*Server](app.Container()).Provider(func(c *gaz.Container) (*Server, error) {
 		return &Server{port: 8080}, nil
 	})
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 
 	if err := app.Build(); err != nil {
 		fmt.Println("error:", err)
