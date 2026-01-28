@@ -50,11 +50,12 @@ Plans:
   2. DI package works standalone (can create container, register, resolve without gaz App)
   3. Root `gaz` package re-exports DI types for backward compatibility
   4. All existing tests pass with updated imports
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md — Create di package with core DI types (Container, For, Resolve)
+- [ ] 12-02-PLAN.md — Add introspection APIs and backward compatibility wrappers
+- [ ] 12-03-PLAN.md — Update App, remove redundant files, update all tests
 
 ---
 
@@ -140,7 +141,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
-| 12. DI Package | 0/2 | Not started | - |
+| 12. DI Package | 0/3 | Not started | - |
 | 13. Config Package | 0/2 | Not started | - |
 | 14. Workers | 0/2 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
