@@ -146,8 +146,10 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		gaz.WithShutdownTimeout(10 * time.Second),
 	)
 
-	// Register configuration as instance
-	app.ProvideInstance(config)
+	// Register configuration as instance using For[T]()
+	if err := gaz.For[AppConfig](app.Container()).Instance(config); err != nil {
+		return fmt.Errorf("failed to register config: %w", err)
+	}
 
 	// Register server with lifecycle hooks
 	if err := gaz.For[*Server](app.Container()).

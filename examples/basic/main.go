@@ -17,10 +17,13 @@ func main() {
 	// Create a new application
 	app := gaz.New()
 
-	// Register a singleton provider for Greeter
-	app.ProvideSingleton(func(c *gaz.Container) (*Greeter, error) {
+	// Register a singleton provider for Greeter using For[T]()
+	err := gaz.For[*Greeter](app.Container()).Provider(func(c *gaz.Container) (*Greeter, error) {
 		return &Greeter{Name: "World"}, nil
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Build the application (validates and prepares services)
 	if err := app.Build(); err != nil {

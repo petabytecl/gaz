@@ -129,14 +129,18 @@ func main() {
 		health.WithHealthChecks(health.DefaultConfig()),
 	)
 
-	// Register configuration
+	// Register configuration using For[T]()
 	config := DefaultServerConfig()
-	app.ProvideInstance(config)
+	if err := gaz.For[ServerConfig](app.Container()).Instance(config); err != nil {
+		log.Fatalf("Failed to register config: %v", err)
+	}
 
-	// Register HTTP handler
-	app.ProvideSingleton(func(_ *gaz.Container) (*Handler, error) {
-		return NewHandler(), nil
-	})
+	// Register HTTP handler using For[T]()
+	if err := gaz.For[*Handler](app.Container()).ProviderFunc(func(_ *gaz.Container) *Handler {
+		return NewHandler()
+	}); err != nil {
+		log.Fatalf("Failed to register handler: %v", err)
+	}
 
 	// Register HTTP server with lifecycle hooks
 	if err := gaz.For[*Server](app.Container()).

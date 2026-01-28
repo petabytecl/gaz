@@ -39,12 +39,15 @@ func (s *Server) OnStop(ctx context.Context) error {
 func main() {
 	app := gaz.New()
 
-	// Register the server as a singleton.
+	// Register the server as a singleton using For[T]().
 	// gaz automatically detects that Server implements Starter and Stopper
 	// and will call OnStart during Run() and OnStop during shutdown.
-	app.ProvideSingleton(func(c *gaz.Container) (*Server, error) {
+	err := gaz.For[*Server](app.Container()).Provider(func(c *gaz.Container) (*Server, error) {
 		return &Server{port: 8080}, nil
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := app.Build(); err != nil {
 		log.Fatal(err)
