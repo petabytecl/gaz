@@ -9,18 +9,18 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Cleanup
 
-- [ ] **CLN-01**: Delete deprecated `NewApp()` function
-- [ ] **CLN-02**: Delete deprecated `AppOption` type
-- [ ] **CLN-03**: Delete `withShutdownTimeoutLegacy()` helper
-- [ ] **CLN-04**: Remove `ProvideSingleton()` method from App
-- [ ] **CLN-05**: Remove `ProvideTransient()` method from App
-- [ ] **CLN-06**: Remove `ProvideEager()` method from App
-- [ ] **CLN-07**: Remove `ProvideInstance()` method from App
-- [ ] **CLN-08**: Remove `registerProvider()` reflection-based helper
-- [ ] **CLN-09**: Remove `registerInstance()` reflection-based helper
-- [ ] **CLN-10**: Remove non-generic service wrappers (`lazySingletonAny`, `transientServiceAny`, `eagerSingletonAny`, `instanceServiceAny`)
-- [ ] **CLN-11**: Update all examples to use generic fluent API
-- [ ] **CLN-12**: Update all tests to use generic fluent API
+- [x] **CLN-01**: Delete deprecated `NewApp()` function
+- [x] **CLN-02**: Delete deprecated `AppOption` type
+- [x] **CLN-03**: Delete `withShutdownTimeoutLegacy()` helper
+- [x] **CLN-04**: Remove `ProvideSingleton()` method from App
+- [x] **CLN-05**: Remove `ProvideTransient()` method from App
+- [x] **CLN-06**: Remove `ProvideEager()` method from App
+- [x] **CLN-07**: Remove `ProvideInstance()` method from App
+- [x] **CLN-08**: Remove `registerProvider()` reflection-based helper
+- [x] **CLN-09**: Remove `registerInstance()` reflection-based helper (public API removed; internal helper retained for WithConfig)
+- [x] **CLN-10**: Remove non-generic service wrappers (`lazySingletonAny`, `transientServiceAny`, `eagerSingletonAny` removed; `instanceServiceAny` retained for internal use)
+- [x] **CLN-11**: Update all examples to use generic fluent API
+- [x] **CLN-12**: Update all tests to use generic fluent API
 
 ### DI Package Extraction
 
@@ -120,18 +120,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLN-01 | Phase 11 | Pending |
-| CLN-02 | Phase 11 | Pending |
-| CLN-03 | Phase 11 | Pending |
-| CLN-04 | Phase 11 | Pending |
-| CLN-05 | Phase 11 | Pending |
-| CLN-06 | Phase 11 | Pending |
-| CLN-07 | Phase 11 | Pending |
-| CLN-08 | Phase 11 | Pending |
-| CLN-09 | Phase 11 | Pending |
-| CLN-10 | Phase 11 | Pending |
-| CLN-11 | Phase 11 | Pending |
-| CLN-12 | Phase 11 | Pending |
+| CLN-01 | Phase 11 | Complete |
+| CLN-02 | Phase 11 | Complete |
+| CLN-03 | Phase 11 | Complete |
+| CLN-04 | Phase 11 | Complete |
+| CLN-05 | Phase 11 | Complete |
+| CLN-06 | Phase 11 | Complete |
+| CLN-07 | Phase 11 | Complete |
+| CLN-08 | Phase 11 | Complete |
+| CLN-09 | Phase 11 | Complete |
+| CLN-10 | Phase 11 | Complete |
+| CLN-11 | Phase 11 | Complete |
+| CLN-12 | Phase 11 | Complete |
 | DI-01 | Phase 12 | Pending |
 | DI-02 | Phase 12 | Pending |
 | DI-03 | Phase 12 | Pending |
@@ -185,4 +185,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after initial definition*
+*Last updated: 2026-01-28 after Phase 11 completion*
