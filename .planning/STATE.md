@@ -13,18 +13,18 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 13 of 16 (Config Package)
-- **Plan:** 2 of 4 in current phase
+- **Plan:** 3 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-28 — Completed 13-02-PLAN.md (Manager, options, validation, accessors)
+- **Last activity:** 2026-01-28 — Completed 13-03-PLAN.md (App integration and backward compat)
 
-Progress: [████████░░] 66% (8/12 plans)
+Progress: [█████████░] 75% (9/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v2.0)
-- Average duration: 22 min
-- Total execution time: 2.6 hours
+- Total plans completed: 9 (v2.0)
+- Average duration: 21 min
+- Total execution time: 2.8 hours
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [████████░░] 66% (8/12 plans)
 |-------|-------|-------|----------|
 | 11. Cleanup | 2/2 | 50 min | 25 min |
 | 12. DI Package | 4/4 | 100 min | 25 min |
-| 13. Config Package | 2/4 | 10 min | 5 min |
+| 13. Config Package | 3/4 | 20 min | 7 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -62,6 +62,7 @@ Recent decisions affecting current work:
 - ErrConfigValidation with 'config:' prefix (not 'gaz:') (13-01)
 - Backend injection via option - New() requires WithBackend to avoid import cycle (13-02)
 - Internal interfaces for viper operations - avoids importing config/viper (13-02)
+- ConfigManager kept as thin wrapper (not alias) to preserve Load() API (13-03)
 
 ### Phase 13 In Progress
 
@@ -71,7 +72,7 @@ Config Package extraction started:
 |------|------|--------|
 | 13-01 | Backend interfaces and ViperBackend | ✅ Complete |
 | 13-02 | Manager, options, validation, accessors | ✅ Complete |
-| 13-03 | App integration and backward compat | Pending |
+| 13-03 | App integration and backward compat | ✅ Complete |
 | 13-04 | Tests and verify all tests pass | Pending |
 
 ### Pending Todos
@@ -85,8 +86,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 13-02-PLAN.md
-Resume file: .planning/phases/13-config/13-03-PLAN.md
+Stopped at: Completed 13-03-PLAN.md
+Resume file: .planning/phases/13-config/13-04-PLAN.md
 
 ---
 
