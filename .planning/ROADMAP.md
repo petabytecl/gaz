@@ -14,7 +14,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 
 - [x] **Phase 11: Cleanup** - Remove deprecated APIs and update examples/tests
 - [x] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
-- [ ] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
+- [x] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [ ] **Phase 14: Workers** - Background workers with lifecycle integration
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
@@ -76,7 +76,7 @@ Plans:
 - [x] 13-01-PLAN.md — Create config package with Backend interfaces and ViperBackend
 - [x] 13-02-PLAN.md — Create Manager, options, validation, and generic accessors
 - [x] 13-03-PLAN.md — Integrate config package with App and backward compatibility
-- [ ] 13-04-PLAN.md — Create config package tests and verify all tests pass
+- [x] 13-04-PLAN.md — Create config package tests and verify all tests pass
 
 ---
 
@@ -145,7 +145,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
-| 13. Config Package | 3/4 | In progress | - |
+| 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 0/2 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |

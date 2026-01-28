@@ -37,15 +37,15 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Config Package Extraction
 
-- [ ] **CFG-01**: Create `gaz/config` subpackage
-- [ ] **CFG-02**: Move `ConfigManager` to `gaz/config`
-- [ ] **CFG-03**: Move `Defaulter`/`Validator` interfaces to `gaz/config`
-- [ ] **CFG-04**: Move config options to `gaz/config`
-- [ ] **CFG-05**: Define `Backend` interface to abstract viper
-- [ ] **CFG-06**: Create `ViperBackend` implementing `Backend`
-- [ ] **CFG-07**: Config package works standalone without gaz App
-- [ ] **CFG-08**: Root gaz package integrates config via interface
-- [ ] **CFG-09**: Update imports throughout codebase
+- [x] **CFG-01**: Create `gaz/config` subpackage
+- [x] **CFG-02**: Move `ConfigManager` to `gaz/config`
+- [x] **CFG-03**: Move `Defaulter`/`Validator` interfaces to `gaz/config`
+- [x] **CFG-04**: Move config options to `gaz/config`
+- [x] **CFG-05**: Define `Backend` interface to abstract viper
+- [x] **CFG-06**: Create `ViperBackend` implementing `Backend`
+- [x] **CFG-07**: Config package works standalone without gaz App
+- [x] **CFG-08**: Root gaz package integrates config via interface
+- [x] **CFG-09**: Update imports throughout codebase
 
 ### Workers
 
@@ -142,15 +142,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DI-08 | Phase 12 | Complete |
 | DI-09 | Phase 12 | Complete |
 | DI-10 | Phase 12 | Complete |
-| CFG-01 | Phase 13 | Pending |
-| CFG-02 | Phase 13 | Pending |
-| CFG-03 | Phase 13 | Pending |
-| CFG-04 | Phase 13 | Pending |
-| CFG-05 | Phase 13 | Pending |
-| CFG-06 | Phase 13 | Pending |
-| CFG-07 | Phase 13 | Pending |
-| CFG-08 | Phase 13 | Pending |
-| CFG-09 | Phase 13 | Pending |
+| CFG-01 | Phase 13 | Complete |
+| CFG-02 | Phase 13 | Complete |
+| CFG-03 | Phase 13 | Complete |
+| CFG-04 | Phase 13 | Complete |
+| CFG-05 | Phase 13 | Complete |
+| CFG-06 | Phase 13 | Complete |
+| CFG-07 | Phase 13 | Complete |
+| CFG-08 | Phase 13 | Complete |
+| CFG-09 | Phase 13 | Complete |
 | WRK-01 | Phase 14 | Pending |
 | WRK-02 | Phase 14 | Pending |
 | WRK-03 | Phase 14 | Pending |
