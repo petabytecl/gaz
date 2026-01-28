@@ -1,60 +1,40 @@
 package gaz
 
+import "github.com/petabytecl/gaz/config"
+
 // =============================================================================
-// Config Options - for ConfigManager
+// Config Options - Re-exported from config package for backward compatibility
 // =============================================================================
 
 // ConfigOption configures the ConfigManager.
-type ConfigOption func(*ConfigManager)
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+type ConfigOption = config.Option
 
 // WithName sets the config file name (without extension).
 // Default is "config".
-func WithName(name string) ConfigOption {
-	return func(c *ConfigManager) {
-		c.fileName = name
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithName = config.WithName
 
 // WithType sets the config file type (yaml, json, toml, etc.).
 // Default is "yaml".
-func WithType(t string) ConfigOption {
-	return func(c *ConfigManager) {
-		c.fileType = t
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithType = config.WithType
 
 // WithEnvPrefix sets the environment variable prefix.
 // If set, environment variables will be bound automatically.
-func WithEnvPrefix(prefix string) ConfigOption {
-	return func(c *ConfigManager) {
-		c.envPrefix = prefix
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithEnvPrefix = config.WithEnvPrefix
 
 // WithSearchPaths sets the paths to search for the config file.
 // Default is ["."].
-func WithSearchPaths(paths ...string) ConfigOption {
-	return func(c *ConfigManager) {
-		c.searchPaths = paths
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithSearchPaths = config.WithSearchPaths
 
 // WithProfileEnv sets the environment variable name that determines the active profile.
 // If set and the env var is present, a profile-specific config will be loaded and merged.
-func WithProfileEnv(envVar string) ConfigOption {
-	return func(c *ConfigManager) {
-		c.profileEnv = envVar
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithProfileEnv = config.WithProfileEnv
 
 // WithDefaults sets default values for configuration keys.
-func WithDefaults(defaults map[string]any) ConfigOption {
-	return func(c *ConfigManager) {
-		if c.defaults == nil {
-			c.defaults = make(map[string]any)
-		}
-		for k, v := range defaults {
-			c.defaults[k] = v
-		}
-	}
-}
+// Deprecated: Import github.com/petabytecl/gaz/config directly.
+var WithDefaults = config.WithDefaults

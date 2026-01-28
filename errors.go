@@ -3,6 +3,7 @@ package gaz
 import (
 	"errors"
 
+	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -32,14 +33,14 @@ var (
 	ErrInvalidProvider = di.ErrInvalidProvider
 
 	// ErrDuplicateModule is returned when a module with the same name is registered twice.
-	// This error is specific to gaz (not in di package).
+	// This error is specific to gaz (not in di or config packages).
 	ErrDuplicateModule = errors.New("gaz: duplicate module name")
 
 	// ErrConfigKeyCollision is returned when two providers register the same config key.
-	// This error is specific to gaz (not in di package).
+	// This error is specific to gaz (not in di or config packages).
 	ErrConfigKeyCollision = errors.New("gaz: config key collision")
 
 	// ErrConfigValidation is returned when config struct validation fails.
-	// This error is specific to gaz (not in di package).
-	ErrConfigValidation = errors.New("gaz: config validation failed")
+	// This is an alias to config.ErrConfigValidation for backward compatibility.
+	ErrConfigValidation = config.ErrConfigValidation
 )
