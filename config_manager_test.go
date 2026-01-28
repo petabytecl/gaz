@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 type ConfigManagerSuite struct {
@@ -68,7 +69,7 @@ func (s *ConfigManagerSuite) TestLoadEnv() {
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithEnvPrefix("TEST_APP"),
+		config.WithEnvPrefix("TEST_APP"),
 	)
 
 	err := cm.Load()
@@ -87,8 +88,8 @@ func (s *ConfigManagerSuite) TestLoadFile() {
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithName("testconfig"),
-		gaz.WithSearchPaths(tmpDir),
+		config.WithName("testconfig"),
+		config.WithSearchPaths(tmpDir),
 	)
 
 	err = cm.Load()
@@ -116,8 +117,8 @@ func (s *ConfigManagerSuite) TestLoadProfile() {
 
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithSearchPaths(tmpDir),
-		gaz.WithProfileEnv("APP_ENV"),
+		config.WithSearchPaths(tmpDir),
+		config.WithProfileEnv("APP_ENV"),
 	)
 
 	err = cm.Load()
@@ -130,7 +131,7 @@ func (s *ConfigManagerSuite) TestLoadProfile() {
 func (s *ConfigManagerSuite) TestExplicitDefaults() {
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithDefaults(map[string]any{
+		config.WithDefaults(map[string]any{
 			"host": "default-host",
 			"port": 9000,
 		}),
@@ -146,7 +147,7 @@ func (s *ConfigManagerSuite) TestExplicitDefaults() {
 func (s *ConfigManagerSuite) TestValidation() {
 	var cfg TestManagerConfig
 	cm := gaz.NewConfigManager(&cfg,
-		gaz.WithDefaults(map[string]any{
+		config.WithDefaults(map[string]any{
 			"port": -1,
 		}),
 	)

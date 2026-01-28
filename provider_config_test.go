@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 type ProviderConfigSuite struct {
@@ -140,7 +141,7 @@ type NonConfigProvider struct{}
 func (s *ProviderConfigSuite) TestBasicConfigProvider() {
 	// Provider implements ConfigProvider, values accessible via ProviderValues
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_BASIC"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_BASIC"))
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
 		return &RedisProvider{}
@@ -166,7 +167,7 @@ func (s *ProviderConfigSuite) TestNamespacePrefixing() {
 	s.T().Setenv("REDIS_PORT", "9999")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NS"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_NS"))
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
 		return &RedisProvider{}
@@ -187,7 +188,7 @@ func (s *ProviderConfigSuite) TestNamespacePrefixing() {
 func (s *ProviderConfigSuite) TestKeyCollision() {
 	// Two providers with same full key fails Build()
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_COLLISION"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_COLLISION"))
 
 	err := gaz.For[*CollidingProvider1](app.Container()).ProviderFunc(func(_ *gaz.Container) *CollidingProvider1 {
 		return &CollidingProvider1{}
@@ -208,7 +209,7 @@ func (s *ProviderConfigSuite) TestKeyCollision() {
 func (s *ProviderConfigSuite) TestRequiredMissing() {
 	// Required flag not set fails Build()
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_MISSING"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_REQUIRED_MISSING"))
 
 	err := gaz.For[*RequiredConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RequiredConfigProvider {
 		return &RequiredConfigProvider{}
@@ -226,7 +227,7 @@ func (s *ProviderConfigSuite) TestRequiredSet() {
 	s.T().Setenv("REQUIRED_API_KEY", "my-secret-key")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_SET"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_REQUIRED_SET"))
 
 	err := gaz.For[*RequiredConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RequiredConfigProvider {
 		return &RequiredConfigProvider{}
@@ -244,7 +245,7 @@ func (s *ProviderConfigSuite) TestRequiredSet() {
 func (s *ProviderConfigSuite) TestDefaultValue() {
 	// Default value used when not set
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_DEFAULT"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_DEFAULT"))
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
 		return &RedisProvider{}
@@ -271,7 +272,7 @@ func (s *ProviderConfigSuite) TestAllTypes() {
 	s.T().Setenv("TYPES_RATE", "3.14")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_TYPES"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_TYPES"))
 
 	err := gaz.For[*AllTypesProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *AllTypesProvider {
 		return &AllTypesProvider{}
@@ -297,7 +298,7 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 	s.T().Setenv("CACHE_TTL", "10m")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_MULTI"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_MULTI"))
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
 		return &RedisProvider{}
@@ -346,7 +347,7 @@ func (s *ProviderConfigSuite) TestNoConfigManager() {
 func (s *ProviderConfigSuite) TestNonConfigProvider() {
 	// Provider that doesn't implement ConfigProvider is ignored
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NON"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_NON"))
 
 	err := gaz.For[*NonConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *NonConfigProvider {
 		return &NonConfigProvider{}
@@ -373,7 +374,7 @@ func (s *ProviderConfigSuite) TestEnvVarTranslation() {
 	s.T().Setenv("REDIS_HOST", "env-translated-host")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_ENV"))
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_ENV"))
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
 		return &RedisProvider{}

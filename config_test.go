@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 type ConfigSuite struct {
@@ -60,7 +61,7 @@ func (s *ConfigSuite) TestEnvVars() {
 	}()
 
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
+	app := gaz.New().WithConfig(&cfg, config.WithEnvPrefix("TEST_APP"))
 
 	err := app.Build()
 	s.Require().NoError(err)
@@ -74,7 +75,7 @@ func (s *ConfigSuite) TestValidation() {
 	defer func() { _ = os.Unsetenv("TEST_APP_PORT") }()
 
 	var cfg TestConfig
-	app := gaz.New().WithConfig(&cfg, gaz.WithEnvPrefix("TEST_APP"))
+	app := gaz.New().WithConfig(&cfg, config.WithEnvPrefix("TEST_APP"))
 
 	err := app.Build()
 	s.Require().Error(err)
@@ -126,8 +127,8 @@ func (s *ConfigSuite) TestProfiles() {
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg,
-		gaz.WithSearchPaths(tmpDir),
-		gaz.WithProfileEnv("TEST_ENV"),
+		config.WithSearchPaths(tmpDir),
+		config.WithProfileEnv("TEST_ENV"),
 	)
 
 	err = app.Build()

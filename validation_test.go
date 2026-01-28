@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 // ValidationSuite tests the validation engine functionality.
@@ -30,7 +31,7 @@ func (s *ValidationSuite) TestRequiredValidation() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "host")
 	s.Contains(err.Error(), "required field cannot be empty")
 
@@ -55,7 +56,7 @@ func (s *ValidationSuite) TestMinMaxValidation() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "must be at least 1")
 
 	// Value 70000 fails max=65535
@@ -64,7 +65,7 @@ func (s *ValidationSuite) TestMinMaxValidation() {
 	err = app2.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "must be at most 65535")
 
 	// Value 8080 passes
@@ -88,7 +89,7 @@ func (s *ValidationSuite) TestOneOfValidation() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "must be one of: debug info warn error")
 
 	// Valid value passes
@@ -117,7 +118,7 @@ func (s *ValidationSuite) TestNestedStructValidation() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	// Error should show "database.host" namespace
 	s.Contains(err.Error(), "database.host")
 	s.Contains(err.Error(), "required field cannot be empty")
@@ -149,7 +150,7 @@ func (s *ValidationSuite) TestMapstructureFieldNames() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	// Error should use mapstructure name
 	s.Contains(err.Error(), "db_host")
 	// Error should NOT contain Go field name
@@ -170,7 +171,7 @@ func (s *ValidationSuite) TestAllErrorsCollected() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 
 	errStr := err.Error()
 
@@ -199,7 +200,7 @@ func (s *ValidationSuite) TestRequiredIfValidation() {
 	err := app.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "username")
 	s.Contains(err.Error(), "password")
 
@@ -220,7 +221,7 @@ func (s *ValidationSuite) TestRequiredIfValidation() {
 	err = app3.Build()
 
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	s.Contains(err.Error(), "token")
 
 	// Type="oauth" with token passes
@@ -255,7 +256,7 @@ func (s *ValidationSuite) TestConfigManagerValidation() {
 
 	// Validation runs and fails
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 }
 
 // TestValidationAfterDefaults tests that defaults are applied before validation.
@@ -297,7 +298,7 @@ func (s *ValidationSuite) TestValidationBeforeCustomValidate() {
 
 	// Tag validation fails first (required field empty)
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, gaz.ErrConfigValidation)
+	s.Require().ErrorIs(err, config.ErrConfigValidation)
 	// Custom Validate() should NOT have been called
 	s.False(invalidConfig.validateCalled)
 }
