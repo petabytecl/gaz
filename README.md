@@ -40,9 +40,14 @@ func (s *Server) OnStop(ctx context.Context) error {
 
 func main() {
 	app := gaz.New()
-	app.ProvideSingleton(func(c *gaz.Container) (*Server, error) {
+
+	// Register a singleton provider using the type-safe For[T]() API
+	err := gaz.For[*Server](app.Container()).Provider(func(c *gaz.Container) (*Server, error) {
 		return &Server{addr: ":8080"}, nil
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := app.Build(); err != nil {
 		log.Fatal(err)
@@ -74,7 +79,11 @@ func main() {
 
 ```go
 app := gaz.New()
-app.ProvideSingleton(NewDatabase)
+
+// Register services using the type-safe For[T]() API
+gaz.For[*Database](app.Container()).Provider(NewDatabase)
+gaz.For[*UserService](app.Container()).Provider(NewUserService)
+
 app.Build()
 app.Run(ctx)
 ```
@@ -92,13 +101,16 @@ db, _ := gaz.Resolve[*Database](c)
 
 ```go
 // Singleton (default): one instance for container lifetime
-app.ProvideSingleton(NewDatabase)
+gaz.For[*Database](c).Provider(NewDatabase)
 
 // Transient: new instance on every resolution
-app.ProvideTransient(NewRequest)
+gaz.For[*Request](c).Transient().Provider(NewRequest)
 
 // Eager: singleton instantiated at Build() time
-app.ProvideEager(NewConnectionPool)
+gaz.For[*ConnectionPool](c).Eager().Provider(NewConnectionPool)
+
+// Instance: register a pre-built value
+gaz.For[*Config](c).Instance(cfg)
 ```
 
 ### Lifecycle Hooks
