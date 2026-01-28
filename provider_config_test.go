@@ -140,12 +140,14 @@ type NonConfigProvider struct{}
 func (s *ProviderConfigSuite) TestBasicConfigProvider() {
 	// Provider implements ConfigProvider, values accessible via ProviderValues
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_BASIC")).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_BASIC"))
 
-	err := app.Build()
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	// Resolve ProviderValues
@@ -164,12 +166,14 @@ func (s *ProviderConfigSuite) TestNamespacePrefixing() {
 	s.T().Setenv("REDIS_PORT", "9999")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NS")).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NS"))
 
-	err := app.Build()
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -183,15 +187,19 @@ func (s *ProviderConfigSuite) TestNamespacePrefixing() {
 func (s *ProviderConfigSuite) TestKeyCollision() {
 	// Two providers with same full key fails Build()
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_COLLISION")).
-		ProvideSingleton(func(_ *gaz.Container) *CollidingProvider1 {
-			return &CollidingProvider1{}
-		}).
-		ProvideSingleton(func(_ *gaz.Container) *CollidingProvider2 {
-			return &CollidingProvider2{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_COLLISION"))
 
-	err := app.Build()
+	err := gaz.For[*CollidingProvider1](app.Container()).ProviderFunc(func(_ *gaz.Container) *CollidingProvider1 {
+		return &CollidingProvider1{}
+	})
+	s.Require().NoError(err)
+
+	err = gaz.For[*CollidingProvider2](app.Container()).ProviderFunc(func(_ *gaz.Container) *CollidingProvider2 {
+		return &CollidingProvider2{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, gaz.ErrConfigKeyCollision)
 	s.Contains(err.Error(), "cache.host")
@@ -200,12 +208,14 @@ func (s *ProviderConfigSuite) TestKeyCollision() {
 func (s *ProviderConfigSuite) TestRequiredMissing() {
 	// Required flag not set fails Build()
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_MISSING")).
-		ProvideSingleton(func(_ *gaz.Container) *RequiredConfigProvider {
-			return &RequiredConfigProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_MISSING"))
 
-	err := app.Build()
+	err := gaz.For[*RequiredConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RequiredConfigProvider {
+		return &RequiredConfigProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().Error(err)
 	s.Contains(err.Error(), "required.api_key")
 	s.Contains(err.Error(), "required config key")
@@ -216,12 +226,14 @@ func (s *ProviderConfigSuite) TestRequiredSet() {
 	s.T().Setenv("REQUIRED_API_KEY", "my-secret-key")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_SET")).
-		ProvideSingleton(func(_ *gaz.Container) *RequiredConfigProvider {
-			return &RequiredConfigProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_REQUIRED_SET"))
 
-	err := app.Build()
+	err := gaz.For[*RequiredConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RequiredConfigProvider {
+		return &RequiredConfigProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -232,12 +244,14 @@ func (s *ProviderConfigSuite) TestRequiredSet() {
 func (s *ProviderConfigSuite) TestDefaultValue() {
 	// Default value used when not set
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_DEFAULT")).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_DEFAULT"))
 
-	err := app.Build()
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -257,12 +271,14 @@ func (s *ProviderConfigSuite) TestAllTypes() {
 	s.T().Setenv("TYPES_RATE", "3.14")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_TYPES")).
-		ProvideSingleton(func(_ *gaz.Container) *AllTypesProvider {
-			return &AllTypesProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_TYPES"))
 
-	err := app.Build()
+	err := gaz.For[*AllTypesProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *AllTypesProvider {
+		return &AllTypesProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -281,15 +297,19 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 	s.T().Setenv("CACHE_TTL", "10m")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_MULTI")).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		}).
-		ProvideSingleton(func(_ *gaz.Container) *CacheProvider {
-			return &CacheProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_MULTI"))
 
-	err := app.Build()
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = gaz.For[*CacheProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *CacheProvider {
+		return &CacheProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -306,13 +326,15 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 
 func (s *ProviderConfigSuite) TestNoConfigManager() {
 	// App without WithConfig - provider config features are skipped
-	app := gaz.New().
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+	app := gaz.New()
+
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
 
 	// Should build successfully
-	err := app.Build()
+	err = app.Build()
 	s.Require().NoError(err)
 
 	// ProviderValues should not be registered when no ConfigManager
@@ -324,15 +346,19 @@ func (s *ProviderConfigSuite) TestNoConfigManager() {
 func (s *ProviderConfigSuite) TestNonConfigProvider() {
 	// Provider that doesn't implement ConfigProvider is ignored
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NON")).
-		ProvideSingleton(func(_ *gaz.Container) *NonConfigProvider {
-			return &NonConfigProvider{}
-		}).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_NON"))
 
-	err := app.Build()
+	err := gaz.For[*NonConfigProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *NonConfigProvider {
+		return &NonConfigProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
@@ -347,12 +373,14 @@ func (s *ProviderConfigSuite) TestEnvVarTranslation() {
 	s.T().Setenv("REDIS_HOST", "env-translated-host")
 
 	app := gaz.New().
-		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_ENV")).
-		ProvideSingleton(func(_ *gaz.Container) *RedisProvider {
-			return &RedisProvider{}
-		})
+		WithConfig(&struct{}{}, gaz.WithEnvPrefix("TEST_ENV"))
 
-	err := app.Build()
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
