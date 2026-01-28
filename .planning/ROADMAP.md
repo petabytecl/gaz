@@ -19,6 +19,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
 - [ ] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
 - [x] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
+- [ ] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 
@@ -153,6 +154,21 @@ New pattern:
 
 ---
 
+### Phase 14.4: Config Flag and ProviderValues (INSERTED)
+
+**Goal:** Add `WithConfigFile()` option for explicit config paths and enable ProviderValues injection inside provider functions.
+**Depends on:** Phase 14.3
+**Plans**: 1 plan
+
+Plans:
+- [ ] 14.4-01-PLAN.md — Config file path support and early ProviderValues registration
+
+**Details:**
+1. `WithConfigFile(path string)` option for explicit config file path
+2. `gaz.ProviderValues` available inside provider functions during Build()
+
+---
+
 ### Phase 15: Cron
 
 **Goal**: Add scheduled task support wrapping robfig/cron with DI-aware jobs and graceful shutdown.
@@ -204,6 +220,7 @@ Plans:
 | 14.1 Cleanup Re-exports | 2/2 | Complete | 2026-01-28 |
 | 14.2 Update Docs/Examples | 0/? | Not started | - |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
+| 14.4 Config Flag/ProviderValues | 0/1 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 
