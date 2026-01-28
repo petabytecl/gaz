@@ -14,7 +14,7 @@ import (
 //	)
 func WithHealthChecks(config Config) gaz.Option {
 	return func(app *gaz.App) {
-		app.ProvideInstance(config)
+		_ = gaz.For[Config](app.Container()).Instance(config)
 		app.Module("health", Module)
 	}
 }

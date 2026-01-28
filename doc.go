@@ -6,7 +6,7 @@
 // Create an application, register providers, build, and run:
 //
 //	app := gaz.New()
-//	app.ProvideSingleton(func(c *gaz.Container) (*Database, error) {
+//	gaz.For[*Database](app.Container()).Provider(func(c *gaz.Container) (*Database, error) {
 //	    return &Database{DSN: "postgres://..."}, nil
 //	})
 //	if err := app.Build(); err != nil {
@@ -16,16 +16,17 @@
 //
 // # Service Scopes
 //
-// Services can be registered with different scopes:
+// Services can be registered with different scopes using the [For] fluent API:
 //
-//   - Singleton: One instance for container lifetime (default). Use [App.ProvideSingleton].
-//   - Transient: New instance on every resolution. Use [App.ProvideTransient].
-//   - Eager: Singleton instantiated at [App.Build] time. Use [App.ProvideEager].
+//   - Singleton: One instance for container lifetime (default). Use [For][T].Provider().
+//   - Transient: New instance on every resolution. Use [For][T].Transient().Provider().
+//   - Eager: Singleton instantiated at [Container.Build] time. Use [For][T].Eager().Provider().
 //
-// For low-level control, use [For] with the [Container]:
+// Examples:
 //
-//	gaz.For[*Service](c).Transient().Provider(NewService)
-//	gaz.For[*Pool](c).Eager().Provider(NewPool)
+//	gaz.For[*Service](c).Provider(NewService)           // Lazy singleton (default)
+//	gaz.For[*Service](c).Transient().Provider(NewService) // New instance each time
+//	gaz.For[*Pool](c).Eager().Provider(NewPool)         // Created at Build() time
 //
 // # Lifecycle Management
 //
@@ -91,17 +92,14 @@
 //
 // Group related providers into reusable modules:
 //
-//	type DatabaseModule struct{}
+//	app.Module("database",
+//	    func(c *gaz.Container) error {
+//	        return gaz.For[*Pool](c).Provider(NewPool)
+//	    },
+//	    func(c *gaz.Container) error {
+//	        return gaz.For[*UserRepo](c).Provider(NewUserRepo)
+//	    },
+//	)
 //
-//	func (m *DatabaseModule) Name() string { return "database" }
-//
-//	func (m *DatabaseModule) Register(app *gaz.App) error {
-//	    app.ProvideSingleton(NewPool)
-//	    app.ProvideSingleton(NewUserRepo)
-//	    return nil
-//	}
-//
-//	app.Module(&DatabaseModule{})
-//
-// See [Module] interface for details.
+// See [App.Module] for details.
 package gaz

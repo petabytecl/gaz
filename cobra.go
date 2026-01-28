@@ -46,9 +46,9 @@ func FromContext(ctx context.Context) *App {
 // Example:
 //
 //	rootCmd := &cobra.Command{Use: "myapp"}
-//	app := gaz.New().
-//	    ProvideSingleton(NewDatabase).
-//	    WithCobra(rootCmd)
+//	app := gaz.New()
+//	gaz.For[*Database](app.Container()).Provider(NewDatabase)
+//	app.WithCobra(rootCmd)
 //
 //	// In subcommand:
 //	app := gaz.FromContext(cmd.Context())
