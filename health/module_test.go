@@ -10,7 +10,10 @@ func TestModule(t *testing.T) {
 	app := gaz.New()
 
 	// Manually register config since module expects it
-	app.ProvideInstance(DefaultConfig())
+	err := gaz.For[Config](app.Container()).Instance(DefaultConfig())
+	if err != nil {
+		t.Fatalf("Register config failed: %v", err)
+	}
 
 	// Register module
 	app.Module("health", Module)
