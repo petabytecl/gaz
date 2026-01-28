@@ -649,101 +649,21 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 }
 
 // =============================================================================
-// Tests for reflection-based wrappers (*Any types)
+// Tests for internal instance service helper
 // =============================================================================
 
-func (s *ServiceSuite) TestAnyWrappers_Lifecycle() {
-	// 1. Lazy Singleton Any
-	{
-		provider := func(_ *Container) (any, error) {
-			return &testService{id: 1}, nil
-		}
-		startCalled := false
-		startHooks := []func(context.Context, any) error{
-			func(_ context.Context, _ any) error { startCalled = true; return nil },
-		}
+func (s *ServiceSuite) TestInstanceServiceAny_Lifecycle() {
+	// Instance Service Any - used internally by registerInstance()
+	inst := &starterService{}
+	svc := newInstanceServiceAny("instance", "any", inst, nil, nil)
 
-		svc := newLazySingletonAny("lazy", "any", provider, startHooks, nil)
-		c := NewContainer()
+	s.Require().NoError(svc.start(context.Background()))
+	s.True(inst.started)
 
-		// Not built yet
-		s.Require().NoError(svc.start(context.Background()))
-		s.False(startCalled)
+	s.Require().NoError(svc.stop(context.Background()))
 
-		// Build
-		_, err := svc.getInstance(c, nil)
-		s.Require().NoError(err)
-
-		// Built
-		s.Require().NoError(svc.start(context.Background()))
-		s.True(startCalled)
-
-		s.Require().NoError(svc.stop(context.Background()))
-	}
-
-	// 2. Eager Singleton Any
-	{
-		provider := func(_ *Container) (any, error) {
-			return &starterService{}, nil
-		}
-		svc := newEagerSingletonAny("eager", "any", provider, nil, nil)
-		c := NewContainer()
-
-		// Build
-		inst, err := svc.getInstance(c, nil)
-		s.Require().NoError(err)
-
-		// Start (should trigger OnStart interface)
-		s.Require().NoError(svc.start(context.Background()))
-		starter, ok := inst.(*starterService)
-		s.Require().True(ok, "instance should be *starterService")
-		s.True(starter.started)
-
-		s.Require().NoError(svc.stop(context.Background()))
-	}
-
-	// 3. Instance Service Any
-	{
-		inst := &starterService{}
-		svc := newInstanceServiceAny("instance", "any", inst, nil, nil)
-
-		s.Require().NoError(svc.start(context.Background()))
-		s.True(inst.started)
-
-		s.Require().NoError(svc.stop(context.Background()))
-	}
-
-	// 4. Transient Service Any
-	{
-		provider := func(_ *Container) (any, error) {
-			return &testService{id: 1}, nil
-		}
-		svc := newTransientAny("transient", "any", provider)
-
-		s.Require().NoError(svc.start(context.Background()))
-		s.Require().NoError(svc.stop(context.Background()))
-		s.False(svc.hasLifecycle())
-
-		c := NewContainer()
-		_, err := svc.getInstance(c, nil)
-		s.Require().NoError(err)
-
-		s.Equal("transient", svc.name())
-		s.Equal("any", svc.typeName())
-	}
-
-	// Verify hasLifecycle overrides
-	{
-		// Eager Any
-		svc := newEagerSingletonAny("e", "t", func(_ *Container) (any, error) {
-			return struct{}{}, nil
-		}, nil, nil)
-		s.True(svc.hasLifecycle())
-
-		// Instance Any
-		svc2 := newInstanceServiceAny("i", "t", nil, nil, nil)
-		s.True(svc2.hasLifecycle())
-	}
+	// Verify hasLifecycle override
+	s.True(svc.hasLifecycle())
 }
 
 func (s *ServiceSuite) TestInstanceService_StopperInterface() {
