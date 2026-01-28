@@ -10,6 +10,9 @@
 //   - ProviderValues provides typed access to resolved config values
 //   - Values can come from config files, environment variables, or defaults
 //
+// By default, gaz looks for config.yaml in the current directory. No explicit
+// WithConfig() call is needed for basic ConfigProvider usage.
+//
 // Environment variable mapping:
 //   - server.host -> SERVER_HOST
 //   - server.port -> SERVER_PORT
@@ -21,7 +24,6 @@ import (
 	"log"
 
 	"github.com/petabytecl/gaz"
-	"github.com/petabytecl/gaz/config"
 )
 
 // ServerConfig implements ConfigProvider to declare its configuration requirements.
@@ -54,15 +56,11 @@ func NewServerConfig(c *gaz.Container) (*ServerConfig, error) {
 }
 
 func main() {
-	// Create the application
+	// Create the application.
+	// ConfigManager is auto-initialized with convention defaults:
+	// - Looks for config.yaml in current directory
+	// - Environment variables override config file values
 	app := gaz.New()
-
-	// Enable config manager with search paths and env prefix.
-	// The empty struct just enables the ConfigManager - we use ProviderValues for values.
-	app.WithConfig(&struct{}{},
-		config.WithName("config"),
-		config.WithSearchPaths("."),
-	)
 
 	// Register the ConfigProvider. During Build(), the framework will:
 	// 1. Call ConfigNamespace() and ConfigFlags() to collect requirements

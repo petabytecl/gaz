@@ -326,7 +326,7 @@ func (s *ProviderConfigSuite) TestMultipleProviders() {
 }
 
 func (s *ProviderConfigSuite) TestNoConfigManager() {
-	// App without WithConfig - provider config features are skipped
+	// App without explicit WithConfig - config is auto-initialized with convention defaults
 	app := gaz.New()
 
 	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
@@ -338,10 +338,14 @@ func (s *ProviderConfigSuite) TestNoConfigManager() {
 	err = app.Build()
 	s.Require().NoError(err)
 
-	// ProviderValues should not be registered when no ConfigManager
-	_, err = gaz.Resolve[*gaz.ProviderValues](app.Container())
-	s.Require().Error(err)
-	s.ErrorIs(err, gaz.ErrNotFound)
+	// ProviderValues IS registered because config is auto-initialized
+	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
+	s.Require().NoError(err)
+	s.NotNil(pv)
+
+	// ConfigProvider flags should work with auto-initialized config
+	s.Equal("localhost", pv.GetString("redis.host"))
+	s.Equal(6379, pv.GetInt("redis.port"))
 }
 
 func (s *ProviderConfigSuite) TestNonConfigProvider() {

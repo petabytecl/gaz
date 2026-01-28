@@ -161,6 +161,16 @@ func New(opts ...Option) *App {
 		panic(fmt.Errorf("failed to register logger: %w", err))
 	}
 
+	// Initialize ConfigManager with convention-based defaults:
+	// - Looks for config.yaml/json/toml in current directory
+	// - Environment variables override config file values
+	// Use WithConfig() to customize options or load into a struct.
+	app.configMgr = config.New(
+		config.WithBackend(cfgviper.New()),
+		config.WithName("config"),
+		config.WithSearchPaths("."),
+	)
+
 	return app
 }
 
@@ -171,7 +181,7 @@ func (a *App) Container() *Container {
 }
 
 // WithConfig configures the application to load configuration into the target struct.
-// The target must be a pointer to a struct.
+// The target must be a pointer to a struct, or nil to only customize config options.
 //
 // The configuration is loaded from:
 // 1. Defaults (via Defaulter interface)
@@ -179,24 +189,31 @@ func (a *App) Container() *Container {
 // 3. Environment variables (if WithEnvPrefix is set)
 // 4. Flags (if WithCobra is used)
 //
-// The config object is automatically registered as a singleton instance in the container.
+// By default, gaz looks for config.yaml in the current directory. Use this method to:
+// - Load config into a struct (target != nil)
+// - Customize config options (change search paths, env prefix, etc.)
+//
+// If you only use ConfigProvider pattern for config, you don't need to call this method.
 func (a *App) WithConfig(target any, opts ...config.Option) *App {
 	if a.built {
 		panic("gaz: cannot configure config after Build()")
 	}
 
-	// Create config.Manager with viper backend
-	configOpts := make([]config.Option, 0, len(opts)+1)
-	configOpts = append(configOpts, config.WithBackend(cfgviper.New()))
-	configOpts = append(configOpts, opts...)
+	// If options provided, recreate config manager with new options
+	// Options are applied on top of viper backend (always required)
+	if len(opts) > 0 {
+		configOpts := make([]config.Option, 0, len(opts)+1)
+		configOpts = append(configOpts, config.WithBackend(cfgviper.New()))
+		configOpts = append(configOpts, opts...)
+		a.configMgr = config.New(configOpts...)
+	}
 
-	a.configMgr = config.New(configOpts...)
-	a.configTarget = target
-
-	// Register the config object in the container
-	// We register the pointer itself, as that's what will be populated
-	if err := a.registerInstance(target); err != nil {
-		a.buildErrors = append(a.buildErrors, err)
+	// If target provided, set it for loading and register in container
+	if target != nil {
+		a.configTarget = target
+		if err := a.registerInstance(target); err != nil {
+			a.buildErrors = append(a.buildErrors, err)
+		}
 	}
 
 	return a
@@ -226,7 +243,12 @@ func (a *App) loadConfig() error {
 	if a.configMgr == nil {
 		return nil
 	}
-	return a.configMgr.LoadInto(a.configTarget)
+	// If a target struct is provided, load and unmarshal into it
+	if a.configTarget != nil {
+		return a.configMgr.LoadInto(a.configTarget)
+	}
+	// Otherwise just load the config file (for ConfigProvider pattern)
+	return a.configMgr.Load()
 }
 
 // getSortedServiceNames returns service names in sorted order for deterministic iteration.
