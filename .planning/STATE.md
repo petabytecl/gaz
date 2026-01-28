@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 14.1 of 16 (Cleanup Re-exports)
-- **Plan:** 2 of 2 in current phase
+- **Phase:** 14.3 of 16 (Flag-Based Config Registration)
+- **Plan:** 1 of 1 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-01-28 — Completed 14.1-02-PLAN.md
+- **Last activity:** 2026-01-28 — Completed 14.3-01-PLAN.md
 
-Progress: [███████████████░] 96% (16/17 plans)
+Progress: [████████████████] 100% (17/17 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (v2.0)
+- Total plans completed: 17 (v2.0)
 - Average duration: 13 min
 - Total execution time: 3.6 hours
 
@@ -35,6 +35,7 @@ Progress: [███████████████░] 96% (16/17 plans)
 | 13. Config Package | 4/4 | 26 min | 7 min |
 | 14. Workers | 4/4 | 14 min | 3.5 min |
 | 14.1 Cleanup Re-exports | 2/2 | 6 min | 3 min |
+| 14.3 Flag-Based Config | 1/1 | 1 min | 1 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -79,6 +80,17 @@ Recent decisions affecting current work:
 - Test files import config package directly for config options (14.1-02)
 - doc.go shows explicit config package import pattern (14.1-02)
 
+- ProviderValues resolved in main() AFTER Build(), not in constructor (14.3-01)
+- All config keys under server namespace for consistency (14.3-01)
+
+### Phase 14.3 Complete
+
+Flag-Based Config Registration complete:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 14.3-01 | Rewrite config-loading example | ✅ Complete |
+
 ### Phase 14.1 Complete
 
 Cleanup Re-exports complete:
@@ -106,6 +118,7 @@ Workers package complete with full test coverage:
 
 - Phase 14.1 inserted after Phase 14: Cleanup deprecated re-exports, keep only planned APIs (URGENT)
 - Phase 14.2 inserted after Phase 14.1: Update all relevant documentation and examples (URGENT)
+- Phase 14.3 inserted after Phase 14.2: Flag-based config registration - providers register configs via flags, fetch in constructor (URGENT)
 
 ### Phase 13 Complete
 
@@ -132,9 +145,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28T22:08:34Z
-Stopped at: Completed 14.1-02-PLAN.md (Update tests and documentation)
-Resume file: None (Phase 14.1 complete)
+Last session: 2026-01-28T22:59:26Z
+Stopped at: Completed 14.3-01-PLAN.md (Rewrite config-loading example)
+Resume file: None (Phase 14.3 complete)
 
 ---
 

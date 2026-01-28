@@ -137,7 +137,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 14.3-01-PLAN.md — Rewrite config-loading example to use ConfigProvider pattern
+- [x] 14.3-01-PLAN.md — Rewrite config-loading example to use ConfigProvider pattern
 
 **Details:**
 Current pattern (to be removed):
@@ -203,7 +203,7 @@ Plans:
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
 | 14.1 Cleanup Re-exports | 2/2 | Complete | 2026-01-28 |
 | 14.2 Update Docs/Examples | 0/? | Not started | - |
-| 14.3 Flag-Based Config | 0/? | Not started | - |
+| 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 
