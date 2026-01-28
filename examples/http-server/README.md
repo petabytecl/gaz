@@ -12,7 +12,7 @@ This example demonstrates building an HTTP server with gaz, featuring:
 1. **Lifecycle Management**: The `Server` type has `OnStart` and `OnStop` methods registered as hooks
 2. **Graceful Shutdown**: On SIGINT/SIGTERM, the server waits for active connections to complete
 3. **Health Endpoints**: Health module provides `/ready`, `/live`, `/startup` on port 9090
-4. **Service Registration**: Shows both `ProvideSingleton` (app-level) and `For[T]` (container-level) APIs
+4. **Service Registration**: Shows `For[T]` API with `Instance()`, `Provider()`, and `ProviderFunc()`
 
 ## Running
 

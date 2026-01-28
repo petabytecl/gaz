@@ -82,7 +82,11 @@ func runServe(cmd *cobra.Command, _ []string) error {
     }
     
     app := gaz.New()
-    app.ProvideInstance(config)
+    
+    // Register configuration using For[T]().Instance()
+    if err := gaz.For[AppConfig](app.Container()).Instance(config); err != nil {
+        return err
+    }
     // ...
 }
 ```
