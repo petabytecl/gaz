@@ -1,0 +1,5 @@
+host: viperhost
+port: 3000
+debug: true
+nested:
+  key: nestedvalue
