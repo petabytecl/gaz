@@ -12,18 +12,18 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 14 of 16 (Workers) - COMPLETE
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-01-28 — Completed 14-04-PLAN.md (Tests and verification)
+- **Phase:** 14.1 of 16 (Cleanup Re-exports)
+- **Plan:** 1 of 2 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-28 — Completed 14.1-01-PLAN.md
 
-Progress: [█████████████░] 93% (14/15 plans)
+Progress: [██████████████░] 94% (15/16 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14 (v2.0)
-- Average duration: 15 min
+- Total plans completed: 15 (v2.0)
+- Average duration: 14 min
 - Total execution time: 3.5 hours
 
 **By Phase:**
@@ -34,6 +34,7 @@ Progress: [█████████████░] 93% (14/15 plans)
 | 12. DI Package | 4/4 | 100 min | 25 min |
 | 13. Config Package | 4/4 | 26 min | 7 min |
 | 14. Workers | 4/4 | 14 min | 3.5 min |
+| 14.1 Cleanup Re-exports | 1/2 | 2 min | 2 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - Workers discovered during Build() via Worker interface check (14-03)
 - Workers start after Starter hooks, stop before Stopper hooks (14-03)
 - Mock workers use channels for synchronization (14-04)
+- DI error aliases kept as ergonomic conveniences (14.1-01)
+- ErrConfigValidation removed - users use config.ErrConfigValidation (14.1-01)
+- NewContainer kept without deprecation as permanent convenience API (14.1-01)
 
 ### Phase 14 Complete
 
@@ -86,6 +90,11 @@ Workers package complete with full test coverage:
 
 **Coverage achieved:**
 - worker package: 92.1% (target: 70%)
+
+### Roadmap Evolution
+
+- Phase 14.1 inserted after Phase 14: Cleanup deprecated re-exports, keep only planned APIs (URGENT)
+- Phase 14.2 inserted after Phase 14.1: Update all relevant documentation and examples (URGENT)
 
 ### Phase 13 Complete
 
@@ -112,9 +121,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Completed 14-04-PLAN.md (Tests and verification)
-Resume file: .planning/phases/15-cron/15-01-PLAN.md (when created)
+Last session: 2026-01-28T21:59:39Z
+Stopped at: Completed 14.1-01-PLAN.md (Remove deprecated config re-exports)
+Resume file: .planning/phases/14.1-cleanup-deprecated-re-exports/14.1-02-PLAN.md
 
 ---
 

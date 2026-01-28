@@ -110,7 +110,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14.1-01-PLAN.md — Remove deprecated config re-exports (delete options.go, config.go, update errors.go)
+- [x] 14.1-01-PLAN.md — Remove deprecated config re-exports (delete options.go, config.go, update errors.go)
 - [ ] 14.1-02-PLAN.md — Update tests and documentation to use config.* imports
 
 ---
@@ -177,7 +177,7 @@ Plans:
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
-| 14.1 Cleanup Re-exports | 0/? | Not started | - |
+| 14.1 Cleanup Re-exports | 1/2 | In progress | - |
 | 14.2 Update Docs/Examples | 0/? | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
