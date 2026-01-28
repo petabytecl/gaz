@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -274,4 +275,34 @@ func (c *Container) GetGraph() map[string][]string {
 		clone[k] = deps
 	}
 	return clone
+}
+
+// List returns the names of all registered services.
+// Names are returned in sorted order for deterministic output.
+//
+// Example:
+//
+//	for _, name := range c.List() {
+//	    fmt.Println("Registered:", name)
+//	}
+func (c *Container) List() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	names := make([]string, 0, len(c.services))
+	for name := range c.services {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// Has returns true if a service of type T is registered in the container.
+//
+// Example:
+//
+//	if di.Has[*Database](c) {
+//	    db, _ := di.Resolve[*Database](c)
+//	}
+func Has[T any](c *Container) bool {
+	return c.hasService(TypeName[T]())
 }
