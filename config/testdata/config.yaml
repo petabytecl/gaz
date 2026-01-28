@@ -1,0 +1,4 @@
+host: testhost
+port: 9000
+debug: true
+timeout: 30s
