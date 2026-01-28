@@ -18,7 +18,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14: Workers** - Background workers with lifecycle integration
 - [x] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
 - [ ] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
-- [ ] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
+- [x] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 
