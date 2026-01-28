@@ -12,25 +12,26 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 11 of 16 (Cleanup) - COMPLETE
-- **Plan:** 2 of 2 in current phase
-- **Status:** Phase complete, ready for Phase 12
-- **Last activity:** 2026-01-28 — Completed 11-02-PLAN.md (Documentation Update)
+- **Phase:** 12 of 16 (DI Package)
+- **Plan:** 1 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-28 — Completed 12-01-PLAN.md (Create di package core)
 
-Progress: [██░░░░░░░░] 17% (2/12 plans)
+Progress: [███░░░░░░░] 25% (3/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2 (v2.0)
-- Average duration: 25 min
-- Total execution time: 0.83 hours
+- Total plans completed: 3 (v2.0)
+- Average duration: 20 min
+- Total execution time: 0.92 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 11. Cleanup | 2/2 | 50 min | 25 min |
+| 12. DI Package | 1/4 | 5 min | 5 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -47,8 +48,11 @@ Recent decisions affecting current work:
 - Reflection-based registration removed (CLN-04 to CLN-09) ✓ DONE in 11-01
 - registerInstance() and instanceServiceAny retained for internal use (WithConfig, Logger)
 - CHANGELOG uses Keep a Changelog format with semver
-- DI should work standalone without full gaz framework (DI-08)
+- DI should work standalone without full gaz framework (DI-08) ✓ DONE in 12-01
 - Order: Cleanup → DI → Config → Workers/Cron/EventBus
+- Renamed NewContainer() → New() for idiomatic Go constructor (12-01)
+- Exported ServiceWrapper interface for App integration (12-01)
+- Error prefix changed from 'gaz:' to 'di:' for di package errors (12-01)
 
 ### Pending Todos
 
@@ -61,8 +65,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 11-02-PLAN.md (Documentation Update) - Phase 11 complete
-Resume file: .planning/phases/12-di/12-01-PLAN.md (when created)
+Stopped at: Completed 12-01-PLAN.md (Create di package core)
+Resume file: .planning/phases/12-di/12-02-PLAN.md
 
 ---
 

@@ -53,7 +53,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Create di package with core DI types (Container, For, Resolve, accessor methods)
+- [x] 12-01-PLAN.md — Create di package with core DI types (Container, For, Resolve, accessor methods)
 - [ ] 12-02-PLAN.md — Add introspection APIs and backward compatibility wrappers
 - [ ] 12-03-PLAN.md — Update App to use di.Container, remove redundant root files
 - [ ] 12-04-PLAN.md — Create di package tests and update root package tests
@@ -142,7 +142,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
-| 12. DI Package | 0/4 | Not started | - |
+| 12. DI Package | 1/4 | In progress | - |
 | 13. Config Package | 0/2 | Not started | - |
 | 14. Workers | 0/2 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
