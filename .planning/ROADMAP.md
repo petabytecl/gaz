@@ -16,7 +16,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
 - [x] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [x] **Phase 14: Workers** - Background workers with lifecycle integration
-- [ ] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
+- [x] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
 - [ ] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
