@@ -49,14 +49,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Workers
 
-- [ ] **WRK-01**: Define `Worker` interface with `Start()`, `Stop()`, `Name() string` methods
-- [ ] **WRK-02**: Create `WorkerManager` for tracking multiple workers
-- [ ] **WRK-03**: Workers integrate with lifecycle (auto-start/stop)
-- [ ] **WRK-04**: Workers respect context cancellation for graceful shutdown
-- [ ] **WRK-05**: Workers have panic recovery (don't crash app)
-- [ ] **WRK-06**: Workers expose Done() channel for shutdown verification
-- [ ] **WRK-07**: Workers integrate with slog for logging
-- [ ] **WRK-08**: Workers have names for debugging
+- [x] **WRK-01**: Define `Worker` interface with `Start()`, `Stop()`, `Name() string` methods
+- [x] **WRK-02**: Create `WorkerManager` for tracking multiple workers
+- [x] **WRK-03**: Workers integrate with lifecycle (auto-start/stop)
+- [x] **WRK-04**: Workers respect context cancellation for graceful shutdown
+- [x] **WRK-05**: Workers have panic recovery (don't crash app)
+- [x] **WRK-06**: Workers expose Done() channel for shutdown verification
+- [x] **WRK-07**: Workers integrate with slog for logging
+- [x] **WRK-08**: Workers have names for debugging
 
 ### Cron
 
@@ -151,14 +151,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CFG-07 | Phase 13 | Complete |
 | CFG-08 | Phase 13 | Complete |
 | CFG-09 | Phase 13 | Complete |
-| WRK-01 | Phase 14 | Pending |
-| WRK-02 | Phase 14 | Pending |
-| WRK-03 | Phase 14 | Pending |
-| WRK-04 | Phase 14 | Pending |
-| WRK-05 | Phase 14 | Pending |
-| WRK-06 | Phase 14 | Pending |
-| WRK-07 | Phase 14 | Pending |
-| WRK-08 | Phase 14 | Pending |
+| WRK-01 | Phase 14 | Complete |
+| WRK-02 | Phase 14 | Complete |
+| WRK-03 | Phase 14 | Complete |
+| WRK-04 | Phase 14 | Complete |
+| WRK-05 | Phase 14 | Complete |
+| WRK-06 | Phase 14 | Complete |
+| WRK-07 | Phase 14 | Complete |
+| WRK-08 | Phase 14 | Complete |
 | CRN-01 | Phase 15 | Pending |
 | CRN-02 | Phase 15 | Pending |
 | CRN-03 | Phase 15 | Pending |

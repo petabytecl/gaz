@@ -15,7 +15,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 11: Cleanup** - Remove deprecated APIs and update examples/tests
 - [x] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
 - [x] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
-- [ ] **Phase 14: Workers** - Background workers with lifecycle integration
+- [x] **Phase 14: Workers** - Background workers with lifecycle integration
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 
@@ -94,10 +94,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Worker interface, options, backoff configuration, jpillora/backoff dependency
-- [ ] 14-02-PLAN.md — WorkerManager and Supervisor with panic recovery and circuit breaker
-- [ ] 14-03-PLAN.md — App integration with auto-discovery and lifecycle
-- [ ] 14-04-PLAN.md — Tests and verify all tests pass
+- [x] 14-01-PLAN.md — Worker interface, options, backoff configuration, jpillora/backoff dependency
+- [x] 14-02-PLAN.md — WorkerManager and Supervisor with panic recovery and circuit breaker
+- [x] 14-03-PLAN.md — App integration with auto-discovery and lifecycle
+- [x] 14-04-PLAN.md — Tests and verify all tests pass
 
 ---
 
