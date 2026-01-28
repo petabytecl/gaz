@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 12 of 16 (DI Package) ✅ COMPLETE
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase 12 complete, ready for Phase 13
-- **Last activity:** 2026-01-28 — Completed 12-04-PLAN.md (Tests and backward compat)
+- **Phase:** 13 of 16 (Config Package)
+- **Plan:** 1 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-28 — Completed 13-01-PLAN.md (Backend interfaces and ViperBackend)
 
-Progress: [██████░░░░] 50% (6/12 plans)
+Progress: [███████░░░] 58% (7/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v2.0)
-- Average duration: 25 min
-- Total execution time: 2.5 hours
+- Total plans completed: 7 (v2.0)
+- Average duration: 22 min
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -32,6 +32,7 @@ Progress: [██████░░░░] 50% (6/12 plans)
 |-------|-------|-------|----------|
 | 11. Cleanup | 2/2 | 50 min | 25 min |
 | 12. DI Package | 4/4 | 100 min | 25 min |
+| 13. Config Package | 1/4 | 4 min | 4 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -56,17 +57,20 @@ Recent decisions affecting current work:
 - Combined Task 2+3 in 12-02 due to type alias conflict (12-02)
 - Exported Register(), HasService(), ResolveByName() for App access (12-02)
 - gaz.Err* now alias di.Err* for errors.Is() compatibility (12-02)
+- Composed interfaces: core Backend + optional Watcher/Writer/EnvBinder (13-01)
+- ViperBackend in subpackage to isolate viper dependency (13-01)
+- ErrConfigValidation with 'config:' prefix (not 'gaz:') (13-01)
 
-### Phase 12 Complete
+### Phase 13 In Progress
 
-The DI Package phase is complete with all 4 plans executed:
+Config Package extraction started:
 
-| Plan | Name | Summary |
-|------|------|---------|
-| 12-01 | Create di package core | Core DI types, Container, resolution, lifecycle engine |
-| 12-02 | Introspection APIs and backward compat | List, Has, ForEach, GetService, GetGraph + gaz wrappers |
-| 12-03 | Testing helpers | Merged into 12-02 (NewTestContainer already created) |
-| 12-04 | Tests and backward compat tests | 72.7% di coverage, 90.2% gaz coverage |
+| Plan | Name | Status |
+|------|------|--------|
+| 13-01 | Backend interfaces and ViperBackend | ✅ Complete |
+| 13-02 | Manager, options, validation, accessors | Pending |
+| 13-03 | App integration and backward compat | Pending |
+| 13-04 | Tests and verify all tests pass | Pending |
 
 ### Pending Todos
 
@@ -79,8 +83,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 12-04-PLAN.md (Phase 12 complete)
-Resume file: .planning/phases/13-config/13-01-PLAN.md
+Stopped at: Completed 13-01-PLAN.md
+Resume file: .planning/phases/13-config/13-02-PLAN.md
 
 ---
 
