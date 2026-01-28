@@ -13,18 +13,18 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 14.1 of 16 (Cleanup Re-exports)
-- **Plan:** 1 of 2 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-01-28 — Completed 14.1-01-PLAN.md
+- **Plan:** 2 of 2 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-01-28 — Completed 14.1-02-PLAN.md
 
-Progress: [██████████████░] 94% (15/16 plans)
+Progress: [███████████████░] 96% (16/17 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15 (v2.0)
-- Average duration: 14 min
-- Total execution time: 3.5 hours
+- Total plans completed: 16 (v2.0)
+- Average duration: 13 min
+- Total execution time: 3.6 hours
 
 **By Phase:**
 
@@ -34,7 +34,7 @@ Progress: [██████████████░] 94% (15/16 plans)
 | 12. DI Package | 4/4 | 100 min | 25 min |
 | 13. Config Package | 4/4 | 26 min | 7 min |
 | 14. Workers | 4/4 | 14 min | 3.5 min |
-| 14.1 Cleanup Re-exports | 1/2 | 2 min | 2 min |
+| 14.1 Cleanup Re-exports | 2/2 | 6 min | 3 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -76,6 +76,17 @@ Recent decisions affecting current work:
 - DI error aliases kept as ergonomic conveniences (14.1-01)
 - ErrConfigValidation removed - users use config.ErrConfigValidation (14.1-01)
 - NewContainer kept without deprecation as permanent convenience API (14.1-01)
+- Test files import config package directly for config options (14.1-02)
+- doc.go shows explicit config package import pattern (14.1-02)
+
+### Phase 14.1 Complete
+
+Cleanup Re-exports complete:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 14.1-01 | Remove deprecated config re-exports | ✅ Complete |
+| 14.1-02 | Update tests and documentation | ✅ Complete |
 
 ### Phase 14 Complete
 
@@ -121,9 +132,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28T21:59:39Z
-Stopped at: Completed 14.1-01-PLAN.md (Remove deprecated config re-exports)
-Resume file: .planning/phases/14.1-cleanup-deprecated-re-exports/14.1-02-PLAN.md
+Last session: 2026-01-28T22:08:34Z
+Stopped at: Completed 14.1-02-PLAN.md (Update tests and documentation)
+Resume file: None (Phase 14.1 complete)
 
 ---
 
