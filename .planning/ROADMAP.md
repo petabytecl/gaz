@@ -13,7 +13,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 ## Phases
 
 - [x] **Phase 11: Cleanup** - Remove deprecated APIs and update examples/tests
-- [ ] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
+- [x] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
 - [ ] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [ ] **Phase 14: Workers** - Background workers with lifecycle integration
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
@@ -54,9 +54,9 @@ Plans:
 
 Plans:
 - [x] 12-01-PLAN.md — Create di package with core DI types (Container, For, Resolve, accessor methods)
-- [ ] 12-02-PLAN.md — Add introspection APIs and backward compatibility wrappers
-- [ ] 12-03-PLAN.md — Update App to use di.Container, remove redundant root files
-- [ ] 12-04-PLAN.md — Create di package tests and update root package tests
+- [x] 12-02-PLAN.md — Add introspection APIs and backward compatibility wrappers
+- [x] 12-03-PLAN.md — Update App to use di.Container, remove redundant root files
+- [x] 12-04-PLAN.md — Create di package tests and update root package tests
 
 ---
 
@@ -142,7 +142,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
-| 12. DI Package | 1/4 | In progress | - |
+| 12. DI Package | 4/4 | Complete | 2026-01-28 |
 | 13. Config Package | 0/2 | Not started | - |
 | 14. Workers | 0/2 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |

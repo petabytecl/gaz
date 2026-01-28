@@ -24,16 +24,16 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### DI Package Extraction
 
-- [ ] **DI-01**: Create `gaz/di` subpackage
-- [ ] **DI-02**: Move `Container` type to `gaz/di`
-- [ ] **DI-03**: Move `For[T]()` registration builder to `gaz/di`
-- [ ] **DI-04**: Move `Resolve[T]()` function to `gaz/di`
-- [ ] **DI-05**: Move service wrappers to `gaz/di` (internal)
-- [ ] **DI-06**: Move `TypeName[T]()` to `gaz/di`
-- [ ] **DI-07**: Move injection logic (`inject.go`) to `gaz/di`
-- [ ] **DI-08**: DI package works standalone without gaz App
-- [ ] **DI-09**: Root gaz package re-exports DI types for backward compatibility
-- [ ] **DI-10**: Update imports throughout codebase
+- [x] **DI-01**: Create `gaz/di` subpackage
+- [x] **DI-02**: Move `Container` type to `gaz/di`
+- [x] **DI-03**: Move `For[T]()` registration builder to `gaz/di`
+- [x] **DI-04**: Move `Resolve[T]()` function to `gaz/di`
+- [x] **DI-05**: Move service wrappers to `gaz/di` (internal)
+- [x] **DI-06**: Move `TypeName[T]()` to `gaz/di`
+- [x] **DI-07**: Move injection logic (`inject.go`) to `gaz/di`
+- [x] **DI-08**: DI package works standalone without gaz App
+- [x] **DI-09**: Root gaz package re-exports DI types for backward compatibility
+- [x] **DI-10**: Update imports throughout codebase
 
 ### Config Package Extraction
 
@@ -132,16 +132,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLN-10 | Phase 11 | Complete |
 | CLN-11 | Phase 11 | Complete |
 | CLN-12 | Phase 11 | Complete |
-| DI-01 | Phase 12 | Pending |
-| DI-02 | Phase 12 | Pending |
-| DI-03 | Phase 12 | Pending |
-| DI-04 | Phase 12 | Pending |
-| DI-05 | Phase 12 | Pending |
-| DI-06 | Phase 12 | Pending |
-| DI-07 | Phase 12 | Pending |
-| DI-08 | Phase 12 | Pending |
-| DI-09 | Phase 12 | Pending |
-| DI-10 | Phase 12 | Pending |
+| DI-01 | Phase 12 | Complete |
+| DI-02 | Phase 12 | Complete |
+| DI-03 | Phase 12 | Complete |
+| DI-04 | Phase 12 | Complete |
+| DI-05 | Phase 12 | Complete |
+| DI-06 | Phase 12 | Complete |
+| DI-07 | Phase 12 | Complete |
+| DI-08 | Phase 12 | Complete |
+| DI-09 | Phase 12 | Complete |
+| DI-10 | Phase 12 | Complete |
 | CFG-01 | Phase 13 | Pending |
 | CFG-02 | Phase 13 | Pending |
 | CFG-03 | Phase 13 | Pending |
