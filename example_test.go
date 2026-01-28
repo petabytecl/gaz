@@ -34,9 +34,13 @@ func (c *Counter) Next() int {
 // ExampleNew demonstrates basic app creation and provider registration.
 func ExampleNew() {
 	app := gaz.New()
-	app.ProvideSingleton(func(c *gaz.Container) (*MyService, error) {
+	err := gaz.For[*MyService](app.Container()).Provider(func(c *gaz.Container) (*MyService, error) {
 		return &MyService{Name: "example"}, nil
 	})
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 	if err := app.Build(); err != nil {
 		fmt.Println("error:", err)
 		return
@@ -119,24 +123,32 @@ func ExampleResolve() {
 	// Output: level: debug
 }
 
-// ExampleApp_ProvideSingleton demonstrates dependency injection with App.
+// ExampleFor_provider demonstrates dependency injection with For[T]().
 // The provider function receives the Container for resolving dependencies.
-func ExampleApp_ProvideSingleton() {
+func ExampleFor_provider() {
 	app := gaz.New()
 
 	// Register Logger first
-	app.ProvideSingleton(func(c *gaz.Container) (*Logger, error) {
+	err := gaz.For[*Logger](app.Container()).Provider(func(c *gaz.Container) (*Logger, error) {
 		return &Logger{Level: "info"}, nil
 	})
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 
 	// UserService depends on Logger
-	app.ProvideSingleton(func(c *gaz.Container) (*UserService, error) {
-		logger, err := gaz.Resolve[*Logger](c)
-		if err != nil {
-			return nil, err
+	err = gaz.For[*UserService](app.Container()).Provider(func(c *gaz.Container) (*UserService, error) {
+		logger, resolveErr := gaz.Resolve[*Logger](c)
+		if resolveErr != nil {
+			return nil, resolveErr
 		}
 		return &UserService{logger: logger}, nil
 	})
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 
 	if err := app.Build(); err != nil {
 		fmt.Println("error:", err)
