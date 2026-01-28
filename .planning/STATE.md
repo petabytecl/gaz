@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 13 of 16 (Config Package) - COMPLETE
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete, ready for Phase 14
-- **Last activity:** 2026-01-28 — Completed 13-04-PLAN.md (Tests and verify all tests pass)
+- **Phase:** 14 of 16 (Workers)
+- **Plan:** 1 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-28 — Completed 14-01-PLAN.md (Worker foundation)
 
-Progress: [██████████] 83% (10/12 plans)
+Progress: [███████████░] 85% (11/13 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10 (v2.0)
-- Average duration: 19 min
-- Total execution time: 3.2 hours
+- Total plans completed: 11 (v2.0)
+- Average duration: 18 min
+- Total execution time: 3.3 hours
 
 **By Phase:**
 
@@ -33,6 +33,7 @@ Progress: [██████████] 83% (10/12 plans)
 | 11. Cleanup | 2/2 | 50 min | 25 min |
 | 12. DI Package | 4/4 | 100 min | 25 min |
 | 13. Config Package | 4/4 | 26 min | 7 min |
+| 14. Workers | 1/4 | 4 min | 4 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -64,6 +65,19 @@ Recent decisions affecting current work:
 - Internal interfaces for viper operations - avoids importing config/viper (13-02)
 - ConfigManager kept as thin wrapper (not alias) to preserve Load() API (13-03)
 - Mock backend for config package unit tests (13-04)
+- Worker interface: Start/Stop/Name per CONTEXT.md (14-01)
+- jpillora/backoff for restart delays with jitter (14-01)
+
+### Phase 14 Progress
+
+Workers package foundation:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 14-01 | Worker interface, options, backoff | ✅ Complete |
+| 14-02 | WorkerManager and Supervisor | ⏳ Pending |
+| 14-03 | App integration | ⏳ Pending |
+| 14-04 | Tests and verification | ⏳ Pending |
 
 ### Phase 13 Complete
 
@@ -91,8 +105,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed Phase 13 (Config Package)
-Resume file: .planning/phases/14-workers/14-01-PLAN.md
+Stopped at: Completed 14-01-PLAN.md (Worker foundation)
+Resume file: .planning/phases/14-workers/14-02-PLAN.md
 
 ---
 
