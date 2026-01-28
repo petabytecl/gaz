@@ -66,15 +66,17 @@ Plans:
 **Depends on**: Phase 12 (DI patterns established first)
 **Requirements**: CFG-01, CFG-02, CFG-03, CFG-04, CFG-05, CFG-06, CFG-07, CFG-08, CFG-09
 **Success Criteria** (what must be TRUE):
-  1. `gaz/config` package exists and exports `ConfigManager`, `Defaulter`, `Validator`
+  1. `gaz/config` package exists and exports `Manager`, `Defaulter`, `Validator`
   2. `Backend` interface abstracts the viper dependency
   3. Config package works standalone (can load config without gaz App)
   4. Root `gaz` package integrates via `Backend` interface
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md — Create config package with Backend interfaces and ViperBackend
+- [ ] 13-02-PLAN.md — Create Manager, options, validation, and generic accessors
+- [ ] 13-03-PLAN.md — Integrate config package with App and backward compatibility
+- [ ] 13-04-PLAN.md — Create config package tests and verify all tests pass
 
 ---
 
@@ -143,7 +145,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
-| 13. Config Package | 0/2 | Not started | - |
+| 13. Config Package | 0/4 | Not started | - |
 | 14. Workers | 0/2 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
