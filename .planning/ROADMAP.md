@@ -86,16 +86,18 @@ Plans:
 **Depends on**: Phase 13 (package extractions complete)
 **Requirements**: WRK-01, WRK-02, WRK-03, WRK-04, WRK-05, WRK-06, WRK-07, WRK-08
 **Success Criteria** (what must be TRUE):
-  1. `Worker` interface defined with `Run(ctx context.Context) error` method
+  1. `Worker` interface defined with `Start()`, `Stop()`, `Name() string` methods
   2. Workers auto-start on `app.Run()` and auto-stop on shutdown
   3. Workers gracefully handle context cancellation (no goroutine leaks)
   4. Panics in workers are recovered and logged (don't crash app)
   5. Workers have names visible in logs for debugging
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md — Worker interface, options, backoff configuration, jpillora/backoff dependency
+- [ ] 14-02-PLAN.md — WorkerManager and Supervisor with panic recovery and circuit breaker
+- [ ] 14-03-PLAN.md — App integration with auto-discovery and lifecycle
+- [ ] 14-04-PLAN.md — Tests and verify all tests pass
 
 ---
 
@@ -146,7 +148,7 @@ Plans:
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
-| 14. Workers | 0/2 | Not started | - |
+| 14. Workers | 0/4 | Not started | - |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 
