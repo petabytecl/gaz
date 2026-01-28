@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 14.3 of 16 (Flag-Based Config Registration)
+- **Phase:** 14.4 of 16 (Config Flag and ProviderValues)
 - **Plan:** 1 of 1 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-01-28 — Completed 14.3-01-PLAN.md
+- **Last activity:** 2026-01-28 — Completed 14.4-01-PLAN.md
 
-Progress: [████████████████] 100% (17/17 plans)
+Progress: [████████████████] 100% (18/18 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17 (v2.0)
-- Average duration: 13 min
-- Total execution time: 3.6 hours
+- Total plans completed: 18 (v2.0)
+- Average duration: 12 min
+- Total execution time: 3.7 hours
 
 **By Phase:**
 
@@ -36,6 +36,7 @@ Progress: [████████████████] 100% (17/17 plans)
 | 14. Workers | 4/4 | 14 min | 3.5 min |
 | 14.1 Cleanup Re-exports | 2/2 | 6 min | 3 min |
 | 14.3 Flag-Based Config | 1/1 | 1 min | 1 min |
+| 14.4 Config Flag/ProviderValues | 1/1 | 3 min | 3 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -82,6 +83,17 @@ Recent decisions affecting current work:
 
 - ProviderValues resolved in main() AFTER Build(), not in constructor (14.3-01)
 - All config keys under server namespace for consistency (14.3-01)
+- ProviderValues registered BEFORE collectProviderConfigs in Build() (14.4-01)
+- WithConfigFile bypasses search paths when set (14.4-01)
+- configFileSetter interface for backend abstraction (14.4-01)
+
+### Phase 14.4 Complete
+
+Config Flag and ProviderValues complete:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 14.4-01 | WithConfigFile and early ProviderValues | ✅ Complete |
 
 ### Phase 14.3 Complete
 
@@ -119,6 +131,7 @@ Workers package complete with full test coverage:
 - Phase 14.1 inserted after Phase 14: Cleanup deprecated re-exports, keep only planned APIs (URGENT)
 - Phase 14.2 inserted after Phase 14.1: Update all relevant documentation and examples (URGENT)
 - Phase 14.3 inserted after Phase 14.2: Flag-based config registration - providers register configs via flags, fetch in constructor (URGENT)
+- Phase 14.4 inserted after Phase 14.3: Config flag and ProviderValues - default config via --config flag, ProviderValues available in providers (URGENT)
 
 ### Phase 13 Complete
 
@@ -145,9 +158,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28T22:59:26Z
-Stopped at: Completed 14.3-01-PLAN.md (Rewrite config-loading example)
-Resume file: None (Phase 14.3 complete)
+Last session: 2026-01-28T23:48:36Z
+Stopped at: Completed 14.4-01-PLAN.md (Config Flag and ProviderValues)
+Resume file: None (Phase 14.4 complete)
 
 ---
 
