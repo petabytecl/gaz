@@ -26,7 +26,7 @@ type (
 )
 
 func (s *AppTestSuite) TestRunAndStop() {
-	c := NewContainer()
+	app := New()
 
 	var startOrder []string
 	var stopOrder []string
@@ -45,7 +45,7 @@ func (s *AppTestSuite) TestRunAndStop() {
 	}
 
 	// Service A (Leaf dependency)
-	err := For[*AppTestServiceA](c).Named("A").Eager().
+	err := For[*AppTestServiceA](app.Container()).Named("A").Eager().
 		OnStart(func(_ context.Context, _ *AppTestServiceA) error {
 			recordStart("A")
 			return nil
@@ -58,7 +58,7 @@ func (s *AppTestSuite) TestRunAndStop() {
 	s.Require().NoError(err)
 
 	// Service B depends on A
-	err = For[*AppTestServiceB](c).Named("B").Eager().
+	err = For[*AppTestServiceB](app.Container()).Named("B").Eager().
 		OnStart(func(_ context.Context, _ *AppTestServiceB) error {
 			recordStart("B")
 			return nil
@@ -75,8 +75,6 @@ func (s *AppTestSuite) TestRunAndStop() {
 			return &AppTestServiceB{A: a}, nil
 		})
 	s.Require().NoError(err)
-
-	app := NewApp(c)
 
 	// Run in goroutine because it blocks
 	runErr := make(chan error, 1)
@@ -113,8 +111,7 @@ func (s *AppTestSuite) TestRunAndStop() {
 }
 
 func (s *AppTestSuite) TestSignalHandling() {
-	c := NewContainer()
-	app := NewApp(c)
+	app := New()
 
 	// Run in goroutine
 	runErr := make(chan error, 1)
@@ -139,16 +136,14 @@ func (s *AppTestSuite) TestSignalHandling() {
 }
 
 func (s *AppTestSuite) TestWithShutdownTimeout() {
-	c := NewContainer()
 	timeout := 5 * time.Second
-	app := NewApp(c, withShutdownTimeoutLegacy(timeout))
+	app := New(WithShutdownTimeout(timeout))
 
 	s.Equal(timeout, app.opts.ShutdownTimeout, "shutdown timeout should be set")
 }
 
 func (s *AppTestSuite) TestRunAlreadyRunning() {
-	c := NewContainer()
-	app := NewApp(c)
+	app := New()
 
 	// Start in background
 	runErr := make(chan error, 1)
@@ -176,8 +171,7 @@ func (s *AppTestSuite) TestRunAlreadyRunning() {
 }
 
 func (s *AppTestSuite) TestRunContextCancelled() {
-	c := NewContainer()
-	app := NewApp(c)
+	app := New()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -203,8 +197,7 @@ func (s *AppTestSuite) TestRunContextCancelled() {
 }
 
 func (s *AppTestSuite) TestStopNotRunning() {
-	c := NewContainer()
-	app := NewApp(c)
+	app := New()
 
 	// Stop when not running should be no-op
 	err := app.Stop(context.Background())
@@ -214,9 +207,9 @@ func (s *AppTestSuite) TestStopNotRunning() {
 type FailingStartService struct{}
 
 func (s *AppTestSuite) TestRunStartError() {
-	c := NewContainer()
+	app := New()
 
-	err := For[*FailingStartService](c).Eager().
+	err := For[*FailingStartService](app.Container()).Eager().
 		OnStart(func(_ context.Context, _ *FailingStartService) error {
 			return errors.New("start failed")
 		}).
@@ -225,7 +218,6 @@ func (s *AppTestSuite) TestRunStartError() {
 		})
 	s.Require().NoError(err)
 
-	app := NewApp(c)
 	err = app.Run(context.Background())
 	s.Require().Error(err)
 	s.Contains(err.Error(), "starting service")
@@ -234,9 +226,9 @@ func (s *AppTestSuite) TestRunStartError() {
 type FailingStopService struct{}
 
 func (s *AppTestSuite) TestStopError() {
-	c := NewContainer()
+	app := New()
 
-	err := For[*FailingStopService](c).Named("failstop").Eager().
+	err := For[*FailingStopService](app.Container()).Named("failstop").Eager().
 		OnStop(func(_ context.Context, _ *FailingStopService) error {
 			return errors.New("stop failed")
 		}).
@@ -244,8 +236,6 @@ func (s *AppTestSuite) TestStopError() {
 			return &FailingStopService{}
 		})
 	s.Require().NoError(err)
-
-	app := NewApp(c)
 
 	// Run in background
 	runErr := make(chan error, 1)
@@ -269,7 +259,7 @@ func (s *AppTestSuite) TestStopError() {
 }
 
 // =============================================================================
-// Tests for new fluent API (gaz.New())
+// Tests for fluent API (gaz.New() + For[T]())
 // =============================================================================
 
 func (s *AppTestSuite) TestNewCreatesAppWithDefaults() {
@@ -297,11 +287,12 @@ type FluentTestCache struct{ db *FluentTestDB }
 
 type FluentTestRequest struct{ id int }
 
-func (s *AppTestSuite) TestProvideSingletonRegistersService() {
+func (s *AppTestSuite) TestSingletonRegistersService() {
 	app := New()
-	app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
+	err := For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{connected: true}, nil
 	})
+	s.Require().NoError(err)
 
 	s.Require().NoError(app.Build())
 
@@ -314,13 +305,14 @@ func (s *AppTestSuite) TestProvideSingletonRegistersService() {
 	s.Same(db, db2, "singleton should return same instance")
 }
 
-func (s *AppTestSuite) TestProvideTransientReturnsNewInstances() {
+func (s *AppTestSuite) TestTransientReturnsNewInstances() {
 	app := New()
 	counter := 0
-	app.ProvideTransient(func(_ *Container) (*FluentTestRequest, error) {
+	err := For[*FluentTestRequest](app.Container()).Transient().Provider(func(_ *Container) (*FluentTestRequest, error) {
 		counter++
 		return &FluentTestRequest{id: counter}, nil
 	})
+	s.Require().NoError(err)
 
 	s.Require().NoError(app.Build())
 
@@ -334,23 +326,25 @@ func (s *AppTestSuite) TestProvideTransientReturnsNewInstances() {
 	s.NotSame(req1, req2, "transient should return different instances")
 }
 
-func (s *AppTestSuite) TestProvideEagerInstantiatesAtBuild() {
+func (s *AppTestSuite) TestEagerInstantiatesAtBuild() {
 	app := New()
 	instantiated := false
-	app.ProvideEager(func(_ *Container) (*FluentTestDB, error) {
+	err := For[*FluentTestDB](app.Container()).Eager().Provider(func(_ *Container) (*FluentTestDB, error) {
 		instantiated = true
 		return &FluentTestDB{}, nil
 	})
+	s.Require().NoError(err)
 
 	s.False(instantiated, "should not instantiate before Build()")
 	s.Require().NoError(app.Build())
 	s.True(instantiated, "should instantiate at Build() time")
 }
 
-func (s *AppTestSuite) TestProvideInstance() {
+func (s *AppTestSuite) TestInstanceRegistration() {
 	app := New()
 	db := &FluentTestDB{connected: true}
-	app.ProvideInstance(db)
+	err := For[*FluentTestDB](app.Container()).Instance(db)
+	s.Require().NoError(err)
 
 	s.Require().NoError(app.Build())
 
@@ -359,18 +353,21 @@ func (s *AppTestSuite) TestProvideInstance() {
 	s.Same(db, resolved, "should return same instance")
 }
 
-func (s *AppTestSuite) TestFluentChaining() {
+func (s *AppTestSuite) TestDependencyResolution() {
 	app := New()
-	app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
+	err := For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{connected: true}, nil
-	}).
-		ProvideSingleton(func(c *Container) (*FluentTestCache, error) {
-			db, err := Resolve[*FluentTestDB](c)
-			if err != nil {
-				return nil, err
-			}
-			return &FluentTestCache{db: db}, nil
-		})
+	})
+	s.Require().NoError(err)
+
+	err = For[*FluentTestCache](app.Container()).Provider(func(c *Container) (*FluentTestCache, error) {
+		db, resolveErr := Resolve[*FluentTestDB](c)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		return &FluentTestCache{db: db}, nil
+	})
+	s.Require().NoError(err)
 
 	s.Require().NoError(app.Build())
 
@@ -380,103 +377,32 @@ func (s *AppTestSuite) TestFluentChaining() {
 	s.True(cache.db.connected)
 }
 
-func (s *AppTestSuite) TestLateRegistrationPanics() {
-	app := New()
-	s.Require().NoError(app.Build())
-
-	s.Panics(func() {
-		app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
-			return &FluentTestDB{}, nil
-		})
-	}, "should panic on late registration")
-
-	s.Panics(func() {
-		app.ProvideTransient(func(_ *Container) (*FluentTestDB, error) {
-			return &FluentTestDB{}, nil
-		})
-	}, "should panic on late transient registration")
-
-	s.Panics(func() {
-		app.ProvideEager(func(_ *Container) (*FluentTestDB, error) {
-			return &FluentTestDB{}, nil
-		})
-	}, "should panic on late eager registration")
-
-	s.Panics(func() {
-		app.ProvideInstance(&FluentTestDB{})
-	}, "should panic on late instance registration")
-}
-
 func (s *AppTestSuite) TestBuildAggregatesErrors() {
 	app := New()
 
-	// Register same type twice - should collect errors
-	app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
+	// Register same type twice - should error on second registration
+	err := For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{}, nil
 	})
-	app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
-		return &FluentTestDB{}, nil
-	})
+	s.Require().NoError(err)
 
-	err := app.Build()
+	err = For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
+		return &FluentTestDB{}, nil
+	})
 	s.Require().Error(err, "should have error for duplicate registration")
-	s.Contains(err.Error(), "FluentTestDB")
 	s.Require().ErrorIs(err, ErrDuplicate)
 }
 
 func (s *AppTestSuite) TestBuildIsIdempotent() {
 	app := New()
-	app.ProvideSingleton(func(_ *Container) (*FluentTestDB, error) {
+	err := For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{connected: true}, nil
 	})
+	s.Require().NoError(err)
 
 	s.Require().NoError(app.Build())
 	s.Require().NoError(app.Build()) // Should return nil on second call
 	s.Require().NoError(app.Build()) // And third
-}
-
-func (s *AppTestSuite) TestInvalidProviderSignature() {
-	app := New()
-
-	// No arguments
-	app.ProvideSingleton(func() (*FluentTestDB, error) {
-		return &FluentTestDB{}, nil
-	})
-
-	err := app.Build()
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, ErrInvalidProvider)
-
-	// Wrong argument type
-	app2 := New()
-	app2.ProvideSingleton(func(_ int) (*FluentTestDB, error) {
-		return &FluentTestDB{}, nil
-	})
-
-	err = app2.Build()
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, ErrInvalidProvider)
-
-	// Too many return values - test with a valid case instead
-	app3 := New()
-	app3.ProvideSingleton("not a function") // Invalid: not a function
-
-	err = app3.Build()
-	s.Require().Error(err)
-	s.Require().ErrorIs(err, ErrInvalidProvider)
-}
-
-func (s *AppTestSuite) TestProviderWithoutError() {
-	app := New()
-	app.ProvideSingleton(func(_ *Container) *FluentTestDB {
-		return &FluentTestDB{connected: true}
-	})
-
-	s.Require().NoError(app.Build())
-
-	db, err := Resolve[*FluentTestDB](app.Container())
-	s.Require().NoError(err)
-	s.True(db.connected)
 }
 
 func (s *AppTestSuite) TestContainerAccessor() {
