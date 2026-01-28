@@ -49,7 +49,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Workers
 
-- [ ] **WRK-01**: Define `Worker` interface with `Run(ctx context.Context) error`
+- [ ] **WRK-01**: Define `Worker` interface with `Start()`, `Stop()`, `Name() string` methods
 - [ ] **WRK-02**: Create `WorkerManager` for tracking multiple workers
 - [ ] **WRK-03**: Workers integrate with lifecycle (auto-start/stop)
 - [ ] **WRK-04**: Workers respect context cancellation for graceful shutdown
