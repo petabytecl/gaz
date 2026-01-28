@@ -86,15 +86,17 @@ func (s *ConfigSuite) TestInjection() {
 	var injectedCfg *TestConfig
 
 	app := gaz.New().
-		WithConfig(&cfg).
-		ProvideSingleton(func(c *gaz.Container) string {
-			// This service depends on config
-			conf, _ := gaz.Resolve[*TestConfig](c)
-			injectedCfg = conf
-			return "done"
-		})
+		WithConfig(&cfg)
 
-	err := app.Build()
+	// This service depends on config
+	err := gaz.For[string](app.Container()).Provider(func(c *gaz.Container) (string, error) {
+		conf, _ := gaz.Resolve[*TestConfig](c)
+		injectedCfg = conf
+		return "done", nil
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	// Trigger resolution
