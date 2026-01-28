@@ -164,22 +164,25 @@ func (s *IntegrationSuite) TestCobraWithFullLifecycle() {
 func (s *IntegrationSuite) TestBuildAggregatesAllErrors() {
 	app := gaz.New()
 
-	// Register duplicate services using ProvideSingleton (which collects errors)
-	app.ProvideSingleton(func(_ *gaz.Container) (*testDatabase, error) {
-		return &testDatabase{}, nil
+	// Register duplicate services using For[T] (which returns immediate error on duplicate)
+	err := gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
+		return &testDatabase{}
 	})
-	app.ProvideSingleton(func(_ *gaz.Container) (*testDatabase, error) {
-		return &testDatabase{}, nil
+	s.Require().NoError(err)
+
+	err = gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
+		return &testDatabase{}
 	})
+	s.Require().Error(err) // Duplicate error on registration
+	s.Require().ErrorIs(err, gaz.ErrDuplicate)
 
 	// Duplicate module name
 	app.Module("dup").Module("dup")
 
-	err := app.Build()
+	err = app.Build()
 	s.Require().Error(err)
 
-	// Should contain both error types
-	s.Require().ErrorIs(err, gaz.ErrDuplicate)
+	// Should contain module duplicate error
 	s.Require().ErrorIs(err, gaz.ErrDuplicateModule)
 }
 
@@ -368,30 +371,37 @@ func (s *IntegrationSuite) TestEmptyModulesAreValid() {
 	s.Require().NoError(err)
 }
 
-func (s *IntegrationSuite) TestFluentProviderMethodsChain() {
-	// Test: All fluent provider methods on App return *App for chaining
+func (s *IntegrationSuite) TestFluentForTRegistration() {
+	// Test: For[T]() pattern for service registration
 
 	app := gaz.New()
 
-	result := app.
-		ProvideSingleton(func(_ *gaz.Container) (*testDatabase, error) {
-			return &testDatabase{dsn: "singleton"}, nil
-		}).
-		ProvideTransient(func(_ *gaz.Container) (*testRequest, error) {
-			return &testRequest{id: 1}, nil
-		}).
-		ProvideInstance(&testCache{addr: "redis://instance"}).
-		Module("core",
-			func(c *gaz.Container) error {
-				return gaz.For[*testLogger](c).ProviderFunc(func(_ *gaz.Container) *testLogger {
-					return &testLogger{level: "info"}
-				})
-			},
-		)
+	// Register singleton using For[T]()
+	err := gaz.For[*testDatabase](app.Container()).Provider(func(_ *gaz.Container) (*testDatabase, error) {
+		return &testDatabase{dsn: "singleton"}, nil
+	})
+	s.Require().NoError(err)
 
-	s.Same(app, result, "all methods should return same app for chaining")
+	// Register transient using For[T]().Transient()
+	err = gaz.For[*testRequest](app.Container()).Transient().Provider(func(_ *gaz.Container) (*testRequest, error) {
+		return &testRequest{id: 1}, nil
+	})
+	s.Require().NoError(err)
 
-	err := app.Build()
+	// Register instance using For[T]().Instance()
+	err = gaz.For[*testCache](app.Container()).Instance(&testCache{addr: "redis://instance"})
+	s.Require().NoError(err)
+
+	// Register via module (still uses For[T] pattern inside)
+	app.Module("core",
+		func(c *gaz.Container) error {
+			return gaz.For[*testLogger](c).ProviderFunc(func(_ *gaz.Container) *testLogger {
+				return &testLogger{level: "info"}
+			})
+		},
+	)
+
+	err = app.Build()
 	s.Require().NoError(err)
 
 	// Verify all services are registered
