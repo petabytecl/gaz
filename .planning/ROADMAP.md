@@ -12,7 +12,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 
 ## Phases
 
-- [ ] **Phase 11: Cleanup** - Remove deprecated APIs and update examples/tests
+- [x] **Phase 11: Cleanup** - Remove deprecated APIs and update examples/tests
 - [ ] **Phase 12: DI Package** - Extract DI into standalone gaz/di package
 - [ ] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [ ] **Phase 14: Workers** - Background workers with lifecycle integration
@@ -35,8 +35,8 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 **Plans**: 2 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Remove deprecated APIs and migrate tests to For[T]()
-- [ ] 11-02-PLAN.md — Rewrite examples and update documentation
+- [x] 11-01-PLAN.md — Remove deprecated APIs and migrate tests to For[T]()
+- [x] 11-02-PLAN.md — Rewrite examples and update documentation
 
 ---
 
@@ -139,7 +139,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 11. Cleanup | 0/2 | Not started | - |
+| 11. Cleanup | 2/2 | Complete | 2026-01-28 |
 | 12. DI Package | 0/2 | Not started | - |
 | 13. Config Package | 0/2 | Not started | - |
 | 14. Workers | 0/2 | Not started | - |
