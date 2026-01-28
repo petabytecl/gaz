@@ -148,7 +148,7 @@ Plans:
 | 11. Cleanup | 2/2 | Complete | 2026-01-28 |
 | 12. DI Package | 4/4 | Complete | 2026-01-28 |
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
-| 14. Workers | 3/4 | In progress | - |
+| 14. Workers | 4/4 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 
