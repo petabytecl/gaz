@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/worker"
 )
 
 // =============================================================================
@@ -85,3 +86,11 @@ type ServiceWrapper = di.ServiceWrapper
 // serviceWrapper is an alias for di.ServiceWrapper for internal use.
 // This maintains backward compatibility with app.go which uses lowercase.
 type serviceWrapper = di.ServiceWrapper
+
+// =============================================================================
+// Worker Interface Re-export
+// =============================================================================
+
+// Worker is a background task that runs continuously.
+// Alias for worker.Worker for convenience.
+type Worker = worker.Worker

@@ -479,6 +479,16 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}
 
+	// Start workers after all services started
+	a.Logger.InfoContext(ctx, "starting workers")
+	if err := a.workerMgr.Start(ctx); err != nil {
+		// Rollback
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
+		defer cancel()
+		_ = a.Stop(shutdownCtx)
+		return fmt.Errorf("starting workers: %w", err)
+	}
+
 	return a.waitForShutdownSignal(ctx)
 }
 
@@ -588,7 +598,17 @@ func (a *App) Stop(ctx context.Context) error {
 	}
 	shutdownOrder := ComputeShutdownOrder(startupOrder)
 
-	lastErr := a.stopServices(ctx, shutdownOrder, services)
+	var errs []error
+
+	// Stop workers first (they may depend on services)
+	a.Logger.InfoContext(ctx, "stopping workers")
+	if err := a.workerMgr.Stop(); err != nil {
+		errs = append(errs, fmt.Errorf("stopping workers: %w", err))
+	}
+
+	if err := a.stopServices(ctx, shutdownOrder, services); err != nil {
+		errs = append(errs, err)
+	}
 
 	// Cancel the force-exit goroutine
 	close(done)
@@ -605,7 +625,10 @@ func (a *App) Stop(ctx context.Context) error {
 		a.mu.Unlock()
 	}
 
-	return lastErr
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
 
 // stopServices stops services sequentially with per-hook timeout and blame logging.
