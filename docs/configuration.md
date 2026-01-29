@@ -2,9 +2,202 @@
 
 Loading and managing application configuration with gaz.
 
+## Overview
+
+Gaz provides two main approaches to configuration:
+
+1. **ConfigProvider Pattern** - Services declare their config requirements via interface (recommended)
+2. **Standalone config Package** - Direct configuration loading for simpler use cases
+
+## ConfigProvider Pattern (Recommended)
+
+The ConfigProvider pattern allows services to declare their configuration needs declaratively. The framework automatically handles loading, environment variable binding, and validation.
+
+### Implementing ConfigProvider
+
+Create a struct that implements `ConfigNamespace()` and `ConfigFlags()`:
+
+```go
+import "github.com/petabytecl/gaz"
+
+// ServerConfig implements ConfigProvider to declare its configuration requirements.
+type ServerConfig struct {
+    pv *gaz.ProviderValues
+}
+
+// ConfigNamespace returns the namespace prefix for all config keys.
+// Keys from ConfigFlags() are prefixed with this namespace.
+func (s *ServerConfig) ConfigNamespace() string {
+    return "server"
+}
+
+// ConfigFlags declares the configuration flags this provider needs.
+func (s *ServerConfig) ConfigFlags() []gaz.ConfigFlag {
+    return []gaz.ConfigFlag{
+        {Key: "host", Type: gaz.ConfigFlagTypeString, Default: "localhost", Description: "Server host"},
+        {Key: "port", Type: gaz.ConfigFlagTypeInt, Default: 8080, Description: "Server port"},
+        {Key: "debug", Type: gaz.ConfigFlagTypeBool, Default: false, Description: "Debug mode"},
+    }
+}
+
+// NewServerConfig creates the config with injected ProviderValues.
+func NewServerConfig(c *gaz.Container) (*ServerConfig, error) {
+    pv, err := gaz.Resolve[*gaz.ProviderValues](c)
+    if err != nil {
+        return nil, err
+    }
+    return &ServerConfig{pv: pv}, nil
+}
+
+// Accessor methods for type-safe config access
+func (s *ServerConfig) Host() string { return s.pv.GetString("server.host") }
+func (s *ServerConfig) Port() int    { return s.pv.GetInt("server.port") }
+func (s *ServerConfig) Debug() bool  { return s.pv.GetBool("server.debug") }
+```
+
+### Registering a ConfigProvider
+
+Register the provider using the fluent API:
+
+```go
+app := gaz.New()
+
+if err := gaz.For[*ServerConfig](app.Container()).Provider(NewServerConfig); err != nil {
+    log.Fatal(err)
+}
+
+if err := app.Build(); err != nil {
+    log.Fatal(err)
+}
+
+cfg := gaz.MustResolve[*ServerConfig](app.Container())
+fmt.Printf("Server: %s:%d\n", cfg.Host(), cfg.Port())
+```
+
+### How It Works
+
+During `Build()`, the framework:
+
+1. Registers `ProviderValues` early (before providers run)
+2. Instantiates providers (can inject `ProviderValues`)
+3. Collects `ConfigNamespace()` and `ConfigFlags()` from providers
+4. Registers defaults and binds environment variables
+5. Validates required flags are set
+
+## ConfigFlag Types
+
+| Type | Go Type | Example |
+|------|---------|---------|
+| `ConfigFlagTypeString` | `string` | `"localhost"` |
+| `ConfigFlagTypeInt` | `int` | `8080` |
+| `ConfigFlagTypeBool` | `bool` | `true` |
+| `ConfigFlagTypeDuration` | `time.Duration` | `"30s"` |
+| `ConfigFlagTypeFloat` | `float64` | `3.14` |
+
+### Required Flags
+
+Mark a flag as required:
+
+```go
+{Key: "password", Type: gaz.ConfigFlagTypeString, Required: true, Description: "Database password"}
+```
+
+If a required flag is not set, `Build()` returns an error:
+
+```
+provider "database": required config key "database.password" is not set
+```
+
+## ProviderValues Access
+
+`ProviderValues` provides typed access to configuration values:
+
+```go
+func NewRedisClient(c *gaz.Container) (*RedisClient, error) {
+    pv := gaz.MustResolve[*gaz.ProviderValues](c)
+    
+    host := pv.GetString("redis.host")
+    port := pv.GetInt("redis.port")
+    password := pv.GetString("redis.password")
+    timeout := pv.GetDuration("redis.timeout")
+    
+    return &RedisClient{
+        Addr:     fmt.Sprintf("%s:%d", host, port),
+        Password: password,
+        Timeout:  timeout,
+    }, nil
+}
+```
+
+**Available methods:**
+
+- `GetString(key string) string`
+- `GetInt(key string) int`
+- `GetBool(key string) bool`
+- `GetDuration(key string) time.Duration`
+- `GetFloat(key string) float64`
+
+## Environment Variables
+
+Provider config keys are automatically bound to environment variables using single underscore separation:
+
+| Config Key | Environment Variable |
+|------------|---------------------|
+| `server.host` | `SERVER_HOST` |
+| `server.port` | `SERVER_PORT` |
+| `redis.password` | `REDIS_PASSWORD` |
+
+Environment variables override config file values.
+
+## Standalone Config Usage
+
+For simpler use cases or when not using the full framework, use the config package directly:
+
+```go
+import "github.com/petabytecl/gaz/config"
+
+type AppConfig struct {
+    Server struct {
+        Host string `mapstructure:"host"`
+        Port int    `mapstructure:"port"`
+    } `mapstructure:"server"`
+}
+
+func main() {
+    cfg := &AppConfig{}
+    mgr := config.New(
+        config.WithName("config"),
+        config.WithSearchPaths(".", "./config", "/etc/myapp"),
+    )
+    
+    if err := mgr.LoadInto(cfg); err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Server: %s:%d\n", cfg.Server.Host, cfg.Server.Port)
+}
+```
+
+**Supported file formats:**
+
+- YAML (`.yaml`, `.yml`)
+- JSON (`.json`)
+- TOML (`.toml`)
+- HCL (`.hcl`)
+
+### Config Options
+
+```go
+mgr := config.New(
+    config.WithName("config"),           // Looks for config.yaml, config.json, etc.
+    config.WithSearchPaths(".", "./config"),
+    config.WithEnvPrefix("MYAPP"),        // Bind env vars with prefix
+)
+```
+
 ## Config Structs
 
-Define configuration as a Go struct with `mapstructure` tags for field mapping:
+Define configuration as a Go struct with `mapstructure` tags:
 
 ```go
 type Config struct {
@@ -25,30 +218,6 @@ type DatabaseConfig struct {
 }
 ```
 
-## Loading Config
-
-Use `ConfigManager` to load configuration from files:
-
-```go
-cfg := &Config{}
-cm := gaz.NewConfigManager(cfg,
-    gaz.WithSearchPaths(".", "./config", "/etc/myapp"),
-    gaz.WithName("config"),        // Looks for config.yaml, config.json, etc.
-    gaz.WithFileType("yaml"),      // Default file type
-)
-
-if err := cm.Load(); err != nil {
-    log.Fatal(err)
-}
-```
-
-**Supported file formats:**
-
-- YAML (`.yaml`, `.yml`)
-- JSON (`.json`)
-- TOML (`.toml`)
-- HCL (`.hcl`)
-
 **Example config.yaml:**
 
 ```yaml
@@ -62,94 +231,7 @@ database:
 debug: false
 ```
 
-## Environment Variables
-
-Bind environment variables with a prefix:
-
-```go
-cm := gaz.NewConfigManager(cfg,
-    gaz.WithEnvPrefix("MYAPP"),
-)
-```
-
-Environment variables are translated automatically:
-
-| Struct Field | Environment Variable |
-|--------------|---------------------|
-| `server.host` | `MYAPP__SERVER__HOST` |
-| `server.port` | `MYAPP__SERVER__PORT` |
-| `database.url` | `MYAPP__DATABASE__URL` |
-| `debug` | `MYAPP__DEBUG` |
-
-**Note:** Double underscore (`__`) separates nested fields.
-
-Environment variables override file values:
-
-```bash
-export MYAPP__SERVER__PORT=9090
-export MYAPP__DEBUG=true
-```
-
-## Profiles
-
-Use profiles for environment-specific configuration:
-
-```go
-cm := gaz.NewConfigManager(cfg,
-    gaz.WithProfileEnv("APP_ENV"),  // Read profile from APP_ENV
-)
-```
-
-**How profiles work:**
-
-1. Base config loaded from `config.yaml`
-2. Profile config merged from `config.{profile}.yaml`
-3. Profile values override base values
-
-**Example:**
-
-```bash
-export APP_ENV=production
-```
-
-Files loaded:
-
-1. `config.yaml` (base)
-2. `config.production.yaml` (profile overrides)
-
-**config.yaml:**
-
-```yaml
-server:
-  port: 8080
-debug: true
-```
-
-**config.production.yaml:**
-
-```yaml
-server:
-  port: 443
-debug: false
-```
-
-Result: `port=443`, `debug=false`
-
 ## Defaults
-
-Set default values in two ways.
-
-### WithDefaults Option
-
-```go
-cm := gaz.NewConfigManager(cfg,
-    gaz.WithDefaults(map[string]any{
-        "server.host": "localhost",
-        "server.port": 8080,
-        "database.max_conns": 10,
-    }),
-)
-```
 
 ### Defaulter Interface
 
@@ -172,108 +254,17 @@ func (c *Config) Default() {
 
 The `Default()` method is called automatically after loading.
 
-## Injecting Config
+### ConfigFlag Defaults
 
-Register config as a singleton for DI resolution:
-
-```go
-app := gaz.New()
-cfg := &Config{}
-
-app.WithConfig(cfg,
-    gaz.WithSearchPaths("."),
-    gaz.WithEnvPrefix("MYAPP"),
-)
-
-app.ProvideSingleton(func(c *gaz.Container) (*Server, error) {
-    // Config is automatically available
-    cfg, err := gaz.Resolve[*Config](c)
-    if err != nil {
-        return nil, err
-    }
-    return NewServer(cfg.Server.Host, cfg.Server.Port), nil
-})
-```
-
-## Provider Config
-
-For reusable providers that need configuration, implement `ConfigProvider`:
+When using ConfigProvider, defaults are specified per-flag:
 
 ```go
-type RedisProvider struct{}
-
-func (r *RedisProvider) ConfigNamespace() string {
-    return "redis"
-}
-
-func (r *RedisProvider) ConfigFlags() []gaz.ConfigFlag {
-    return []gaz.ConfigFlag{
-        {
-            Key:         "host",
-            Type:        gaz.ConfigFlagTypeString,
-            Default:     "localhost",
-            Description: "Redis server host",
-        },
-        {
-            Key:         "port",
-            Type:        gaz.ConfigFlagTypeInt,
-            Default:     6379,
-            Description: "Redis server port",
-        },
-        {
-            Key:         "password",
-            Type:        gaz.ConfigFlagTypeString,
-            Required:    true,
-            Description: "Redis password",
-        },
-    }
-}
+{Key: "port", Type: gaz.ConfigFlagTypeInt, Default: 8080, Description: "Server port"}
 ```
 
-**Config flag types:**
+## Validation
 
-| Type | Go Type | Example |
-|------|---------|---------|
-| `ConfigFlagTypeString` | `string` | `"localhost"` |
-| `ConfigFlagTypeInt` | `int` | `6379` |
-| `ConfigFlagTypeBool` | `bool` | `true` |
-| `ConfigFlagTypeDuration` | `time.Duration` | `"30s"` |
-| `ConfigFlagTypeFloat` | `float64` | `3.14` |
-
-**Accessing provider config values:**
-
-```go
-func NewRedisClient(c *gaz.Container) (*RedisClient, error) {
-    pv := gaz.MustResolve[*gaz.ProviderValues](c)
-    
-    host := pv.GetString("redis.host")
-    port := pv.GetInt("redis.port")
-    password := pv.GetString("redis.password")
-    
-    return &RedisClient{
-        Addr:     fmt.Sprintf("%s:%d", host, port),
-        Password: password,
-    }, nil
-}
-```
-
-**Environment variable binding:**
-
-Provider config keys are automatically bound to environment variables:
-
-| Config Key | Environment Variable |
-|------------|---------------------|
-| `redis.host` | `REDIS_HOST` |
-| `redis.port` | `REDIS_PORT` |
-| `redis.password` | `REDIS_PASSWORD` |
-
-**Validation at Build time:**
-
-If a required provider config flag is not set, `Build()` returns an error:
-
-```
-provider "redis": required config key "redis.password" is not set
-```
+See [Validation](validation.md) for struct tag validation and custom validators.
 
 ## Complete Example
 
@@ -281,50 +272,79 @@ provider "redis": required config key "redis.password" is not set
 package main
 
 import (
-    "context"
     "fmt"
     "log"
 
     "github.com/petabytecl/gaz"
 )
 
-type Config struct {
-    Server struct {
-        Host string `mapstructure:"host" validate:"required"`
-        Port int    `mapstructure:"port" validate:"required,min=1,max=65535"`
-    } `mapstructure:"server"`
-    Debug bool `mapstructure:"debug"`
+// ServerConfig implements ConfigProvider
+type ServerConfig struct {
+    pv *gaz.ProviderValues
 }
 
-func (c *Config) Default() {
-    if c.Server.Host == "" {
-        c.Server.Host = "localhost"
-    }
-    if c.Server.Port == 0 {
-        c.Server.Port = 8080
+func (s *ServerConfig) ConfigNamespace() string { return "server" }
+
+func (s *ServerConfig) ConfigFlags() []gaz.ConfigFlag {
+    return []gaz.ConfigFlag{
+        {Key: "host", Type: gaz.ConfigFlagTypeString, Default: "localhost", Description: "Server host"},
+        {Key: "port", Type: gaz.ConfigFlagTypeInt, Default: 8080, Description: "Server port"},
+        {Key: "debug", Type: gaz.ConfigFlagTypeBool, Default: false, Description: "Debug mode"},
     }
 }
+
+func NewServerConfig(c *gaz.Container) (*ServerConfig, error) {
+    pv, err := gaz.Resolve[*gaz.ProviderValues](c)
+    if err != nil {
+        return nil, err
+    }
+    return &ServerConfig{pv: pv}, nil
+}
+
+func (s *ServerConfig) Host() string { return s.pv.GetString("server.host") }
+func (s *ServerConfig) Port() int    { return s.pv.GetInt("server.port") }
+func (s *ServerConfig) Debug() bool  { return s.pv.GetBool("server.debug") }
 
 func main() {
     app := gaz.New()
-    cfg := &Config{}
 
-    app.WithConfig(cfg,
-        gaz.WithSearchPaths(".", "./config"),
-        gaz.WithEnvPrefix("MYAPP"),
-        gaz.WithProfileEnv("APP_ENV"),
-    )
-
-    app.ProvideSingleton(func(c *gaz.Container) (*http.Server, error) {
-        cfg := gaz.MustResolve[*Config](c)
-        addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-        return &http.Server{Addr: addr}, nil
-    })
-
-    if err := app.Build(); err != nil {
-        log.Fatal(err)
+    // Register the ConfigProvider
+    if err := gaz.For[*ServerConfig](app.Container()).Provider(NewServerConfig); err != nil {
+        log.Fatalf("Failed to register config provider: %v", err)
     }
 
-    app.Run(context.Background())
+    // Build triggers config loading and provider instantiation
+    if err := app.Build(); err != nil {
+        log.Fatalf("Failed to build app: %v", err)
+    }
+
+    // Get the ServerConfig - ProviderValues already injected
+    cfg := gaz.MustResolve[*ServerConfig](app.Container())
+
+    fmt.Println("Configuration loaded via ConfigProvider pattern:")
+    fmt.Printf("  Server: %s:%d\n", cfg.Host(), cfg.Port())
+    fmt.Printf("  Debug:  %v\n", cfg.Debug())
+    fmt.Println()
+    fmt.Println("Config sources (in priority order):")
+    fmt.Println("  1. Environment variables (e.g., SERVER_HOST, SERVER_PORT)")
+    fmt.Println("  2. Config file (config.yaml)")
+    fmt.Println("  3. Defaults from ConfigFlags()")
 }
+```
+
+**config.yaml:**
+
+```yaml
+server:
+  host: 0.0.0.0
+  port: 3000
+  debug: true
+```
+
+Run with environment override:
+
+```bash
+export SERVER_PORT=9090
+go run main.go
+# Output: Server: 0.0.0.0:9090
 ```
