@@ -129,6 +129,111 @@ func Subscribe[T Event](b *EventBus, handler Handler[T], opts ...SubscribeOption
 	return newSubscription(id, eventType, options.topic, b)
 }
 
+// Publish sends an event to all matching subscribers.
+//
+// Matching includes:
+//   - Subscribers for exact (type, topic) pair
+//   - Subscribers for (type, "") wildcard (subscribed to all topics)
+//
+// Publish returns immediately (fire-and-forget). Events are queued
+// in each subscriber's buffer. Blocks if any subscriber's buffer is full.
+//
+// Publishing to a closed bus is a silent no-op (idempotent).
+//
+// # Example
+//
+//	eventbus.Publish(ctx, bus, UserCreated{UserID: "123"}, "")
+//	eventbus.Publish(ctx, bus, UserCreated{UserID: "456"}, "admin")
+func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
+	b.mu.RLock()
+	if b.closed {
+		b.mu.RUnlock()
+		return // Silent no-op per CONTEXT.md
+	}
+
+	eventType := reflect.TypeOf(event)
+
+	// Find all matching handlers (exact topic + wildcard)
+	var handlers []*asyncSubscription
+
+	// Exact topic match
+	exactKey := subscriptionKey{eventType: eventType, topic: topic}
+	handlers = append(handlers, b.handlers[exactKey]...)
+
+	// Wildcard match (empty topic = all topics)
+	if topic != "" {
+		wildcardKey := subscriptionKey{eventType: eventType, topic: ""}
+		handlers = append(handlers, b.handlers[wildcardKey]...)
+	}
+
+	b.mu.RUnlock()
+
+	// Deliver to each handler (blocks if buffer full per CONTEXT.md)
+	for _, h := range handlers {
+		select {
+		case h.ch <- event:
+			// Delivered
+		case <-ctx.Done():
+			return // Context cancelled, stop publishing
+		}
+	}
+}
+
+// Name implements worker.Worker interface.
+func (b *EventBus) Name() string {
+	return "eventbus.EventBus"
+}
+
+// Start implements worker.Worker interface.
+//
+// EventBus is always ready - no initialization needed beyond New().
+// This method logs that the eventbus has started.
+func (b *EventBus) Start() {
+	b.logger.Info("eventbus started")
+}
+
+// Stop implements worker.Worker interface.
+//
+// Calls Close() to drain in-flight handlers.
+func (b *EventBus) Stop() {
+	b.Close()
+}
+
+// Close shuts down the EventBus and waits for in-flight handlers.
+//
+// After Close, Publish is a no-op and Subscribe returns nil.
+// Safe to call multiple times (idempotent).
+//
+// Close waits for all handler goroutines to finish processing their
+// buffered events before returning. This ensures graceful shutdown.
+func (b *EventBus) Close() {
+	b.mu.Lock()
+	if b.closed {
+		b.mu.Unlock()
+		return
+	}
+	b.closed = true
+
+	// Collect all subscriptions
+	var allSubs []*asyncSubscription
+	for _, subs := range b.handlers {
+		allSubs = append(allSubs, subs...)
+	}
+	b.mu.Unlock()
+
+	// Close all channels (signals handlers to drain and exit)
+	for _, sub := range allSubs {
+		close(sub.ch)
+	}
+
+	// Wait for all handlers to finish processing
+	for _, sub := range allSubs {
+		<-sub.done
+	}
+
+	b.logger.Info("eventbus stopped", "subscriptions_drained", len(allSubs))
+}
+
 // unsubscribe removes a subscription from the bus.
 //
 // This is called by Subscription.Unsubscribe() via the unsubscriber interface.
