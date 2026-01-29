@@ -1,6 +1,10 @@
 package gaz
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/spf13/pflag"
+)
 
 // Module represents a reusable bundle of providers.
 // Modules can be composed using the Use() method to bundle child modules.
@@ -30,6 +34,8 @@ type ModuleBuilder struct {
 	name         string
 	providers    []func(*Container) error
 	childModules []Module
+	flagsFn      func(*pflag.FlagSet) // CLI flags registration function
+	envPrefix    string               // config key prefix for the module
 }
 
 // NewModule creates a new ModuleBuilder with the given name.
@@ -80,6 +86,47 @@ func (b *ModuleBuilder) Use(m Module) *ModuleBuilder {
 	return b
 }
 
+// Flags registers CLI flags for this module.
+// The flags function receives a FlagSet to register module-specific flags.
+// Flags should be namespaced by module name (e.g., "redis-host" not "host")
+// to avoid collisions with other modules.
+//
+// The flags function is called when the module is applied to an App that has
+// a Cobra command attached (via WithCobra). If no Cobra command is attached,
+// the flags function is not called.
+//
+// Example:
+//
+//	module := gaz.NewModule("redis").
+//	    Flags(func(fs *pflag.FlagSet) {
+//	        fs.String("redis-host", "localhost", "Redis server host")
+//	        fs.Int("redis-port", 6379, "Redis server port")
+//	    }).
+//	    Build()
+func (b *ModuleBuilder) Flags(fn func(*pflag.FlagSet)) *ModuleBuilder {
+	b.flagsFn = fn
+	return b
+}
+
+// WithEnvPrefix sets the config key prefix for this module.
+// When combined with service-level env prefix, the module prefix becomes
+// a sub-prefix. For example:
+//
+//	Service prefix: "MYAPP_"
+//	Module prefix:  "redis"
+//	Config key:     "host"
+//	Result:         "MYAPP_REDIS_HOST"
+//
+// Example:
+//
+//	module := gaz.NewModule("redis").
+//	    WithEnvPrefix("redis").
+//	    Build()
+func (b *ModuleBuilder) WithEnvPrefix(prefix string) *ModuleBuilder {
+	b.envPrefix = prefix
+	return b
+}
+
 // Build creates the final Module.
 // After Build() is called, the ModuleBuilder should not be reused.
 func (b *ModuleBuilder) Build() Module {
@@ -87,6 +134,8 @@ func (b *ModuleBuilder) Build() Module {
 		name:         b.name,
 		providers:    b.providers,
 		childModules: b.childModules,
+		flagsFn:      b.flagsFn,
+		envPrefix:    b.envPrefix,
 	}
 }
 
@@ -95,6 +144,8 @@ type builtModule struct {
 	name         string
 	providers    []func(*Container) error
 	childModules []Module
+	flagsFn      func(*pflag.FlagSet)
+	envPrefix    string
 }
 
 // Name returns the module name.
@@ -129,4 +180,15 @@ func (m *builtModule) Apply(app *App) error {
 	}
 
 	return nil
+}
+
+// FlagsFn returns the flags registration function, or nil if none was set.
+// This is used by App.Use() to apply module flags to the cobra command.
+func (m *builtModule) FlagsFn() func(*pflag.FlagSet) {
+	return m.flagsFn
+}
+
+// EnvPrefix returns the module's environment prefix, or empty string if none was set.
+func (m *builtModule) EnvPrefix() string {
+	return m.envPrefix
 }
