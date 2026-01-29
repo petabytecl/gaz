@@ -23,11 +23,11 @@ Requirements for API Enhancement milestone. Each maps to roadmap phases.
 
 ### Testing (gaztest)
 
-- [ ] **TEST-01**: `gaztest.New(t)` creates test app with automatic cleanup via `t.Cleanup()`
-- [ ] **TEST-02**: `app.RequireStart()` starts app or fails test with `t.Fatal()`
-- [ ] **TEST-03**: `app.RequireStop()` stops app or fails test with `t.Fatal()`
-- [ ] **TEST-04**: Test apps use shorter timeouts suitable for testing (5s default)
-- [ ] **TEST-05**: `app.Replace(instance)` swaps dependency for testing (mocks)
+- [x] **TEST-01**: `gaztest.New(t)` creates test app with automatic cleanup via `t.Cleanup()`
+- [x] **TEST-02**: `app.RequireStart()` starts app or fails test with `t.Fatal()`
+- [x] **TEST-03**: `app.RequireStop()` stops app or fails test with `t.Fatal()`
+- [x] **TEST-04**: Test apps use shorter timeouts suitable for testing (5s default)
+- [x] **TEST-05**: `app.Replace(instance)` swaps dependency for testing (mocks)
 
 ### Service Builder
 
@@ -91,11 +91,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLI-01 | Phase 19 | Complete |
 | CLI-02 | Phase 19 | Complete |
 | CLI-03 | Phase 19 | Complete |
-| TEST-01 | Phase 20 | Pending |
-| TEST-02 | Phase 20 | Pending |
-| TEST-03 | Phase 20 | Pending |
-| TEST-04 | Phase 20 | Pending |
-| TEST-05 | Phase 20 | Pending |
+| TEST-01 | Phase 20 | Complete |
+| TEST-02 | Phase 20 | Complete |
+| TEST-03 | Phase 20 | Complete |
+| TEST-04 | Phase 20 | Complete |
+| TEST-05 | Phase 20 | Complete |
 | SVC-01 | Phase 21 | Pending |
 | SVC-02 | Phase 21 | Pending |
 | SVC-03 | Phase 21 | Pending |
