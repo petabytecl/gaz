@@ -30,7 +30,6 @@ type ModuleBuilder struct {
 	name         string
 	providers    []func(*Container) error
 	childModules []Module
-	errs         []error
 }
 
 // NewModule creates a new ModuleBuilder with the given name.
