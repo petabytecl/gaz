@@ -204,6 +204,12 @@ func (a *App) Container() *Container {
 	return a.container
 }
 
+// EventBus returns the application's EventBus for pub/sub.
+// Prefer injecting *eventbus.EventBus as a dependency instead.
+func (a *App) EventBus() *eventbus.EventBus {
+	return a.eventBus
+}
+
 // WithConfig configures the application to load configuration into the target struct.
 // The target must be a pointer to a struct, or nil to only customize config options.
 //
@@ -523,6 +529,11 @@ func (a *App) Build() error {
 	// Discover workers from registered services
 	if err := a.discoverWorkers(); err != nil {
 		errs = append(errs, err)
+	}
+
+	// Register EventBus with worker manager for lifecycle management
+	if err := a.workerMgr.Register(a.eventBus); err != nil {
+		errs = append(errs, fmt.Errorf("registering eventbus: %w", err))
 	}
 
 	// Discover cron jobs from registered services
