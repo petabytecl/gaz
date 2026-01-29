@@ -60,16 +60,16 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Cron
 
-- [ ] **CRN-01**: Create `Scheduler` type wrapping robfig/cron v3
-- [ ] **CRN-02**: Support standard 5-field cron expressions
-- [ ] **CRN-03**: Support predefined schedules (@hourly, @daily, etc.)
-- [ ] **CRN-04**: Scheduler integrates with lifecycle (OnStart/OnStop)
-- [ ] **CRN-05**: Scheduler waits for running jobs on shutdown
-- [ ] **CRN-06**: Jobs have panic recovery by default
-- [ ] **CRN-07**: Jobs are DI-aware (can inject dependencies from container)
-- [ ] **CRN-08**: Jobs use SkipIfStillRunning by default
-- [ ] **CRN-09**: Scheduler exposes health check (job status)
-- [ ] **CRN-10**: Jobs have names for logging
+- [x] **CRN-01**: Create `Scheduler` type wrapping robfig/cron v3
+- [x] **CRN-02**: Support standard 5-field cron expressions
+- [x] **CRN-03**: Support predefined schedules (@hourly, @daily, etc.)
+- [x] **CRN-04**: Scheduler integrates with lifecycle (OnStart/OnStop)
+- [x] **CRN-05**: Scheduler waits for running jobs on shutdown
+- [x] **CRN-06**: Jobs have panic recovery by default
+- [x] **CRN-07**: Jobs are DI-aware (can inject dependencies from container)
+- [x] **CRN-08**: Jobs use SkipIfStillRunning by default
+- [x] **CRN-09**: Scheduler exposes health check (job status)
+- [x] **CRN-10**: Jobs have names for logging
 
 ### EventBus
 
@@ -159,16 +159,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WRK-06 | Phase 14 | Complete |
 | WRK-07 | Phase 14 | Complete |
 | WRK-08 | Phase 14 | Complete |
-| CRN-01 | Phase 15 | Pending |
-| CRN-02 | Phase 15 | Pending |
-| CRN-03 | Phase 15 | Pending |
-| CRN-04 | Phase 15 | Pending |
-| CRN-05 | Phase 15 | Pending |
-| CRN-06 | Phase 15 | Pending |
-| CRN-07 | Phase 15 | Pending |
-| CRN-08 | Phase 15 | Pending |
-| CRN-09 | Phase 15 | Pending |
-| CRN-10 | Phase 15 | Pending |
+| CRN-01 | Phase 15 | Complete |
+| CRN-02 | Phase 15 | Complete |
+| CRN-03 | Phase 15 | Complete |
+| CRN-04 | Phase 15 | Complete |
+| CRN-05 | Phase 15 | Complete |
+| CRN-06 | Phase 15 | Complete |
+| CRN-07 | Phase 15 | Complete |
+| CRN-08 | Phase 15 | Complete |
+| CRN-09 | Phase 15 | Complete |
+| CRN-10 | Phase 15 | Complete |
 | EVT-01 | Phase 16 | Pending |
 | EVT-02 | Phase 16 | Pending |
 | EVT-03 | Phase 16 | Pending |
@@ -185,4 +185,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-28 after Phase 11 completion*
+*Last updated: 2026-01-29 after Phase 15 completion*
