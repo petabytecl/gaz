@@ -176,3 +176,102 @@ func TestGetOr_NestedKey_Works(t *testing.T) {
 	host := config.GetOr(mgr, "database.host", "localhost")
 	assert.Equal(t, "localhost", host)
 }
+
+// =============================================================================
+// Test typeNameOf coverage via MustGet panic messages
+// =============================================================================
+
+func TestMustGet_TypeMismatch_PanicMessageContainsString(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", 42) // int, not string
+	mgr := config.NewWithBackend(backend)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected string")
+	}()
+
+	config.MustGet[string](mgr, "key")
+}
+
+func TestMustGet_TypeMismatch_PanicMessageContainsInt(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", "not-an-int") // string, not int
+	mgr := config.NewWithBackend(backend)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected int")
+	}()
+
+	config.MustGet[int](mgr, "key")
+}
+
+func TestMustGet_TypeMismatch_PanicMessageContainsInt64(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", "not-int64")
+	mgr := config.NewWithBackend(backend)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected int64")
+	}()
+
+	config.MustGet[int64](mgr, "key")
+}
+
+func TestMustGet_TypeMismatch_PanicMessageContainsFloat64(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", "not-float64")
+	mgr := config.NewWithBackend(backend)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected float64")
+	}()
+
+	config.MustGet[float64](mgr, "key")
+}
+
+func TestMustGet_TypeMismatch_PanicMessageContainsBool(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", "not-bool")
+	mgr := config.NewWithBackend(backend)
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected bool")
+	}()
+
+	config.MustGet[bool](mgr, "key")
+}
+
+func TestMustGet_TypeMismatch_PanicMessageContainsUnknown(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("key", "a-string")
+	mgr := config.NewWithBackend(backend)
+
+	// Custom struct type - will be "unknown" in typeNameOf
+	type customStruct struct {
+		Field string
+	}
+
+	defer func() {
+		r := recover()
+		assert.NotNil(t, r)
+		panicMsg := r.(string)
+		assert.Contains(t, panicMsg, "expected unknown")
+	}()
+
+	config.MustGet[customStruct](mgr, "key")
+}
