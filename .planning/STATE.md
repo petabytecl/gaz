@@ -8,21 +8,21 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.0 Cleanup & Concurrency - Phase 14.2 Complete
+**Current focus:** v2.0 Cleanup & Concurrency - Phase 17 In Progress
 
 ## Current Position
 
-- **Phase:** 14.2 of 16 (Update Documentation)
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-01-29 — Completed 14.2-04-PLAN.md
+- **Phase:** 17 of 17 (Cobra CLI Flags)
+- **Plan:** 1 of 2 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-29 — Completed 17-01-PLAN.md
 
-Progress: [████████████████] 100% (22/22 plans)
+Progress: [███████████████░] 96% (23/24 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22 (v2.0)
+- Total plans completed: 23 (v2.0)
 - Average duration: 12 min
 - Total execution time: 3.8 hours
 
@@ -38,6 +38,7 @@ Progress: [████████████████] 100% (22/22 plans)
 | 14.2 Update Documentation | 4/4 | 8 min | 2 min |
 | 14.3 Flag-Based Config | 1/1 | 1 min | 1 min |
 | 14.4 Config Flag/ProviderValues | 1/1 | 3 min | 3 min |
+| 17. Cobra CLI Flags | 1/2 | 3 min | 3 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -95,6 +96,19 @@ Recent decisions affecting current work:
 - Worker package added to README features (14.2-03)
 - Package READMEs link back to main gaz README for pkg.go.dev (14.2-04)
 
+- FlagBinder as exported interface for individual flag binding (17-01)
+- Idempotency tracking via bool fields for config operations (17-01)
+- Key transformation: server.host -> --server-host for POSIX compliance (17-01)
+
+### Phase 17 In Progress
+
+Cobra CLI Flags:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 17-01 | FlagBinder interface and RegisterCobraFlags | ✅ Complete |
+| 17-02 | Comprehensive tests | 🔲 Not started |
+
 ### Phase 14.2 Complete
 
 Update Documentation complete:
@@ -147,6 +161,7 @@ Workers package complete with full test coverage:
 
 ### Roadmap Evolution
 
+- Phase 17 added: Expose ConfigProvider flags to Cobra CLI - auto-register provider config flags as cobra command flags for CLI override and --help visibility
 - Phase 14.1 inserted after Phase 14: Cleanup deprecated re-exports, keep only planned APIs (URGENT)
 - Phase 14.2 inserted after Phase 14.1: Update all relevant documentation and examples (URGENT)
 - Phase 14.3 inserted after Phase 14.2: Flag-based config registration - providers register configs via flags, fetch in constructor (URGENT)
@@ -177,9 +192,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T00:30:49Z
-Stopped at: Completed 14.2-04-PLAN.md (Standalone Package READMEs)
-Resume file: None (Phase 14.2 complete)
+Last session: 2026-01-29T01:14:47Z
+Stopped at: Completed 17-01-PLAN.md (FlagBinder and RegisterCobraFlags)
+Resume file: None (Phase 17 in progress)
 
 ---
 
