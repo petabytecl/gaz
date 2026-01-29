@@ -8,7 +8,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 
 - v1.0 MVP - Phases 1-6 (shipped 2026-01-26)
 - v1.1 Security & Hardening - Phases 7-10 (shipped 2026-01-27)
-- **v2.0 Cleanup & Concurrency** - Phases 11-17 (in progress)
+- **v2.0 Cleanup & Concurrency** - Phases 11-18 (in progress)
 
 ## Phases
 
@@ -23,6 +23,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 - [x] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
+- [ ] **Phase 18: System Info CLI Example** - Showcase DI, ConfigProvider, Workers, and Cobra integration
 
 ## Phase Details
 
@@ -231,9 +232,29 @@ Plans:
 
 ---
 
+### Phase 18: System Info CLI Example
+
+**Goal:** Create system info CLI example showcasing DI, ConfigProvider, Workers, and Cobra integration.
+**Depends on:** Phase 17
+**Plans:** 2 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — ConfigProvider and Collector with gopsutil integration
+- [ ] 18-02-PLAN.md — Worker, main.go with RegisterCobraFlags, and README
+
+**Details:**
+- ConfigProvider declares sysinfo.refresh, sysinfo.format, sysinfo.once flags
+- Collector uses gopsutil/v4 for CPU, memory, disk, host info
+- Worker refreshes data at configured interval with graceful shutdown
+- RegisterCobraFlags called before Execute() for --help visibility
+- One-shot mode (--sysinfo-once) for single display and exit
+- Continuous mode runs worker until Ctrl+C
+
+---
+
 ## Progress
 
-**Execution Order:** Phases execute sequentially: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
+**Execution Order:** Phases execute sequentially: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -248,6 +269,7 @@ Plans:
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 | 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
+| 18. System Info CLI Example | 0/2 | Not started | - |
 
 ---
 
