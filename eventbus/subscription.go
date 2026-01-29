@@ -33,10 +33,12 @@ type unsubscriber interface {
 //
 // Safe to call multiple times (idempotent). Calling Unsubscribe on a
 // subscription that was already unsubscribed or on a closed bus is a no-op.
+// Calling Unsubscribe on a nil Subscription is also a no-op.
 func (s *Subscription) Unsubscribe() {
-	if s.bus != nil {
-		s.bus.unsubscribe(s.eventType, s.topic, s.id)
+	if s == nil || s.bus == nil {
+		return
 	}
+	s.bus.unsubscribe(s.eventType, s.topic, s.id)
 }
 
 // newSubscription creates a new Subscription with the given parameters.
