@@ -97,6 +97,35 @@ func (s *baseService) runStopLifecycle(ctx context.Context, instance any) error 
 	return s.runStopHooks(ctx, instance)
 }
 
+// hasLifecycleImpl is a helper for generic service wrappers to check for
+// explicit hooks or implicit Starter/Stopper interfaces on T or *T.
+func hasLifecycleImpl[T any](base *baseService) bool {
+	// Check explicit hooks first
+	if base.HasLifecycle() {
+		return true
+	}
+
+	// Check if T implements interfaces (e.g. T is *Service)
+	var zero T
+	if _, ok := any(zero).(Starter); ok {
+		return true
+	}
+	if _, ok := any(zero).(Stopper); ok {
+		return true
+	}
+
+	// Check if *T implements interfaces (e.g. T is Service struct, methods on *Service)
+	ptr := new(T)
+	if _, ok := any(ptr).(Starter); ok {
+		return true
+	}
+	if _, ok := any(ptr).(Stopper); ok {
+		return true
+	}
+
+	return false
+}
+
 // lazySingleton is the default service type - creates instance on first resolve,
 // then caches it for all subsequent calls.
 type lazySingleton[T any] struct {
@@ -131,6 +160,10 @@ func (s *lazySingleton[T]) IsEager() bool {
 
 func (s *lazySingleton[T]) IsTransient() bool {
 	return false
+}
+
+func (s *lazySingleton[T]) HasLifecycle() bool {
+	return hasLifecycleImpl[T](&s.baseService)
 }
 
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
@@ -308,7 +341,7 @@ func (s *eagerSingleton[T]) Stop(ctx context.Context) error {
 }
 
 func (s *eagerSingleton[T]) HasLifecycle() bool {
-	return true
+	return hasLifecycleImpl[T](&s.baseService)
 }
 
 // instanceService wraps a pre-built value. No provider is called.
