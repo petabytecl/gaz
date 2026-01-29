@@ -12,10 +12,11 @@ import (
 
 // Compile-time interface assertions.
 var (
-	_ config.Backend   = (*Backend)(nil)
-	_ config.Watcher   = (*Backend)(nil)
-	_ config.Writer    = (*Backend)(nil)
-	_ config.EnvBinder = (*Backend)(nil)
+	_ config.Backend    = (*Backend)(nil)
+	_ config.Watcher    = (*Backend)(nil)
+	_ config.Writer     = (*Backend)(nil)
+	_ config.EnvBinder  = (*Backend)(nil)
+	_ config.FlagBinder = (*Backend)(nil)
 )
 
 // Backend implements config.Backend, config.Watcher, config.Writer, and config.EnvBinder
@@ -213,6 +214,14 @@ func (b *Backend) MergeInConfig() error {
 // BindPFlags binds pflags to configuration keys.
 func (b *Backend) BindPFlags(fs *pflag.FlagSet) error {
 	return b.v.BindPFlags(fs)
+}
+
+// BindPFlag binds a single pflag to a configuration key.
+// This allows CLI flags to override config values via viper precedence.
+// The key uses dot notation (e.g., "server.host") while the flag uses
+// hyphen notation (e.g., "server-host").
+func (b *Backend) BindPFlag(key string, flag *pflag.Flag) error {
+	return b.v.BindPFlag(key, flag)
 }
 
 // ConfigFileUsed returns the file used to populate the config.

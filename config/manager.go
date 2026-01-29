@@ -377,6 +377,13 @@ type flagBinder interface {
 	BindPFlags(fs *pflag.FlagSet) error
 }
 
+// FlagBinder is implemented by backends that can bind individual pflags.
+// This extends the flagBinder interface with single-flag binding support,
+// allowing CLI flags to override config values via viper precedence.
+type FlagBinder interface {
+	BindPFlag(key string, flag *pflag.Flag) error
+}
+
 // configFileNotFoundChecker is implemented by backends that can check for file not found errors.
 type configFileNotFoundChecker interface {
 	IsConfigFileNotFoundError(err error) bool
