@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 16 of 18 (EventBus)
-- **Plan:** 3 of 4 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 16-03-PLAN.md
+- **Plan:** 4 of 4 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-01-29 — Completed 16-04-PLAN.md
 
-Progress: [█████████████████████████████████░░] 97% (33/34 plans)
+Progress: [███████████████████████████████████] 100% (34/34 plans)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [███████████████████████
 | 17. Cobra CLI Flags | 2/2 | 6 min | 3 min |
 | 18. System Info CLI Example | 2/2 | 13 min | 6.5 min |
 | 15. Cron | 4/4 | 16 min | 4 min |
+| 16. EventBus | 4/4 | 10 min | 2.5 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -129,7 +130,10 @@ Recent decisions affecting current work:
 - EventBus registered as DI singleton via For[*eventbus.EventBus]().Instance() (16-03)
 - EventBus registered with WorkerManager for lifecycle management (16-03)
 
-### Phase 16 In Progress
+- Subscription.Unsubscribe() made nil-safe for ergonomic use (16-04)
+- testEvent mock pattern for eventbus testing (16-04)
+
+### Phase 16 Complete
 
 EventBus type-safe pub/sub:
 
@@ -138,7 +142,10 @@ EventBus type-safe pub/sub:
 | 16-01 | EventBus foundation (Event, Handler, Subscription, Options) | ✅ Complete |
 | 16-02 | EventBus implementation | ✅ Complete |
 | 16-03 | App integration | ✅ Complete |
-| 16-04 | Tests and verification | Pending |
+| 16-04 | Tests and verification | ✅ Complete |
+
+**Coverage achieved:**
+- eventbus package: 100% (target: 70%)
 
 ### Phase 15 Complete
 
@@ -256,8 +263,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T05:19:29Z
-Stopped at: Completed 16-03-PLAN.md
+Last session: 2026-01-29T05:25:03Z
+Stopped at: Completed 16-04-PLAN.md (Phase 16 complete)
 Resume file: None
 
 ---
