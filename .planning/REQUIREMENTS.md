@@ -9,17 +9,17 @@ Requirements for API Enhancement milestone. Each maps to roadmap phases.
 
 ### Interface Auto-Detection
 
-- [ ] **LIFE-01**: Services implementing `Starter` interface have `OnStart()` called automatically during lifecycle start
-- [ ] **LIFE-02**: Services implementing `Stopper` interface have `OnStop()` called automatically during lifecycle stop
-- [ ] **LIFE-03**: Explicit `.OnStart()/.OnStop()` registration takes precedence over interface detection
-- [ ] **LIFE-04**: Interface detection works with both pointer and value receivers
-- [ ] **LIFE-05**: `HasLifecycle()` returns true for services implementing Starter or Stopper interfaces
+- [x] **LIFE-01**: Services implementing `Starter` interface have `OnStart()` called automatically during lifecycle start
+- [x] **LIFE-02**: Services implementing `Stopper` interface have `OnStop()` called automatically during lifecycle stop
+- [x] **LIFE-03**: Explicit `.OnStart()/.OnStop()` registration takes precedence over interface detection
+- [x] **LIFE-04**: Interface detection works with both pointer and value receivers
+- [x] **LIFE-05**: `HasLifecycle()` returns true for services implementing Starter or Stopper interfaces
 
 ### CLI Integration
 
-- [ ] **CLI-01**: CLI positional arguments accessible via `CommandArgs` type from DI container
-- [ ] **CLI-02**: Helper function `gaz.GetArgs(container)` returns positional args slice
-- [ ] **CLI-03**: `CommandArgs.Command` provides access to the current `*cobra.Command`
+- [x] **CLI-01**: CLI positional arguments accessible via `CommandArgs` type from DI container
+- [x] **CLI-02**: Helper function `gaz.GetArgs(container)` returns positional args slice
+- [x] **CLI-03**: `CommandArgs.Command` provides access to the current `*cobra.Command`
 
 ### Testing (gaztest)
 
@@ -83,14 +83,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIFE-01 | Phase 19 | Pending |
-| LIFE-02 | Phase 19 | Pending |
-| LIFE-03 | Phase 19 | Pending |
-| LIFE-04 | Phase 19 | Pending |
-| LIFE-05 | Phase 19 | Pending |
-| CLI-01 | Phase 19 | Pending |
-| CLI-02 | Phase 19 | Pending |
-| CLI-03 | Phase 19 | Pending |
+| LIFE-01 | Phase 19 | Complete |
+| LIFE-02 | Phase 19 | Complete |
+| LIFE-03 | Phase 19 | Complete |
+| LIFE-04 | Phase 19 | Complete |
+| LIFE-05 | Phase 19 | Complete |
+| CLI-01 | Phase 19 | Complete |
+| CLI-02 | Phase 19 | Complete |
+| CLI-03 | Phase 19 | Complete |
 | TEST-01 | Phase 20 | Pending |
 | TEST-02 | Phase 20 | Pending |
 | TEST-03 | Phase 20 | Pending |
