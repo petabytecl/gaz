@@ -215,16 +215,41 @@ Config.database.url: must be a valid URL (validate:"url")
 Validation failures cause immediate exit:
 
 ```go
-app := gaz.New()
-cfg := &Config{}
+import (
+    "log"
 
-app.WithConfig(cfg,
-    gaz.WithSearchPaths("."),
+    "github.com/petabytecl/gaz"
+    "github.com/petabytecl/gaz/config"
 )
 
-// If validation fails, Build() returns error
-if err := app.Build(); err != nil {
-    log.Fatal(err)  // Exits with validation error message
+type Config struct {
+    Server ServerConfig `mapstructure:"server"`
+}
+
+type ServerConfig struct {
+    Host string `mapstructure:"host" validate:"required"`
+    Port int    `mapstructure:"port" validate:"required,min=1,max=65535"`
+}
+
+func main() {
+    app := gaz.New()
+
+    // Register config with validation
+    if err := gaz.For[*Config](app.Container()).Provider(func(c *gaz.Container) (*Config, error) {
+        cfg := &Config{}
+        mgr := config.New(config.WithSearchPaths("."))
+        if err := mgr.LoadInto(cfg); err != nil {
+            return nil, err
+        }
+        return cfg, nil
+    }); err != nil {
+        log.Fatal(err)
+    }
+
+    // If validation fails, Build() returns error
+    if err := app.Build(); err != nil {
+        log.Fatal(err)  // Exits with validation error message
+    }
 }
 ```
 
@@ -242,6 +267,7 @@ import (
     "time"
 
     "github.com/petabytecl/gaz"
+    "github.com/petabytecl/gaz/config"
 )
 
 type Config struct {
@@ -281,12 +307,21 @@ func (c *Config) Validate() error {
 
 func main() {
     app := gaz.New()
-    cfg := &Config{}
 
-    app.WithConfig(cfg,
-        gaz.WithSearchPaths("."),
-        gaz.WithEnvPrefix("MYAPP"),
-    )
+    // Register config provider with validation
+    if err := gaz.For[*Config](app.Container()).Provider(func(c *gaz.Container) (*Config, error) {
+        cfg := &Config{}
+        mgr := config.New(
+            config.WithSearchPaths("."),
+            config.WithEnvPrefix("MYAPP"),
+        )
+        if err := mgr.LoadInto(cfg); err != nil {
+            return nil, err
+        }
+        return cfg, nil
+    }); err != nil {
+        log.Fatal(err)
+    }
 
     if err := app.Build(); err != nil {
         log.Fatalf("Configuration error: %v", err)
