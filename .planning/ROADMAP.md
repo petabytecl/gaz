@@ -21,7 +21,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
 - [x] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
 - [x] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
-- [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
+- [x] **Phase 16: EventBus** - Type-safe in-process pub/sub
 - [x] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
 - [x] **Phase 18: System Info CLI Example** - Showcase DI, ConfigProvider, Workers, and Cobra integration
 
