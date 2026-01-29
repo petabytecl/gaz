@@ -240,7 +240,7 @@ Plans:
 
 Plans:
 - [x] 18-01-PLAN.md — ConfigProvider and Collector with gopsutil integration
-- [ ] 18-02-PLAN.md — Worker, main.go with RegisterCobraFlags, and README
+- [x] 18-02-PLAN.md — Worker, main.go with RegisterCobraFlags, and README
 
 **Details:**
 - ConfigProvider declares sysinfo.refresh, sysinfo.format, sysinfo.once flags
@@ -269,7 +269,7 @@ Plans:
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
 | 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
-| 18. System Info CLI Example | 1/2 | In progress | - |
+| 18. System Info CLI Example | 2/2 | Complete | 2026-01-29 |
 
 ---
 
