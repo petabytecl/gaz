@@ -50,10 +50,11 @@ Plans:
   3. `app.RequireStop()` stops app or fails test with `t.Fatal()`
   4. Test apps use shorter default timeouts (5s) suitable for testing
   5. `app.Replace(instance)` allows swapping dependencies for mocks
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 20-01: TBD
+- [ ] 20-01-PLAN.md — **[TDD]** Core gaztest package (Builder, App, TB interface)
+- [ ] 20-02-PLAN.md — Integration tests and examples
 
 #### Phase 21: Service Builder + Unified Provider
 **Goal**: Creating production-ready services and reusable modules is streamlined
@@ -77,7 +78,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 19. Interface Auto-Detection + CLI | v2.1 | 3/3 | Complete | 2026-01-29 |
-| 20. Testing Utilities (gaztest) | v2.1 | 0/TBD | Not started | - |
+| 20. Testing Utilities (gaztest) | v2.1 | 0/2 | Planned | - |
 | 21. Service Builder + Unified Provider | v2.1 | 0/TBD | Not started | - |
 
 <details>
