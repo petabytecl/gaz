@@ -202,15 +202,17 @@ Plans:
 **Requirements**: EVT-01, EVT-02, EVT-03, EVT-04, EVT-05, EVT-06, EVT-07, EVT-08
 **Success Criteria** (what must be TRUE):
   1. `Publish[T]()` and `Subscribe[T]()` provide type-safe event handling
-  2. Events delivered synchronously by default
-  3. Async mode available with bounded buffer for non-blocking publish
-  4. Subscribers can unsubscribe
+  2. Async fire-and-forget delivery by default (corrected from roadmap)
+  3. Per-subscription bounded buffer with blocking backpressure
+  4. Subscribers can unsubscribe via Subscription.Unsubscribe()
   5. EventBus integrates with DI container (resolvable as dependency)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 16-01: TBD
-- [ ] 16-02: TBD
+- [ ] 16-01-PLAN.md — Event interface, Handler type, Subscription, and options
+- [ ] 16-02-PLAN.md — EventBus core with Subscribe/Publish and lifecycle
+- [ ] 16-03-PLAN.md — App integration with DI registration and WorkerManager
+- [ ] 16-04-PLAN.md — Tests and verification
 
 ---
 
@@ -269,7 +271,7 @@ Plans:
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 4/4 | Complete | 2026-01-29 |
-| 16. EventBus | 0/2 | Not started | - |
+| 16. EventBus | 0/4 | Not started | - |
 | 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
 | 18. System Info CLI Example | 2/2 | Complete | 2026-01-29 |
 
