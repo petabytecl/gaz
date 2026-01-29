@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 15 of 18 (Cron)
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-01-29 — Completed 15-04-PLAN.md
+- **Phase:** 16 of 18 (EventBus)
+- **Plan:** 1 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-01-29 — Completed 16-01-PLAN.md
 
-Progress: [██████████████████████████████] 100% (30/30 plans)
+Progress: [███████████████████████████████░░░] 91% (31/34 plans)
 
 ## Performance Metrics
 
@@ -115,6 +115,23 @@ Recent decisions affecting current work:
 
 - Mock CronJob pattern with runFn callback for flexible test scenarios (15-04)
 - countingResolver pattern for transient verification (15-04)
+
+- Event interface requires EventName() for logging/debugging (16-01)
+- Handler[T Event] is fire-and-forget with no error return (16-01)
+- Subscription uses atomic counter ID, not UUID (16-01)
+- Default event buffer size is 100 (16-01)
+- unsubscriber interface pattern avoids circular dependency (16-01)
+
+### Phase 16 In Progress
+
+EventBus type-safe pub/sub:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 16-01 | EventBus foundation (Event, Handler, Subscription, Options) | ✅ Complete |
+| 16-02 | EventBus implementation | Pending |
+| 16-03 | App integration | Pending |
+| 16-04 | Tests and verification | Pending |
 
 ### Phase 15 Complete
 
@@ -232,8 +249,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T03:53:44Z
-Stopped at: Completed 15-04-PLAN.md (Phase 15 complete)
+Last session: 2026-01-29T05:09:44Z
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
 
 ---
