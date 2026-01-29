@@ -43,16 +43,17 @@ type SystemInfo struct {
 
 // Collector gathers system information and displays it.
 type Collector struct {
-	format string
+	cfg *SystemInfoConfig
 }
 
-// NewCollector creates a new Collector with format from config.
+// NewCollector creates a new Collector with config for dynamic format reading.
+// Format is read dynamically (not cached) to support CLI flag overrides.
 func NewCollector(c *gaz.Container) (*Collector, error) {
 	cfg, err := gaz.Resolve[*SystemInfoConfig](c)
 	if err != nil {
 		return nil, err
 	}
-	return &Collector{format: cfg.Format()}, nil
+	return &Collector{cfg: cfg}, nil
 }
 
 // Collect gathers system information from gopsutil.
@@ -100,8 +101,9 @@ func (c *Collector) Collect() (*SystemInfo, error) {
 }
 
 // Display outputs the system information in the configured format.
+// Format is read dynamically from config to support CLI flag overrides.
 func (c *Collector) Display(info *SystemInfo) error {
-	switch c.format {
+	switch c.cfg.Format() {
 	case "json":
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
