@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -439,4 +440,152 @@ func TestValidateProviderFlags_NoErrorsWhenSet(t *testing.T) {
 
 	errs := mgr.ValidateProviderFlags("myapp", flags)
 	assert.Len(t, errs, 0)
+}
+
+// =============================================================================
+// Test BindFlags()
+// =============================================================================
+
+func TestBindFlags_WithCobraFlags_BindsToConfig(t *testing.T) {
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend)
+
+	// Create a cobra command with flags
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().String("host", "default", "hostname")
+	cmd.Flags().Int("port", 8080, "port number")
+
+	// Set flag values as if passed via CLI
+	require.NoError(t, cmd.Flags().Set("host", "flaghost"))
+	require.NoError(t, cmd.Flags().Set("port", "9999"))
+
+	// Bind flags to config
+	err := mgr.BindFlags(cmd.Flags())
+	require.NoError(t, err)
+
+	// Verify config values reflect flag values
+	assert.Equal(t, "flaghost", backend.GetString("host"))
+	assert.Equal(t, 9999, backend.GetInt("port"))
+}
+
+func TestBindFlags_WithDefaultValues_UsesDefaults(t *testing.T) {
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend)
+
+	// Create command with default values only
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().String("env", "development", "environment")
+	cmd.Flags().Bool("debug", false, "debug mode")
+
+	// Bind without setting values
+	err := mgr.BindFlags(cmd.Flags())
+	require.NoError(t, err)
+
+	// Default values should be accessible
+	assert.Equal(t, "development", backend.GetString("env"))
+	assert.False(t, backend.GetBool("debug"))
+}
+
+func TestBindFlags_WithNilFlagSet_Panics(t *testing.T) {
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend)
+
+	// BindFlags with nil panics (viper doesn't handle nil)
+	assert.Panics(t, func() {
+		_ = mgr.BindFlags(nil)
+	})
+}
+
+func TestBindFlags_OverridesConfigFileValues(t *testing.T) {
+	backend := cfgviper.New()
+	testdataDir := filepath.Join("testdata")
+
+	mgr := config.NewWithBackend(backend,
+		config.WithName("config"),
+		config.WithSearchPaths(testdataDir),
+	)
+
+	// Load config file first (has host=testhost, port=9000)
+	err := mgr.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "testhost", backend.GetString("host"))
+
+	// Create and bind flags with different value
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().String("host", "", "hostname")
+	require.NoError(t, cmd.Flags().Set("host", "flagoverride"))
+
+	err = mgr.BindFlags(cmd.Flags())
+	require.NoError(t, err)
+
+	// Flag value should override config file value
+	assert.Equal(t, "flagoverride", backend.GetString("host"))
+}
+
+// =============================================================================
+// Test WithConfigFile()
+// =============================================================================
+
+func TestWithConfigFile_LoadsFromExplicitPath(t *testing.T) {
+	backend := cfgviper.New()
+
+	// Create a temp config file
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "myapp.yaml")
+	content := "host: explicithost\nport: 7777\n"
+	require.NoError(t, os.WriteFile(configPath, []byte(content), 0o644))
+
+	// Use WithConfigFile to point to explicit path
+	mgr := config.NewWithBackend(backend,
+		config.WithConfigFile(configPath),
+	)
+
+	err := mgr.Load()
+	require.NoError(t, err)
+
+	assert.Equal(t, "explicithost", backend.GetString("host"))
+	assert.Equal(t, 7777, backend.GetInt("port"))
+}
+
+func TestWithConfigFile_IgnoresSearchPaths(t *testing.T) {
+	backend := cfgviper.New()
+
+	// Create a temp config file in a non-standard location
+	tmpDir := t.TempDir()
+	subDir := filepath.Join(tmpDir, "nested", "path")
+	require.NoError(t, os.MkdirAll(subDir, 0o755))
+
+	configPath := filepath.Join(subDir, "special.json")
+	content := `{"name": "from-explicit-file", "count": 42}`
+	require.NoError(t, os.WriteFile(configPath, []byte(content), 0o644))
+
+	// Create config in default search path (should be ignored)
+	defaultPath := filepath.Join(tmpDir, "config.yaml")
+	require.NoError(t, os.WriteFile(defaultPath, []byte("name: from-default"), 0o644))
+
+	// WithConfigFile takes precedence over search paths
+	mgr := config.NewWithBackend(backend,
+		config.WithConfigFile(configPath),
+		config.WithSearchPaths(tmpDir), // Should be ignored
+		config.WithName("config"),      // Should be ignored
+	)
+
+	err := mgr.Load()
+	require.NoError(t, err)
+
+	// Should load from explicit path, not default
+	assert.Equal(t, "from-explicit-file", backend.GetString("name"))
+	assert.Equal(t, 42, backend.GetInt("count"))
+}
+
+func TestWithConfigFile_NonExistentFile_ReturnsError(t *testing.T) {
+	backend := cfgviper.New()
+
+	mgr := config.NewWithBackend(backend,
+		config.WithConfigFile("/nonexistent/path/config.yaml"),
+	)
+
+	err := mgr.Load()
+	// Should return error for explicit missing file
+	assert.Error(t, err)
 }
