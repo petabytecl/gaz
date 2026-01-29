@@ -19,6 +19,7 @@ import (
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -86,6 +87,7 @@ type App struct {
 	built       bool            // tracks if Build() was called
 	buildErrors []error         // collects registration errors for Build()
 	modules     map[string]bool // tracks registered module names for duplicate detection
+	cobraCmd    *cobra.Command  // cobra command for module flags integration
 
 	// Logger instance
 	Logger *slog.Logger

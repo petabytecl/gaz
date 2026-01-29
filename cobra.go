@@ -55,6 +55,9 @@ func FromContext(ctx context.Context) *App {
 //	app := gaz.FromContext(cmd.Context())
 //	db, _ := gaz.Resolve[*Database](app.Container())
 func (a *App) WithCobra(cmd *cobra.Command) *App {
+	// Store command reference for module flags integration
+	a.cobraCmd = cmd
+
 	// Preserve existing hooks
 	originalPreRunE := cmd.PersistentPreRunE
 	originalPostRunE := cmd.PersistentPostRunE
