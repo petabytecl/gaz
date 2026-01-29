@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 15 of 18 (Cron)
-- **Plan:** 1 of 4 in current phase
+- **Plan:** 2 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 15-01-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 15-02-PLAN.md
 
-Progress: [███████████████████████████░░░] 90% (27/30 plans)
+Progress: [████████████████████████████░░] 93% (28/30 plans)
 
 ## Performance Metrics
 
@@ -40,7 +40,7 @@ Progress: [███████████████████████
 | 14.4 Config Flag/ProviderValues | 1/1 | 3 min | 3 min |
 | 17. Cobra CLI Flags | 2/2 | 6 min | 3 min |
 | 18. System Info CLI Example | 2/2 | 13 min | 6.5 min |
-| 15. Cron | 1/4 | 2 min | 2 min |
+| 15. Cron | 2/4 | 4 min | 2 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -106,6 +106,9 @@ Recent decisions affecting current work:
 
 - CronJob interface matches CONTEXT.md specification (Name, Schedule, Timeout, Run) (15-01)
 - slog adapter adds component=cron for log correlation (15-01)
+- Resolver interface abstracts container for cron package decoupling (15-02)
+- Custom panic recovery (not cron.Recover) for slog + stack traces (15-02)
+- Empty schedule string disables job gracefully (not an error) (15-02)
 
 ### Phase 15 In Progress
 
@@ -114,7 +117,7 @@ Cron scheduled tasks:
 | Plan | Name | Status |
 |------|------|--------|
 | 15-01 | CronJob interface and package foundation | ✅ Complete |
-| 15-02 | Scheduler and DI-aware job wrapper | ⏳ Pending |
+| 15-02 | Scheduler and DI-aware job wrapper | ✅ Complete |
 | 15-03 | App integration and lifecycle management | ⏳ Pending |
 | 15-04 | Tests and verification | ⏳ Pending |
 
@@ -220,9 +223,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T03:28:36Z
-Stopped at: Completed 15-01-PLAN.md
-Resume file: .planning/phases/15-cron/15-02-PLAN.md
+Last session: 2026-01-29T03:34:19Z
+Stopped at: Completed 15-02-PLAN.md
+Resume file: .planning/phases/15-cron/15-03-PLAN.md
 
 ---
 
