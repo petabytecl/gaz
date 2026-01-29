@@ -16,6 +16,7 @@ import (
 	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
 )
@@ -107,6 +108,9 @@ type App struct {
 	// Cron scheduler
 	scheduler *cron.Scheduler
 
+	// EventBus for pub/sub
+	eventBus *eventbus.EventBus
+
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
@@ -167,10 +171,18 @@ func New(opts ...Option) *App {
 	// Initialize Scheduler with background context (job execution uses app context)
 	app.scheduler = cron.NewScheduler(app.container, context.Background(), app.Logger)
 
+	// Initialize EventBus
+	app.eventBus = eventbus.New(app.Logger)
+
 	// Register Logger in container using For[T]() pattern
 	if err := For[*slog.Logger](app.container).Instance(app.Logger); err != nil {
 		// Should not happen as container is empty
 		panic(fmt.Errorf("failed to register logger: %w", err))
+	}
+
+	// Register EventBus as singleton for DI resolution
+	if err := For[*eventbus.EventBus](app.container).Instance(app.eventBus); err != nil {
+		panic(fmt.Errorf("failed to register eventbus: %w", err))
 	}
 
 	// Initialize ConfigManager with convention-based defaults:
