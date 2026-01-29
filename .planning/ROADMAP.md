@@ -22,7 +22,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
-- [ ] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
+- [x] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
 
 ## Phase Details
 
