@@ -8,13 +8,14 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.0 Cleanup & Concurrency - Phase 17 Complete
+**Current focus:** v2.0 Cleanup & Concurrency - Phase 17 Complete, Phase 18 Added
 
 ## Current Position
 
-- **Phase:** 17 of 17 (Cobra CLI Flags)
+- **Phase:** 17 of 18 (Cobra CLI Flags)
 - **Plan:** 2 of 2 in current phase
 - **Status:** Phase complete
+- **Next Phase:** Phase 18: System Info CLI Example
 - **Last activity:** 2026-01-29 — Completed 17-02-PLAN.md
 
 Progress: [████████████████] 100% (24/24 plans)
@@ -163,6 +164,7 @@ Workers package complete with full test coverage:
 
 ### Roadmap Evolution
 
+- Phase 18 added: Create system info CLI example showcasing DI, ConfigProvider, Workers, and Cobra integration
 - Phase 17 added: Expose ConfigProvider flags to Cobra CLI - auto-register provider config flags as cobra command flags for CLI override and --help visibility
 - Phase 14.1 inserted after Phase 14: Cleanup deprecated re-exports, keep only planned APIs (URGENT)
 - Phase 14.2 inserted after Phase 14.1: Update all relevant documentation and examples (URGENT)
@@ -186,7 +188,7 @@ Config Package extraction complete:
 
 ### Pending Todos
 
-2 pending todo(s) in `.planning/todos/pending/`
+1 pending todo(s) in `.planning/todos/pending/`
 
 ### Blockers/Concerns
 
