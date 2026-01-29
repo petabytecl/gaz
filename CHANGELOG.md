@@ -48,6 +48,15 @@ gaz.For[*Config](app.Container()).Instance(config)
 - Documentation updated with new API examples
 - Codebase lint and format pass completed
 
+### Added
+
+- **gaz/di package** - Standalone DI container that works without gaz.App. Exports `di.New()`, `di.For[T]()`, `di.Resolve[T]()`. Use for testing or library code.
+- **gaz/config package** - Standalone configuration management with Backend interface. Exports `config.New()`, `config.Manager`, `config.Backend`. Viper implementation in `gaz/config/viper`.
+- **gaz/worker package** - Background workers with lifecycle integration. Exports `worker.Worker` interface, `worker.Manager`, with automatic restart, circuit breaker, and graceful shutdown.
+- **ConfigProvider interface** - Services can declare config requirements via `ConfigNamespace()` and `ConfigFlags()` methods
+- **ProviderValues** - Type-safe access to config values within provider functions
+- **WithConfigFile option** - Explicit config file path without search path lookup
+
 ## [1.1.0] - 2026-01-27
 
 ### Added
