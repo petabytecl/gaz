@@ -221,7 +221,7 @@ Plans:
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
 | 14.1 Cleanup Re-exports | 2/2 | Complete | 2026-01-28 |
-| 14.2 Update Docs/Examples | 0/4 | Not started | - |
+| 14.2 Update Docs/Examples | 0/4 | Ready | - |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
