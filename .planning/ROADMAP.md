@@ -218,8 +218,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Add FlagBinder interface and RegisterCobraFlags method
-- [ ] 17-02-PLAN.md — Comprehensive tests for flag registration and CLI override
+- [x] 17-01-PLAN.md — Add FlagBinder interface and RegisterCobraFlags method
+- [x] 17-02-PLAN.md — Comprehensive tests for flag registration and CLI override
 
 **Details:**
 - RegisterCobraFlags(cmd) method on App for explicit flag registration before Execute()
@@ -247,7 +247,7 @@ Plans:
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
-| 17. Cobra CLI Flags | 0/2 | Not started | - |
+| 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
 
 ---
 
