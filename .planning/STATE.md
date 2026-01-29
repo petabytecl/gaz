@@ -74,6 +74,9 @@ Progress: [██████████] 100% — v2.1 milestone complete
 ### Blockers/Concerns
 None.
 
+### Pending Todos
+1 todo(s) in `.planning/todos/pending/`
+
 ## Session Continuity
 
 Last session: 2026-01-29
