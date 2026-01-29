@@ -17,7 +17,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 13: Config Package** - Extract Config into standalone gaz/config package
 - [x] **Phase 14: Workers** - Background workers with lifecycle integration
 - [x] **Phase 14.1: Cleanup Re-exports** - Remove deprecated re-exports, keep only planned APIs (INSERTED)
-- [ ] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
+- [x] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
 - [x] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
 - [x] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
@@ -124,10 +124,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 14.2-01-PLAN.md — Rewrite getting-started.md and concepts.md with For[T]() API
-- [ ] 14.2-02-PLAN.md — Rewrite configuration.md and validation.md with config package patterns
-- [ ] 14.2-03-PLAN.md — Update advanced.md, README.md (worker feature), and CHANGELOG.md (package additions)
-- [ ] 14.2-04-PLAN.md — Create package READMEs (di, config, worker) and update config-loading example README
+- [x] 14.2-01-PLAN.md — Rewrite getting-started.md and concepts.md with For[T]() API
+- [x] 14.2-02-PLAN.md — Rewrite configuration.md and validation.md with config package patterns
+- [x] 14.2-03-PLAN.md — Update advanced.md, README.md (worker feature), and CHANGELOG.md (package additions)
+- [x] 14.2-04-PLAN.md — Create package READMEs (di, config, worker) and update config-loading example README
 
 **Details:**
 All plans execute in Wave 1 (parallel) as they touch different files.
@@ -221,7 +221,7 @@ Plans:
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
 | 14.1 Cleanup Re-exports | 2/2 | Complete | 2026-01-28 |
-| 14.2 Update Docs/Examples | 0/4 | Ready | - |
+| 14.2 Update Docs/Examples | 4/4 | Complete | 2026-01-29 |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
