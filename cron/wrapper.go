@@ -14,8 +14,9 @@ import (
 // without directly depending on the di package.
 type Resolver interface {
 	// ResolveByName resolves a service by its registered type name.
+	// The opts parameter is reserved for future use (pass nil).
 	// Returns the resolved instance and any error encountered.
-	ResolveByName(name string, opts any) (any, error)
+	ResolveByName(name string, opts []string) (any, error)
 }
 
 // diJobWrapper wraps a CronJob type to implement robfig/cron's Job interface.

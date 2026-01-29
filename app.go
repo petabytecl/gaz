@@ -14,6 +14,7 @@ import (
 
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
+	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
@@ -103,6 +104,9 @@ type App struct {
 	// Worker management
 	workerMgr *worker.Manager
 
+	// Cron scheduler
+	scheduler *cron.Scheduler
+
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
@@ -159,6 +163,9 @@ func New(opts ...Option) *App {
 			_ = app.Stop(ctx)
 		}()
 	})
+
+	// Initialize Scheduler with background context (job execution uses app context)
+	app.scheduler = cron.NewScheduler(app.container, context.Background(), app.Logger)
 
 	// Register Logger in container using For[T]() pattern
 	if err := For[*slog.Logger](app.container).Instance(app.Logger); err != nil {
@@ -418,6 +425,37 @@ func (a *App) discoverWorkers() error {
 	return nil
 }
 
+// discoverCronJobs iterates registered services and registers those implementing
+// cron.CronJob interface with the Scheduler.
+func (a *App) discoverCronJobs() error {
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		// CronJobs should be transient (new instance per execution)
+		// But we still need to resolve once to get schedule info at registration time
+
+		// Try to resolve and check for CronJob interface
+		instance, err := a.container.ResolveByName(name, nil)
+		if err != nil {
+			return // Skip services that fail to resolve
+		}
+
+		if job, ok := instance.(cron.CronJob); ok {
+			// Register with scheduler using service name for later resolution
+			if regErr := a.scheduler.RegisterJob(
+				name,           // serviceName for container resolution
+				job.Name(),     // human name for logging
+				job.Schedule(), // cron expression
+				job.Timeout(),  // execution timeout
+			); regErr != nil {
+				a.Logger.Warn("failed to register cron job",
+					"name", job.Name(),
+					"error", regErr,
+				)
+			}
+		}
+	})
+	return nil
+}
+
 // Build validates all registrations and instantiates eager services.
 // It aggregates all errors and returns them using errors.Join.
 // Build is idempotent - calling it multiple times after success returns nil.
@@ -452,6 +490,18 @@ func (a *App) Build() error {
 	// Discover workers from registered services
 	if err := a.discoverWorkers(); err != nil {
 		errs = append(errs, err)
+	}
+
+	// Discover cron jobs from registered services
+	if err := a.discoverCronJobs(); err != nil {
+		errs = append(errs, err)
+	}
+
+	// Register scheduler with worker manager (only if jobs exist)
+	if a.scheduler.JobCount() > 0 {
+		if err := a.workerMgr.Register(a.scheduler); err != nil {
+			errs = append(errs, fmt.Errorf("registering scheduler: %w", err))
+		}
 	}
 
 	// Delegate to container.Build() for eager instantiation
