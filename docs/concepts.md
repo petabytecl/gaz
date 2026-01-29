@@ -99,11 +99,7 @@ gaz supports three service scopes that control instantiation behavior.
 One instance per container lifetime. Created on first resolution, reused thereafter.
 
 ```go
-// Using For[T]() API
 gaz.For[*Database](c).Provider(NewDatabase)
-
-// Using App fluent API
-app.ProvideSingleton(NewDatabase)
 ```
 
 ### Transient
@@ -111,11 +107,7 @@ app.ProvideSingleton(NewDatabase)
 New instance on every resolution. Use for request-scoped or stateless services.
 
 ```go
-// Using For[T]() API
 gaz.For[*RequestHandler](c).Transient().Provider(NewRequestHandler)
-
-// Using App fluent API
-app.ProvideTransient(NewRequestHandler)
 ```
 
 ### Eager
@@ -123,11 +115,7 @@ app.ProvideTransient(NewRequestHandler)
 Singleton instantiated at `Build()` time instead of first resolution. Use for services that must start immediately.
 
 ```go
-// Using For[T]() API
 gaz.For[*ConnectionPool](c).Eager().Provider(NewConnectionPool)
-
-// Using App fluent API
-app.ProvideEager(NewConnectionPool)
 ```
 
 **When to use each scope:**
@@ -240,7 +228,10 @@ Use `App` for applications that run, wait for signals, and shut down:
 
 ```go
 app := gaz.New(gaz.WithShutdownTimeout(30 * time.Second))
-app.ProvideSingleton(NewDatabase)
+
+// Register services using the type-safe For[T]() API
+gaz.For[*Database](app.Container()).Provider(NewDatabase)
+
 app.Build()
 app.Run(ctx) // Blocks until shutdown signal
 ```
