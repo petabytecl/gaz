@@ -8,7 +8,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 
 - v1.0 MVP - Phases 1-6 (shipped 2026-01-26)
 - v1.1 Security & Hardening - Phases 7-10 (shipped 2026-01-27)
-- **v2.0 Cleanup & Concurrency** - Phases 11-16 (in progress)
+- **v2.0 Cleanup & Concurrency** - Phases 11-17 (in progress)
 
 ## Phases
 
@@ -22,6 +22,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
 - [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
+- [ ] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
 
 ## Phase Details
 
@@ -210,9 +211,29 @@ Plans:
 
 ---
 
+### Phase 17: Cobra CLI Flags
+
+**Goal:** Expose ConfigProvider flags to Cobra CLI - auto-register provider config flags as cobra command flags for CLI override and --help visibility.
+**Depends on:** Phase 16 (ignored - unrelated)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Add FlagBinder interface and RegisterCobraFlags method
+- [ ] 17-02-PLAN.md — Comprehensive tests for flag registration and CLI override
+
+**Details:**
+- RegisterCobraFlags(cmd) method on App for explicit flag registration before Execute()
+- FlagBinder interface for individual flag binding (BindPFlag wrapping viper)
+- Key transformation: "server.host" -> "--server-host" for POSIX compliance
+- Idempotent config operations (loadConfig, registerProviderValuesEarly, collectProviderConfigs)
+- Full type support: string, int, bool, duration, float
+- Viper binding with original dot-notation key for correct precedence
+
+---
+
 ## Progress
 
-**Execution Order:** Phases execute sequentially: 11 -> 12 -> 13 -> 14 -> 15 -> 16
+**Execution Order:** Phases execute sequentially: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -226,6 +247,7 @@ Plans:
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
 | 16. EventBus | 0/2 | Not started | - |
+| 17. Cobra CLI Flags | 0/2 | Not started | - |
 
 ---
 
