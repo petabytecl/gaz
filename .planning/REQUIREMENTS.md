@@ -83,33 +83,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIFE-01 | TBD | Pending |
-| LIFE-02 | TBD | Pending |
-| LIFE-03 | TBD | Pending |
-| LIFE-04 | TBD | Pending |
-| LIFE-05 | TBD | Pending |
-| CLI-01 | TBD | Pending |
-| CLI-02 | TBD | Pending |
-| CLI-03 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
-| TEST-05 | TBD | Pending |
-| SVC-01 | TBD | Pending |
-| SVC-02 | TBD | Pending |
-| SVC-03 | TBD | Pending |
-| SVC-04 | TBD | Pending |
-| PROV-01 | TBD | Pending |
-| PROV-02 | TBD | Pending |
-| PROV-03 | TBD | Pending |
-| PROV-04 | TBD | Pending |
-| PROV-05 | TBD | Pending |
+| LIFE-01 | Phase 19 | Pending |
+| LIFE-02 | Phase 19 | Pending |
+| LIFE-03 | Phase 19 | Pending |
+| LIFE-04 | Phase 19 | Pending |
+| LIFE-05 | Phase 19 | Pending |
+| CLI-01 | Phase 19 | Pending |
+| CLI-02 | Phase 19 | Pending |
+| CLI-03 | Phase 19 | Pending |
+| TEST-01 | Phase 20 | Pending |
+| TEST-02 | Phase 20 | Pending |
+| TEST-03 | Phase 20 | Pending |
+| TEST-04 | Phase 20 | Pending |
+| TEST-05 | Phase 20 | Pending |
+| SVC-01 | Phase 21 | Pending |
+| SVC-02 | Phase 21 | Pending |
+| SVC-03 | Phase 21 | Pending |
+| SVC-04 | Phase 21 | Pending |
+| PROV-01 | Phase 21 | Pending |
+| PROV-02 | Phase 21 | Pending |
+| PROV-03 | Phase 21 | Pending |
+| PROV-04 | Phase 21 | Pending |
+| PROV-05 | Phase 21 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-29*

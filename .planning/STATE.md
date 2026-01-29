@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.1 API Enhancement
+**Current focus:** v2.1 API Enhancement - Phase 19
 
 ## Current Position
 
-- **Phase:** Not started (defining requirements)
-- **Plan:** —
-- **Status:** Defining requirements
-- **Last activity:** 2026-01-29 — Milestone v2.1 started
+- **Phase:** 19 of 21 (Interface Auto-Detection + CLI Args)
+- **Plan:** 0/TBD — Ready to plan
+- **Status:** Ready to plan
+- **Last activity:** 2026-01-29 — Roadmap created for v2.1
 
-Progress: [░░░░░░░░░░] 0% — Defining requirements
+Progress: [░░░░░░░░░░] 0% — Starting v2.1
 
 ## Milestones Shipped
 
@@ -39,32 +39,26 @@ Progress: [░░░░░░░░░░] 0% — Defining requirements
 
 | Milestone | Phases | Plans | Duration |
 |-----------|--------|-------|----------|
-| v1.0 MVP | 10 | 35 | 1 day |
+| v1.0 MVP | 6 | 35 | 1 day |
 | v1.1 Hardening | 4 | 12 | 2 days |
-| v2.0 Cleanup & Concurrency | 12 | 34 | 2 days |
+| v2.0 Cleanup & Concurrency | 8 | 34 | 2 days |
 
 ## Accumulated Context
 
-### v2.0 Summary
+### v2.1 Scope
 
-- Deprecated APIs removed (NewApp, AppOption, Provide* methods)
-- DI extracted to `gaz/di` package
-- Config extracted to `gaz/config` package
-- Workers package with lifecycle integration
-- Cron package wrapping robfig/cron
-- EventBus package with generics pub/sub
-- RegisterCobraFlags for CLI integration
-- System Info CLI example
+22 requirements across 5 categories:
+- Interface Auto-Detection (5): Auto-call lifecycle methods for Starter/Stopper implementors
+- CLI Integration (3): Inject command args via DI
+- Testing/gaztest (5): Test utilities with automatic cleanup
+- Service Builder (4): Convenience API for production services
+- Unified Provider (5): Module bundling pattern
 
-### Decisions Summary
+### Research Highlights
 
-Key decisions accumulated across all milestones are recorded in PROJECT.md Key Decisions table.
-
-Recent v2.0 decisions:
-- For[T]() is the sole registration API
-- DI and Config work standalone without App
-- Scheduler and EventBus implement Worker interface
-- RegisterCobraFlags must be called before Execute()
+- Interface auto-detection partially implemented — execution logic exists, `HasLifecycle()` gap
+- Zero new dependencies needed (all stdlib: reflect, runtime)
+- Pitfall: Check BOTH T and *T for interface implementation
 
 ### Pending Todos
 
@@ -76,21 +70,13 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T05:30:00Z
-Stopped at: v2.0 milestone complete
+Last session: 2026-01-29
+Stopped at: Roadmap created for v2.1
 Resume file: None
 
 ---
 
 ## Next Steps
-
-To start planning:
-
-```
-/gsd-discuss-phase 19
-```
-
-or directly:
 
 ```
 /gsd-plan-phase 19
