@@ -206,8 +206,8 @@ func main() {
     }
     
     app := gaz.New()
-    app.ProvideSingleton(NewDatabase)
-    app.ProvideSingleton(NewServer)
+    gaz.For[*Database](app.Container()).Provider(NewDatabase)
+    gaz.For[*Server](app.Container()).Provider(NewServer)
     app.WithCobra(rootCmd)
     
     // Add subcommands
@@ -262,19 +262,34 @@ app.WithCobra(rootCmd)
 
 ### Flag Binding
 
-Cobra flags are automatically bound to configuration:
+Cobra flags are automatically bound to configuration when using `WithCobra()`:
 
 ```go
 rootCmd.PersistentFlags().Int("port", 8080, "Server port")
 rootCmd.PersistentFlags().Bool("debug", false, "Enable debug mode")
 
-app.WithConfig(cfg,
-    gaz.WithSearchPaths("."),
-)
 app.WithCobra(rootCmd)
 
 // Flags override config file values
 // --port=9090 overrides config.yaml server.port
+```
+
+Services can also declare their config requirements via the `ConfigProvider` interface:
+
+```go
+type Server struct {
+    Port int
+}
+
+func (s *Server) ConfigNamespace() string { return "server" }
+func (s *Server) ConfigFlags() []gaz.FlagDef {
+    return []gaz.FlagDef{
+        {Name: "port", Default: 8080, Usage: "Server port"},
+    }
+}
+
+// Config is automatically collected during Build()
+gaz.For[*Server](app.Container()).Provider(NewServer)
 ```
 
 ## Health Checks
@@ -291,8 +306,8 @@ app := gaz.New()
 // Register health module
 app.Module("health", health.Module())
 
-// Register checkers
-app.ProvideSingleton(func(c *gaz.Container) (*Database, error) {
+// Register checkers via provider
+gaz.For[*Database](app.Container()).Provider(func(c *gaz.Container) (*Database, error) {
     db := NewDatabase()
     
     // Register health check
@@ -323,7 +338,7 @@ func (d *Database) Check(ctx context.Context) error {
 ### HTTP Health Endpoint
 
 ```go
-app.ProvideSingleton(func(c *gaz.Container) (*http.ServeMux, error) {
+gaz.For[*http.ServeMux](app.Container()).Provider(func(c *gaz.Container) (*http.ServeMux, error) {
     hm := gaz.MustResolve[*health.Manager](c)
     
     mux := http.NewServeMux()
@@ -477,8 +492,8 @@ func NewB(c *gaz.Container) (*B, error) {
 Use eager loading for infrastructure that must start early:
 
 ```go
-app.ProvideEager(NewConnectionPool)  // Validate connection at startup
-app.ProvideEager(NewMigrator)        // Run migrations before serving
+gaz.For[*ConnectionPool](c).Eager().Provider(NewConnectionPool)  // Validate connection at startup
+gaz.For[*Migrator](c).Eager().Provider(NewMigrator)              // Run migrations before serving
 ```
 
 ### Transient for Stateless
@@ -486,6 +501,6 @@ app.ProvideEager(NewMigrator)        // Run migrations before serving
 Use transient scope for stateless, per-request services:
 
 ```go
-app.ProvideTransient(NewRequestHandler)  // New instance per resolution
-app.ProvideTransient(NewCommandHandler)  // Stateless, no shared state
+gaz.For[*RequestHandler](c).Transient().Provider(NewRequestHandler)  // New instance per resolution
+gaz.For[*CommandHandler](c).Transient().Provider(NewCommandHandler)  // Stateless, no shared state
 ```
