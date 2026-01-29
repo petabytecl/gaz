@@ -1,5 +1,35 @@
 # Project Milestones: gaz
 
+## v2.0 Cleanup & Concurrency (Shipped: 2026-01-29)
+
+**Delivered:** Extracted DI and Config to standalone packages, added concurrency primitives (Workers, Cron, EventBus).
+
+**Phases completed:** 11-18 (34 plans total, including 4 inserted phases)
+
+**Key accomplishments:**
+
+- Deprecated APIs removed (NewApp, AppOption, reflection-based Provide* methods)
+- DI extracted to standalone `gaz/di` package with di.New(), For[T](), Resolve[T]()
+- Config extracted to standalone `gaz/config` package with Backend interface
+- Background workers with lifecycle integration, panic recovery, and circuit breaker
+- Cron scheduled tasks wrapping robfig/cron with DI-aware jobs
+- Type-safe EventBus with generic Publish[T]/Subscribe[T] and topic filtering
+- Cobra CLI flag integration via RegisterCobraFlags()
+- System Info CLI example showcasing all v2.0 features
+
+**Stats:**
+
+- 231 files created/modified
+- 33,844 lines added (31,207 net)
+- 12 phases, 34 plans
+- 2 days from milestone start to ship
+
+**Git range:** `v1.1` → `b87bc0d`
+
+**What's next:** v2.1 - TBD (worker pools, koanf backend)
+
+---
+
 ## v1.1 Security & Hardening (Shipped: 2026-01-27)
 
 **Delivered:** Application robustness with config validation and shutdown hardening.
@@ -22,7 +52,7 @@
 
 **Git range:** `aaf55bd` (v1.0) → `6099075`
 
-**What's next:** v2.0 - TBD (advanced validation, workers, etc.)
+**What's next:** v2.0 - Cleanup & Concurrency
 
 ---
 
@@ -50,6 +80,6 @@
 
 **Git range:** `0c00fc6` → `aaf55bd`
 
-**What's next:** v1.1 - Security & Hardening (Request logging, config validation)
+**What's next:** v1.1 - Security & Hardening
 
 ---

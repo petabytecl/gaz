@@ -2,35 +2,25 @@
 
 ## What This Is
 
-A unified Go application framework that consolidates dependency injection, application lifecycle management, configuration, and observability into a single cohesive library. Extracts and simplifies the best ideas from internal dibx/gazx libraries into a standalone, potentially open-sourceable package with a convention-over-configuration API.
+A unified Go application framework that consolidates dependency injection, application lifecycle management, configuration, and observability into a single cohesive library. Provides type-safe generics-based DI, background workers, cron scheduling, and event bus for in-process pub/sub — all integrated with a consistent lifecycle model.
 
 ## Core Value
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v2.0 Cleanup & Concurrency
-
-**Goal:** Clean up codebase, extract DI to standalone package, add concurrency primitives.
-
-**Target features:**
-- Delete deprecated code (NewApp, AppOption, reflection-based registration)
-- Extract DI to `gaz/di` for standalone use
-- Background workers with graceful shutdown
-- Worker pool for queued processing
-- Cron/scheduled tasks
-- In-app EventBus (pub/sub)
-
 ## Current State
 
-**Shipped:** v1.1 Security & Hardening (2026-01-27)
+**Shipped:** v2.0 Cleanup & Concurrency (2026-01-29)
 
-The framework now provides production-grade robustness:
-- Config validation at startup (struct tags, early exit)
-- Shutdown hardening (timeout enforcement, blame logging)
-- Provider config registration (service-level config)
-- Comprehensive documentation and examples
+The framework now provides:
+- **DI Package** (`gaz/di`) — Standalone dependency injection with For[T](), Resolve[T]()
+- **Config Package** (`gaz/config`) — Configuration management with Backend interface
+- **Workers** — Background workers with lifecycle integration, panic recovery, circuit breaker
+- **Cron** — Scheduled tasks wrapping robfig/cron with DI-aware jobs
+- **EventBus** — Type-safe pub/sub with Publish[T]/Subscribe[T] generics
+- **CLI Integration** — RegisterCobraFlags() exposes ConfigProvider flags to CLI
 
-**Codebase:** 11,319 lines of Go
+**Codebase:** ~96,000 lines of Go (including examples)
 
 ## Requirements
 
@@ -51,16 +41,18 @@ The framework now provides production-grade robustness:
 - ✓ Shutdown hardening (timeout enforcement, blame logging) — v1.1
 - ✓ Provider config registration — v1.1
 - ✓ Comprehensive documentation and examples — v1.1
+- ✓ Delete deprecated APIs (NewApp, AppOption) — v2.0
+- ✓ Remove reflection-based registration (ProvideSingleton, etc.) — v2.0
+- ✓ Extract DI to `gaz/di` subpackage — v2.0
+- ✓ Extract Config to `gaz/config` subpackage — v2.0
+- ✓ Background workers with lifecycle integration — v2.0
+- ✓ Cron/scheduled task support — v2.0
+- ✓ EventBus with pub/sub pattern — v2.0
+- ✓ Cobra CLI flag integration — v2.0
 
 ### Active
 
-- [ ] Delete deprecated APIs (NewApp, AppOption)
-- [ ] Remove reflection-based registration (ProvideSingleton, etc.)
-- [ ] Extract DI to `gaz/di` subpackage
-- [ ] Background workers with lifecycle integration
-- [ ] Worker pool for queued processing
-- [ ] Cron/scheduled task support
-- [ ] EventBus with pub/sub pattern
+(Ready for next milestone)
 
 ### Out of Scope
 
@@ -68,19 +60,20 @@ The framework now provides production-grade robustness:
 - Backward compatibility with dibx/gazx — clean break, fresh API
 - HTTP server integration — keep framework transport-agnostic
 - External message queues (Kafka, RabbitMQ) — EventBus is in-process only
+- Distributed workers/cron — use asynq for distributed jobs
 
 ## Context
 
-Shipped v1.1 on 2026-01-27.
-Framework now includes DI, Lifecycle, Config, Health, Logging, Validation, Shutdown Hardening, and Provider Config.
-All v1.1 requirements verified with comprehensive tests (100% coverage).
+Shipped v2.0 on 2026-01-29.
+Framework provides unified DI, Lifecycle, Config, Health, Logging, Workers, Cron, and EventBus.
+All v2.0 requirements verified (57/57 satisfied).
+Test coverage exceeds 70% on all packages.
 
 This is an extraction and redesign of two internal libraries:
 
 **dibx** (Dependency Injection):
 - Generic `Provider[T] = func(Injector)(T,error)` pattern
 - Multiple service types: lazy, eager, transient, alias
-- Hierarchical scopes (being dropped)
 - Lifecycle interfaces: Healthchecker, Shutdowner
 - Struct tag injection via reflection
 
@@ -91,20 +84,19 @@ This is an extraction and redesign of two internal libraries:
 - EventBus for decoupled pub/sub
 - HealthManager aggregating health checks
 
-Pain points being addressed:
-- Too many configuration options and knobs
-- Unclear when to use which service type
-- Scope complexity rarely needed
-- Two packages to import and coordinate
+Pain points addressed:
+- Too many configuration options and knobs → Convention over configuration
+- Unclear when to use which service type → For[T]() fluent API
+- Two packages to import and coordinate → Single unified gaz package
 
 Target: Internal use first, open source viability later.
 
 ## Constraints
 
 - **Language**: Go 1.21+ (generics, slog in stdlib)
-- **Dependencies**: Minimize external deps; Cobra required, consider koanf vs viper for config
+- **Dependencies**: Minimize external deps; Cobra, Viper, robfig/cron, jpillora/backoff
 - **API Surface**: Convention over configuration — sensible defaults, escape hatches when needed
-- **Package Structure**: Core gaz package + optional subpackages (health, config, log)
+- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health)
 
 ## Key Decisions
 
@@ -123,6 +115,13 @@ Target: Internal use first, open source viability later.
 | Per-hook timeout with blame logging | Debugging hung shutdowns | ✓ Good (v1.1) |
 | exitFunc global for test injection | Necessary for shutdown testing, has nolint | ✓ Good (v1.1) |
 | Skip transient services in config collection | Avoid side effects during Build() | ✓ Good (v1.1) |
+| For[T]() as sole registration API | Type-safe, no reflection | ✓ Good (v2.0) |
+| Renamed NewContainer() → New() | Idiomatic Go constructor | ✓ Good (v2.0) |
+| Composed interfaces for Backend | Optional capabilities (Watcher, Writer, EnvBinder) | ✓ Good (v2.0) |
+| Circuit breaker hand-rolled | Simple counter+window sufficient for workers | ✓ Good (v2.0) |
+| Scheduler implements Worker | Unified lifecycle for cron and workers | ✓ Good (v2.0) |
+| Async fire-and-forget EventBus | Non-blocking publish, buffered subscribers | ✓ Good (v2.0) |
+| RegisterCobraFlags explicit | CLI flag visibility before Execute() | ✓ Good (v2.0) |
 
 ---
-*Last updated: 2026-01-27 after v2.0 milestone started*
+*Last updated: 2026-01-29 after v2.0 milestone shipped*
