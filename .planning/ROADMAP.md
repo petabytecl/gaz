@@ -185,11 +185,13 @@ Plans:
   3. Jobs that panic are recovered and logged (don't crash app)
   4. Jobs can inject dependencies from container (DI-aware)
   5. Overlapping job runs are skipped by default (SkipIfStillRunning)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 15-01: TBD
-- [ ] 15-02: TBD
+- [ ] 15-01-PLAN.md — CronJob interface and package foundation
+- [ ] 15-02-PLAN.md — Scheduler and DI-aware job wrapper
+- [ ] 15-03-PLAN.md — App integration and lifecycle management
+- [ ] 15-04-PLAN.md — Tests and verification
 
 ---
 
@@ -266,7 +268,7 @@ Plans:
 | 14.2 Update Docs/Examples | 4/4 | Complete | 2026-01-29 |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
-| 15. Cron | 0/2 | Not started | - |
+| 15. Cron | 0/4 | Planned | - |
 | 16. EventBus | 0/2 | Not started | - |
 | 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
 | 18. System Info CLI Example | 2/2 | Complete | 2026-01-29 |
