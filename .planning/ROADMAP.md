@@ -189,8 +189,8 @@ Plans:
 
 Plans:
 - [x] 15-01-PLAN.md — CronJob interface and package foundation
-- [ ] 15-02-PLAN.md — Scheduler and DI-aware job wrapper
-- [ ] 15-03-PLAN.md — App integration and lifecycle management
+- [x] 15-02-PLAN.md — Scheduler and DI-aware job wrapper
+- [x] 15-03-PLAN.md — App integration and lifecycle management
 - [ ] 15-04-PLAN.md — Tests and verification
 
 ---

@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 15 of 18 (Cron)
-- **Plan:** 2 of 4 in current phase
+- **Plan:** 3 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 15-02-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 15-03-PLAN.md
 
-Progress: [████████████████████████████░░] 93% (28/30 plans)
+Progress: [█████████████████████████████░] 97% (29/30 plans)
 
 ## Performance Metrics
 
@@ -40,7 +40,7 @@ Progress: [███████████████████████
 | 14.4 Config Flag/ProviderValues | 1/1 | 3 min | 3 min |
 | 17. Cobra CLI Flags | 2/2 | 6 min | 3 min |
 | 18. System Info CLI Example | 2/2 | 13 min | 6.5 min |
-| 15. Cron | 2/4 | 4 min | 2 min |
+| 15. Cron | 3/4 | 13 min | 4 min |
 
 **Previous Milestones:**
 - v1.0 MVP: 35 plans, 1 day
@@ -109,6 +109,9 @@ Recent decisions affecting current work:
 - Resolver interface abstracts container for cron package decoupling (15-02)
 - Custom panic recovery (not cron.Recover) for slog + stack traces (15-02)
 - Empty schedule string disables job gracefully (not an error) (15-02)
+- Resolver interface uses []string opts to match Container signature (15-03)
+- CronJobs discovered by checking svc.TypeName() == cron.CronJob type (15-03)
+- Scheduler registered with WorkerManager only if jobs exist (15-03)
 
 ### Phase 15 In Progress
 
@@ -118,7 +121,7 @@ Cron scheduled tasks:
 |------|------|--------|
 | 15-01 | CronJob interface and package foundation | ✅ Complete |
 | 15-02 | Scheduler and DI-aware job wrapper | ✅ Complete |
-| 15-03 | App integration and lifecycle management | ⏳ Pending |
+| 15-03 | App integration and lifecycle management | ✅ Complete |
 | 15-04 | Tests and verification | ⏳ Pending |
 
 ### Phase 18 Complete
@@ -223,9 +226,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T03:34:19Z
-Stopped at: Completed 15-02-PLAN.md
-Resume file: .planning/phases/15-cron/15-03-PLAN.md
+Last session: 2026-01-29T03:45:55Z
+Stopped at: Completed 15-03-PLAN.md
+Resume file: .planning/phases/15-cron/15-04-PLAN.md
 
 ---
 
