@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/petabytecl/gaz/cron"
+	"github.com/petabytecl/gaz/eventbus"
+	"github.com/petabytecl/gaz/logger"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -429,4 +432,145 @@ func (s *AppTestSuite) TestLoggerInjection() {
 	s.NotPanics(func() {
 		logger.Info("test log message")
 	})
+}
+
+func (s *AppTestSuite) TestEventBus() {
+	app := New()
+
+	// Before Build(), EventBus should be accessible via accessor
+	eventBus := app.EventBus()
+	s.NotNil(eventBus, "EventBus should be available before Build()")
+
+	s.Require().NoError(app.Build())
+
+	// After Build(), EventBus should still be accessible
+	eventBusAfter := app.EventBus()
+	s.NotNil(eventBusAfter, "EventBus should be available after Build()")
+	s.Same(eventBus, eventBusAfter, "EventBus should be the same instance")
+
+	// EventBus should also be resolvable via DI
+	resolvedEventBus, err := Resolve[*eventbus.EventBus](app.Container())
+	s.Require().NoError(err)
+	s.Same(eventBus, resolvedEventBus, "Resolved EventBus should be the same as accessor")
+}
+
+func (s *AppTestSuite) TestWithLoggerConfig() {
+	// Test with custom logger config
+	customConfig := &logger.Config{
+		Level:     slog.LevelDebug,
+		Format:    "text",
+		AddSource: true,
+	}
+
+	app := New(WithLoggerConfig(customConfig))
+
+	// Verify the config was applied
+	s.Equal(customConfig, app.opts.LoggerConfig)
+
+	s.Require().NoError(app.Build())
+
+	// Verify logger is resolvable and can log
+	resolvedLogger, err := Resolve[*slog.Logger](app.Container())
+	s.Require().NoError(err)
+	s.NotNil(resolvedLogger)
+	s.Same(app.Logger, resolvedLogger)
+
+	// Verify we can log without panic
+	s.NotPanics(func() {
+		resolvedLogger.Debug("debug message")
+		resolvedLogger.Info("info message")
+	})
+}
+
+func (s *AppTestSuite) TestWithLoggerConfig_NilUseDefaults() {
+	// When WithLoggerConfig is not used, defaults should apply
+	app := New()
+
+	// Default config should be Info level and JSON format
+	s.Equal(slog.LevelInfo, app.opts.LoggerConfig.Level)
+	s.Equal("json", app.opts.LoggerConfig.Format)
+}
+
+// =============================================================================
+// Tests for discoverCronJobs
+// =============================================================================
+
+type TestCronJob struct {
+	name     string
+	schedule string
+	executed bool
+}
+
+func (j *TestCronJob) Name() string {
+	return j.name
+}
+
+func (j *TestCronJob) Schedule() string {
+	return j.schedule
+}
+
+func (j *TestCronJob) Timeout() time.Duration {
+	return 5 * time.Second
+}
+
+func (j *TestCronJob) Run(ctx context.Context) error {
+	j.executed = true
+	return nil
+}
+
+func (s *AppTestSuite) TestDiscoverCronJobs() {
+	app := New()
+
+	// Register a cron job with valid schedule
+	err := For[cron.CronJob](app.Container()).Named("test-job").Transient().
+		Provider(func(_ *Container) (cron.CronJob, error) {
+			return &TestCronJob{name: "test-job", schedule: "@hourly"}, nil
+		})
+	s.Require().NoError(err)
+
+	// Build should discover and register the job
+	s.Require().NoError(app.Build())
+}
+
+func (s *AppTestSuite) TestDiscoverCronJobs_InvalidSchedule() {
+	app := New()
+
+	// Register a cron job with invalid schedule
+	err := For[cron.CronJob](app.Container()).Named("invalid-job").Transient().
+		Provider(func(_ *Container) (cron.CronJob, error) {
+			return &TestCronJob{name: "invalid-job", schedule: "invalid"}, nil
+		})
+	s.Require().NoError(err)
+
+	// Build should log warning for invalid schedule but not fail
+	// (the scheduler handles invalid schedules gracefully)
+	s.Require().NoError(app.Build())
+}
+
+func (s *AppTestSuite) TestDiscoverCronJobs_EmptySchedule() {
+	app := New()
+
+	// Register a cron job with empty schedule (disabled)
+	err := For[cron.CronJob](app.Container()).Named("disabled-job").Transient().
+		Provider(func(_ *Container) (cron.CronJob, error) {
+			return &TestCronJob{name: "disabled-job", schedule: ""}, nil
+		})
+	s.Require().NoError(err)
+
+	// Build should handle empty schedule (disabled job)
+	s.Require().NoError(app.Build())
+}
+
+func (s *AppTestSuite) TestDiscoverCronJobs_NonTransient() {
+	app := New()
+
+	// Register a cron job as singleton (not recommended, should log warning)
+	err := For[cron.CronJob](app.Container()).Named("singleton-job").
+		Provider(func(_ *Container) (cron.CronJob, error) {
+			return &TestCronJob{name: "singleton-job", schedule: "@daily"}, nil
+		})
+	s.Require().NoError(err)
+
+	// Build should log warning about non-transient CronJob
+	s.Require().NoError(app.Build())
 }
