@@ -169,7 +169,7 @@ Config Package extraction complete:
 
 ### Pending Todos
 
-None.
+1 pending todo(s) in `.planning/todos/pending/`
 
 ### Blockers/Concerns
 
