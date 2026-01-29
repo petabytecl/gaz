@@ -70,7 +70,7 @@ Plans:
 
 Plans:
 - [x] 21-01-PLAN.md — **[TDD]** ModuleBuilder Core + App.Use()
-- [ ] 21-02-PLAN.md — Service Builder + Health Auto-Registration
+- [x] 21-02-PLAN.md — Service Builder + Health Auto-Registration
 - [ ] 21-03-PLAN.md — Module Flags Integration
 
 ## Progress
@@ -81,7 +81,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 19. Interface Auto-Detection + CLI | v2.1 | 3/3 | Complete | 2026-01-29 |
 | 20. Testing Utilities (gaztest) | v2.1 | 2/2 | Complete | 2026-01-29 |
-| 21. Service Builder + Unified Provider | v2.1 | 1/3 | In progress | - |
+| 21. Service Builder + Unified Provider | v2.1 | 2/3 | In progress | - |
 
 <details>
 <summary>✅ v2.0 Cleanup & Concurrency (Phases 11-18) - SHIPPED 2026-01-29</summary>

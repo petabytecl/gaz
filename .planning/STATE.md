@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 21 of 21 (Service Builder + Unified Provider)
-- **Plan:** 1 of 3 in current phase (ModuleBuilder Core + App.Use())
+- **Plan:** 2 of 3 in current phase (Service Builder + Health Auto-Registration)
 - **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 21-01-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 21-02-PLAN.md
 
-Progress: [█████████░] 93% — Phase 21 in progress (1/3 plans)
+Progress: [█████████░] 96% — Phase 21 in progress (2/3 plans)
 
 ## Milestones Shipped
 
@@ -66,6 +66,8 @@ Progress: [█████████░] 93% — Phase 21 in progress (1/3 pla
 | 20 | Documentation-only examples | Avoid log output polluting example Output: comparison |
 | 21 | Child modules registered in app.modules | Ensures consistent duplicate detection for bundled modules |
 | 21 | Child modules applied before parent providers | Composition convenience, not dependency ordering (DI handles that) |
+| 21 | Health config via HealthConfigProvider interface | Explicit check for auto-registration trigger |
+| 21 | Register health.Config as instance before module | Allow health.Module to resolve config via DI |
 
 ### Blockers/Concerns
 None.
@@ -73,7 +75,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 21-01-PLAN.md
+Stopped at: Completed 21-02-PLAN.md
 Resume file: None
 
 ---
