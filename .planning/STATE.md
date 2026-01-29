@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 16 of 18 (EventBus)
-- **Plan:** 1 of 4 in current phase
+- **Plan:** 2 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 16-01-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 16-02-PLAN.md
 
-Progress: [███████████████████████████████░░░] 91% (31/34 plans)
+Progress: [████████████████████████████████░░] 94% (32/34 plans)
 
 ## Performance Metrics
 
@@ -121,6 +121,9 @@ Recent decisions affecting current work:
 - Subscription uses atomic counter ID, not UUID (16-01)
 - Default event buffer size is 100 (16-01)
 - unsubscriber interface pattern avoids circular dependency (16-01)
+- Silent no-op for publishing to closed bus (16-02)
+- Context cancellation support in Publish for graceful abort (16-02)
+- Backpressure via blocking when subscriber buffer full (16-02)
 
 ### Phase 16 In Progress
 
@@ -129,7 +132,7 @@ EventBus type-safe pub/sub:
 | Plan | Name | Status |
 |------|------|--------|
 | 16-01 | EventBus foundation (Event, Handler, Subscription, Options) | ✅ Complete |
-| 16-02 | EventBus implementation | Pending |
+| 16-02 | EventBus implementation | ✅ Complete |
 | 16-03 | App integration | Pending |
 | 16-04 | Tests and verification | Pending |
 
@@ -249,8 +252,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T05:09:44Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-01-29T05:14:36Z
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None
 
 ---
