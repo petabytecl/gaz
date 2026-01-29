@@ -1,6 +1,7 @@
 package gaz
 
 import (
+	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/worker"
 )
@@ -94,3 +95,11 @@ type serviceWrapper = di.ServiceWrapper
 // Worker is a background task that runs continuously.
 // Alias for worker.Worker for convenience.
 type Worker = worker.Worker
+
+// =============================================================================
+// CronJob Interface Re-export
+// =============================================================================
+
+// CronJob is a type alias for cron.CronJob for convenience.
+// Users can import this from the root gaz package instead of gaz/cron.
+type CronJob = cron.CronJob
