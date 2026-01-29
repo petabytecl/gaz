@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -385,4 +386,156 @@ func TestBackend_ImplementsWriter(t *testing.T) {
 
 func TestBackend_ImplementsEnvBinder(t *testing.T) {
 	var _ config.EnvBinder = (*cfgviper.Backend)(nil)
+}
+
+// =============================================================================
+// Test write operations (WriteConfig, SafeWriteConfig, SetConfigFile)
+// =============================================================================
+
+func TestBackend_WriteConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "write-config.yaml")
+
+	backend := cfgviper.New()
+	backend.SetConfigFile(tmpFile)
+	backend.SetConfigType("yaml")
+	backend.Set("test", "value")
+	backend.Set("nested.key", "nested-value")
+
+	// First write should work (creates file)
+	err := backend.WriteConfigAs(tmpFile)
+	require.NoError(t, err)
+
+	// Now WriteConfig should work since config file is set
+	backend.Set("updated", "new-value")
+	err = backend.WriteConfig()
+	require.NoError(t, err)
+
+	// Verify file was written
+	data, err := os.ReadFile(tmpFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "test")
+	assert.Contains(t, string(data), "updated")
+}
+
+func TestBackend_SafeWriteConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	backend := cfgviper.New()
+	backend.SetConfigName("safe-write-config")
+	backend.SetConfigType("yaml")
+	backend.AddConfigPath(tmpDir)
+	backend.Set("safe", "value")
+
+	// SafeWriteConfig should work when file doesn't exist
+	err := backend.SafeWriteConfig()
+	require.NoError(t, err)
+
+	// Verify file was created
+	tmpFile := filepath.Join(tmpDir, "safe-write-config.yaml")
+	data, err := os.ReadFile(tmpFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "safe")
+
+	// SafeWriteConfig should fail when file exists
+	backend.Set("new", "value")
+	err = backend.SafeWriteConfig()
+	assert.Error(t, err, "SafeWriteConfig should fail when file exists")
+}
+
+func TestBackend_SetConfigFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "explicit-config.yaml")
+
+	// Create a config file
+	err := os.WriteFile(tmpFile, []byte("explicit: content\nport: 9999\n"), 0o644)
+	require.NoError(t, err)
+
+	backend := cfgviper.New()
+	backend.SetConfigFile(tmpFile)
+
+	err = backend.ReadInConfig()
+	require.NoError(t, err)
+
+	// Verify ConfigFileUsed returns the exact path
+	assert.Equal(t, tmpFile, backend.ConfigFileUsed())
+
+	// Verify values were read
+	assert.Equal(t, "content", backend.GetString("explicit"))
+	assert.Equal(t, 9999, backend.GetInt("port"))
+}
+
+// =============================================================================
+// Test flag binding operations (BindPFlags, BindPFlag)
+// =============================================================================
+
+func TestBackend_BindPFlags(t *testing.T) {
+	backend := cfgviper.New()
+
+	// Create a pflag set
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fs.String("host", "localhost", "Server host")
+	fs.Int("port", 8080, "Server port")
+	fs.Bool("debug", false, "Debug mode")
+
+	// Parse some values (simulate CLI args)
+	err := fs.Parse([]string{"--host=testhost", "--port=9090", "--debug"})
+	require.NoError(t, err)
+
+	// Bind pflags to viper
+	err = backend.BindPFlags(fs)
+	require.NoError(t, err)
+
+	// Values should be accessible via viper
+	assert.Equal(t, "testhost", backend.GetString("host"))
+	assert.Equal(t, 9090, backend.GetInt("port"))
+	assert.True(t, backend.GetBool("debug"))
+}
+
+func TestBackend_BindPFlag(t *testing.T) {
+	backend := cfgviper.New()
+
+	// Create a pflag set
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fs.String("server-host", "localhost", "Server host")
+
+	// Parse a value
+	err := fs.Parse([]string{"--server-host=bound-host"})
+	require.NoError(t, err)
+
+	// Bind individual flag to config key
+	flag := fs.Lookup("server-host")
+	err = backend.BindPFlag("server.host", flag)
+	require.NoError(t, err)
+
+	// Value should be accessible via dot notation
+	assert.Equal(t, "bound-host", backend.GetString("server.host"))
+}
+
+func TestBackend_BindPFlag_WithDefault(t *testing.T) {
+	backend := cfgviper.New()
+
+	// Create a pflag set with default
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fs.Int("timeout", 30, "Timeout in seconds")
+
+	// Don't parse any override - use default
+	err := fs.Parse([]string{})
+	require.NoError(t, err)
+
+	// Bind the flag
+	flag := fs.Lookup("timeout")
+	err = backend.BindPFlag("app.timeout", flag)
+	require.NoError(t, err)
+
+	// Default should be accessible
+	assert.Equal(t, 30, backend.GetInt("app.timeout"))
+}
+
+// =============================================================================
+// Test FlagBinder interface compliance
+// =============================================================================
+
+func TestBackend_ImplementsFlagBinder(t *testing.T) {
+	var _ config.FlagBinder = (*cfgviper.Backend)(nil)
 }
