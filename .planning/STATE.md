@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.1 API Enhancement - Phase 19
+**Current focus:** v2.1 API Enhancement - Phase 20
 
 ## Current Position
 
 - **Phase:** 19 of 21 (Interface Auto-Detection + CLI Args)
-- **Plan:** 1 of 3 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 19-01-PLAN.md
+- **Plan:** 2 of 2 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-01-29 — Completed 19-02-PLAN.md
 
-Progress: [░░░░░░░░░░] 1% — v2.1 started
+Progress: [██████████] 100% — Phase 19 complete
 
 ## Milestones Shipped
 
@@ -27,14 +27,14 @@ Progress: [░░░░░░░░░░] 1% — v2.1 started
 | v1.1 | Security & Hardening | 7-10 | 12 | 2026-01-27 |
 | v2.0 | Cleanup & Concurrency | 11-18 | 34 | 2026-01-29 |
 
-**Total:** 82 plans across 18 phases (approx)
+**Total:** 83 plans across 19 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 82
+- Total plans completed: 83
 - v2.0: 34 plans in 2 days
-- v2.1: 1 plan
+- v2.1: 2 plans in 1 day
 
 **By Milestone:**
 
@@ -43,7 +43,7 @@ Progress: [░░░░░░░░░░] 1% — v2.1 started
 | v1.0 MVP | 6 | 35 | 1 day |
 | v1.1 Hardening | 4 | 12 | 2 days |
 | v2.0 Cleanup & Concurrency | 8 | 34 | 2 days |
-| v2.1 API Enhancement | 1 | 1 | In progress |
+| v2.1 API Enhancement | 1 | 2 | In progress |
 
 ## Accumulated Context
 
@@ -51,9 +51,15 @@ Progress: [░░░░░░░░░░] 1% — v2.1 started
 - Interface Auto-Detection: Auto-call lifecycle methods
 - CLI Integration: Inject command args
 - Testing: Test utilities
+- Service Builder: Convenience API
+- Unified Provider: Module bundling
 
 ### Decisions
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
 | 19 | Reflection Strategy | Checked `T` (zero value) and `*T` (via `new(T)`) to catch all implementation patterns |
+| 19 | Inject CommandArgs as struct pointer | Allow access to both *cobra.Command and Args slice |
+| 19 | Register CommandArgs during bootstrap | Ensure availability before Build() for eager services |
 
 ### Blockers/Concerns
 None.
@@ -61,7 +67,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 19-01-PLAN.md
+Stopped at: Completed 19-02-PLAN.md
 Resume file: None
 
 ---
@@ -69,7 +75,7 @@ Resume file: None
 ## Next Steps
 
 ```
-/gsd-execute-plan 19 02
+/gsd-plan-phase 20
 ```
 
 ---
