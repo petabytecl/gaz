@@ -3,6 +3,8 @@ package gaz
 import (
 	"testing"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -248,4 +250,131 @@ func TestModuleBuilder_Build_ReturnsModule(t *testing.T) {
 	m := NewModule("test").Build()
 	require.NotNil(t, m)
 	assert.Equal(t, "test", m.Name())
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_Flags_StoresFunction() {
+	called := false
+	fn := func(fs *pflag.FlagSet) {
+		called = true
+	}
+
+	m := NewModule("test").Flags(fn).Build()
+
+	// Access the FlagsFn via interface assertion
+	if flagsProvider, ok := m.(interface{ FlagsFn() func(*pflag.FlagSet) }); ok {
+		gotFn := flagsProvider.FlagsFn()
+		s.Require().NotNil(gotFn)
+
+		// Call it to verify it's the right function
+		gotFn(pflag.NewFlagSet("test", pflag.ContinueOnError))
+		s.True(called)
+	} else {
+		s.Fail("module should implement FlagsFn()")
+	}
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_Flags_Chainable() {
+	mb := NewModule("test").
+		Flags(func(fs *pflag.FlagSet) {}).
+		Provide(func(c *Container) error { return nil })
+
+	s.Require().NotNil(mb)
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_WithEnvPrefix_StoresPrefix() {
+	m := NewModule("test").WithEnvPrefix("redis").Build()
+
+	// Access the EnvPrefix via interface assertion
+	if prefixProvider, ok := m.(interface{ EnvPrefix() string }); ok {
+		s.Equal("redis", prefixProvider.EnvPrefix())
+	} else {
+		s.Fail("module should implement EnvPrefix()")
+	}
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_WithEnvPrefix_Chainable() {
+	mb := NewModule("test").
+		WithEnvPrefix("myprefix").
+		Flags(func(fs *pflag.FlagSet) {}).
+		Provide(func(c *Container) error { return nil })
+
+	s.Require().NotNil(mb)
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_FlagsApplied_WithCobraCommand() {
+	cmd := &cobra.Command{Use: "test"}
+
+	module := NewModule("redis").
+		Flags(func(fs *pflag.FlagSet) {
+			fs.String("redis-host", "localhost", "Redis host")
+			fs.Int("redis-port", 6379, "Redis port")
+		}).
+		Build()
+
+	app := New().WithCobra(cmd).Use(module)
+
+	// Verify flags were registered on the command
+	hostFlag := cmd.PersistentFlags().Lookup("redis-host")
+	s.Require().NotNil(hostFlag, "redis-host flag should be registered")
+	s.Equal("localhost", hostFlag.DefValue)
+
+	portFlag := cmd.PersistentFlags().Lookup("redis-port")
+	s.Require().NotNil(portFlag, "redis-port flag should be registered")
+	s.Equal("6379", portFlag.DefValue)
+
+	// App should build without error
+	err := app.Build()
+	s.Require().NoError(err)
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_Flags_NoCobraCommand() {
+	// Should not panic when no cobra command is set
+	module := NewModule("test").
+		Flags(func(fs *pflag.FlagSet) {
+			fs.String("test-flag", "", "Test flag")
+		}).
+		Build()
+
+	app := New().Use(module)
+
+	// Should succeed without error (flags just not applied)
+	err := app.Build()
+	s.Require().NoError(err)
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_Flags_NilFunction() {
+	// Module without Flags() called should not panic
+	module := NewModule("test").Build()
+
+	cmd := &cobra.Command{Use: "test"}
+	app := New().WithCobra(cmd).Use(module)
+
+	// Should succeed without error
+	err := app.Build()
+	s.Require().NoError(err)
+}
+
+func (s *ModuleBuilderSuite) TestModuleBuilder_FlagsApplied_MultipleModules() {
+	cmd := &cobra.Command{Use: "test"}
+
+	redisModule := NewModule("redis").
+		Flags(func(fs *pflag.FlagSet) {
+			fs.String("redis-host", "localhost", "Redis host")
+		}).
+		Build()
+
+	dbModule := NewModule("database").
+		Flags(func(fs *pflag.FlagSet) {
+			fs.String("db-host", "127.0.0.1", "Database host")
+		}).
+		Build()
+
+	app := New().WithCobra(cmd).Use(redisModule).Use(dbModule)
+
+	// Both flags should be registered
+	s.NotNil(cmd.PersistentFlags().Lookup("redis-host"))
+	s.NotNil(cmd.PersistentFlags().Lookup("db-host"))
+
+	err := app.Build()
+	s.Require().NoError(err)
 }
