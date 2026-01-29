@@ -68,6 +68,7 @@ func main() {
 - **Configuration loading** - YAML/JSON/TOML files, environment variables, profiles
 - **Struct validation** - `validate` tags with go-playground/validator
 - **Health checks** - Readiness and liveness probes via `health` subpackage
+- **Background workers** - Supervised workers with restart, circuit breaker, lifecycle integration
 - **Cobra CLI integration** - Build CLI apps with dependency injection
 - **Module organization** - Group related providers into reusable modules
 
