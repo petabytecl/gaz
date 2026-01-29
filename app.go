@@ -95,6 +95,11 @@ type App struct {
 	// Provider config tracking
 	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
 
+	// Idempotency tracking for operations that may run during RegisterCobraFlags
+	configLoaded             bool
+	providerValuesRegistered bool
+	providerConfigsCollected bool
+
 	// Worker management
 	workerMgr *worker.Manager
 
@@ -239,27 +244,46 @@ func (a *App) registerInstance(instance any) error {
 }
 
 // loadConfig loads the configuration from all sources.
+// This method is idempotent - subsequent calls return nil after first load.
 func (a *App) loadConfig() error {
+	if a.configLoaded {
+		return nil // Already loaded
+	}
 	if a.configMgr == nil {
 		return nil
 	}
 	// If a target struct is provided, load and unmarshal into it
 	if a.configTarget != nil {
-		return a.configMgr.LoadInto(a.configTarget)
+		if err := a.configMgr.LoadInto(a.configTarget); err != nil {
+			return err
+		}
+	} else {
+		// Otherwise just load the config file (for ConfigProvider pattern)
+		if err := a.configMgr.Load(); err != nil {
+			return err
+		}
 	}
-	// Otherwise just load the config file (for ConfigProvider pattern)
-	return a.configMgr.Load()
+	a.configLoaded = true
+	return nil
 }
 
 // registerProviderValuesEarly registers ProviderValues as an instance
 // immediately after config loading, BEFORE providers are instantiated.
 // This allows providers to inject *ProviderValues as a dependency.
+// This method is idempotent - subsequent calls return nil after first registration.
 func (a *App) registerProviderValuesEarly() error {
+	if a.providerValuesRegistered {
+		return nil // Already registered
+	}
 	if a.configMgr == nil {
 		return nil
 	}
 	pv := &ProviderValues{backend: a.configMgr.Backend()}
-	return a.registerInstance(pv)
+	if err := a.registerInstance(pv); err != nil {
+		return err
+	}
+	a.providerValuesRegistered = true
+	return nil
 }
 
 // getSortedServiceNames returns service names in sorted order for deterministic iteration.
@@ -270,7 +294,11 @@ func (a *App) getSortedServiceNames() []string {
 // collectProviderConfigs iterates registered services, collects config from ConfigProvider
 // implementers, detects key collisions, registers provider flags with ConfigManager,
 // validates required fields, and registers ProviderValues.
+// This method is idempotent - subsequent calls return nil after first collection.
 func (a *App) collectProviderConfigs() error {
+	if a.providerConfigsCollected {
+		return nil // Already collected
+	}
 	keyOwners := make(map[string]string)
 	var collisionErrors []error
 
@@ -323,6 +351,8 @@ func (a *App) collectProviderConfigs() error {
 		return errors.Join(collisionErrors...)
 	}
 
+	// Set flag BEFORE registerProviderFlags to avoid re-entry issues
+	a.providerConfigsCollected = true
 	return a.registerProviderFlags()
 }
 
