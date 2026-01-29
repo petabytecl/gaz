@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.1 API Enhancement - Phase 21
+**Current focus:** v2.1 API Enhancement - Phase 21 Complete
 
 ## Current Position
 
 - **Phase:** 21 of 21 (Service Builder + Unified Provider)
-- **Plan:** 2 of 3 in current phase (Service Builder + Health Auto-Registration)
-- **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 21-02-PLAN.md
+- **Plan:** 3 of 3 in current phase (Module Flags Integration)
+- **Status:** Phase complete
+- **Last activity:** 2026-01-29 — Completed 21-03-PLAN.md
 
-Progress: [█████████░] 96% — Phase 21 in progress (2/3 plans)
+Progress: [██████████] 100% — v2.1 milestone complete
 
 ## Milestones Shipped
 
@@ -26,16 +26,16 @@ Progress: [█████████░] 96% — Phase 21 in progress (2/3 pla
 | v1.0 | MVP | 1-6 | 35 | 2026-01-26 |
 | v1.1 | Security & Hardening | 7-10 | 12 | 2026-01-27 |
 | v2.0 | Cleanup & Concurrency | 11-18 | 34 | 2026-01-29 |
-| v2.1 | API Enhancement | 19-20 | 5 | 2026-01-29 |
+| v2.1 | API Enhancement | 19-21 | 8 | 2026-01-29 |
 
-**Total:** 87 plans across 21 phases
+**Total:** 89 plans across 21 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 87
+- Total plans completed: 89
 - v2.0: 34 plans in 2 days
-- v2.1: 6 plans in 1 day
+- v2.1: 8 plans in 1 day
 
 **By Milestone:**
 
@@ -44,16 +44,16 @@ Progress: [█████████░] 96% — Phase 21 in progress (2/3 pla
 | v1.0 MVP | 6 | 35 | 1 day |
 | v1.1 Hardening | 4 | 12 | 2 days |
 | v2.0 Cleanup & Concurrency | 8 | 34 | 2 days |
-| v2.1 API Enhancement | 3 | 6 | 1 day |
+| v2.1 API Enhancement | 3 | 8 | 1 day |
 
 ## Accumulated Context
 
-### v2.1 Scope
-- Interface Auto-Detection: Auto-call lifecycle methods
-- CLI Integration: Inject command args
-- Testing: Test utilities
-- Service Builder: Convenience API
-- Unified Provider: Module bundling
+### v2.1 Scope (Complete)
+- Interface Auto-Detection: Auto-call lifecycle methods ✓
+- CLI Integration: Inject command args ✓
+- Testing: Test utilities (gaztest) ✓
+- Service Builder: Convenience API ✓
+- Unified Provider: Module bundling ✓
 
 ### Decisions
 | Phase | Decision | Rationale |
@@ -68,6 +68,8 @@ Progress: [█████████░] 96% — Phase 21 in progress (2/3 pla
 | 21 | Child modules applied before parent providers | Composition convenience, not dependency ordering (DI handles that) |
 | 21 | Health config via HealthConfigProvider interface | Explicit check for auto-registration trigger |
 | 21 | Register health.Config as instance before module | Allow health.Module to resolve config via DI |
+| 21 | Store cobraCmd in App struct | Allow module flags integration regardless of Use()/WithCobra() call order |
+| 21 | Interface type assertion for FlagsFn() | Maintain backward compatibility with custom Module implementations |
 
 ### Blockers/Concerns
 None.
@@ -75,16 +77,14 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 21-02-PLAN.md
+Stopped at: Completed 21-03-PLAN.md (Phase 21 complete)
 Resume file: None
 
 ---
 
 ## Next Steps
 
-```
-/gsd-execute-phase 21
-```
+v2.1 milestone is complete. All phases (19-21) are done.
 
 ---
 
