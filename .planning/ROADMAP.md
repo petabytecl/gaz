@@ -119,15 +119,18 @@ Plans:
 
 ### Phase 14.2: Update All Relevant Documentation and Examples (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
+**Goal:** Update all documentation (README, godoc, examples) to use v2.0 APIs: For[T]() pattern, explicit config package imports, and ConfigProvider pattern.
 **Depends on:** Phase 14.1
-**Plans**: 0 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 14.2 to break down)
+- [ ] 14.2-01-PLAN.md — Rewrite getting-started.md and concepts.md with For[T]() API
+- [ ] 14.2-02-PLAN.md — Rewrite configuration.md and validation.md with config package patterns
+- [ ] 14.2-03-PLAN.md — Update advanced.md, README.md (worker feature), and CHANGELOG.md (package additions)
+- [ ] 14.2-04-PLAN.md — Create package READMEs (di, config, worker) and update config-loading example README
 
 **Details:**
-[To be added during planning]
+All plans execute in Wave 1 (parallel) as they touch different files.
 
 ---
 
@@ -218,7 +221,7 @@ Plans:
 | 13. Config Package | 4/4 | Complete | 2026-01-28 |
 | 14. Workers | 4/4 | Complete | 2026-01-28 |
 | 14.1 Cleanup Re-exports | 2/2 | Complete | 2026-01-28 |
-| 14.2 Update Docs/Examples | 0/? | Not started | - |
+| 14.2 Update Docs/Examples | 0/4 | Not started | - |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
 | 15. Cron | 0/2 | Not started | - |
