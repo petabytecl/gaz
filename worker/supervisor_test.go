@@ -289,3 +289,80 @@ func TestSupervisor_StopDuringBackoff(t *testing.T) {
 		t.Fatal("supervisor did not stop during backoff delay")
 	}
 }
+
+// TestSupervisor_StopMethod tests the stop() method directly.
+func TestSupervisor_StopMethod(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("stop-method-worker")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx := context.Background()
+	sup.start(ctx)
+
+	// Wait for worker to start
+	select {
+	case <-worker.started:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not start")
+	}
+
+	// Call stop() directly (instead of canceling context)
+	sup.stop()
+
+	// Verify supervisor stopped
+	select {
+	case <-sup.wait():
+		// Stopped successfully
+	case <-time.After(time.Second):
+		t.Fatal("supervisor did not stop after stop() call")
+	}
+
+	assert.Equal(t, 1, worker.getStartCount(), "worker should have started once")
+	assert.Equal(t, 1, worker.getStopCount(), "worker should have stopped once")
+}
+
+// TestSupervisor_StopBeforeStart tests that stop() is safe to call before start().
+func TestSupervisor_StopBeforeStart(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("stop-before-start")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	// Stop without starting - should not panic
+	assert.NotPanics(t, func() {
+		sup.stop()
+	})
+
+	assert.Equal(t, 0, worker.getStartCount(), "worker should not have started")
+	assert.Equal(t, 0, worker.getStopCount(), "worker should not have stopped")
+}
+
+// TestPooledWorker_StartStop tests the pooledWorker delegate methods.
+func TestPooledWorker_StartStop(t *testing.T) {
+	worker := newMockWorker("base-worker")
+	pooled := &pooledWorker{
+		delegate: worker,
+		name:     "base-worker-1",
+	}
+
+	assert.Equal(t, "base-worker-1", pooled.Name())
+
+	// Start should delegate to the base worker
+	go pooled.Start()
+
+	select {
+	case <-worker.started:
+		// Started successfully
+	case <-time.After(time.Second):
+		t.Fatal("worker did not start")
+	}
+
+	assert.Equal(t, 1, worker.getStartCount(), "delegate should have started")
+
+	// Stop should delegate to the base worker
+	pooled.Stop()
+	assert.Equal(t, 1, worker.getStopCount(), "delegate should have stopped")
+}
