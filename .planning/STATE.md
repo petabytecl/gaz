@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 
 ## Current Position
 
-- **Phase:** 21 of 21 (Service Builder + Unified Provider)
-- **Plan:** 3 of 3 in current phase (Module Flags Integration)
-- **Status:** Phase complete
-- **Last activity:** 2026-01-29 — Completed 21-03-PLAN.md
+- **Phase:** 22 of 22 (Test Coverage Improvement)
+- **Plan:** 0 of 4 in current phase
+- **Status:** Planning complete, ready for execution
+- **Last activity:** 2026-01-29 — Created phase 22 plans
 
-Progress: [██████████] 100% — v2.1 milestone complete
+Progress: [██████████] 100% v2.1 → v2.2 in progress
 
 ## Milestones Shipped
 
@@ -87,7 +87,17 @@ Resume file: None
 
 ## Next Steps
 
-v2.1 milestone is complete. All phases (19-21) are done.
+Phase 22 (Test Coverage Improvement) is ready for execution:
+
+```
+/gsd-execute-phase 22
+```
+
+**Wave Structure:**
+- Wave 1: Plans 22-01, 22-02, 22-03 (parallel - independent packages)
+- Wave 2: Plan 22-04 (depends on wave 1, final gaps)
+
+**Coverage Target:** 84.3% → 90%+
 
 ---
 

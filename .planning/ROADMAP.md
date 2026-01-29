@@ -10,12 +10,14 @@ v2.1 enhances GAZ's developer experience with interface auto-detection for lifec
 - ✅ **v1.1 Security & Hardening** - Phases 7-10 (shipped 2026-01-27)
 - ✅ **v2.0 Cleanup & Concurrency** - Phases 11-18 (shipped 2026-01-29)
 - ✅ **v2.1 API Enhancement** - Phases 19-21 (shipped 2026-01-29)
+- 🔄 **v2.2 Quality** - Phase 22 (in progress)
 
 ## Phases
 
 - [x] **Phase 19: Interface Auto-Detection + CLI Args** - Foundation fixes and core additions
 - [x] **Phase 20: Testing Utilities (gaztest)** - Test builder with automatic cleanup
 - [x] **Phase 21: Service Builder + Unified Provider** - Convenience APIs for production
+- [ ] **Phase 22: Test Coverage Improvement** - Reach 90% coverage threshold
 
 ## Phase Details
 
@@ -73,6 +75,24 @@ Plans:
 - [x] 21-02-PLAN.md — Service Builder + Health Auto-Registration
 - [x] 21-03-PLAN.md — Module Flags Integration
 
+#### Phase 22: Test Coverage Improvement
+**Goal**: Improve test coverage to pass `make cover` threshold (90%)
+**Depends on**: v2.1 complete (Phase 21)
+**Requirements**: Coverage >= 90% overall
+**Success Criteria** (what must be TRUE):
+  1. `make cover` passes without error
+  2. di package coverage >= 85% (was 73.3%)
+  3. config package coverage >= 90% (was 77.1%)
+  4. health package coverage >= 90% (was 83.8%)
+  5. Overall coverage >= 90% (was 84.3%)
+**Plans**: 4 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — di package coverage (inject, types, lifecycle_engine)
+- [ ] 22-02-PLAN.md — config package coverage (validation, accessor, manager)
+- [ ] 22-03-PLAN.md — health package and app.go coverage
+- [ ] 22-04-PLAN.md — Remaining gaps (service, viper, worker)
+
 ## Progress
 
 **Execution Order:** Phases execute in numeric order: 19 → 20 → 21
@@ -82,6 +102,7 @@ Plans:
 | 19. Interface Auto-Detection + CLI | v2.1 | 3/3 | Complete | 2026-01-29 |
 | 20. Testing Utilities (gaztest) | v2.1 | 2/2 | Complete | 2026-01-29 |
 | 21. Service Builder + Unified Provider | v2.1 | 3/3 | Complete | 2026-01-29 |
+| 22. Test Coverage Improvement | v2.2 | 0/4 | In Progress | - |
 
 <details>
 <summary>✅ v2.0 Cleanup & Concurrency (Phases 11-18) - SHIPPED 2026-01-29</summary>
