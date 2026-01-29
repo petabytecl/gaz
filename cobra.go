@@ -73,7 +73,7 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 			ctx = context.Background()
 		}
 
-		if err := a.bootstrap(ctx, c); err != nil {
+		if err := a.bootstrap(ctx, c, args); err != nil {
 			return err
 		}
 
@@ -103,7 +103,13 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 	return a
 }
 
-func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command) error {
+func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) error {
+	// Register CommandArgs
+	For[*CommandArgs](a.container).Instance(&CommandArgs{
+		Command: cmd,
+		Args:    args,
+	})
+
 	// Bind flags if ConfigManager is available
 	if a.configMgr != nil {
 		if err := a.configMgr.BindFlags(cmd.Flags()); err != nil {
