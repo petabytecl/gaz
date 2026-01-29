@@ -31,18 +31,18 @@ Requirements for API Enhancement milestone. Each maps to roadmap phases.
 
 ### Service Builder
 
-- [ ] **SVC-01**: `service.New(cmd, config)` creates pre-configured App with standard providers
-- [ ] **SVC-02**: Service builder automatically registers health check module
-- [ ] **SVC-03**: Service builder supports custom env prefix for configuration
-- [ ] **SVC-04**: Service builder accepts additional `gaz.Option` for customization
+- [x] **SVC-01**: `service.New(cmd, config)` creates pre-configured App with standard providers
+- [x] **SVC-02**: Service builder automatically registers health check module
+- [x] **SVC-03**: Service builder supports custom env prefix for configuration
+- [x] **SVC-04**: Service builder accepts additional `gaz.Option` for customization
 
 ### Unified Provider
 
-- [ ] **PROV-01**: `Module(name)` returns fluent `ModuleBuilder` for bundling registrations
-- [ ] **PROV-02**: `ModuleBuilder.Flags(fn)` registers command-line flags for the module
-- [ ] **PROV-03**: `ModuleBuilder.Provide(fns...)` adds provider functions to the module
-- [ ] **PROV-04**: `ModuleBuilder.Register(app)` applies all bundled registrations to an App
-- [ ] **PROV-05**: Modules can be composed (module depends on another module)
+- [x] **PROV-01**: `Module(name)` returns fluent `ModuleBuilder` for bundling registrations
+- [x] **PROV-02**: `ModuleBuilder.Flags(fn)` registers command-line flags for the module
+- [x] **PROV-03**: `ModuleBuilder.Provide(fns...)` adds provider functions to the module
+- [x] **PROV-04**: `ModuleBuilder.Register(app)` applies all bundled registrations to an App
+- [x] **PROV-05**: Modules can be composed (module depends on another module)
 
 ## Future Requirements
 
@@ -96,15 +96,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-03 | Phase 20 | Complete |
 | TEST-04 | Phase 20 | Complete |
 | TEST-05 | Phase 20 | Complete |
-| SVC-01 | Phase 21 | Pending |
-| SVC-02 | Phase 21 | Pending |
-| SVC-03 | Phase 21 | Pending |
-| SVC-04 | Phase 21 | Pending |
-| PROV-01 | Phase 21 | Pending |
-| PROV-02 | Phase 21 | Pending |
-| PROV-03 | Phase 21 | Pending |
-| PROV-04 | Phase 21 | Pending |
-| PROV-05 | Phase 21 | Pending |
+| SVC-01 | Phase 21 | Complete |
+| SVC-02 | Phase 21 | Complete |
+| SVC-03 | Phase 21 | Complete |
+| SVC-04 | Phase 21 | Complete |
+| PROV-01 | Phase 21 | Complete |
+| PROV-02 | Phase 21 | Complete |
+| PROV-03 | Phase 21 | Complete |
+| PROV-04 | Phase 21 | Complete |
+| PROV-05 | Phase 21 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 22 total
@@ -113,4 +113,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-29*
-*Last updated: 2026-01-29 after initial definition*
+*Last updated: 2026-01-29 after Phase 21 completion*
