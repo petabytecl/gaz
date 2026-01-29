@@ -191,6 +191,175 @@ func TestValidateStruct_UsesMapstructureTagInErrorMessage(t *testing.T) {
 }
 
 // =============================================================================
+// Test humanizeTag coverage (indirectly via ValidateStruct)
+// =============================================================================
+
+// Test structs for each validation tag type
+type gteConfig struct {
+	Value int `mapstructure:"value" validate:"gte=10"`
+}
+
+type lteConfig struct {
+	Value int `mapstructure:"value" validate:"lte=50"`
+}
+
+type gtConfig struct {
+	Value int `mapstructure:"value" validate:"gt=0"`
+}
+
+type ltConfig struct {
+	Value int `mapstructure:"value" validate:"lt=100"`
+}
+
+type emailConfig struct {
+	Email string `mapstructure:"email" validate:"email"`
+}
+
+type urlConfig struct {
+	URL string `mapstructure:"url" validate:"url"`
+}
+
+type ipConfig struct {
+	IP string `mapstructure:"ip" validate:"ip"`
+}
+
+type ipv4Config struct {
+	IP string `mapstructure:"ip" validate:"ipv4"`
+}
+
+type ipv6Config struct {
+	IP string `mapstructure:"ip" validate:"ipv6"`
+}
+
+type requiredIfConfig struct {
+	Field1 string `mapstructure:"field1"`
+	Field2 string `mapstructure:"field2" validate:"required_if=Field1 yes"`
+}
+
+type requiredUnlessConfig struct {
+	Field1 string `mapstructure:"field1"`
+	Field2 string `mapstructure:"field2" validate:"required_unless=Field1 no"`
+}
+
+type requiredWithConfig struct {
+	Field1 string `mapstructure:"field1"`
+	Field2 string `mapstructure:"field2" validate:"required_with=Field1"`
+}
+
+type requiredWithoutConfig struct {
+	Field1 string `mapstructure:"field1"`
+	Field2 string `mapstructure:"field2" validate:"required_without=Field1"`
+}
+
+type unknownTagConfig struct {
+	Value string `mapstructure:"value" validate:"alphanum"`
+}
+
+func TestHumanizeTag_Gte_Message(t *testing.T) {
+	cfg := gteConfig{Value: 5} // Less than gte=10
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "greater than or equal to")
+	assert.Contains(t, err.Error(), "10")
+}
+
+func TestHumanizeTag_Lte_Message(t *testing.T) {
+	cfg := lteConfig{Value: 100} // Greater than lte=50
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "less than or equal to")
+	assert.Contains(t, err.Error(), "50")
+}
+
+func TestHumanizeTag_Gt_Message(t *testing.T) {
+	cfg := gtConfig{Value: 0} // Not greater than gt=0
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "greater than")
+	assert.Contains(t, err.Error(), "0")
+}
+
+func TestHumanizeTag_Lt_Message(t *testing.T) {
+	cfg := ltConfig{Value: 100} // Not less than lt=100
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "less than")
+	assert.Contains(t, err.Error(), "100")
+}
+
+func TestHumanizeTag_Email_Message(t *testing.T) {
+	cfg := emailConfig{Email: "invalid-email"}
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "valid email address")
+}
+
+func TestHumanizeTag_URL_Message(t *testing.T) {
+	cfg := urlConfig{URL: "not-a-url"}
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "valid URL")
+}
+
+func TestHumanizeTag_IP_Message(t *testing.T) {
+	cfg := ipConfig{IP: "invalid-ip"}
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "valid IP address")
+}
+
+func TestHumanizeTag_IPv4_Message(t *testing.T) {
+	cfg := ipv4Config{IP: "::1"} // IPv6, not IPv4
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "valid IPv4 address")
+}
+
+func TestHumanizeTag_IPv6_Message(t *testing.T) {
+	cfg := ipv6Config{IP: "192.168.1.1"} // IPv4, not IPv6
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "valid IPv6 address")
+}
+
+func TestHumanizeTag_RequiredIf_Message(t *testing.T) {
+	cfg := requiredIfConfig{Field1: "yes", Field2: ""} // Field2 required when Field1="yes"
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "required when")
+}
+
+func TestHumanizeTag_RequiredUnless_Message(t *testing.T) {
+	cfg := requiredUnlessConfig{Field1: "yes", Field2: ""} // Field2 required unless Field1="no"
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "required unless")
+}
+
+func TestHumanizeTag_RequiredWith_Message(t *testing.T) {
+	cfg := requiredWithConfig{Field1: "present", Field2: ""} // Field2 required when Field1 is present
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is present")
+}
+
+func TestHumanizeTag_RequiredWithout_Message(t *testing.T) {
+	cfg := requiredWithoutConfig{Field1: "", Field2: ""} // Field2 required when Field1 is absent
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is absent")
+}
+
+func TestHumanizeTag_UnknownTag_DefaultMessage(t *testing.T) {
+	cfg := unknownTagConfig{Value: "not@alphanum!"} // alphanum is not in humanizeTag switch
+	err := config.ValidateStruct(&cfg)
+	require.Error(t, err)
+	// Default case returns "failed <tag> validation"
+	assert.Contains(t, err.Error(), "failed")
+	assert.Contains(t, err.Error(), "alphanum")
+}
+
+// =============================================================================
 // Test multiple validation errors
 // =============================================================================
 
