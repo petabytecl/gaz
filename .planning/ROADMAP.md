@@ -20,7 +20,7 @@ This milestone cleans up deprecated code, extracts DI and Config into standalone
 - [x] **Phase 14.2: Update All Relevant Documentation and Examples** (INSERTED)
 - [x] **Phase 14.3: Flag-Based Config Registration** - Config via flags, fetch in constructor (INSERTED)
 - [x] **Phase 14.4: Config Flag and ProviderValues** - --config flag and ProviderValues in providers (INSERTED)
-- [ ] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
+- [x] **Phase 15: Cron** - Scheduled tasks wrapping robfig/cron
 - [ ] **Phase 16: EventBus** - Type-safe in-process pub/sub
 - [x] **Phase 17: Cobra CLI Flags** - Expose ConfigProvider flags to Cobra CLI
 - [x] **Phase 18: System Info CLI Example** - Showcase DI, ConfigProvider, Workers, and Cobra integration
@@ -191,7 +191,7 @@ Plans:
 - [x] 15-01-PLAN.md — CronJob interface and package foundation
 - [x] 15-02-PLAN.md — Scheduler and DI-aware job wrapper
 - [x] 15-03-PLAN.md — App integration and lifecycle management
-- [ ] 15-04-PLAN.md — Tests and verification
+- [x] 15-04-PLAN.md — Tests and verification
 
 ---
 
@@ -268,7 +268,7 @@ Plans:
 | 14.2 Update Docs/Examples | 4/4 | Complete | 2026-01-29 |
 | 14.3 Flag-Based Config | 1/1 | Complete | 2026-01-28 |
 | 14.4 Config Flag/ProviderValues | 1/1 | Complete | 2026-01-28 |
-| 15. Cron | 1/4 | In progress | - |
+| 15. Cron | 4/4 | Complete | 2026-01-29 |
 | 16. EventBus | 0/2 | Not started | - |
 | 17. Cobra CLI Flags | 2/2 | Complete | 2026-01-29 |
 | 18. System Info CLI Example | 2/2 | Complete | 2026-01-29 |
