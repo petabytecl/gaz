@@ -115,12 +115,20 @@ func TestBuilder_WithTimeout(t *testing.T) {
 // =============================================================================
 
 func TestBuilder_Replace(t *testing.T) {
-	// First register the real database in a base app to establish the type
+	// Register a concrete type that can be replaced
+	// Note: Replace infers type from the mock instance using reflection,
+	// so we register and replace the same concrete type.
+	realDB := &MockDatabase{queryResult: "original"}
 	baseApp := gaz.New()
-	err := gaz.For[Database](baseApp.Container()).Instance(&RealDatabase{})
+	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(realDB)
 	require.NoError(t, err)
 	err = baseApp.Build()
 	require.NoError(t, err)
+
+	// Verify original value
+	db1, err := gaz.Resolve[*MockDatabase](baseApp.Container())
+	require.NoError(t, err)
+	require.Equal(t, "original", db1.Query())
 
 	// Now test replacement in gaztest
 	mock := &MockDatabase{queryResult: "mocked"}
@@ -132,9 +140,9 @@ func TestBuilder_Replace(t *testing.T) {
 	require.NotNil(t, app)
 
 	// Resolve the database - should get the mock
-	db, err := gaz.Resolve[Database](app.Container())
+	db2, err := gaz.Resolve[*MockDatabase](app.Container())
 	require.NoError(t, err)
-	require.Equal(t, "mocked", db.Query())
+	require.Equal(t, "mocked", db2.Query())
 }
 
 // =============================================================================
