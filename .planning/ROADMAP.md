@@ -209,9 +209,9 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Event interface, Handler type, Subscription, and options
-- [ ] 16-02-PLAN.md — EventBus core with Subscribe/Publish and lifecycle
-- [ ] 16-03-PLAN.md — App integration with DI registration and WorkerManager
+- [x] 16-01-PLAN.md — Event interface, Handler type, Subscription, and options
+- [x] 16-02-PLAN.md — EventBus core with Subscribe/Publish and lifecycle
+- [x] 16-03-PLAN.md — App integration with DI registration and WorkerManager
 - [ ] 16-04-PLAN.md — Tests and verification
 
 ---

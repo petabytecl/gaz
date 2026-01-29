@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 - **Phase:** 16 of 18 (EventBus)
-- **Plan:** 2 of 4 in current phase
+- **Plan:** 3 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-01-29 — Completed 16-02-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 16-03-PLAN.md
 
-Progress: [████████████████████████████████░░] 94% (32/34 plans)
+Progress: [█████████████████████████████████░░] 97% (33/34 plans)
 
 ## Performance Metrics
 
@@ -125,6 +125,10 @@ Recent decisions affecting current work:
 - Context cancellation support in Publish for graceful abort (16-02)
 - Backpressure via blocking when subscriber buffer full (16-02)
 
+- EventBus created in New() constructor with logger (16-03)
+- EventBus registered as DI singleton via For[*eventbus.EventBus]().Instance() (16-03)
+- EventBus registered with WorkerManager for lifecycle management (16-03)
+
 ### Phase 16 In Progress
 
 EventBus type-safe pub/sub:
@@ -133,7 +137,7 @@ EventBus type-safe pub/sub:
 |------|------|--------|
 | 16-01 | EventBus foundation (Event, Handler, Subscription, Options) | ✅ Complete |
 | 16-02 | EventBus implementation | ✅ Complete |
-| 16-03 | App integration | Pending |
+| 16-03 | App integration | ✅ Complete |
 | 16-04 | Tests and verification | Pending |
 
 ### Phase 15 Complete
@@ -252,8 +256,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29T05:14:36Z
-Stopped at: Completed 16-02-PLAN.md
+Last session: 2026-01-29T05:19:29Z
+Stopped at: Completed 16-03-PLAN.md
 Resume file: None
 
 ---
