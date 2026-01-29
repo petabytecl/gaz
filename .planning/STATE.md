@@ -12,17 +12,17 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 
 ## Current Position
 
-- **Phase:** 14.4 of 16 (Config Flag and ProviderValues)
+- **Phase:** 14.2 of 16 (Update Documentation)
 - **Plan:** 1 of 1 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-01-28 — Completed 14.4-01-PLAN.md
+- **Last activity:** 2026-01-29 — Completed 14.2-01-PLAN.md
 
-Progress: [████████████████] 100% (18/18 plans)
+Progress: [████████████████] 100% (19/19 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v2.0)
+- Total plans completed: 19 (v2.0)
 - Average duration: 12 min
 - Total execution time: 3.7 hours
 
@@ -35,6 +35,7 @@ Progress: [████████████████] 100% (18/18 plans)
 | 13. Config Package | 4/4 | 26 min | 7 min |
 | 14. Workers | 4/4 | 14 min | 3.5 min |
 | 14.1 Cleanup Re-exports | 2/2 | 6 min | 3 min |
+| 14.2 Update Documentation | 1/1 | 2 min | 2 min |
 | 14.3 Flag-Based Config | 1/1 | 1 min | 1 min |
 | 14.4 Config Flag/ProviderValues | 1/1 | 3 min | 3 min |
 
@@ -86,6 +87,16 @@ Recent decisions affecting current work:
 - ProviderValues registered BEFORE collectProviderConfigs in Build() (14.4-01)
 - WithConfigFile bypasses search paths when set (14.4-01)
 - configFileSetter interface for backend abstraction (14.4-01)
+
+- For[T]() is the only registration pattern shown in foundational docs (14.2-01)
+
+### Phase 14.2 Complete
+
+Update Documentation complete:
+
+| Plan | Name | Status |
+|------|------|--------|
+| 14.2-01 | Foundational documentation rewrite | ✅ Complete |
 
 ### Phase 14.4 Complete
 
@@ -158,9 +169,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-28T23:48:36Z
-Stopped at: Completed 14.4-01-PLAN.md (Config Flag and ProviderValues)
-Resume file: None (Phase 14.4 complete)
+Last session: 2026-01-29T00:28:50Z
+Stopped at: Completed 14.2-01-PLAN.md (Foundational Documentation Rewrite)
+Resume file: None (Phase 14.2 complete)
 
 ---
 
