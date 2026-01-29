@@ -58,9 +58,12 @@ func main() {
     app := gaz.New()
 
     // Register a singleton service with a provider function
-    app.ProvideSingleton(func(c *gaz.Container) (*Greeter, error) {
+    err := gaz.For[*Greeter](app.Container()).Provider(func(c *gaz.Container) (*Greeter, error) {
         return &Greeter{Name: "World"}, nil
     })
+    if err != nil {
+        log.Fatalf("Registration failed: %v", err)
+    }
 
     // Build validates registrations and instantiates eager services
     if err := app.Build(); err != nil {
@@ -137,8 +140,14 @@ func NewUserRepo(c *gaz.Container) (*UserRepo, error) {
 
 func main() {
     app := gaz.New()
-    app.ProvideSingleton(NewDatabase)
-    app.ProvideSingleton(NewUserRepo)
+
+    // Register services using the type-safe For[T]() API
+    if err := gaz.For[*Database](app.Container()).Provider(NewDatabase); err != nil {
+        log.Fatal(err)
+    }
+    if err := gaz.For[*UserRepo](app.Container()).Provider(NewUserRepo); err != nil {
+        log.Fatal(err)
+    }
 
     if err := app.Build(); err != nil {
         log.Fatal(err)
