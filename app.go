@@ -427,10 +427,31 @@ func (a *App) discoverWorkers() error {
 
 // discoverCronJobs iterates registered services and registers those implementing
 // cron.CronJob interface with the Scheduler.
+//
+// CronJobs should be registered using one of:
+//
+//	gaz.For[cron.CronJob](c).Transient().Provider(NewMyJob)
+//	gaz.For[cron.CronJob](c).Named("job-name").Transient().Provider(NewMyJob)
+//
+// This ensures the service is registered with the CronJob interface type,
+// allowing discovery without resolving unrelated transient services.
 func (a *App) discoverCronJobs() error {
+	cronJobTypeName := di.TypeName[cron.CronJob]()
+
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		// Only process services registered as cron.CronJob interface
+		// TypeName() returns the interface type, so check if name equals it
+		// or if it's a named registration (name != type, but typeName = interface)
+		if svc.TypeName() != cronJobTypeName {
+			return
+		}
+
 		// CronJobs should be transient (new instance per execution)
-		// But we still need to resolve once to get schedule info at registration time
+		if !svc.IsTransient() {
+			a.Logger.Warn("CronJob should be transient",
+				"name", name,
+			)
+		}
 
 		// Try to resolve and check for CronJob interface
 		instance, err := a.container.ResolveByName(name, nil)
