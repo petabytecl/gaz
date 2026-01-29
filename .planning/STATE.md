@@ -186,7 +186,7 @@ Config Package extraction complete:
 
 ### Pending Todos
 
-1 pending todo(s) in `.planning/todos/pending/`
+2 pending todo(s) in `.planning/todos/pending/`
 
 ### Blockers/Concerns
 
