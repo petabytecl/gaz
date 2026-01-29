@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 
 ## Current Position
 
-- **Phase:** 19 of 21 (Interface Auto-Detection + CLI Args)
-- **Plan:** 3 of 3 in current phase (Gap Closure)
-- **Status:** Phase complete
-- **Last activity:** 2026-01-29 — Completed 19-03-PLAN.md
+- **Phase:** 20 of 21 (Testing Utilities)
+- **Plan:** 1 of 2 in current phase (Core gaztest package)
+- **Status:** In progress
+- **Last activity:** 2026-01-29 — Completed 20-01-PLAN.md
 
-Progress: [██████████] 100% — Phase 19 complete
+Progress: [████████░░] 85% — Phase 20 plan 1/2 complete
 
 ## Milestones Shipped
 
@@ -28,14 +28,14 @@ Progress: [██████████] 100% — Phase 19 complete
 | v2.0 | Cleanup & Concurrency | 11-18 | 34 | 2026-01-29 |
 | v2.1 | API Enhancement | 19 | 3 | 2026-01-29 |
 
-**Total:** 84 plans across 19 phases
+**Total:** 85 plans across 20 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 84
+- Total plans completed: 85
 - v2.0: 34 plans in 2 days
-- v2.1: 3 plans in 1 day
+- v2.1: 4 plans in 1 day
 
 **By Milestone:**
 
@@ -44,7 +44,7 @@ Progress: [██████████] 100% — Phase 19 complete
 | v1.0 MVP | 6 | 35 | 1 day |
 | v1.1 Hardening | 4 | 12 | 2 days |
 | v2.0 Cleanup & Concurrency | 8 | 34 | 2 days |
-| v2.1 API Enhancement | 1 | 3 | 1 day |
+| v2.1 API Enhancement | 2 | 4 | 1 day |
 
 ## Accumulated Context
 
@@ -62,6 +62,8 @@ Progress: [██████████] 100% — Phase 19 complete
 | 19 | Inject CommandArgs as struct pointer | Allow access to both *cobra.Command and Args slice |
 | 19 | Register CommandArgs during bootstrap | Ensure availability before Build() for eager services |
 | 19 | Prioritize explicit hooks | Explicit hooks override implicit interfaces to allow user control |
+| 20 | Replace() uses reflection type inference | Works with concrete types; interface replacement requires registering concrete type |
+| 20 | Non-embedded *gaz.App field | Avoids linter warnings and naming confusion |
 
 ### Blockers/Concerns
 None.
@@ -69,7 +71,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 19-03-PLAN.md
+Stopped at: Completed 20-01-PLAN.md
 Resume file: None
 
 ---
@@ -77,7 +79,7 @@ Resume file: None
 ## Next Steps
 
 ```
-/gsd-plan-phase 20
+/gsd-execute-phase 20 (continue with plan 02)
 ```
 
 ---
