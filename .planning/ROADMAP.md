@@ -33,11 +33,12 @@ v2.1 enhances GAZ's developer experience with interface auto-detection for lifec
   3. `For[T]().HasLifecycle()` returns `true` for types implementing Starter or Stopper
   4. Explicit `.OnStart()/.OnStop()` registration takes precedence over interface detection
   5. CLI positional args are accessible via `gaz.GetArgs(container)` after app startup
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — **[TDD]** Lifecycle Auto-Detection
+- [x] 19-01-PLAN.md — **[TDD]** Lifecycle Auto-Detection
 - [x] 19-02-PLAN.md — CLI Arguments Integration
+- [ ] 19-03-PLAN.md — Lifecycle Hook Mutual Exclusion
 
 #### Phase 20: Testing Utilities (gaztest)
 **Goal**: Testing DI apps is easy with proper utilities and automatic cleanup
@@ -75,7 +76,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 19. Interface Auto-Detection + CLI | v2.1 | 2/2 | Complete | 2026-01-29 |
+| 19. Interface Auto-Detection + CLI | v2.1 | 2/3 | Gap Closure | - |
 | 20. Testing Utilities (gaztest) | v2.1 | 0/TBD | Not started | - |
 | 21. Service Builder + Unified Provider | v2.1 | 0/TBD | Not started | - |
 
