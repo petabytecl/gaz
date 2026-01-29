@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v2.1 API Enhancement - Phase 20
+**Current focus:** v2.1 API Enhancement - Phase 21
 
 ## Current Position
 
-- **Phase:** 20 of 21 (Testing Utilities)
-- **Plan:** 2 of 2 in current phase (Integration tests and examples)
-- **Status:** Phase complete
-- **Last activity:** 2026-01-29 — Completed 20-02-PLAN.md
+- **Phase:** 21 of 21 (Service Builder + Unified Provider)
+- **Plan:** 1 of 3 in current phase (ModuleBuilder Core + App.Use())
+- **Status:** In progress
+- **Last activity:** 2026-01-29 — Completed 21-01-PLAN.md
 
-Progress: [█████████░] 90% — Phase 20 complete
+Progress: [█████████░] 93% — Phase 21 in progress (1/3 plans)
 
 ## Milestones Shipped
 
@@ -26,16 +26,16 @@ Progress: [█████████░] 90% — Phase 20 complete
 | v1.0 | MVP | 1-6 | 35 | 2026-01-26 |
 | v1.1 | Security & Hardening | 7-10 | 12 | 2026-01-27 |
 | v2.0 | Cleanup & Concurrency | 11-18 | 34 | 2026-01-29 |
-| v2.1 | API Enhancement | 19 | 3 | 2026-01-29 |
+| v2.1 | API Enhancement | 19-20 | 5 | 2026-01-29 |
 
-**Total:** 86 plans across 20 phases
+**Total:** 87 plans across 21 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 86
+- Total plans completed: 87
 - v2.0: 34 plans in 2 days
-- v2.1: 5 plans in 1 day
+- v2.1: 6 plans in 1 day
 
 **By Milestone:**
 
@@ -44,7 +44,7 @@ Progress: [█████████░] 90% — Phase 20 complete
 | v1.0 MVP | 6 | 35 | 1 day |
 | v1.1 Hardening | 4 | 12 | 2 days |
 | v2.0 Cleanup & Concurrency | 8 | 34 | 2 days |
-| v2.1 API Enhancement | 2 | 5 | 1 day |
+| v2.1 API Enhancement | 3 | 6 | 1 day |
 
 ## Accumulated Context
 
@@ -64,6 +64,8 @@ Progress: [█████████░] 90% — Phase 20 complete
 | 19 | Prioritize explicit hooks | Explicit hooks override implicit interfaces to allow user control |
 | 20 | Replace() uses reflection type inference | Works with concrete types; interface replacement requires registering concrete type |
 | 20 | Documentation-only examples | Avoid log output polluting example Output: comparison |
+| 21 | Child modules registered in app.modules | Ensures consistent duplicate detection for bundled modules |
+| 21 | Child modules applied before parent providers | Composition convenience, not dependency ordering (DI handles that) |
 
 ### Blockers/Concerns
 None.
@@ -71,7 +73,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 20-02-PLAN.md (Phase 20 complete)
+Stopped at: Completed 21-01-PLAN.md
 Resume file: None
 
 ---
@@ -79,7 +81,7 @@ Resume file: None
 ## Next Steps
 
 ```
-/gsd-plan-phase 21
+/gsd-execute-phase 21
 ```
 
 ---
