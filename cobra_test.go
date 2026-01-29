@@ -201,3 +201,70 @@ func (s *CobraSuite) TestStartWithoutBuildCallsBuild() {
 	s.Require().NoError(err)
 	s.Equal("auto-built", svc.name)
 }
+
+func (s *CobraSuite) TestWithCobraArgsInjection() {
+	app := New()
+
+	var receivedArgs []string
+
+	rootCmd := &cobra.Command{
+		Use: "test",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			// Verify access via GetArgs
+			// Note: We need to use FromContext because app inside RunE might be closure-captured,
+			// but we want to simulate real usage.
+			gotApp := FromContext(cmd.Context())
+			s.NotNil(gotApp)
+
+			args := GetArgs(gotApp.Container())
+			receivedArgs = args
+			return nil
+		},
+	}
+
+	app.WithCobra(rootCmd)
+
+	// Pass arguments
+	expectedArgs := []string{"foo", "bar"}
+	rootCmd.SetArgs(expectedArgs)
+
+	err := rootCmd.Execute()
+	s.Require().NoError(err)
+
+	s.Equal(expectedArgs, receivedArgs)
+}
+
+func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
+	app := New()
+
+	type argsService struct {
+		args []string
+	}
+
+	For[*argsService](app.Container()).Provider(func(c *Container) (*argsService, error) {
+		cmdArgs, err := Resolve[*CommandArgs](c)
+		if err != nil {
+			return nil, err
+		}
+		return &argsService{args: cmdArgs.Args}, nil
+	})
+
+	rootCmd := &cobra.Command{
+		Use: "test",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			gotApp := FromContext(cmd.Context())
+			s.NotNil(gotApp)
+
+			svc, err := Resolve[*argsService](gotApp.Container())
+			s.Require().NoError(err)
+			s.Equal([]string{"foo", "bar"}, svc.args)
+			return nil
+		},
+	}
+
+	app.WithCobra(rootCmd)
+	rootCmd.SetArgs([]string{"foo", "bar"})
+
+	err := rootCmd.Execute()
+	s.Require().NoError(err)
+}
