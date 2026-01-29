@@ -353,3 +353,200 @@ func (m *mockTB) FailNow() {
 func (m *mockTB) Helper() {
 	m.realT.Helper()
 }
+
+// =============================================================================
+// Integration Tests: Replace with real service swapping
+// =============================================================================
+
+// TestReplace_SwapsImplementation verifies that Replace() swaps a real
+// implementation with a mock, and the mock is returned when resolving.
+func TestReplace_SwapsImplementation(t *testing.T) {
+	// Register a "real" service (using concrete type for Replace compatibility)
+	realDB := &MockDatabase{queryResult: "production-data"}
+
+	baseApp := gaz.New()
+	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(realDB)
+	require.NoError(t, err)
+	err = baseApp.Build()
+	require.NoError(t, err)
+
+	// Verify original returns production data
+	originalDB, err := gaz.Resolve[*MockDatabase](baseApp.Container())
+	require.NoError(t, err)
+	require.Equal(t, "production-data", originalDB.Query())
+
+	// Create test app with mock replacement
+	mock := &MockDatabase{queryResult: "test-mock-data"}
+	app, err := gaztest.New(t).
+		WithApp(baseApp).
+		Replace(mock).
+		Build()
+	require.NoError(t, err)
+
+	app.RequireStart()
+	defer app.RequireStop()
+
+	// Resolve the type - should get the mock, not the real implementation
+	resolved, err := gaz.Resolve[*MockDatabase](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "test-mock-data", resolved.Query())
+	require.Same(t, mock, resolved, "should return exact mock instance")
+}
+
+// TestReplace_MultipleServices verifies replacing some but not all services.
+func TestReplace_MultipleServices(t *testing.T) {
+	// Create base app with multiple services
+	baseApp := gaz.New()
+
+	// Service 1: will be replaced
+	db1 := &MockDatabase{queryResult: "db1-original"}
+	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(db1)
+	require.NoError(t, err)
+
+	// Service 2: will NOT be replaced
+	svc := &LifecycleService{}
+	err = gaz.For[*LifecycleService](baseApp.Container()).Instance(svc)
+	require.NoError(t, err)
+
+	err = baseApp.Build()
+	require.NoError(t, err)
+
+	// Replace only the database, keep lifecycle service as-is
+	mockDB := &MockDatabase{queryResult: "db1-mocked"}
+	app, err := gaztest.New(t).
+		WithApp(baseApp).
+		Replace(mockDB).
+		Build()
+	require.NoError(t, err)
+
+	app.RequireStart()
+	defer app.RequireStop()
+
+	// Replaced service should return mock
+	resolvedDB, err := gaz.Resolve[*MockDatabase](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "db1-mocked", resolvedDB.Query())
+
+	// Non-replaced service should be the original
+	resolvedSvc, err := gaz.Resolve[*LifecycleService](app.Container())
+	require.NoError(t, err)
+	require.Same(t, svc, resolvedSvc, "non-replaced service should be original")
+}
+
+// TestApp_DoubleStop_Idempotent verifies that calling RequireStop twice is safe.
+func TestApp_DoubleStop_Idempotent(t *testing.T) {
+	svc := &LifecycleService{}
+
+	baseApp := gaz.New()
+	err := gaz.For[*LifecycleService](baseApp.Container()).Instance(svc)
+	require.NoError(t, err)
+
+	app, err := gaztest.New(t).WithApp(baseApp).Build()
+	require.NoError(t, err)
+
+	app.RequireStart()
+	require.True(t, svc.IsStarted())
+
+	// First stop
+	app.RequireStop()
+	require.True(t, svc.IsStopped())
+
+	// Second stop - should NOT panic, should be idempotent
+	app.RequireStop()
+	// If we get here without panic, test passes
+}
+
+// TestCleanup_RunsEvenIfTestPanics verifies cleanup registration.
+// Note: We can't actually test panic recovery in the same test,
+// but we can verify that cleanup is registered and callable.
+func TestCleanup_RunsEvenIfTestPanics(t *testing.T) {
+	// Track cleanup execution
+	var cleanupCalled bool
+	svc := &LifecycleService{}
+
+	// Create mock TB to capture cleanup function
+	mockT := &mockTB{
+		realT: t,
+	}
+
+	baseApp := gaz.New()
+	err := gaz.For[*LifecycleService](baseApp.Container()).Instance(svc)
+	require.NoError(t, err)
+
+	app, err := gaztest.New(mockT).WithApp(baseApp).Build()
+	require.NoError(t, err)
+
+	// Verify cleanup was registered
+	require.True(t, mockT.cleanupRegistered)
+	require.NotNil(t, mockT.registeredCleanup)
+
+	// Start the app
+	app.RequireStart()
+	require.True(t, svc.IsStarted())
+
+	// Simulate what would happen if test panics and Go's defer runs cleanup
+	// In real scenario, t.Cleanup() is called by Go testing framework
+	func() {
+		defer func() {
+			// This simulates Go's cleanup mechanism
+			mockT.registeredCleanup()
+			cleanupCalled = true
+		}()
+
+		// Simulate panic (we recover it)
+		func() {
+			defer func() {
+				recover() // swallow the panic for test purposes
+			}()
+			panic("simulated test panic")
+		}()
+	}()
+
+	// Verify cleanup was called and service was stopped
+	require.True(t, cleanupCalled, "cleanup should have been called")
+	require.True(t, svc.IsStopped(), "service should be stopped by cleanup")
+}
+
+// TestBuilder_WithApp_AllowsServiceResolution verifies that WithApp provides
+// access to pre-registered services.
+func TestBuilder_WithApp_AllowsServiceResolution(t *testing.T) {
+	// Create base app with a service
+	baseApp := gaz.New()
+	db := &MockDatabase{queryResult: "base-app-db"}
+	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(db)
+	require.NoError(t, err)
+	err = baseApp.Build()
+	require.NoError(t, err)
+
+	// Create test app from base app
+	app, err := gaztest.New(t).WithApp(baseApp).Build()
+	require.NoError(t, err)
+
+	app.RequireStart()
+	defer app.RequireStop()
+
+	// Should be able to resolve services from base app
+	resolved, err := gaz.Resolve[*MockDatabase](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "base-app-db", resolved.Query())
+}
+
+// TestRequireStart_Idempotent verifies calling RequireStart twice is safe.
+func TestRequireStart_Idempotent(t *testing.T) {
+	svc := &LifecycleService{}
+
+	baseApp := gaz.New()
+	err := gaz.For[*LifecycleService](baseApp.Container()).Instance(svc)
+	require.NoError(t, err)
+
+	app, err := gaztest.New(t).WithApp(baseApp).Build()
+	require.NoError(t, err)
+
+	// First start
+	app.RequireStart()
+	require.True(t, svc.IsStarted())
+
+	// Second start - should NOT error or double-start
+	app.RequireStart()
+	// If we get here without panic/error, test passes
+}
