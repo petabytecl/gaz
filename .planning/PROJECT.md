@@ -8,6 +8,20 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
+## Current Milestone: v2.1 API Enhancement
+
+**Goal:** Simplify API with interface auto-detection and add RuntimeX-inspired features for production readiness.
+
+**Target features:**
+- Interface auto-detection for Starter/Stopper (no explicit hook registration)
+- Build Info package (version, commit, branch via ldflags)
+- Command arguments injection (CLI args as DI dependency)
+- Pre/Post run hooks for App
+- Frame introspection utilities for debugging
+- Service Builder pattern (pre-configured common providers)
+- Unified Provider type (bundled flags + constructor + lifecycle)
+- Enhanced Test Builder (fxtest-like testing support)
+
 ## Current State
 
 **Shipped:** v2.0 Cleanup & Concurrency (2026-01-29)
@@ -124,4 +138,4 @@ Target: Internal use first, open source viability later.
 | RegisterCobraFlags explicit | CLI flag visibility before Execute() | ✓ Good (v2.0) |
 
 ---
-*Last updated: 2026-01-29 after v2.0 milestone shipped*
+*Last updated: 2026-01-29 after v2.1 milestone started*

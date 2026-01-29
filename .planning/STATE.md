@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Planning next milestone
+**Current focus:** v2.1 API Enhancement
 
 ## Current Position
 
-- **Phase:** Ready for next milestone
-- **Plan:** N/A
-- **Status:** v2.0 shipped, awaiting next milestone
-- **Last activity:** 2026-01-29 — v2.0 Cleanup & Concurrency shipped
+- **Phase:** Not started (defining requirements)
+- **Plan:** —
+- **Status:** Defining requirements
+- **Last activity:** 2026-01-29 — Milestone v2.1 started
 
-Progress: [█████████] 100% — v2.0 complete
+Progress: [░░░░░░░░░░] 0% — Defining requirements
 
 ## Milestones Shipped
 
@@ -84,17 +84,17 @@ Resume file: None
 
 ## Next Steps
 
-To start the next milestone:
+To start planning:
 
 ```
-/gsd-new-milestone
+/gsd-discuss-phase 19
 ```
 
-This will guide you through:
-1. Questioning (what to build next)
-2. Research (ecosystem discovery)
-3. Requirements (define v2.1 requirements)
-4. Roadmap (create phases)
+or directly:
+
+```
+/gsd-plan-phase 19
+```
 
 ---
 
