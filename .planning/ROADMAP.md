@@ -66,10 +66,12 @@ Plans:
   3. `Module(name)` returns fluent `ModuleBuilder` for bundling flags and providers
   4. `ModuleBuilder.Register(app)` applies all bundled registrations to an App
   5. Modules can depend on other modules (composition works)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 21-01: TBD
+- [ ] 21-01-PLAN.md — **[TDD]** ModuleBuilder Core + App.Use()
+- [ ] 21-02-PLAN.md — Service Builder + Health Auto-Registration
+- [ ] 21-03-PLAN.md — Module Flags Integration
 
 ## Progress
 
@@ -79,7 +81,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 19. Interface Auto-Detection + CLI | v2.1 | 3/3 | Complete | 2026-01-29 |
 | 20. Testing Utilities (gaztest) | v2.1 | 2/2 | Complete | 2026-01-29 |
-| 21. Service Builder + Unified Provider | v2.1 | 0/TBD | Not started | - |
+| 21. Service Builder + Unified Provider | v2.1 | 0/3 | Not started | - |
 
 <details>
 <summary>✅ v2.0 Cleanup & Concurrency (Phases 11-18) - SHIPPED 2026-01-29</summary>
