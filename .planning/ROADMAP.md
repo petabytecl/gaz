@@ -54,7 +54,7 @@ Plans:
 
 Plans:
 - [x] 20-01-PLAN.md — **[TDD]** Core gaztest package (Builder, App, TB interface)
-- [ ] 20-02-PLAN.md — Integration tests and examples
+- [x] 20-02-PLAN.md — Integration tests and examples
 
 #### Phase 21: Service Builder + Unified Provider
 **Goal**: Creating production-ready services and reusable modules is streamlined
@@ -78,7 +78,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 19. Interface Auto-Detection + CLI | v2.1 | 3/3 | Complete | 2026-01-29 |
-| 20. Testing Utilities (gaztest) | v2.1 | 1/2 | In progress | - |
+| 20. Testing Utilities (gaztest) | v2.1 | 2/2 | Complete | 2026-01-29 |
 | 21. Service Builder + Unified Provider | v2.1 | 0/TBD | Not started | - |
 
 <details>
