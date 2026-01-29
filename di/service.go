@@ -75,8 +75,10 @@ func (s *baseService) runStopHooks(ctx context.Context, instance any) error {
 }
 
 func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error {
-	if err := s.runStartHooks(ctx, instance); err != nil {
-		return err
+	// If explicit start hooks are registered, they take precedence.
+	// We do NOT call the implicit Starter interface in this case.
+	if len(s.startHooks) > 0 {
+		return s.runStartHooks(ctx, instance)
 	}
 
 	if starter, ok := instance.(Starter); ok {
@@ -88,13 +90,19 @@ func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error
 }
 
 func (s *baseService) runStopLifecycle(ctx context.Context, instance any) error {
+	// If explicit stop hooks are registered, they take precedence.
+	// We do NOT call the implicit Stopper interface in this case.
+	if len(s.stopHooks) > 0 {
+		return s.runStopHooks(ctx, instance)
+	}
+
 	if stopper, ok := instance.(Stopper); ok {
 		if err := stopper.OnStop(ctx); err != nil {
 			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
 		}
 	}
 
-	return s.runStopHooks(ctx, instance)
+	return nil
 }
 
 // hasLifecycleImpl is a helper for generic service wrappers to check for
