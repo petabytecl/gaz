@@ -38,9 +38,22 @@
 //
 // # Lifecycle Hooks
 //
-// Services can implement Starter/Stopper interfaces or use OnStart/OnStop:
+// Services implementing Starter or Stopper interfaces automatically participate
+// in the container's lifecycle. No fluent API needed - interface implementation
+// is the sole mechanism.
 //
-//	di.For[*Server](c).OnStart(func(ctx context.Context, s *Server) error {
+//	type Server struct { addr string }
+//
+//	func (s *Server) OnStart(ctx context.Context) error {
+//	    // Called after container Build() when service is instantiated
 //	    return s.ListenAndServe()
-//	}).Provider(NewServer)
+//	}
+//
+//	func (s *Server) OnStop(ctx context.Context) error {
+//	    // Called during graceful shutdown
+//	    return s.Shutdown(ctx)
+//	}
+//
+//	// Registration is simple - no lifecycle methods needed
+//	di.For[*Server](c).Provider(NewServer)
 package di
