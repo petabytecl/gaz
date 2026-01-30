@@ -60,7 +60,7 @@ func (s *ShutdownTestSuite) SetupTest() {
 	exitFuncMu.Lock()
 	exitFunc = func(code int) {
 		s.exitCalled.Store(true)
-		s.exitCode.Store(int32(code)) //nolint:gosec // code is always 0 or 1 in tests
+		s.exitCode.Store(int32(code))
 	}
 	exitFuncMu.Unlock()
 

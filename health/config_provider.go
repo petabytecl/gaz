@@ -19,6 +19,8 @@ package health
 //	app, _ := service.New().
 //	    WithConfig(&AppConfig{Health: health.DefaultConfig()}).
 //	    Build()
+//
+//nolint:revive // HealthConfigProvider stutters but renaming would break public API
 type HealthConfigProvider interface {
 	HealthConfig() Config
 }

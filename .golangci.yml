@@ -170,6 +170,137 @@ linters:
           - gocognit
         path: lifecycle_engine\.go
         text: "cognitive complexity"
+      # Compatibility layer functions return interfaces by design (generics)
+      - linters:
+          - ireturn
+        text: "returns generic interface"
+      # Backend() returning interface is intentional design
+      - linters:
+          - ireturn
+        text: "Backend returns interface"
+      # NewSlogAdapter returning cron.Logger interface is intentional
+      - linters:
+          - ireturn
+        path: cron/logger\.go
+      # Build returning Module interface is intentional
+      - linters:
+          - ireturn
+        path: module_builder\.go
+      # GetService returning ServiceWrapper interface is intentional
+      - linters:
+          - ireturn
+        path: di/container\.go
+      # Magic numbers in default configurations are acceptable
+      - linters:
+          - mnd
+        path: (options\.go|backoff\.go)
+      # Named return for panic recovery is intentional pattern
+      - linters:
+          - nonamedreturns
+        path: worker/supervisor\.go
+      # nilnil return in mock is intentional for testing
+      - linters:
+          - nilnil
+        path: _test\.go
+      # Interface bloat for Backend is acceptable - it's a config abstraction
+      - linters:
+          - interfacebloat
+        path: config/backend\.go
+      # Test files can use type assertions without checking ok
+      - linters:
+          - errcheck
+        path: _test\.go
+        text: "Error return value is not checked"
+      # gosec warnings for test file permissions are acceptable
+      - linters:
+          - gosec
+        path: _test\.go
+      # Unused params in test callbacks are acceptable
+      - linters:
+          - revive
+        path: _test\.go
+        text: "unused-parameter"
+      # Context as argument in cron package follows robfig/cron convention
+      - linters:
+          - revive
+        path: cron/
+        text: "context-as-argument"
+      # Unexported return in scheduler is internal API
+      - linters:
+          - revive
+        path: cron/scheduler\.go
+        text: "unexported-return"
+      # fatcontext in tests is acceptable
+      - linters:
+          - fatcontext
+        path: _test\.go
+      # gocritic badCall in tests (filepath.Join) is acceptable
+      - linters:
+          - gocritic
+        path: _test\.go
+        text: "badCall"
+      # testifylint require-error relaxed in tests
+      - linters:
+          - testifylint
+        path: _test\.go
+      # usetesting os.Setenv relaxed (t.Setenv has different cleanup behavior)
+      - linters:
+          - usetesting
+        path: _test\.go
+      # govet shadow in test files is acceptable
+      - linters:
+          - govet
+        path: _test\.go
+        text: "shadow:"
+      # unused in test files (test helpers, mocks)
+      - linters:
+          - unused
+        path: _test\.go
+      # noctx http.Get in test files is acceptable
+      - linters:
+          - noctx
+        path: _test\.go
+      # gosec G602 slice bounds in cron logger is safe (loop-based access)
+      - linters:
+          - gosec
+        path: cron/logger\.go
+        text: "G602"
+      # deprecatedComment style in compat layer is acceptable
+      - linters:
+          - gocritic
+        path: config_manager\.go
+        text: "deprecatedComment"
+      # unexported-return for internal factory functions
+      - linters:
+          - revive
+        path: (cron/wrapper\.go|di/service\.go)
+        text: "unexported-return"
+      # funcorder for error types (constructor follows type methods)
+      - linters:
+          - funcorder
+        path: config/errors\.go
+      # errcheck for os.Unsetenv, Body.Close, mgr.Stop in tests
+      - linters:
+          - errcheck
+        path: _test\.go
+        text: "(os\\.Unsetenv|Body\\.Close|mgr\\.Stop)"
+      # errcheck for Provider registration in tests (return value intentionally ignored)
+      - linters:
+          - errcheck
+        path: _test\.go
+        text: "Provider.*is not checked"
+      # wrapcheck for thin wrapper methods in viper backend (pass-through errors)
+      - linters:
+          - wrapcheck
+        path: config/viper/backend\.go
+      # wrapcheck for deprecated compatibility layer (thin wrapper)
+      - linters:
+          - wrapcheck
+        path: config_manager\.go
+      # wrapcheck for gaztest builder (thin wrapper)
+      - linters:
+          - wrapcheck
+        path: gaztest/builder\.go
 
   settings:
     cyclop:

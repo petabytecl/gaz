@@ -78,7 +78,7 @@ func ValidateStruct(cfg any) error {
 	return fmt.Errorf("config: validation error: %w", err)
 }
 
-// formatValidationErrors converts validator.ValidationErrors into our ValidationErrors type.
+// formatValidationErrors converts validator.ValidationErrors into our ValidationError type.
 func formatValidationErrors(errs validator.ValidationErrors) error {
 	fieldErrors := make([]FieldError, 0, len(errs))
 	for _, e := range errs {
@@ -90,7 +90,7 @@ func formatValidationErrors(errs validator.ValidationErrors) error {
 		})
 	}
 
-	return NewValidationErrors(fieldErrors)
+	return NewValidationError(fieldErrors)
 }
 
 // humanizeTag converts validation tag names to human-readable messages.

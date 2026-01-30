@@ -109,7 +109,7 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 
 func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) error {
 	// Register CommandArgs
-	For[*CommandArgs](a.container).Instance(&CommandArgs{
+	_ = For[*CommandArgs](a.container).Instance(&CommandArgs{
 		Command: cmd,
 		Args:    args,
 	})

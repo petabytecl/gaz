@@ -124,16 +124,16 @@ func TestValidateStruct_OneOf_InvalidValue(t *testing.T) {
 }
 
 // =============================================================================
-// Test ValidationErrors and FieldError
+// Test ValidationError and FieldError
 // =============================================================================
 
-func TestValidationErrors_Error_FormatsCorrectly(t *testing.T) {
+func TestValidationError_Error_FormatsCorrectly(t *testing.T) {
 	fieldErrors := []config.FieldError{
 		{Namespace: "Config.host", Tag: "required", Message: "required field cannot be empty"},
 		{Namespace: "Config.port", Tag: "min", Param: "1", Message: "must be at least 1"},
 	}
 
-	ve := config.NewValidationErrors(fieldErrors)
+	ve := config.NewValidationError(fieldErrors)
 	errStr := ve.Error()
 
 	assert.Contains(t, errStr, "validation failed")
@@ -141,8 +141,8 @@ func TestValidationErrors_Error_FormatsCorrectly(t *testing.T) {
 	assert.Contains(t, errStr, "Config.port")
 }
 
-func TestValidationErrors_Unwrap_ReturnsErrConfigValidation(t *testing.T) {
-	ve := config.NewValidationErrors(nil)
+func TestValidationError_Unwrap_ReturnsErrConfigValidation(t *testing.T) {
+	ve := config.NewValidationError(nil)
 
 	assert.ErrorIs(t, ve, config.ErrConfigValidation)
 }
@@ -384,7 +384,7 @@ func TestValidateStruct_MultipleErrors_ReportsAll(t *testing.T) {
 	assert.Contains(t, err.Error(), "name")
 
 	// Check we can access the individual errors
-	var ve config.ValidationErrors
+	var ve config.ValidationError
 	require.ErrorAs(t, err, &ve)
 	assert.Len(t, ve.Errors, 3)
 }

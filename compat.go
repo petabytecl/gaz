@@ -81,14 +81,6 @@ type RegistrationBuilder[T any] = di.RegistrationBuilder[T]
 type ServiceWrapper = di.ServiceWrapper
 
 // =============================================================================
-// Internal type alias for App compatibility
-// =============================================================================
-
-// serviceWrapper is an alias for di.ServiceWrapper for internal use.
-// This maintains backward compatibility with app.go which uses lowercase.
-type serviceWrapper = di.ServiceWrapper
-
-// =============================================================================
 // Worker Interface Re-export
 // =============================================================================
 

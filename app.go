@@ -283,12 +283,12 @@ func (a *App) loadConfig() error {
 	// If a target struct is provided, load and unmarshal into it
 	if a.configTarget != nil {
 		if err := a.configMgr.LoadInto(a.configTarget); err != nil {
-			return err
+			return fmt.Errorf("loading config into target: %w", err)
 		}
 	} else {
 		// Otherwise just load the config file (for ConfigProvider pattern)
 		if err := a.configMgr.Load(); err != nil {
-			return err
+			return fmt.Errorf("loading config: %w", err)
 		}
 	}
 	a.configLoaded = true
@@ -404,7 +404,7 @@ func (a *App) registerProviderFlags() error {
 		}
 
 		if err := a.configMgr.RegisterProviderFlags(entry.namespace, cfgFlags); err != nil {
-			return err
+			return fmt.Errorf("registering provider flags for %s: %w", entry.namespace, err)
 		}
 		errs := a.configMgr.ValidateProviderFlags(entry.namespace, cfgFlags)
 		validationErrors = append(validationErrors, errs...)
@@ -419,7 +419,7 @@ func (a *App) registerProviderFlags() error {
 
 // discoverWorkers iterates registered services and registers those implementing
 // worker.Worker interface with the WorkerManager.
-func (a *App) discoverWorkers() error {
+func (a *App) discoverWorkers() {
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
 		// Skip transient services
 		if svc.IsTransient() {
@@ -443,7 +443,6 @@ func (a *App) discoverWorkers() error {
 			}
 		}
 	})
-	return nil
 }
 
 // discoverCronJobs iterates registered services and registers those implementing
@@ -456,7 +455,7 @@ func (a *App) discoverWorkers() error {
 //
 // This ensures the service is registered with the CronJob interface type,
 // allowing discovery without resolving unrelated transient services.
-func (a *App) discoverCronJobs() error {
+func (a *App) discoverCronJobs() {
 	cronJobTypeName := di.TypeName[cron.CronJob]()
 
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
@@ -495,7 +494,6 @@ func (a *App) discoverCronJobs() error {
 			}
 		}
 	})
-	return nil
 }
 
 // Build validates all registrations and instantiates eager services.
@@ -530,9 +528,7 @@ func (a *App) Build() error {
 	}
 
 	// Discover workers from registered services
-	if err := a.discoverWorkers(); err != nil {
-		errs = append(errs, err)
-	}
+	a.discoverWorkers()
 
 	// Register EventBus with worker manager for lifecycle management
 	if err := a.workerMgr.Register(a.eventBus); err != nil {
@@ -540,9 +536,7 @@ func (a *App) Build() error {
 	}
 
 	// Discover cron jobs from registered services
-	if err := a.discoverCronJobs(); err != nil {
-		errs = append(errs, err)
-	}
+	a.discoverCronJobs()
 
 	// Register scheduler with worker manager (only if jobs exist)
 	if a.scheduler.JobCount() > 0 {
@@ -646,12 +640,12 @@ func (a *App) Run(ctx context.Context) error {
 
 	// Start workers after all services started
 	a.Logger.InfoContext(ctx, "starting workers")
-	if err := a.workerMgr.Start(ctx); err != nil {
+	if workerErr := a.workerMgr.Start(ctx); workerErr != nil {
 		// Rollback
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 		defer cancel()
 		_ = a.Stop(shutdownCtx)
-		return fmt.Errorf("starting workers: %w", err)
+		return fmt.Errorf("starting workers: %w", workerErr)
 	}
 
 	return a.waitForShutdownSignal(ctx)
@@ -767,12 +761,12 @@ func (a *App) Stop(ctx context.Context) error {
 
 	// Stop workers first (they may depend on services)
 	a.Logger.InfoContext(ctx, "stopping workers")
-	if err := a.workerMgr.Stop(); err != nil {
-		errs = append(errs, fmt.Errorf("stopping workers: %w", err))
+	if workerStopErr := a.workerMgr.Stop(); workerStopErr != nil {
+		errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
 	}
 
-	if err := a.stopServices(ctx, shutdownOrder, services); err != nil {
-		errs = append(errs, err)
+	if serviceStopErr := a.stopServices(ctx, shutdownOrder, services); serviceStopErr != nil {
+		errs = append(errs, serviceStopErr)
 	}
 
 	// Cancel the force-exit goroutine

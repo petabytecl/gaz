@@ -70,9 +70,7 @@ func (a *App) registerPFlags(cmd *cobra.Command) error {
 			}
 
 			// Register typed flag with default and description
-			if err := registerTypedFlag(fs, flag, flagName); err != nil {
-				return fmt.Errorf("registering flag %s: %w", flagName, err)
-			}
+			registerTypedFlag(fs, flag, flagName)
 
 			// Bind to viper with ORIGINAL dot-notation key
 			if err := fb.BindPFlag(fullKey, fs.Lookup(flagName)); err != nil {
@@ -90,7 +88,7 @@ func configKeyToFlagName(key string) string {
 }
 
 // registerTypedFlag registers a typed pflag based on ConfigFlag.Type.
-func registerTypedFlag(fs *pflag.FlagSet, flag ConfigFlag, name string) error {
+func registerTypedFlag(fs *pflag.FlagSet, flag ConfigFlag, name string) {
 	switch flag.Type {
 	case ConfigFlagTypeString:
 		def, _ := flag.Default.(string)
@@ -112,5 +110,4 @@ func registerTypedFlag(fs *pflag.FlagSet, flag ConfigFlag, name string) error {
 		def, _ := flag.Default.(string)
 		fs.String(name, def, flag.Description)
 	}
-	return nil
 }

@@ -91,7 +91,7 @@ func (s *TypesSuite) TestTypeName_NamedTypeWithoutPackagePath() {
 func (s *TypesSuite) TestTypeName_PointerType() {
 	typ := reflect.TypeOf((*testTypesStruct)(nil))
 	name := typeName(typ)
-	s.Equal(name[0], '*', "pointer type should start with *")
+	s.True(len(name) > 0 && name[0] == '*', "pointer type should start with *")
 	s.Contains(name, "testTypesStruct", "should include element type")
 }
 

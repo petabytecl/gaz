@@ -141,7 +141,7 @@ func (m *mockServiceWrapper) GetInstance(
 	_ *di.Container,
 	_ []string,
 ) (any, error) {
-	return nil, nil //nolint:nilnil // mock implementation for testing lifecycle ordering
+	return nil, nil
 }
 func (m *mockServiceWrapper) Start(context.Context) error { return nil }
 func (m *mockServiceWrapper) Stop(context.Context) error  { return nil }

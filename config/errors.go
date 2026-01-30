@@ -10,14 +10,14 @@ import (
 // Use errors.Is(err, ErrConfigValidation) to check for validation errors.
 var ErrConfigValidation = errors.New("config: validation failed")
 
-// ValidationErrors holds multiple validation errors.
+// ValidationError holds multiple validation errors.
 // It implements the error interface and provides access to individual field errors.
-type ValidationErrors struct {
+type ValidationError struct {
 	Errors []FieldError
 }
 
 // Error implements the error interface.
-func (ve ValidationErrors) Error() string {
+func (ve ValidationError) Error() string {
 	if len(ve.Errors) == 0 {
 		return ErrConfigValidation.Error()
 	}
@@ -31,7 +31,7 @@ func (ve ValidationErrors) Error() string {
 
 // Unwrap returns the underlying ErrConfigValidation sentinel error.
 // This allows errors.Is(err, ErrConfigValidation) to work correctly.
-func (ve ValidationErrors) Unwrap() error {
+func (ve ValidationError) Unwrap() error {
 	return ErrConfigValidation
 }
 
@@ -58,11 +58,6 @@ func (fe FieldError) String() string {
 	return fmt.Sprintf("%s: %s", fe.Namespace, fe.Message)
 }
 
-// NewValidationErrors creates a ValidationErrors from a slice of FieldErrors.
-func NewValidationErrors(errs []FieldError) ValidationErrors {
-	return ValidationErrors{Errors: errs}
-}
-
 // NewFieldError creates a new FieldError with the given parameters.
 func NewFieldError(namespace, tag, param, message string) FieldError {
 	return FieldError{
@@ -71,4 +66,9 @@ func NewFieldError(namespace, tag, param, message string) FieldError {
 		Param:     param,
 		Message:   message,
 	}
+}
+
+// NewValidationError creates a ValidationError from a slice of FieldErrors.
+func NewValidationError(errs []FieldError) ValidationError {
+	return ValidationError{Errors: errs}
 }

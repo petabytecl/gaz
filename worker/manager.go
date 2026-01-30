@@ -116,7 +116,7 @@ func (m *Manager) Start(ctx context.Context) error {
 	m.running = true
 	m.ctx, m.cancel = context.WithCancel(ctx)
 
-	m.logger.Info("starting workers", slog.Int("count", len(m.supervisors)))
+	m.logger.InfoContext(ctx, "starting workers", slog.Int("count", len(m.supervisors)))
 
 	// Start all supervisors concurrently
 	for _, sup := range m.supervisors {

@@ -117,6 +117,7 @@ func Subscribe[T Event](b *EventBus, handler Handler[T], opts ...SubscribeOption
 		ch:   make(chan any, options.bufferSize),
 		done: make(chan struct{}),
 		handler: func(ctx context.Context, event any) {
+			//nolint:errcheck // Type is guaranteed by generic Subscribe[T]
 			handler(ctx, event.(T))
 		},
 	}
