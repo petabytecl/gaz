@@ -1,22 +1,30 @@
 package worker
 
+import "context"
+
 // Worker defines the interface for background workers with lifecycle management.
 //
 // Workers are long-running background tasks that integrate with gaz's lifecycle
 // system. They auto-start with app.Run() and auto-stop on shutdown.
 //
+// The Worker interface aligns with di.Starter/di.Stopper patterns, enabling
+// consistent lifecycle management across all gaz services.
+//
 // # Contract
 //
 // Implementations must follow these rules:
 //
-//   - Start() must be non-blocking. The worker should spawn its own goroutine
-//     internally for any long-running work. Start() should return immediately
-//     after initiating the worker's background processing.
+//   - OnStart(ctx) must be non-blocking. The worker should spawn its own goroutine
+//     internally for any long-running work. OnStart should return immediately
+//     after initiating the worker's background processing. The context provides
+//     cancellation signals that the worker should respect. Return an error if
+//     startup fails (this prevents the worker from running).
 //
-//   - Stop() signals the worker to shut down. The worker should exit gracefully,
-//     completing or aborting any in-progress work. Stop() may block until the
+//   - OnStop(ctx) signals the worker to shut down. The worker should exit gracefully,
+//     completing or aborting any in-progress work. OnStop may block until the
 //     worker has fully stopped, or it may return immediately if the worker uses
-//     a channel-based shutdown signal.
+//     a channel-based shutdown signal. The context provides a deadline for shutdown.
+//     Return an error to log shutdown issues (shutdown continues regardless).
 //
 //   - Name() must return a non-empty, unique string identifier. This name is used
 //     for logging, debugging, and pool worker naming (e.g., "queue-processor-1").
@@ -31,7 +39,7 @@ package worker
 //
 //	func (p *Poller) Name() string { return "poller" }
 //
-//	func (p *Poller) Start() {
+//	func (p *Poller) OnStart(ctx context.Context) error {
 //	    p.done = make(chan struct{})
 //	    p.wg.Add(1)
 //	    go func() {
@@ -40,6 +48,8 @@ package worker
 //	        defer ticker.Stop()
 //	        for {
 //	            select {
+//	            case <-ctx.Done():
+//	                return
 //	            case <-p.done:
 //	                return
 //	            case <-ticker.C:
@@ -47,32 +57,46 @@ package worker
 //	            }
 //	        }
 //	    }()
+//	    return nil
 //	}
 //
-//	func (p *Poller) Stop() {
+//	func (p *Poller) OnStop(ctx context.Context) error {
 //	    close(p.done)
 //	    p.wg.Wait() // Wait for goroutine to exit
+//	    return nil
 //	}
 type Worker interface {
-	// Start begins the worker's background processing.
+	// OnStart begins the worker's background processing.
 	//
 	// This method must be non-blocking. The worker should spawn its own
 	// goroutine internally for long-running work. The method should return
 	// immediately after initiating the worker.
 	//
-	// Start may be called multiple times if the worker is restarted after
+	// The context provides cancellation signals that the worker should
+	// respect for graceful shutdown.
+	//
+	// OnStart may be called multiple times if the worker is restarted after
 	// a panic. Implementations should handle this gracefully.
-	Start()
+	//
+	// Return an error if startup fails. A startup error prevents the worker
+	// from running and triggers the restart logic.
+	OnStart(ctx context.Context) error
 
-	// Stop signals the worker to shut down.
+	// OnStop signals the worker to shut down.
 	//
 	// The worker should exit gracefully, completing or aborting any in-progress
 	// work. This method may block until shutdown is complete, or return
 	// immediately if using a channel-based signal.
 	//
-	// Stop is called during application shutdown and when the worker panics
+	// The context provides a deadline for shutdown. Workers should respect
+	// this deadline and abort cleanup if the context is cancelled.
+	//
+	// OnStop is called during application shutdown and when the worker panics
 	// (before restart). Implementations should be idempotent.
-	Stop()
+	//
+	// Return an error to log shutdown issues. Errors are logged but shutdown
+	// continues regardless (stop errors are non-fatal).
+	OnStop(ctx context.Context) error
 
 	// Name returns a unique identifier for this worker.
 	//
