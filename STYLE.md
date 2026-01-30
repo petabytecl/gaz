@@ -233,3 +233,302 @@ func NewModule(name string, providers []Provider, flags FlagFn, prefix string) M
     ...
 }
 ```
+
+## Error Conventions
+
+### Sentinel Error Naming
+
+Sentinel error variables MUST use the `Err` prefix followed by a descriptive name.
+
+**Rationale:** Go convention; enables `errors.Is()` checks and clear identification.
+
+**Good:**
+```go
+// Source: gaz/di/errors.go
+var (
+    // ErrNotFound is returned when a requested service is not registered.
+    ErrNotFound = errors.New("di: service not found")
+
+    // ErrCycle is returned when a circular dependency is detected.
+    ErrCycle = errors.New("di: circular dependency detected")
+
+    // ErrDuplicate is returned when attempting to register an existing service.
+    ErrDuplicate = errors.New("di: service already registered")
+)
+```
+
+```go
+// Source: gaz/worker/errors.go
+var (
+    // ErrCircuitBreakerTripped indicates max restarts exceeded.
+    ErrCircuitBreakerTripped = errors.New("worker: circuit breaker tripped, max restarts exceeded")
+
+    // ErrWorkerStopped indicates a worker stopped normally.
+    ErrWorkerStopped = errors.New("worker: stopped normally")
+)
+```
+
+**Bad:**
+```go
+// Missing Err prefix
+var NotFound = errors.New("not found")
+
+// Wrong casing
+var errNotFound = errors.New("not found")  // Unexported sentinel is rarely useful
+```
+
+[AUTOMATABLE] Error variable naming (`Err*` prefix) can be enforced with custom golangci-lint rule.
+
+### Error Message Format
+
+Error messages MUST use the format `"pkg: description"` — lowercase, no trailing punctuation.
+
+**Rationale:** Consistent formatting when errors are wrapped and printed in chains.
+
+**Good:**
+```go
+// Source: gaz/di/errors.go
+ErrNotFound = errors.New("di: service not found")
+ErrCycle = errors.New("di: circular dependency detected")
+
+// Source: gaz/worker/errors.go
+ErrCircuitBreakerTripped = errors.New("worker: circuit breaker tripped, max restarts exceeded")
+```
+
+**Bad:**
+```go
+// Capitalized
+ErrNotFound = errors.New("Service not found")
+
+// Trailing punctuation
+ErrNotFound = errors.New("di: service not found.")
+
+// Missing package prefix
+ErrNotFound = errors.New("service not found")
+```
+
+### Error Wrapping
+
+Error wrapping MUST use `fmt.Errorf("context: %w", err)` with lowercase context.
+
+**Rationale:** Preserves error chain for `errors.Is()` and `errors.As()` while adding context.
+
+**Good:**
+```go
+// Source: gaz/health/module.go
+if err := gaz.For[*ShutdownCheck](c).
+    ProviderFunc(func(_ *gaz.Container) *ShutdownCheck {
+        return NewShutdownCheck()
+    }); err != nil {
+    return fmt.Errorf("register shutdown check: %w", err)
+}
+
+if err := gaz.For[*Manager](c).Provider(...); err != nil {
+    return fmt.Errorf("register manager: %w", err)
+}
+```
+
+**Bad:**
+```go
+// Capitalized context
+return fmt.Errorf("Register manager: %w", err)
+
+// Using %v loses error chain
+return fmt.Errorf("register manager: %v", err)
+
+// No context
+return err
+```
+
+### Error Types (for completeness)
+
+Error types SHOULD use the `Error` suffix when a struct type is needed.
+
+**Rationale:** Distinguishes error types from regular types; enables `errors.As()` matching.
+
+**Note:** gaz currently uses sentinel errors (`var Err*`), not error types. This convention is documented for completeness if error types are needed in the future.
+
+**Good:**
+```go
+// Not currently used in gaz, but if needed:
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation: %s: %s", e.Field, e.Message)
+}
+```
+
+**Bad:**
+```go
+// Missing Error suffix
+type Validation struct { ... }
+
+// Using Err prefix for types (Err is for variables)
+type ErrValidation struct { ... }
+```
+
+## Module Patterns
+
+### Module Factory Function
+
+Module factory functions MUST use the signature `func Module(c *gaz.Container) error`.
+
+**Rationale:** Consistent signature enables composition with `NewModule().Provide()`.
+
+**Good:**
+```go
+// Source: gaz/health/module.go
+// Module registers the health module components.
+func Module(c *gaz.Container) error {
+    // Register ShutdownCheck
+    if err := gaz.For[*ShutdownCheck](c).
+        ProviderFunc(func(_ *gaz.Container) *ShutdownCheck {
+            return NewShutdownCheck()
+        }); err != nil {
+        return fmt.Errorf("register shutdown check: %w", err)
+    }
+
+    // Register Manager
+    if err := gaz.For[*Manager](c).
+        Provider(func(c *gaz.Container) (*Manager, error) {
+            m := NewManager()
+            // Wire up dependencies...
+            return m, nil
+        }); err != nil {
+        return fmt.Errorf("register manager: %w", err)
+    }
+
+    return nil
+}
+```
+
+**Bad:**
+```go
+// Wrong signature
+func Module() error { ... }
+func Module(c *gaz.Container) { ... }  // Missing error return
+
+// Wrong name
+func RegisterModule(c *gaz.Container) error { ... }
+```
+
+### ModuleBuilder Pattern
+
+Use `NewModule(name).Provide(...).Build()` for bundling multiple providers.
+
+**Rationale:** Clean composition with naming, flags, and child modules.
+
+**Good:**
+```go
+// Source: gaz/module_builder.go
+// Create module with providers
+module := gaz.NewModule("database").
+    Provide(func(c *gaz.Container) error {
+        return gaz.For[*DB](c).Provider(NewDB)
+    }).
+    Build()
+
+// Compose modules
+observability := gaz.NewModule("observability").
+    Use(loggingModule).
+    Use(metricsModule).
+    Build()
+
+// Module with flags
+redisModule := gaz.NewModule("redis").
+    Flags(func(fs *pflag.FlagSet) {
+        fs.String("redis-host", "localhost", "Redis server host")
+    }).
+    Provide(RedisProvider).
+    Build()
+```
+
+**Bad:**
+```go
+// Direct struct construction
+module := &builtModule{name: "database", ...}
+
+// Missing Build() call
+module := gaz.NewModule("database").Provide(...)  // Returns *ModuleBuilder, not Module
+```
+
+### Error Wrapping in Modules
+
+Module registration errors MUST be wrapped with context using the pattern `"register X: %w"`.
+
+**Rationale:** Clear error messages when module registration fails.
+
+**Good:**
+```go
+// Source: gaz/health/module.go
+if err := gaz.For[*Manager](c).Provider(...); err != nil {
+    return fmt.Errorf("register manager: %w", err)
+}
+
+if err := gaz.For[*ManagementServer](c).Provider(...); err != nil {
+    return fmt.Errorf("register management server: %w", err)
+}
+```
+
+**Bad:**
+```go
+// No context
+if err := gaz.For[*Manager](c).Provider(...); err != nil {
+    return err
+}
+
+// Inconsistent format
+if err := gaz.For[*Manager](c).Provider(...); err != nil {
+    return fmt.Errorf("Manager registration failed: %w", err)
+}
+```
+
+## Exception Process
+
+When a convention cannot be followed:
+
+1. **Document the reason** in a code comment referencing STYLE.md
+2. **Get approval** in code review with explicit acknowledgment
+3. **Justify why** the exception is necessary (not just convenient)
+
+**Example:**
+```go
+// STYLE.md exception: Using NewHealthManager() instead of NewManager()
+// because health package also exports health.Manager from external library.
+// Approved in PR #123.
+func NewHealthManager() *Manager {
+    return &Manager{}
+}
+```
+
+**When exceptions are appropriate:**
+- External library constraints (naming conflicts)
+- Backward compatibility requirements
+- Performance-critical code paths
+
+**When exceptions are NOT appropriate:**
+- Personal preference
+- "It's faster to write"
+- "Other projects do it this way"
+
+## Automatable Rules
+
+The following conventions can be enforced with linters:
+
+| Convention | Automatable | Linter |
+|------------|-------------|--------|
+| Error variable naming (`Err*` prefix) | Yes | Custom golangci-lint rule |
+| Error message format (`pkg: msg`) | Partially | Custom rule |
+| Package doc exists | Yes | revive |
+| Doc comment starts with name | Yes | revive |
+| Constructor naming (`New*`) | No | Semantic, context-dependent |
+
+[AUTOMATABLE] markers appear inline where linter enforcement is feasible.
+
+---
+
+*Last updated: 2026-01-30*
+*Phase: 23-foundation-style-guide*
