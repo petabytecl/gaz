@@ -134,6 +134,62 @@ func (p *AllTypesProvider) ConfigFlags() []gaz.ConfigFlag {
 // NonConfigProvider is a regular provider that doesn't implement ConfigProvider.
 type NonConfigProvider struct{}
 
+// DatabaseProvider is used for nested struct unmarshal testing.
+type DatabaseProvider struct{}
+
+func (p *DatabaseProvider) ConfigNamespace() string {
+	return "database"
+}
+
+func (p *DatabaseProvider) ConfigFlags() []gaz.ConfigFlag {
+	return []gaz.ConfigFlag{
+		{Key: "host", Type: gaz.ConfigFlagTypeString, Default: "db.local", Description: "Database host"},
+		{Key: "pool_max", Type: gaz.ConfigFlagTypeInt, Default: 10, Description: "Max pool size"},
+		{Key: "pool_idle", Type: gaz.ConfigFlagTypeInt, Default: 5, Description: "Idle pool size"},
+	}
+}
+
+// PartialProvider is used for partial fill testing.
+type PartialProvider struct{}
+
+func (p *PartialProvider) ConfigNamespace() string {
+	return "partial"
+}
+
+func (p *PartialProvider) ConfigFlags() []gaz.ConfigFlag {
+	return []gaz.ConfigFlag{
+		{Key: "host", Type: gaz.ConfigFlagTypeString, Default: "myhost", Description: "Host"},
+		// port deliberately has no default to test partial fill
+	}
+}
+
+// ServerProvider is used for full unmarshal testing.
+type ServerProvider struct{}
+
+func (p *ServerProvider) ConfigNamespace() string {
+	return "server"
+}
+
+func (p *ServerProvider) ConfigFlags() []gaz.ConfigFlag {
+	return []gaz.ConfigFlag{
+		{Key: "host", Type: gaz.ConfigFlagTypeString, Default: "0.0.0.0", Description: "Server host"},
+		{Key: "port", Type: gaz.ConfigFlagTypeInt, Default: 8080, Description: "Server port"},
+	}
+}
+
+// DebugProvider is used for full unmarshal testing.
+type DebugProvider struct{}
+
+func (p *DebugProvider) ConfigNamespace() string {
+	return ""
+}
+
+func (p *DebugProvider) ConfigFlags() []gaz.ConfigFlag {
+	return []gaz.ConfigFlag{
+		{Key: "debug", Type: gaz.ConfigFlagTypeBool, Default: true, Description: "Debug mode"},
+	}
+}
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -393,4 +449,153 @@ func (s *ProviderConfigSuite) TestEnvVarTranslation() {
 
 	// Env var REDIS_HOST should override redis.host
 	s.Equal("env-translated-host", pv.GetString("redis.host"))
+}
+
+// =============================================================================
+// Unmarshal tests
+// =============================================================================
+
+func (s *ProviderConfigSuite) TestProviderValues_UnmarshalKey_SimpleStruct() {
+	// Unmarshal simple struct with gaz tags
+	s.T().Setenv("REDIS_HOST", "localhost")
+	s.T().Setenv("REDIS_PORT", "6379")
+
+	app := gaz.New().
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_UNMARSHAL_SIMPLE"))
+
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
+	s.Require().NoError(err)
+
+	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+
+	target := &struct {
+		Host string `gaz:"host"`
+		Port int    `gaz:"port"`
+	}{}
+	err = pv.UnmarshalKey("redis", target)
+	s.Require().NoError(err)
+
+	s.Equal("localhost", target.Host)
+	s.Equal(6379, target.Port)
+}
+
+func (s *ProviderConfigSuite) TestProviderValues_UnmarshalKey_NestedStruct() {
+	// Test UnmarshalKey with struct that has multiple fields using gaz tags
+	app := gaz.New().
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_UNMARSHAL_NESTED"))
+
+	// Register a provider that declares the database namespace with flat keys
+	err := gaz.For[*DatabaseProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *DatabaseProvider {
+		return &DatabaseProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
+	s.Require().NoError(err)
+
+	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+
+	// Test that struct fields are unmarshaled correctly using gaz tags
+	target := &struct {
+		Host     string `gaz:"host"`
+		PoolMax  int    `gaz:"pool_max"`
+		PoolIdle int    `gaz:"pool_idle"`
+	}{}
+	err = pv.UnmarshalKey("database", target)
+	s.Require().NoError(err)
+
+	s.Equal("db.local", target.Host)
+	s.Equal(10, target.PoolMax)
+	s.Equal(5, target.PoolIdle)
+}
+
+func (s *ProviderConfigSuite) TestProviderValues_UnmarshalKey_MissingNamespace() {
+	// Missing namespace returns ErrKeyNotFound
+	app := gaz.New().
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_UNMARSHAL_MISSING"))
+
+	err := app.Build()
+	s.Require().NoError(err)
+
+	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+
+	target := &struct {
+		Host string `gaz:"host"`
+	}{}
+	err = pv.UnmarshalKey("nonexistent", target)
+
+	s.Require().Error(err)
+	s.ErrorIs(err, config.ErrKeyNotFound)
+	s.Contains(err.Error(), "nonexistent")
+}
+
+func (s *ProviderConfigSuite) TestProviderValues_UnmarshalKey_PartialFill() {
+	// Partial fill leaves unset fields at zero value
+	// PartialProvider only declares "host" with default "myhost"
+	// The target struct has "port" which is not in config - should stay zero
+	app := gaz.New().
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_UNMARSHAL_PARTIAL"))
+
+	// Register provider for partial namespace
+	err := gaz.For[*PartialProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *PartialProvider {
+		return &PartialProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
+	s.Require().NoError(err)
+
+	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+
+	target := &struct {
+		Host string `gaz:"host"`
+		Port int    `gaz:"port"`
+	}{}
+	err = pv.UnmarshalKey("partial", target)
+	s.Require().NoError(err)
+
+	s.Equal("myhost", target.Host)
+	s.Equal(0, target.Port) // zero value because not in config
+}
+
+func (s *ProviderConfigSuite) TestProviderValues_Unmarshal() {
+	// Full config unmarshaling using UnmarshalKey for namespaced config
+	// This demonstrates the recommended pattern: use UnmarshalKey for specific namespaces
+	type RedisConfig struct {
+		Host string `gaz:"host"`
+		Port int    `gaz:"port"`
+	}
+
+	app := gaz.New().
+		WithConfig(&struct{}{}, config.WithEnvPrefix("TEST_UNMARSHAL_FULL"))
+
+	// Register provider for redis namespace
+	err := gaz.For[*RedisProvider](app.Container()).ProviderFunc(func(_ *gaz.Container) *RedisProvider {
+		return &RedisProvider{}
+	})
+	s.Require().NoError(err)
+
+	err = app.Build()
+	s.Require().NoError(err)
+
+	pv := gaz.MustResolve[*gaz.ProviderValues](app.Container())
+
+	// UnmarshalKey is the recommended way to get namespaced config
+	var cfg RedisConfig
+	err = pv.UnmarshalKey("redis", &cfg)
+	s.Require().NoError(err)
+
+	s.Equal("localhost", cfg.Host)
+	s.Equal(6379, cfg.Port)
+
+	// Unmarshal (full config) can unmarshal to a map to inspect all settings
+	var allConfig map[string]any
+	err = pv.Unmarshal(&allConfig)
+	s.Require().NoError(err)
+	s.Contains(allConfig, "redis")
 }
