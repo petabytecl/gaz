@@ -75,28 +75,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | — | Pending |
-| LIF-01 | — | Pending |
-| LIF-02 | — | Pending |
-| LIF-03 | — | Pending |
-| MOD-01 | — | Pending |
-| MOD-02 | — | Pending |
-| MOD-03 | — | Pending |
-| MOD-04 | — | Pending |
-| ERR-01 | — | Pending |
-| ERR-02 | — | Pending |
-| ERR-03 | — | Pending |
-| TST-01 | — | Pending |
-| TST-02 | — | Pending |
-| TST-03 | — | Pending |
-| DOC-01 | — | Pending |
-| DOC-02 | — | Pending |
-| DOC-03 | — | Pending |
+| CFG-01 | Phase 25 | Pending |
+| LIF-01 | Phase 24 | Pending |
+| LIF-02 | Phase 24 | Pending |
+| LIF-03 | Phase 24 | Pending |
+| MOD-01 | Phase 26 | Pending |
+| MOD-02 | Phase 26 | Pending |
+| MOD-03 | Phase 26 | Pending |
+| MOD-04 | Phase 26 | Pending |
+| ERR-01 | Phase 27 | Pending |
+| ERR-02 | Phase 27 | Pending |
+| ERR-03 | Phase 27 | Pending |
+| TST-01 | Phase 28 | Pending |
+| TST-02 | Phase 28 | Pending |
+| TST-03 | Phase 28 | Pending |
+| DOC-01 | Phase 23 | Pending |
+| DOC-02 | Phase 29 | Pending |
+| DOC-03 | Phase 29 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 (pending roadmap creation)
+- Mapped to phases: 17 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-29*

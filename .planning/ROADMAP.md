@@ -1,0 +1,153 @@
+# Roadmap: gaz v3.0 API Harmonization
+
+## Overview
+
+The v3.0 API Harmonization milestone transforms gaz's API patterns to align with industry standards (uber-go/fx, google/wire, samber/do). This is a clean-break refactoring: interface-based lifecycle management, module factory functions, config struct unmarshaling, and consolidated error handling. Seven phases take us from establishing conventions through implementation to polished documentation.
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-6 (shipped 2026-01-26)
+- ✅ **v1.1 Security & Hardening** - Phases 7-10 (shipped 2026-01-27)
+- ✅ **v2.0 Cleanup & Concurrency** - Phases 11-18 (shipped 2026-01-29)
+- ✅ **v2.1 API Enhancement** - Phases 19-21 (shipped 2026-01-29)
+- ✅ **v2.2 Test Coverage** - Phase 22 (shipped 2026-01-29)
+- 🚧 **v3.0 API Harmonization** - Phases 23-29 (in progress)
+
+## Phases
+
+<details>
+<summary>✅ v1.0 - v2.2 (Phases 1-22) - SHIPPED</summary>
+
+See `.planning/milestones/` for archived phase details.
+
+</details>
+
+### 🚧 v3.0 API Harmonization (In Progress)
+
+**Milestone Goal:** Harmonize gaz API with industry-standard patterns for lifecycle, modules, config, and errors.
+
+- [ ] **Phase 23: Foundation & Style Guide** - Establish naming conventions before API changes
+- [ ] **Phase 24: Lifecycle Interface Alignment** - Remove fluent hooks, unify Starter/Stopper patterns
+- [ ] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
+- [ ] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
+- [ ] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
+- [ ] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
+- [ ] **Phase 29: Documentation & Examples** - Complete user documentation and examples
+
+## Phase Details
+
+### Phase 23: Foundation & Style Guide
+**Goal**: Naming conventions and API patterns documented for consistent implementation
+**Depends on**: Nothing (first phase of v3.0)
+**Requirements**: DOC-01
+**Success Criteria** (what must be TRUE):
+  1. STYLE.md (or equivalent) exists with API naming conventions
+  2. Constructor patterns documented (New*() vs builders vs fluent)
+  3. Error naming conventions defined (ErrSubsystemAction format)
+  4. Module factory function pattern documented (NewModule() returns gaz.Module)
+**Plans**: TBD
+
+Plans:
+- [ ] 23-01: TBD
+
+### Phase 24: Lifecycle Interface Alignment
+**Goal**: Unified interface-based lifecycle management across all service types
+**Depends on**: Phase 23
+**Requirements**: LIF-01, LIF-02, LIF-03
+**Success Criteria** (what must be TRUE):
+  1. Services implementing Starter/Stopper are automatically wired without fluent hooks
+  2. worker.Worker implementations receive context in OnStart/OnStop and return error
+  3. Third-party types (sql.DB, http.Server) can have lifecycle via Adapt() helper
+  4. Fluent OnStart/OnStop methods are removed from RegistrationBuilder API
+**Plans**: TBD
+
+Plans:
+- [ ] 24-01: TBD
+
+### Phase 25: Configuration Harmonization
+**Goal**: Struct-based config resolution via unmarshaling
+**Depends on**: Phase 24
+**Requirements**: CFG-01
+**Success Criteria** (what must be TRUE):
+  1. ProviderValues has Unmarshal(namespace, &target) method that populates config structs
+  2. Existing LoadInto() pattern continues to work (no breaking change there)
+  3. Config namespacing enables module isolation (each module's config is prefixed)
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD
+
+### Phase 26: Module & Service Consolidation
+**Goal**: Simplified module system with consistent NewModule() patterns
+**Depends on**: Phase 25
+**Requirements**: MOD-01, MOD-02, MOD-03, MOD-04
+**Success Criteria** (what must be TRUE):
+  1. gaz.App provides all functionality previously in service.Builder
+  2. gaz/service package is removed (import path no longer exists)
+  3. Subsystem packages (worker, cron, health, eventbus, config) export NewModule()
+  4. Import relationship between di and gaz packages is documented clearly
+  5. All existing tests pass with consolidated module system
+**Plans**: TBD
+
+Plans:
+- [ ] 26-01: TBD
+
+### Phase 27: Error Standardization
+**Goal**: Predictable, contextual error handling with namespaced sentinels
+**Depends on**: Phase 26
+**Requirements**: ERR-01, ERR-02, ERR-03
+**Success Criteria** (what must be TRUE):
+  1. All sentinel errors are defined in gaz/errors.go (single source of truth)
+  2. Error names include subsystem prefix (ErrDINotFound, ErrConfigNotFound, ErrWorkerStopped)
+  3. All error wrapping uses consistent "pkg: context: %w" format
+  4. errors.Is/As work correctly for all gaz error types
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD
+
+### Phase 28: Testing Infrastructure
+**Goal**: Comprehensive test support for v3 patterns
+**Depends on**: Phase 27
+**Requirements**: TST-01, TST-02, TST-03
+**Success Criteria** (what must be TRUE):
+  1. gaztest builder API fully supports v3 patterns (no deprecated methods remain)
+  2. Each subsystem has testing.go with test helpers (health, worker, config, cron, eventbus)
+  3. Testing guide documentation explains common testing patterns
+  4. Example tests demonstrate all v3 patterns
+**Plans**: TBD
+
+Plans:
+- [ ] 28-01: TBD
+
+### Phase 29: Documentation & Examples
+**Goal**: Complete user-facing documentation for v3
+**Depends on**: Phase 28
+**Requirements**: DOC-02, DOC-03
+**Success Criteria** (what must be TRUE):
+  1. README includes getting started guide for new users
+  2. godoc examples exist for all major public APIs
+  3. All example code uses v3 patterns exclusively
+  4. Tutorials cover common use cases (DI setup, lifecycle, modules, config)
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD
+
+## Progress
+
+**Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 23. Foundation & Style Guide | v3.0 | 0/TBD | Not started | - |
+| 24. Lifecycle Interface Alignment | v3.0 | 0/TBD | Not started | - |
+| 25. Configuration Harmonization | v3.0 | 0/TBD | Not started | - |
+| 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
+| 27. Error Standardization | v3.0 | 0/TBD | Not started | - |
+| 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
+| 29. Documentation & Examples | v3.0 | 0/TBD | Not started | - |
+
+---
+*Roadmap created: 2026-01-29*
+*Milestone: v3.0 API Harmonization*
