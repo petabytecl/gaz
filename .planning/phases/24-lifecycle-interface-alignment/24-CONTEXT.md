@@ -7,7 +7,6 @@
 ## Phase Boundary
 
 Unify interface-based lifecycle management across all service types. Remove fluent OnStart/OnStop hooks from RegistrationBuilder, align worker.Worker interface with di.Starter/Stopper patterns, and ensure automatic lifecycle wiring for any type implementing these interfaces. This is a clean-break v3.0 change.
-
 </domain>
 
 <decisions>
@@ -41,24 +40,4 @@ Unify interface-based lifecycle management across all service types. Remove flue
 - Whether Worker interface embeds Starter + Stopper or just has matching signatures
 - Implementation details for lifecycle auto-detection
 - Test migration strategy
-
 </decisions>
-
-<specifics>
-## Specific Ideas
-
-No specific requirements — open to standard approaches.
-
-</specifics>
-
-<deferred>
-## Deferred Ideas
-
-- Third-party wrapper documentation example — Phase 29 (Documentation & Examples)
-
-</deferred>
-
----
-
-*Phase: 24-lifecycle-interface-alignment*
-*Context gathered: 2026-01-30*
