@@ -9,13 +9,13 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CFG-01**: ProviderValues has Unmarshal(namespace, &target) method for struct-based config resolution
+- [x] **CFG-01**: ProviderValues has Unmarshal(namespace, &target) method for struct-based config resolution
 
 ### Lifecycle
 
-- [ ] **LIF-01**: RegistrationBuilder does not have OnStart/OnStop fluent methods (interface-only lifecycle)
-- [ ] **LIF-02**: worker.Worker interface uses OnStart(ctx context.Context) error and OnStop(ctx context.Context) error
-- [ ] **LIF-03**: Adapt() helper exists for wrapping third-party types (sql.DB, http.Server) with lifecycle hooks
+- [x] **LIF-01**: RegistrationBuilder does not have OnStart/OnStop fluent methods (interface-only lifecycle)
+- [x] **LIF-02**: worker.Worker interface uses OnStart(ctx context.Context) error and OnStop(ctx context.Context) error
+- [x] **LIF-03**: Adapt() helper exists for wrapping third-party types (sql.DB, http.Server) with lifecycle hooks (SKIPPED per user decision)
 
 ### Module Consolidation
 
@@ -75,10 +75,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 25 | Pending |
-| LIF-01 | Phase 24 | Pending |
-| LIF-02 | Phase 24 | Pending |
-| LIF-03 | Phase 24 | Pending |
+| CFG-01 | Phase 25 | Complete |
+| LIF-01 | Phase 24 | Complete |
+| LIF-02 | Phase 24 | Complete |
+| LIF-03 | Phase 24 | Skipped |
 | MOD-01 | Phase 26 | Pending |
 | MOD-02 | Phase 26 | Pending |
 | MOD-03 | Phase 26 | Pending |

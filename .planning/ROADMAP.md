@@ -28,7 +28,7 @@ See `.planning/milestones/` for archived phase details.
 
 - [x] **Phase 23: Foundation & Style Guide** - Establish naming conventions before API changes
 - [x] **Phase 24: Lifecycle Interface Alignment** - Remove fluent hooks, unify Starter/Stopper patterns
-- [ ] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
+- [x] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
 - [ ] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
 - [ ] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
 - [ ] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
