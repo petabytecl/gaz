@@ -26,7 +26,7 @@ See `.planning/milestones/` for archived phase details.
 
 **Milestone Goal:** Harmonize gaz API with industry-standard patterns for lifecycle, modules, config, and errors.
 
-- [ ] **Phase 23: Foundation & Style Guide** - Establish naming conventions before API changes
+- [x] **Phase 23: Foundation & Style Guide** - Establish naming conventions before API changes
 - [ ] **Phase 24: Lifecycle Interface Alignment** - Remove fluent hooks, unify Starter/Stopper patterns
 - [ ] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
 - [ ] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
@@ -48,7 +48,7 @@ See `.planning/milestones/` for archived phase details.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 23-01-PLAN.md — Create STYLE.md with API naming conventions
+- [x] 23-01-PLAN.md — Create STYLE.md with API naming conventions
 
 ### Phase 24: Lifecycle Interface Alignment
 **Goal**: Unified interface-based lifecycle management across all service types
@@ -140,7 +140,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 23. Foundation & Style Guide | v3.0 | 0/1 | Planned | - |
+| 23. Foundation & Style Guide | v3.0 | 1/1 | Complete | 2026-01-30 |
 | 24. Lifecycle Interface Alignment | v3.0 | 0/TBD | Not started | - |
 | 25. Configuration Harmonization | v3.0 | 0/TBD | Not started | - |
 | 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
