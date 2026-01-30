@@ -32,15 +32,16 @@ func newMockWorker(name string) *mockWorker {
 	}
 }
 
-func (w *mockWorker) Start() {
+func (w *mockWorker) OnStart(ctx context.Context) error {
 	atomic.AddInt32(&w.startCount, 1)
 	if w.panicOnStart {
 		panic("intentional panic for testing")
 	}
 	close(w.started)
+	return nil
 }
 
-func (w *mockWorker) Stop() {
+func (w *mockWorker) OnStop(ctx context.Context) error {
 	atomic.AddInt32(&w.stopCount, 1)
 	w.mu.Lock()
 	select {
@@ -50,6 +51,7 @@ func (w *mockWorker) Stop() {
 		close(w.stopped)
 	}
 	w.mu.Unlock()
+	return nil
 }
 
 func (w *mockWorker) Name() string {
@@ -70,12 +72,12 @@ type panicWorker struct {
 	startCount int32
 }
 
-func (w *panicWorker) Start() {
+func (w *panicWorker) OnStart(ctx context.Context) error {
 	atomic.AddInt32(&w.startCount, 1)
 	panic("intentional panic")
 }
 
-func (w *panicWorker) Stop() {}
+func (w *panicWorker) OnStop(ctx context.Context) error { return nil }
 
 func (w *panicWorker) Name() string { return w.name }
 
@@ -340,8 +342,8 @@ func TestSupervisor_StopBeforeStart(t *testing.T) {
 	assert.Equal(t, 0, worker.getStopCount(), "worker should not have stopped")
 }
 
-// TestPooledWorker_StartStop tests the pooledWorker delegate methods.
-func TestPooledWorker_StartStop(t *testing.T) {
+// TestPooledWorker_OnStartOnStop tests the pooledWorker delegate methods.
+func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	worker := newMockWorker("base-worker")
 	pooled := &pooledWorker{
 		delegate: worker,
@@ -350,8 +352,10 @@ func TestPooledWorker_StartStop(t *testing.T) {
 
 	assert.Equal(t, "base-worker-1", pooled.Name())
 
-	// Start should delegate to the base worker
-	go pooled.Start()
+	ctx := context.Background()
+
+	// OnStart should delegate to the base worker
+	go pooled.OnStart(ctx)
 
 	select {
 	case <-worker.started:
@@ -362,7 +366,7 @@ func TestPooledWorker_StartStop(t *testing.T) {
 
 	assert.Equal(t, 1, worker.getStartCount(), "delegate should have started")
 
-	// Stop should delegate to the base worker
-	pooled.Stop()
+	// OnStop should delegate to the base worker
+	pooled.OnStop(ctx)
 	assert.Equal(t, 1, worker.getStopCount(), "delegate should have stopped")
 }

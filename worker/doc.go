@@ -8,15 +8,20 @@
 //
 // The [Worker] interface defines three methods for lifecycle management:
 //
-//   - Start() - Begins the worker. Returns immediately; worker spawns its own goroutine.
-//   - Stop() - Signals shutdown. Worker should exit gracefully.
+//   - OnStart(ctx) - Begins the worker. Returns immediately; worker spawns its own goroutine.
+//     The context provides cancellation signals. Returns error if startup fails.
+//   - OnStop(ctx) - Signals shutdown. Worker should exit gracefully. The context provides
+//     a shutdown deadline. Returns error to log issues (shutdown continues regardless).
 //   - Name() - Returns a unique identifier for logging and debugging.
+//
+// The OnStart/OnStop signature aligns with [di.Starter] and [di.Stopper] interfaces,
+// enabling consistent lifecycle management across all gaz services.
 //
 // # Implementing a Worker
 //
-// Workers are responsible for their own goroutine management. Start() must be
+// Workers are responsible for their own goroutine management. OnStart() must be
 // non-blocking; the worker should spawn its own goroutine for long-running work.
-// Stop() signals the worker to shut down; the worker decides when to return.
+// OnStop() signals the worker to shut down; the worker decides when to return.
 //
 // Example of a simple worker:
 //
@@ -26,11 +31,13 @@
 //
 //	func (w *MyWorker) Name() string { return "my-worker" }
 //
-//	func (w *MyWorker) Start() {
+//	func (w *MyWorker) OnStart(ctx context.Context) error {
 //	    w.stop = make(chan struct{})
 //	    go func() {
 //	        for {
 //	            select {
+//	            case <-ctx.Done():
+//	                return
 //	            case <-w.stop:
 //	                return
 //	            case <-time.After(time.Second):
@@ -38,10 +45,12 @@
 //	            }
 //	        }
 //	    }()
+//	    return nil
 //	}
 //
-//	func (w *MyWorker) Stop() {
+//	func (w *MyWorker) OnStop(ctx context.Context) error {
 //	    close(w.stop)
+//	    return nil
 //	}
 //
 // # Registration Options

@@ -30,7 +30,7 @@ func newSimpleWorker(name string) *simpleWorker {
 	}
 }
 
-func (w *simpleWorker) Start() {
+func (w *simpleWorker) OnStart(ctx context.Context) error {
 	atomic.AddInt32(&w.startCount, 1)
 	w.mu.Lock()
 	select {
@@ -39,9 +39,10 @@ func (w *simpleWorker) Start() {
 		close(w.started)
 	}
 	w.mu.Unlock()
+	return nil
 }
 
-func (w *simpleWorker) Stop() {
+func (w *simpleWorker) OnStop(ctx context.Context) error {
 	atomic.AddInt32(&w.stopCount, 1)
 	w.mu.Lock()
 	select {
@@ -50,6 +51,7 @@ func (w *simpleWorker) Stop() {
 		close(w.stopped)
 	}
 	w.mu.Unlock()
+	return nil
 }
 
 func (w *simpleWorker) Name() string {
