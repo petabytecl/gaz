@@ -113,18 +113,14 @@ func (s *IntegrationSuite) TestCobraWithFullLifecycle() {
 	app := gaz.New(gaz.WithShutdownTimeout(time.Second))
 
 	// Register service with lifecycle hooks using For[T] API
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
 	err := gaz.For[*testLifecycleService](app.Container()).
-		OnStart(func(_ context.Context, _ *testLifecycleService) error {
-			startCalled.Store(true)
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *testLifecycleService) error {
-			stopCalled.Store(true)
-			return nil
-		}).
 		Eager(). // Must be eager to have hooks called
 		ProviderFunc(func(_ *gaz.Container) *testLifecycleService {
-			return &testLifecycleService{}
+			return &testLifecycleService{
+				onStart: func() { startCalled.Store(true) },
+				onStop:  func() { stopCalled.Store(true) },
+			}
 		})
 	s.Require().NoError(err)
 
@@ -426,20 +422,17 @@ func (s *IntegrationSuite) TestCobraWithModulesAndLifecycle() {
 	app := gaz.New()
 
 	// Infrastructure module with lifecycle
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
 	app.Module("infrastructure",
 		func(c *gaz.Container) error {
 			return gaz.For[*testDatabase](c).
-				OnStart(func(_ context.Context, _ *testDatabase) error {
-					started.Store(true)
-					return nil
-				}).
-				OnStop(func(_ context.Context, _ *testDatabase) error {
-					stopped.Store(true)
-					return nil
-				}).
 				Eager().
 				ProviderFunc(func(_ *gaz.Container) *testDatabase {
-					return &testDatabase{dsn: "production-db"}
+					return &testDatabase{
+						dsn:     "production-db",
+						onStart: func() { started.Store(true) },
+						onStop:  func() { stopped.Store(true) },
+					}
 				})
 		},
 	)
@@ -521,7 +514,25 @@ func (s *IntegrationSuite) TestCobraConfigIntegration() {
 // =============================================================================
 
 type testDatabase struct {
-	dsn string
+	dsn     string
+	onStart func()
+	onStop  func()
+}
+
+// OnStart implements di.Starter for testDatabase.
+func (d *testDatabase) OnStart(_ context.Context) error {
+	if d.onStart != nil {
+		d.onStart()
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for testDatabase.
+func (d *testDatabase) OnStop(_ context.Context) error {
+	if d.onStop != nil {
+		d.onStop()
+	}
+	return nil
 }
 
 type testCache struct {
@@ -532,7 +543,26 @@ type testUserService struct {
 	db *testDatabase
 }
 
-type testLifecycleService struct{}
+type testLifecycleService struct {
+	onStart func()
+	onStop  func()
+}
+
+// OnStart implements di.Starter for testLifecycleService.
+func (s *testLifecycleService) OnStart(_ context.Context) error {
+	if s.onStart != nil {
+		s.onStart()
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for testLifecycleService.
+func (s *testLifecycleService) OnStop(_ context.Context) error {
+	if s.onStop != nil {
+		s.onStop()
+	}
+	return nil
+}
 
 type testRequest struct {
 	id int
