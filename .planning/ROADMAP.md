@@ -53,16 +53,19 @@ Plans:
 ### Phase 24: Lifecycle Interface Alignment
 **Goal**: Unified interface-based lifecycle management across all service types
 **Depends on**: Phase 23
-**Requirements**: LIF-01, LIF-02, LIF-03
+**Requirements**: LIF-01, LIF-02, LIF-03 (LIF-03 skipped per user decision - no Adapt() helper)
 **Success Criteria** (what must be TRUE):
   1. Services implementing Starter/Stopper are automatically wired without fluent hooks
   2. worker.Worker implementations receive context in OnStart/OnStop and return error
-  3. Third-party types (sql.DB, http.Server) can have lifecycle via Adapt() helper
-  4. Fluent OnStart/OnStop methods are removed from RegistrationBuilder API
-**Plans**: TBD
+  3. Fluent OnStart/OnStop methods are removed from RegistrationBuilder API
+**Plans**: 5 plans in 3 waves
 
 Plans:
-- [ ] 24-01: TBD
+- [ ] 24-01-PLAN.md — Migrate worker.Worker interface to OnStart(ctx)/OnStop(ctx) error
+- [ ] 24-02-PLAN.md — Remove fluent hooks from RegistrationBuilder (interface-only lifecycle)
+- [ ] 24-03-PLAN.md — Update cron.Scheduler and example workers to new interface
+- [ ] 24-04-PLAN.md — Migrate all remaining fluent hook usages to interfaces
+- [ ] 24-05-PLAN.md — Update documentation and verify full phase completion
 
 ### Phase 25: Configuration Harmonization
 **Goal**: Struct-based config resolution via unmarshaling
@@ -141,7 +144,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 23. Foundation & Style Guide | v3.0 | 1/1 | Complete | 2026-01-30 |
-| 24. Lifecycle Interface Alignment | v3.0 | 0/TBD | Not started | - |
+| 24. Lifecycle Interface Alignment | v3.0 | 0/5 | Planned | - |
 | 25. Configuration Harmonization | v3.0 | 0/TBD | Not started | - |
 | 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
 | 27. Error Standardization | v3.0 | 0/TBD | Not started | - |
