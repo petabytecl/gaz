@@ -36,12 +36,10 @@ type ServiceWrapper interface {
 }
 
 // baseService implements common functionality for all service wrappers.
-// It handles metadata (name, type) and lifecycle hook execution.
+// It handles metadata (name, type) only. Lifecycle is detected via interfaces.
 type baseService struct {
 	serviceName     string
 	serviceTypeName string
-	startHooks      []func(context.Context, any) error
-	stopHooks       []func(context.Context, any) error
 }
 
 func (s *baseService) Name() string {
@@ -52,35 +50,7 @@ func (s *baseService) TypeName() string {
 	return s.serviceTypeName
 }
 
-func (s *baseService) HasLifecycle() bool {
-	return len(s.startHooks) > 0 || len(s.stopHooks) > 0
-}
-
-func (s *baseService) runStartHooks(ctx context.Context, instance any) error {
-	for _, hook := range s.startHooks {
-		if err := hook(ctx, instance); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *baseService) runStopHooks(ctx context.Context, instance any) error {
-	for i := len(s.stopHooks) - 1; i >= 0; i-- {
-		if err := s.stopHooks[i](ctx, instance); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error {
-	// If explicit start hooks are registered, they take precedence.
-	// We do NOT call the implicit Starter interface in this case.
-	if len(s.startHooks) > 0 {
-		return s.runStartHooks(ctx, instance)
-	}
-
 	if starter, ok := instance.(Starter); ok {
 		if err := starter.OnStart(ctx); err != nil {
 			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
@@ -90,29 +60,17 @@ func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error
 }
 
 func (s *baseService) runStopLifecycle(ctx context.Context, instance any) error {
-	// If explicit stop hooks are registered, they take precedence.
-	// We do NOT call the implicit Stopper interface in this case.
-	if len(s.stopHooks) > 0 {
-		return s.runStopHooks(ctx, instance)
-	}
-
 	if stopper, ok := instance.(Stopper); ok {
 		if err := stopper.OnStop(ctx); err != nil {
 			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
 		}
 	}
-
 	return nil
 }
 
 // hasLifecycleImpl is a helper for generic service wrappers to check for
-// explicit hooks or implicit Starter/Stopper interfaces on T or *T.
-func hasLifecycleImpl[T any](base *baseService) bool {
-	// Check explicit hooks first
-	if base.HasLifecycle() {
-		return true
-	}
-
+// Starter/Stopper interfaces on T or *T.
+func hasLifecycleImpl[T any]() bool {
 	// Check if T implements interfaces (e.g. T is *Service)
 	var zero T
 	if _, ok := any(zero).(Starter); ok {
@@ -149,14 +107,11 @@ type lazySingleton[T any] struct {
 func newLazySingleton[T any](
 	name, typeName string,
 	provider func(*Container) (T, error),
-	startHooks, stopHooks []func(context.Context, any) error,
 ) *lazySingleton[T] {
 	return &lazySingleton[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
-			startHooks:      startHooks,
-			stopHooks:       stopHooks,
 		},
 		provider: provider,
 	}
@@ -171,7 +126,7 @@ func (s *lazySingleton[T]) IsTransient() bool {
 }
 
 func (s *lazySingleton[T]) HasLifecycle() bool {
-	return hasLifecycleImpl[T](&s.baseService)
+	return hasLifecycleImpl[T]()
 }
 
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
@@ -201,14 +156,14 @@ func (s *lazySingleton[T]) Start(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	return s.runStartHooks(ctx, s.instance)
+	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *lazySingleton[T]) Stop(ctx context.Context) error {
 	if !s.built {
 		return nil
 	}
-	return s.runStopHooks(ctx, s.instance)
+	return s.runStopLifecycle(ctx, s.instance)
 }
 
 // transientService creates a new instance on every resolve call.
@@ -281,14 +236,11 @@ type eagerSingleton[T any] struct {
 func newEagerSingleton[T any](
 	name, typeName string,
 	provider func(*Container) (T, error),
-	startHooks, stopHooks []func(context.Context, any) error,
 ) *eagerSingleton[T] {
 	return &eagerSingleton[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
-			startHooks:      startHooks,
-			stopHooks:       stopHooks,
 		},
 		provider: provider,
 	}
@@ -349,7 +301,7 @@ func (s *eagerSingleton[T]) Stop(ctx context.Context) error {
 }
 
 func (s *eagerSingleton[T]) HasLifecycle() bool {
-	return hasLifecycleImpl[T](&s.baseService)
+	return hasLifecycleImpl[T]()
 }
 
 // instanceService wraps a pre-built value. No provider is called.
@@ -363,14 +315,11 @@ type instanceService[T any] struct {
 func newInstanceService[T any](
 	name, typeName string,
 	value T,
-	startHooks, stopHooks []func(context.Context, any) error,
 ) *instanceService[T] {
 	return &instanceService[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
-			startHooks:      startHooks,
-			stopHooks:       stopHooks,
 		},
 		value: value,
 	}
@@ -397,7 +346,7 @@ func (s *instanceService[T]) Stop(ctx context.Context) error {
 }
 
 func (s *instanceService[T]) HasLifecycle() bool {
-	return true
+	return hasLifecycleImpl[T]()
 }
 
 // =============================================================================
@@ -416,14 +365,11 @@ type instanceServiceAny struct {
 func NewInstanceServiceAny(
 	name, typeName string,
 	value any,
-	startHooks, stopHooks []func(context.Context, any) error,
 ) *instanceServiceAny {
 	return &instanceServiceAny{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
-			startHooks:      startHooks,
-			stopHooks:       stopHooks,
 		},
 		value: value,
 	}
@@ -445,5 +391,12 @@ func (s *instanceServiceAny) Stop(ctx context.Context) error {
 }
 
 func (s *instanceServiceAny) HasLifecycle() bool {
-	return true
+	// Runtime check for Starter/Stopper interfaces
+	if _, ok := s.value.(Starter); ok {
+		return true
+	}
+	if _, ok := s.value.(Stopper); ok {
+		return true
+	}
+	return false
 }

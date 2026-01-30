@@ -266,7 +266,7 @@ func (a *App) registerInstance(instance any) error {
 		return fmt.Errorf("%w: %s", ErrDuplicate, typeNameStr)
 	}
 
-	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance, nil, nil)
+	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance)
 	a.container.Register(typeNameStr, svc)
 	return nil
 }

@@ -119,7 +119,7 @@ func (b *Builder) Build() (*App, error) {
 			return nil, fmt.Errorf("gaztest: Replace: type %s not registered in container", r.typeName)
 		}
 		// Create replacement service and register it
-		svc := di.NewInstanceServiceAny(r.typeName, r.typeName, r.instance, nil, nil)
+		svc := di.NewInstanceServiceAny(r.typeName, r.typeName, r.instance)
 		gazApp.Container().Register(r.typeName, svc)
 	}
 

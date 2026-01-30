@@ -42,7 +42,7 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 			return &simpleStarter{}, nil
 		}
 		// No explicit hooks provided
-		svc := newLazySingleton("test", "*di.simpleStarter", provider, nil, nil)
+		svc := newLazySingleton("test", "*di.simpleStarter", provider)
 
 		assert.True(t, svc.HasLifecycle(), "HasLifecycle should return true for service implementing Starter")
 	})
@@ -52,7 +52,7 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 			return &simpleStopper{}, nil
 		}
 		// No explicit hooks provided
-		svc := newLazySingleton("test", "*di.simpleStopper", provider, nil, nil)
+		svc := newLazySingleton("test", "*di.simpleStopper", provider)
 
 		assert.True(t, svc.HasLifecycle(), "HasLifecycle should return true for service implementing Stopper")
 	})
@@ -62,69 +62,8 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 		provider := func(_ *Container) (*noLifecycle, error) {
 			return &noLifecycle{}, nil
 		}
-		svc := newLazySingleton("test", "*di.noLifecycle", provider, nil, nil)
+		svc := newLazySingleton("test", "*di.noLifecycle", provider)
 
 		assert.False(t, svc.HasLifecycle(), "HasLifecycle should return false for service with no lifecycle")
 	})
-}
-
-// doubleLifecycle implements both Starter and Stopper.
-type doubleLifecycle struct {
-	started      bool
-	stopped      bool
-	startHookRun bool
-	stopHookRun  bool
-}
-
-func (s *doubleLifecycle) OnStart(ctx context.Context) error {
-	s.started = true
-	return nil
-}
-
-func (s *doubleLifecycle) OnStop(ctx context.Context) error {
-	s.stopped = true
-	return nil
-}
-
-func TestLifecycle_ExplicitOverridesImplicit(t *testing.T) {
-	instance := &doubleLifecycle{}
-
-	// Explicit hooks that track execution
-	startHook := func(ctx context.Context, i any) error {
-		s := i.(*doubleLifecycle)
-		s.startHookRun = true
-		return nil
-	}
-
-	stopHook := func(ctx context.Context, i any) error {
-		s := i.(*doubleLifecycle)
-		s.stopHookRun = true
-		return nil
-	}
-
-	// Register service with BOTH implicit interface and explicit hooks
-	// We use newInstanceService here to simplify test setup, as baseService logic is shared
-	svc := newInstanceService(
-		"double",
-		"*di.doubleLifecycle",
-		instance,
-		[]func(context.Context, any) error{startHook},
-		[]func(context.Context, any) error{stopHook},
-	)
-
-	ctx := context.Background()
-
-	// Test Start
-	err := svc.Start(ctx)
-	assert.NoError(t, err)
-
-	assert.True(t, instance.startHookRun, "Explicit start hook should have run")
-	assert.False(t, instance.started, "Implicit OnStart should NOT have run")
-
-	// Test Stop
-	err = svc.Stop(ctx)
-	assert.NoError(t, err)
-
-	assert.True(t, instance.stopHookRun, "Explicit stop hook should have run")
-	assert.False(t, instance.stopped, "Implicit OnStop should NOT have run")
 }

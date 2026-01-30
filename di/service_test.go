@@ -32,7 +32,7 @@ func (s *ServiceSuite) TestLazySingleton_InstantiatesOnce() {
 		return &testService{id: callCount}, nil
 	}
 
-	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newLazySingleton("test", "*gaz.testService", provider)
 	c := New()
 
 	instance1, err := svc.GetInstance(c, nil)
@@ -54,7 +54,7 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 		return &testService{id: int(callCount)}, nil
 	}
 
-	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newLazySingleton("test", "*gaz.testService", provider)
 	c := New()
 
 	const numGoroutines = 10
@@ -121,12 +121,12 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 		return &testService{id: 1}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
 
 	s.True(svc.IsEager(), "eagerSingleton.IsEager() should return true")
 
 	// Verify lazy and transient are NOT eager
-	lazy := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
+	lazy := newLazySingleton("test", "*gaz.testService", provider)
 	s.False(lazy.IsEager(), "lazySingleton.IsEager() should return false")
 
 	transient := newTransient("test", "*gaz.testService", provider)
@@ -135,7 +135,7 @@ func (s *ServiceSuite) TestEagerSingleton_IsEagerTrue() {
 
 func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 	original := &testService{id: 42}
-	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.testService", original)
 	c := New()
 
 	instance, err := svc.GetInstance(c, nil)
@@ -153,7 +153,7 @@ func (s *ServiceSuite) TestInstanceService_ReturnsValue() {
 
 func (s *ServiceSuite) TestInstanceService_IsNotEager() {
 	original := &testService{id: 1}
-	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.testService", original)
 
 	// Instance service is already instantiated, so isEager() should be false
 	// (no need to instantiate at Build() time)
@@ -173,7 +173,7 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 	}{
 		{
 			name:    "lazySingleton",
-			wrapper: newLazySingleton("myService", "*app.MyService", provider, nil, nil),
+			wrapper: newLazySingleton("myService", "*app.MyService", provider),
 			expName: "myService",
 			expType: "*app.MyService",
 		},
@@ -185,13 +185,13 @@ func (s *ServiceSuite) TestServiceWrapper_NameAndTypeName() {
 		},
 		{
 			name:    "eagerSingleton",
-			wrapper: newEagerSingleton("eager", "*app.Eager", provider, nil, nil),
+			wrapper: newEagerSingleton("eager", "*app.Eager", provider),
 			expName: "eager",
 			expType: "*app.Eager",
 		},
 		{
 			name:    "instanceService",
-			wrapper: newInstanceService("instance", "*app.Instance", &testService{id: 1}, nil, nil),
+			wrapper: newInstanceService("instance", "*app.Instance", &testService{id: 1}),
 			expName: "instance",
 			expType: "*app.Instance",
 		},
@@ -213,7 +213,7 @@ func (s *ServiceSuite) TestEagerSingleton_BehavesLikeLazySingleton() {
 		return &testService{id: callCount}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
 	c := New()
 
 	instance1, err := svc.GetInstance(c, nil)
@@ -245,156 +245,14 @@ func (s *ServiceSuite) TestTransientService_LifecycleMethods() {
 	s.False(svc.HasLifecycle(), "transient should not have lifecycle")
 }
 
-// Test lazy singleton lifecycle edge cases.
-func (s *ServiceSuite) TestLazySingleton_LifecycleNotBuilt() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	startCalled := false
-	stopCalled := false
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			startCalled = true
-			return nil
-		},
-	}
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			stopCalled = true
-			return nil
-		},
-	}
-
-	svc := newLazySingleton("test", "*gaz.testService", provider, startHooks, stopHooks)
-
-	// When not built, start and stop should be no-ops
-	err := svc.Start(context.Background())
-	s.Require().NoError(err)
-	s.False(startCalled, "start hook should not be called when not built")
-
-	err = svc.Stop(context.Background())
-	s.Require().NoError(err)
-	s.False(stopCalled, "stop hook should not be called when not built")
-}
-
-func (s *ServiceSuite) TestLazySingleton_LifecycleWithHooks() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	startCalled := false
-	stopCalled := false
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			startCalled = true
-			return nil
-		},
-	}
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			stopCalled = true
-			return nil
-		},
-	}
-
-	svc := newLazySingleton("test", "*gaz.testService", provider, startHooks, stopHooks)
-	c := New()
-
-	// Build the instance
-	_, err := svc.GetInstance(c, nil)
-	s.Require().NoError(err)
-
-	// Now hooks should be called
-	err = svc.Start(context.Background())
-	s.Require().NoError(err)
-	s.True(startCalled, "start hook should be called")
-
-	err = svc.Stop(context.Background())
-	s.Require().NoError(err)
-	s.True(stopCalled, "stop hook should be called")
-}
-
-func (s *ServiceSuite) TestLazySingleton_StartError() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("start failed")
-		},
-	}
-
-	svc := newLazySingleton("test", "*gaz.testService", provider, startHooks, nil)
-	c := New()
-
-	// Build the instance
-	_, err := svc.GetInstance(c, nil)
-	s.Require().NoError(err)
-
-	// start should return the error
-	err = svc.Start(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "start failed")
-}
-
-func (s *ServiceSuite) TestLazySingleton_StopError() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("stop failed")
-		},
-	}
-
-	svc := newLazySingleton("test", "*gaz.testService", provider, nil, stopHooks)
-	c := New()
-
-	// Build the instance
-	_, err := svc.GetInstance(c, nil)
-	s.Require().NoError(err)
-
-	// stop should return the error
-	err = svc.Stop(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "stop failed")
-}
-
 func (s *ServiceSuite) TestLazySingleton_HasLifecycle() {
 	provider := func(_ *Container) (*testService, error) {
 		return &testService{id: 1}, nil
 	}
 
-	// No hooks
-	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
+	// No lifecycle interfaces
+	svc := newLazySingleton("test", "*gaz.testService", provider)
 	s.False(svc.HasLifecycle())
-
-	// With start hook only
-	svc2 := newLazySingleton(
-		"test",
-		"*gaz.testService",
-		provider,
-		[]func(context.Context, any) error{
-			func(_ context.Context, _ any) error { return nil },
-		},
-		nil,
-	)
-	s.True(svc2.HasLifecycle())
-
-	// With stop hook only
-	svc3 := newLazySingleton(
-		"test",
-		"*gaz.testService",
-		provider,
-		nil,
-		[]func(context.Context, any) error{
-			func(_ context.Context, _ any) error { return nil },
-		},
-	)
-	s.True(svc3.HasLifecycle())
 }
 
 // Test eager singleton lifecycle edge cases.
@@ -403,7 +261,7 @@ func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 		return &testService{id: 1}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
 
 	// When not built, start should be no-op
 	err := svc.Start(context.Background())
@@ -414,135 +272,12 @@ func (s *ServiceSuite) TestEagerSingleton_LifecycleNotBuilt() {
 	s.Require().NoError(err)
 }
 
-func (s *ServiceSuite) TestEagerSingleton_StartError() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("start failed")
-		},
-	}
-
-	svc := newEagerSingleton("test", "*gaz.testService", provider, startHooks, nil)
-	c := New()
-
-	// Build the instance
-	_, err := svc.GetInstance(c, nil)
-	s.Require().NoError(err)
-
-	// start should return the error
-	err = svc.Start(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "start failed")
-}
-
-func (s *ServiceSuite) TestEagerSingleton_StopError() {
-	provider := func(_ *Container) (*testService, error) {
-		return &testService{id: 1}, nil
-	}
-
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("stop failed")
-		},
-	}
-
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, stopHooks)
-	c := New()
-
-	// Build the instance
-	_, err := svc.GetInstance(c, nil)
-	s.Require().NoError(err)
-
-	// stop should return the error
-	err = svc.Stop(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "stop failed")
-}
-
-// Test instance service lifecycle.
-func (s *ServiceSuite) TestInstanceService_LifecycleHooks() {
-	original := &testService{id: 42}
-
-	startCalled := false
-	stopCalled := false
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			startCalled = true
-			return nil
-		},
-	}
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			stopCalled = true
-			return nil
-		},
-	}
-
-	svc := newInstanceService("test", "*gaz.testService", original, startHooks, stopHooks)
-
-	err := svc.Start(context.Background())
-	s.Require().NoError(err)
-	s.True(startCalled)
-
-	err = svc.Stop(context.Background())
-	s.Require().NoError(err)
-	s.True(stopCalled)
-}
-
 func (s *ServiceSuite) TestInstanceService_HasLifecycle() {
 	original := &testService{id: 42}
 
-	// No hooks
-	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
-	// Changed: instance services always participate in lifecycle to support Starter/Stopper interfaces
-	s.True(svc.HasLifecycle())
-
-	// With hooks
-	svc2 := newInstanceService(
-		"test",
-		"*gaz.testService",
-		original,
-		[]func(context.Context, any) error{
-			func(_ context.Context, _ any) error { return nil },
-		},
-		nil,
-	)
-	s.True(svc2.HasLifecycle())
-}
-
-func (s *ServiceSuite) TestInstanceService_StartError() {
-	original := &testService{id: 42}
-
-	startHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("start failed")
-		},
-	}
-
-	svc := newInstanceService("test", "*gaz.testService", original, startHooks, nil)
-
-	err := svc.Start(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "start failed")
-}
-
-func (s *ServiceSuite) TestInstanceService_StopError() {
-	original := &testService{id: 42}
-
-	stopHooks := []func(context.Context, any) error{
-		func(_ context.Context, _ any) error {
-			return errors.New("stop failed")
-		},
-	}
-
-	svc := newInstanceService("test", "*gaz.testService", original, nil, stopHooks)
-
-	err := svc.Stop(context.Background())
-	s.Require().Error(err)
-	s.Contains(err.Error(), "stop failed")
+	// testService does not implement Starter/Stopper, so no lifecycle
+	svc := newInstanceService("test", "*gaz.testService", original)
+	s.False(svc.HasLifecycle())
 }
 
 // Test Starter/Stopper interfaces for eager singleton.
@@ -577,7 +312,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterface() {
 		return &starterService{}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.starterService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.starterService", provider)
 	c := New()
 
 	// Build the instance
@@ -597,7 +332,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterface() {
 		return &stopperService{}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.stopperService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.stopperService", provider)
 	c := New()
 
 	// Build the instance
@@ -617,7 +352,7 @@ func (s *ServiceSuite) TestEagerSingleton_StarterInterfaceError() {
 		return &failingStarterService{}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.failingStarterService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.failingStarterService", provider)
 	c := New()
 
 	// Build the instance
@@ -635,7 +370,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 		return &failingStopperService{}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.failingStopperService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.failingStopperService", provider)
 	c := New()
 
 	// Build the instance
@@ -655,7 +390,7 @@ func (s *ServiceSuite) TestEagerSingleton_StopperInterfaceError() {
 func (s *ServiceSuite) TestInstanceServiceAny_Lifecycle() {
 	// Instance Service Any - used internally by registerInstance()
 	inst := &starterService{}
-	svc := NewInstanceServiceAny("instance", "any", inst, nil, nil)
+	svc := NewInstanceServiceAny("instance", "any", inst)
 
 	s.Require().NoError(svc.Start(context.Background()))
 	s.True(inst.started)
@@ -669,7 +404,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_Lifecycle() {
 func (s *ServiceSuite) TestInstanceService_StopperInterface() {
 	original := &stopperService{}
 
-	svc := newInstanceService("test", "*gaz.stopperService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.stopperService", original)
 
 	err := svc.Stop(context.Background())
 	s.Require().NoError(err)
@@ -679,7 +414,7 @@ func (s *ServiceSuite) TestInstanceService_StopperInterface() {
 func (s *ServiceSuite) TestInstanceService_StarterInterfaceError() {
 	original := &failingStarterService{}
 
-	svc := newInstanceService("test", "*gaz.failingStarterService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.failingStarterService", original)
 
 	err := svc.Start(context.Background())
 	s.Require().Error(err)
@@ -689,7 +424,7 @@ func (s *ServiceSuite) TestInstanceService_StarterInterfaceError() {
 func (s *ServiceSuite) TestInstanceService_StopperInterfaceError() {
 	original := &failingStopperService{}
 
-	svc := newInstanceService("test", "*gaz.failingStopperService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.failingStopperService", original)
 
 	err := svc.Stop(context.Background())
 	s.Require().Error(err)
@@ -705,7 +440,7 @@ func (s *ServiceSuite) TestLazySingleton_IsTransient() {
 		return &testService{id: 1}, nil
 	}
 
-	svc := newLazySingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newLazySingleton("test", "*gaz.testService", provider)
 
 	s.False(svc.IsTransient(), "lazySingleton.IsTransient() should return false")
 }
@@ -725,7 +460,7 @@ func (s *ServiceSuite) TestEagerSingleton_IsTransient() {
 		return &testService{id: 1}, nil
 	}
 
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
 
 	s.False(svc.IsTransient(), "eagerSingleton.IsTransient() should return false")
 }
@@ -733,7 +468,7 @@ func (s *ServiceSuite) TestEagerSingleton_IsTransient() {
 func (s *ServiceSuite) TestInstanceService_IsTransient() {
 	original := &testService{id: 42}
 
-	svc := newInstanceService("test", "*gaz.testService", original, nil, nil)
+	svc := newInstanceService("test", "*gaz.testService", original)
 
 	s.False(svc.IsTransient(), "instanceService.IsTransient() should return false")
 }
@@ -741,7 +476,7 @@ func (s *ServiceSuite) TestInstanceService_IsTransient() {
 func (s *ServiceSuite) TestInstanceServiceAny_IsTransient() {
 	original := &testService{id: 42}
 
-	svc := NewInstanceServiceAny("test", "*gaz.testService", original, nil, nil)
+	svc := NewInstanceServiceAny("test", "*gaz.testService", original)
 
 	s.False(svc.IsTransient(), "instanceServiceAny.IsTransient() should return false")
 }
@@ -753,7 +488,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_IsTransient() {
 func (s *ServiceSuite) TestInstanceServiceAny_IsEager() {
 	original := &testService{id: 42}
 
-	svc := NewInstanceServiceAny("test", "*gaz.testService", original, nil, nil)
+	svc := NewInstanceServiceAny("test", "*gaz.testService", original)
 
 	// Instance service is already instantiated, so IsEager() should be false
 	// (no need to instantiate at Build() time)
@@ -763,7 +498,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_IsEager() {
 func (s *ServiceSuite) TestInstanceServiceAny_GetInstance() {
 	original := &testService{id: 42}
 
-	svc := NewInstanceServiceAny("test", "*gaz.testService", original, nil, nil)
+	svc := NewInstanceServiceAny("test", "*gaz.testService", original)
 	c := New()
 
 	instance, err := svc.GetInstance(c, nil)
@@ -782,7 +517,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_GetInstance() {
 func (s *ServiceSuite) TestInstanceServiceAny_NameAndTypeName() {
 	original := &testService{id: 42}
 
-	svc := NewInstanceServiceAny("myInstance", "*app.MyType", original, nil, nil)
+	svc := NewInstanceServiceAny("myInstance", "*app.MyType", original)
 
 	s.Equal("myInstance", svc.Name())
 	s.Equal("*app.MyType", svc.TypeName())
@@ -791,7 +526,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_NameAndTypeName() {
 func (s *ServiceSuite) TestInstanceServiceAny_StartError() {
 	original := &failingStarterService{}
 
-	svc := NewInstanceServiceAny("test", "*gaz.failingStarterService", original, nil, nil)
+	svc := NewInstanceServiceAny("test", "*gaz.failingStarterService", original)
 
 	err := svc.Start(context.Background())
 	s.Require().Error(err)
@@ -801,7 +536,7 @@ func (s *ServiceSuite) TestInstanceServiceAny_StartError() {
 func (s *ServiceSuite) TestInstanceServiceAny_StopError() {
 	original := &failingStopperService{}
 
-	svc := NewInstanceServiceAny("test", "*gaz.failingStopperService", original, nil, nil)
+	svc := NewInstanceServiceAny("test", "*gaz.failingStopperService", original)
 
 	err := svc.Stop(context.Background())
 	s.Require().Error(err)
@@ -817,45 +552,21 @@ func (s *ServiceSuite) TestEagerSingleton_HasLifecycle() {
 		return &testService{id: 1}, nil
 	}
 
-	// No hooks - check for interface implementations
-	svc := newEagerSingleton("test", "*gaz.testService", provider, nil, nil)
+	// No lifecycle interfaces
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
 	s.False(svc.HasLifecycle())
-
-	// With start hook only
-	svc2 := newEagerSingleton(
-		"test",
-		"*gaz.testService",
-		provider,
-		[]func(context.Context, any) error{
-			func(_ context.Context, _ any) error { return nil },
-		},
-		nil,
-	)
-	s.True(svc2.HasLifecycle())
-
-	// With stop hook only
-	svc3 := newEagerSingleton(
-		"test",
-		"*gaz.testService",
-		provider,
-		nil,
-		[]func(context.Context, any) error{
-			func(_ context.Context, _ any) error { return nil },
-		},
-	)
-	s.True(svc3.HasLifecycle())
 
 	// With Starter interface
 	starterProvider := func(_ *Container) (*starterService, error) {
 		return &starterService{}, nil
 	}
-	svc4 := newEagerSingleton("test", "*gaz.starterService", starterProvider, nil, nil)
+	svc4 := newEagerSingleton("test", "*gaz.starterService", starterProvider)
 	s.True(svc4.HasLifecycle())
 
 	// With Stopper interface
 	stopperProvider := func(_ *Container) (*stopperService, error) {
 		return &stopperService{}, nil
 	}
-	svc5 := newEagerSingleton("test", "*gaz.stopperService", stopperProvider, nil, nil)
+	svc5 := newEagerSingleton("test", "*gaz.stopperService", stopperProvider)
 	s.True(svc5.HasLifecycle())
 }

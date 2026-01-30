@@ -1,10 +1,5 @@
 package di
 
-import (
-	"context"
-	"fmt"
-)
-
 // serviceScope defines the lifecycle scope for a registered service.
 type serviceScope int
 
@@ -18,6 +13,9 @@ const (
 // RegistrationBuilder provides a fluent API for configuring and registering services.
 // Start with For[T]() and chain methods like Named(), Transient(), Eager(), Replace(),
 // then terminate with Provider() or Instance().
+//
+// For lifecycle management (startup/shutdown hooks), implement the di.Starter and/or
+// di.Stopper interfaces on your service type. These interfaces are auto-detected.
 type RegistrationBuilder[T any] struct {
 	container    *Container
 	name         string       // Registration key (default: type name)
@@ -25,8 +23,6 @@ type RegistrationBuilder[T any] struct {
 	scope        serviceScope // singleton or transient
 	lazy         bool         // lazy (default) or eager
 	allowReplace bool         // allow overwriting existing
-	startHooks   []func(context.Context, any) error
-	stopHooks    []func(context.Context, any) error
 }
 
 // For returns a registration builder for type T.
@@ -85,42 +81,6 @@ func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 	return b
 }
 
-// OnStart registers a hook to be executed when the service is started.
-// The hook receives the context and the service instance.
-func (b *RegistrationBuilder[T]) OnStart(
-	fn func(context.Context, T) error,
-	_ ...HookOption, // Reserved for future extensibility
-) *RegistrationBuilder[T] {
-	wrapper := func(ctx context.Context, instance any) error {
-		typedInstance, ok := instance.(T)
-		if !ok {
-			var zero T
-			return fmt.Errorf("invalid instance type: expected %T", zero)
-		}
-		return fn(ctx, typedInstance)
-	}
-	b.startHooks = append(b.startHooks, wrapper)
-	return b
-}
-
-// OnStop registers a hook to be executed when the service is stopped.
-// The hook receives the context and the service instance.
-func (b *RegistrationBuilder[T]) OnStop(
-	fn func(context.Context, T) error,
-	_ ...HookOption, // Reserved for future extensibility
-) *RegistrationBuilder[T] {
-	wrapper := func(ctx context.Context, instance any) error {
-		typedInstance, ok := instance.(T)
-		if !ok {
-			var zero T
-			return fmt.Errorf("invalid instance type: expected %T", zero)
-		}
-		return fn(ctx, typedInstance)
-	}
-	b.stopHooks = append(b.stopHooks, wrapper)
-	return b
-}
-
 // Provider registers a provider function that creates the service instance.
 // The provider receives the container for resolving dependencies.
 // Returns an error if a service with the same name already exists (unless Replace() was called).
@@ -146,9 +106,9 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 	case b.scope == scopeTransient:
 		svc = newTransient(b.name, b.typeName, fn)
 	case !b.lazy:
-		svc = newEagerSingleton(b.name, b.typeName, fn, b.startHooks, b.stopHooks)
+		svc = newEagerSingleton(b.name, b.typeName, fn)
 	default:
-		svc = newLazySingleton(b.name, b.typeName, fn, b.startHooks, b.stopHooks)
+		svc = newLazySingleton(b.name, b.typeName, fn)
 	}
 
 	b.container.Register(b.name, svc)
@@ -184,7 +144,7 @@ func (b *RegistrationBuilder[T]) Instance(val T) error {
 		return ErrDuplicate
 	}
 
-	svc := newInstanceService(b.name, b.typeName, val, b.startHooks, b.stopHooks)
+	svc := newInstanceService(b.name, b.typeName, val)
 	b.container.Register(b.name, svc)
 	return nil
 }

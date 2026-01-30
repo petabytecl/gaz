@@ -1,7 +1,6 @@
 package di
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -220,97 +219,6 @@ func (s *RegistrationSuite) TestFor_Replace_Instance_AllowsOverwrite() {
 	cfg, err := Resolve[*testRegConfig](c)
 	s.Require().NoError(err)
 	s.Equal("replaced", cfg.value, "should get replaced instance")
-}
-
-// =============================================================================
-// OnStart()/OnStop() Hooks Tests
-// =============================================================================
-
-func (s *RegistrationSuite) TestFor_OnStart_HookCalled() {
-	c := New()
-
-	startCalled := false
-	err := For[*testRegService](c).
-		OnStart(func(_ context.Context, _ *testRegService) error {
-			startCalled = true
-			return nil
-		}).
-		Provider(func(_ *Container) (*testRegService, error) {
-			return &testRegService{id: 1}, nil
-		})
-	s.Require().NoError(err)
-
-	// Resolve to build
-	_, err = Resolve[*testRegService](c)
-	s.Require().NoError(err)
-
-	// Access wrapper and call start
-	wrapper, found := c.GetService(TypeName[*testRegService]())
-	s.Require().True(found)
-
-	err = wrapper.Start(context.Background())
-	s.Require().NoError(err)
-	s.True(startCalled, "OnStart hook should have been called")
-}
-
-func (s *RegistrationSuite) TestFor_OnStop_HookCalled() {
-	c := New()
-
-	stopCalled := false
-	err := For[*testRegService](c).
-		OnStop(func(_ context.Context, _ *testRegService) error {
-			stopCalled = true
-			return nil
-		}).
-		Provider(func(_ *Container) (*testRegService, error) {
-			return &testRegService{id: 1}, nil
-		})
-	s.Require().NoError(err)
-
-	// Resolve to build
-	_, err = Resolve[*testRegService](c)
-	s.Require().NoError(err)
-
-	// Access wrapper and call stop
-	wrapper, found := c.GetService(TypeName[*testRegService]())
-	s.Require().True(found)
-
-	err = wrapper.Stop(context.Background())
-	s.Require().NoError(err)
-	s.True(stopCalled, "OnStop hook should have been called")
-}
-
-func (s *RegistrationSuite) TestFor_BothHooks_CalledCorrectly() {
-	c := New()
-
-	callOrder := make([]string, 0)
-	err := For[*testRegService](c).
-		OnStart(func(_ context.Context, _ *testRegService) error {
-			callOrder = append(callOrder, "start")
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *testRegService) error {
-			callOrder = append(callOrder, "stop")
-			return nil
-		}).
-		Provider(func(_ *Container) (*testRegService, error) {
-			return &testRegService{id: 1}, nil
-		})
-	s.Require().NoError(err)
-
-	// Resolve to build
-	_, err = Resolve[*testRegService](c)
-	s.Require().NoError(err)
-
-	// Access wrapper
-	wrapper, found := c.GetService(TypeName[*testRegService]())
-	s.Require().True(found)
-
-	// Call start and stop
-	s.Require().NoError(wrapper.Start(context.Background()))
-	s.Require().NoError(wrapper.Stop(context.Background()))
-
-	s.Equal([]string{"start", "stop"}, callOrder)
 }
 
 // =============================================================================
