@@ -18,7 +18,25 @@ func TestCobraSuite(t *testing.T) {
 
 // cobraTestService is a test helper type for Cobra tests.
 type cobraTestService struct {
-	name string
+	name    string
+	onStart func()
+	onStop  func()
+}
+
+// OnStart implements di.Starter for cobraTestService.
+func (s *cobraTestService) OnStart(_ context.Context) error {
+	if s.onStart != nil {
+		s.onStart()
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for cobraTestService.
+func (s *cobraTestService) OnStop(_ context.Context) error {
+	if s.onStop != nil {
+		s.onStop()
+	}
+	return nil
 }
 
 func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
@@ -156,17 +174,13 @@ func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {
 	app := New()
 
 	var startCalled, stopCalled bool
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
 	err := For[*cobraTestService](app.Container()).Named("test").Eager().
-		OnStart(func(_ context.Context, _ *cobraTestService) error {
-			startCalled = true
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *cobraTestService) error {
-			stopCalled = true
-			return nil
-		}).
 		Provider(func(_ *Container) (*cobraTestService, error) {
-			return &cobraTestService{}, nil
+			return &cobraTestService{
+				onStart: func() { startCalled = true },
+				onStop:  func() { stopCalled = true },
+			}, nil
 		})
 	s.Require().NoError(err)
 

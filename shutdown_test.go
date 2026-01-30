@@ -88,19 +88,12 @@ func (s *ShutdownTestSuite) createAppWithSlowHook(
 	)
 
 	// Create a slow service using the container
+	// Service implements di.Stopper interface - no fluent hooks needed
 	err := For[*slowShutdownService](app.Container()).
 		Named("SlowService").
 		Eager().
-		OnStop(func(ctx context.Context, _ *slowShutdownService) error {
-			select {
-			case <-time.After(hookDuration):
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}).
 		ProviderFunc(func(_ *Container) *slowShutdownService {
-			return &slowShutdownService{}
+			return &slowShutdownService{duration: hookDuration}
 		})
 	s.Require().NoError(err)
 
@@ -108,7 +101,19 @@ func (s *ShutdownTestSuite) createAppWithSlowHook(
 }
 
 // slowShutdownService is a test service with configurable shutdown delay.
-type slowShutdownService struct{}
+type slowShutdownService struct {
+	duration time.Duration
+}
+
+// OnStop implements di.Stopper with a configurable delay.
+func (s *slowShutdownService) OnStop(ctx context.Context) error {
+	select {
+	case <-time.After(s.duration):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
 
 // createAppWithMultipleServices creates an app with multiple services for testing
 // per-hook timeout behavior where one service times out but others complete.
@@ -128,38 +133,22 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 	serviceBStopped := &atomic.Bool{}
 
 	// Service A (will timeout if serviceADuration > perHookTimeout)
+	// Service implements di.Stopper interface - no fluent hooks needed
 	err := For[*shutdownTestServiceA](app.Container()).
 		Named("ServiceA").
 		Eager().
-		OnStop(func(ctx context.Context, _ *shutdownTestServiceA) error {
-			select {
-			case <-time.After(serviceADuration):
-				serviceAStopped.Store(true)
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}).
 		ProviderFunc(func(_ *Container) *shutdownTestServiceA {
-			return &shutdownTestServiceA{}
+			return &shutdownTestServiceA{duration: serviceADuration, stopped: serviceAStopped}
 		})
 	s.Require().NoError(err)
 
 	// Service B (should complete even if A times out)
+	// Service implements di.Stopper interface - no fluent hooks needed
 	err = For[*shutdownTestServiceB](app.Container()).
 		Named("ServiceB").
 		Eager().
-		OnStop(func(ctx context.Context, _ *shutdownTestServiceB) error {
-			select {
-			case <-time.After(serviceBDuration):
-				serviceBStopped.Store(true)
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}).
 		ProviderFunc(func(_ *Container) *shutdownTestServiceB {
-			return &shutdownTestServiceB{}
+			return &shutdownTestServiceB{duration: serviceBDuration, stopped: serviceBStopped}
 		})
 	s.Require().NoError(err)
 
@@ -167,9 +156,37 @@ func (s *ShutdownTestSuite) createAppWithMultipleServices(
 }
 
 type (
-	shutdownTestServiceA struct{}
-	shutdownTestServiceB struct{}
+	shutdownTestServiceA struct {
+		duration time.Duration
+		stopped  *atomic.Bool
+	}
+	shutdownTestServiceB struct {
+		duration time.Duration
+		stopped  *atomic.Bool
+	}
 )
+
+// OnStop implements di.Stopper for shutdownTestServiceA.
+func (s *shutdownTestServiceA) OnStop(ctx context.Context) error {
+	select {
+	case <-time.After(s.duration):
+		s.stopped.Store(true)
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// OnStop implements di.Stopper for shutdownTestServiceB.
+func (s *shutdownTestServiceB) OnStop(ctx context.Context) error {
+	select {
+	case <-time.After(s.duration):
+		s.stopped.Store(true)
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
 
 // createLogCapturingApp creates an app with logger writing to the suite's logBuffer.
 // This allows assertion on logged messages including blame logging.
@@ -197,6 +214,16 @@ type namedSlowService struct {
 	duration time.Duration
 }
 
+// OnStop implements di.Stopper with a configurable delay.
+func (s *namedSlowService) OnStop(ctx context.Context) error {
+	select {
+	case <-time.After(s.duration):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // createAppWithNamedService creates an app with a named service for blame logging tests.
 func (s *ShutdownTestSuite) createAppWithNamedService(
 	serviceName string,
@@ -207,17 +234,10 @@ func (s *ShutdownTestSuite) createAppWithNamedService(
 	app := s.createLogCapturingApp(perHookTimeout, globalTimeout)
 
 	// Create a named service
+	// Service implements di.Stopper interface - no fluent hooks needed
 	err := For[*namedSlowService](app.Container()).
 		Named(serviceName).
 		Eager().
-		OnStop(func(ctx context.Context, _ *namedSlowService) error {
-			select {
-			case <-time.After(hookDuration):
-				return nil
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}).
 		ProviderFunc(func(_ *Container) *namedSlowService {
 			return &namedSlowService{name: serviceName, duration: hookDuration}
 		})

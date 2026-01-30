@@ -9,32 +9,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// myTestService is a test service that tracks lifecycle callbacks.
+type myTestService struct {
+	started *bool
+	stopped *bool
+}
+
+// OnStart implements di.Starter for myTestService.
+func (s *myTestService) OnStart(_ context.Context) error {
+	if s.started != nil {
+		*s.started = true
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for myTestService.
+func (s *myTestService) OnStop(_ context.Context) error {
+	if s.stopped != nil {
+		*s.stopped = true
+	}
+	return nil
+}
+
 func TestLifecycleHooks(t *testing.T) {
 	c := NewContainer()
 
 	var startCalled, stopCalled bool
 
-	type MyService struct{}
-
-	err := For[*MyService](c).
-		OnStart(func(_ context.Context, _ *MyService) error {
-			startCalled = true
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *MyService) error {
-			stopCalled = true
-			return nil
-		}).
-		ProviderFunc(func(_ *Container) *MyService { return &MyService{} })
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
+	err := For[*myTestService](c).
+		ProviderFunc(func(_ *Container) *myTestService {
+			return &myTestService{started: &startCalled, stopped: &stopCalled}
+		})
 
 	require.NoError(t, err)
 
 	// Manually resolve to ensure it's built
-	_, err = Resolve[*MyService](c)
+	_, err = Resolve[*myTestService](c)
 	require.NoError(t, err)
 
 	// Access the service wrapper using public API
-	svcName := TypeName[*MyService]()
+	svcName := TypeName[*myTestService]()
 	wrapper, ok := c.GetService(svcName)
 	require.True(t, ok)
 

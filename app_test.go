@@ -25,9 +25,50 @@ func TestAppTestSuite(t *testing.T) {
 }
 
 type (
-	AppTestServiceA struct{}
-	AppTestServiceB struct{ A *AppTestServiceA }
+	// AppTestServiceA is a test service that calls lifecycle callbacks.
+	AppTestServiceA struct {
+		onStart func()
+		onStop  func()
+	}
+	// AppTestServiceB is a test service that depends on A and calls lifecycle callbacks.
+	AppTestServiceB struct {
+		A       *AppTestServiceA
+		onStart func()
+		onStop  func()
+	}
 )
+
+// OnStart implements di.Starter for AppTestServiceA.
+func (s *AppTestServiceA) OnStart(_ context.Context) error {
+	if s.onStart != nil {
+		s.onStart()
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for AppTestServiceA.
+func (s *AppTestServiceA) OnStop(_ context.Context) error {
+	if s.onStop != nil {
+		s.onStop()
+	}
+	return nil
+}
+
+// OnStart implements di.Starter for AppTestServiceB.
+func (s *AppTestServiceB) OnStart(_ context.Context) error {
+	if s.onStart != nil {
+		s.onStart()
+	}
+	return nil
+}
+
+// OnStop implements di.Stopper for AppTestServiceB.
+func (s *AppTestServiceB) OnStop(_ context.Context) error {
+	if s.onStop != nil {
+		s.onStop()
+	}
+	return nil
+}
 
 func (s *AppTestSuite) TestRunAndStop() {
 	app := New()
@@ -49,34 +90,29 @@ func (s *AppTestSuite) TestRunAndStop() {
 	}
 
 	// Service A (Leaf dependency)
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
 	err := For[*AppTestServiceA](app.Container()).Named("A").Eager().
-		OnStart(func(_ context.Context, _ *AppTestServiceA) error {
-			recordStart("A")
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *AppTestServiceA) error {
-			recordStop("A")
-			return nil
-		}).
-		Provider(func(_ *Container) (*AppTestServiceA, error) { return &AppTestServiceA{}, nil })
+		Provider(func(_ *Container) (*AppTestServiceA, error) {
+			return &AppTestServiceA{
+				onStart: func() { recordStart("A") },
+				onStop:  func() { recordStop("A") },
+			}, nil
+		})
 	s.Require().NoError(err)
 
 	// Service B depends on A
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
 	err = For[*AppTestServiceB](app.Container()).Named("B").Eager().
-		OnStart(func(_ context.Context, _ *AppTestServiceB) error {
-			recordStart("B")
-			return nil
-		}).
-		OnStop(func(_ context.Context, _ *AppTestServiceB) error {
-			recordStop("B")
-			return nil
-		}).
 		Provider(func(c *Container) (*AppTestServiceB, error) {
 			a, resolveErr := Resolve[*AppTestServiceA](c, Named("A"))
 			if resolveErr != nil {
 				return nil, resolveErr
 			}
-			return &AppTestServiceB{A: a}, nil
+			return &AppTestServiceB{
+				A:       a,
+				onStart: func() { recordStart("B") },
+				onStop:  func() { recordStop("B") },
+			}, nil
 		})
 	s.Require().NoError(err)
 
@@ -210,13 +246,15 @@ func (s *AppTestSuite) TestStopNotRunning() {
 
 type FailingStartService struct{}
 
+// OnStart implements di.Starter and always returns an error.
+func (s *FailingStartService) OnStart(_ context.Context) error {
+	return errors.New("start failed")
+}
+
 func (s *AppTestSuite) TestRunStartError() {
 	app := New()
 
 	err := For[*FailingStartService](app.Container()).Eager().
-		OnStart(func(_ context.Context, _ *FailingStartService) error {
-			return errors.New("start failed")
-		}).
 		ProviderFunc(func(_ *Container) *FailingStartService {
 			return &FailingStartService{}
 		})
@@ -229,13 +267,15 @@ func (s *AppTestSuite) TestRunStartError() {
 
 type FailingStopService struct{}
 
+// OnStop implements di.Stopper and always returns an error.
+func (s *FailingStopService) OnStop(_ context.Context) error {
+	return errors.New("stop failed")
+}
+
 func (s *AppTestSuite) TestStopError() {
 	app := New()
 
 	err := For[*FailingStopService](app.Container()).Named("failstop").Eager().
-		OnStop(func(_ context.Context, _ *FailingStopService) error {
-			return errors.New("stop failed")
-		}).
 		ProviderFunc(func(_ *Container) *FailingStopService {
 			return &FailingStopService{}
 		})
