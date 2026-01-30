@@ -8,6 +8,20 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
+## Current Milestone: v3.0 API Harmonization
+
+**Goal:** Harmonize the gaz framework API for consistency, discoverability, and extensibility.
+
+**Target features:**
+- Merge `service` package into core `gaz`
+- Remove fluent `OnStart`/`OnStop` from `For[T]()` (interface-only lifecycle)
+- Align `worker.Worker` interface with `Starter`/`Stopper` patterns
+- Add `ProviderValues.Unmarshal()` for config namespace resolution
+- Standardize `NewModule()` factory pattern across subsystems
+- Consolidate sentinel errors in `gaz/errors.go`
+- Enhanced gaztest and per-package testing helpers
+- Comprehensive documentation and style guides
+
 ## Current State
 
 **Shipped:** v2.2 Test Coverage (2026-01-29)
@@ -65,7 +79,12 @@ The framework now provides:
 
 ### Active
 
-(Ready for next milestone)
+- [ ] Configuration system harmonization (ProviderValues.Unmarshal, config struct standard)
+- [ ] Lifecycle interface alignment (remove fluent hooks, align worker interface)
+- [ ] Module system consolidation (merge service package, NewModule() pattern)
+- [ ] Error standardization (sentinel errors, wrapping pattern)
+- [ ] Testing infrastructure (enhanced gaztest, per-package helpers)
+- [ ] Documentation & polish (style guide, user docs, examples)
 
 ### Out of Scope
 
@@ -141,4 +160,4 @@ Target: Internal use first, open source viability later.
 | Health auto-registration via interface | Config implements HealthConfigProvider for opt-in | ✓ Good (v2.1) |
 
 ---
-*Last updated: 2026-01-29 after v2.2 milestone complete*
+*Last updated: 2026-01-29 after v3.0 milestone started*
