@@ -1,7 +1,6 @@
 package health
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/petabytecl/gaz"
@@ -43,14 +42,8 @@ func Module(c *gaz.Container) error {
 		return fmt.Errorf("register manager: %w", err)
 	}
 
-	// Register ManagementServer
+	// Register ManagementServer (implements di.Starter and di.Stopper)
 	if err := gaz.For[*ManagementServer](c).
-		OnStart(func(ctx context.Context, s *ManagementServer) error {
-			return s.Start(ctx)
-		}).
-		OnStop(func(ctx context.Context, s *ManagementServer) error {
-			return s.Stop(ctx)
-		}).
 		Eager().
 		Provider(func(c *gaz.Container) (*ManagementServer, error) {
 			cfg, err := gaz.Resolve[Config](c)

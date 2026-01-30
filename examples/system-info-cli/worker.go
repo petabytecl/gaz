@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -41,14 +42,17 @@ func (w *RefreshWorker) Name() string {
 	return w.name
 }
 
-// Start begins the worker's background processing.
+// OnStart begins the worker's background processing.
 //
 // This method is non-blocking. It spawns a goroutine that:
 //   - Performs initial collection and display on start
 //   - Creates a ticker for periodic collection
 //   - Collects and displays system info on each tick
 //   - Exits gracefully when done channel is closed
-func (w *RefreshWorker) Start() {
+//
+// The context can be used for cancellation signals.
+// Returns nil as worker startup doesn't fail.
+func (w *RefreshWorker) OnStart(ctx context.Context) error {
 	w.done = make(chan struct{})
 	w.wg.Add(1)
 	go func() {
@@ -62,6 +66,8 @@ func (w *RefreshWorker) Start() {
 
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-w.done:
 				return
 			case <-ticker.C:
@@ -69,15 +75,19 @@ func (w *RefreshWorker) Start() {
 			}
 		}
 	}()
+	return nil
 }
 
-// Stop signals the worker to shut down and waits for completion.
+// OnStop signals the worker to shut down and waits for completion.
 //
 // This method blocks until the background goroutine has fully stopped.
 // It closes the done channel to signal shutdown and waits on the WaitGroup.
-func (w *RefreshWorker) Stop() {
+// The context provides a deadline for shutdown (not currently used).
+// Returns nil as worker stop doesn't fail.
+func (w *RefreshWorker) OnStop(ctx context.Context) error {
 	close(w.done)
 	w.wg.Wait()
+	return nil
 }
 
 // collectAndDisplay gathers and outputs system information.

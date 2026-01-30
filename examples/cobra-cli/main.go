@@ -151,14 +151,8 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to register config: %w", err)
 	}
 
-	// Register server with lifecycle hooks
+	// Register server with lifecycle hooks (Server implements di.Starter and di.Stopper)
 	if err := gaz.For[*Server](app.Container()).
-		OnStart(func(ctx context.Context, s *Server) error {
-			return s.OnStart(ctx)
-		}).
-		OnStop(func(ctx context.Context, s *Server) error {
-			return s.OnStop(ctx)
-		}).
 		Eager().
 		Provider(func(c *gaz.Container) (*Server, error) {
 			cfg, err := gaz.Resolve[AppConfig](c)

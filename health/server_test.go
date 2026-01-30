@@ -23,8 +23,8 @@ func TestManagementServer_StartStop(t *testing.T) {
 
 	// Start
 	ctx := context.Background()
-	if err := server.Start(ctx); err != nil {
-		t.Fatalf("Start failed: %v", err)
+	if err := server.OnStart(ctx); err != nil {
+		t.Fatalf("OnStart failed: %v", err)
 	}
 
 	// Verify it's running
@@ -49,7 +49,7 @@ func TestManagementServer_StartStop(t *testing.T) {
 	// Stop
 	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	if stopErr := server.Stop(stopCtx); stopErr != nil {
-		t.Errorf("Stop failed: %v", stopErr)
+	if stopErr := server.OnStop(stopCtx); stopErr != nil {
+		t.Errorf("OnStop failed: %v", stopErr)
 	}
 }

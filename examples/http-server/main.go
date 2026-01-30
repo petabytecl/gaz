@@ -142,14 +142,8 @@ func main() {
 		log.Fatalf("Failed to register handler: %v", err)
 	}
 
-	// Register HTTP server with lifecycle hooks
+	// Register HTTP server (implements di.Starter and di.Stopper)
 	if err := gaz.For[*Server](app.Container()).
-		OnStart(func(ctx context.Context, s *Server) error {
-			return s.OnStart(ctx)
-		}).
-		OnStop(func(ctx context.Context, s *Server) error {
-			return s.OnStop(ctx)
-		}).
 		Eager(). // Start immediately
 		Provider(func(c *gaz.Container) (*Server, error) {
 			cfg, err := gaz.Resolve[ServerConfig](c)

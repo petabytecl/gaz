@@ -37,9 +37,9 @@ func NewManagementServer(
 	}
 }
 
-// Start starts the management server in a background goroutine.
-// It returns immediately.
-func (s *ManagementServer) Start(_ context.Context) error {
+// OnStart starts the management server in a background goroutine.
+// It returns immediately. Implements di.Starter interface.
+func (s *ManagementServer) OnStart(_ context.Context) error {
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// In a real application, we would want to log this error.
@@ -51,9 +51,10 @@ func (s *ManagementServer) Start(_ context.Context) error {
 	return nil
 }
 
-// Stop gracefully shuts down the management server.
+// OnStop gracefully shuts down the management server.
 // It first marks the application as shutting down to fail readiness probes.
-func (s *ManagementServer) Stop(ctx context.Context) error {
+// Implements di.Stopper interface.
+func (s *ManagementServer) OnStop(ctx context.Context) error {
 	// 1. Mark shutting down first
 	if s.shutdownCheck != nil {
 		s.shutdownCheck.MarkShuttingDown()
