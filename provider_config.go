@@ -1,6 +1,7 @@
 package gaz
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/petabytecl/gaz/config"
@@ -142,4 +143,63 @@ func (pv *ProviderValues) GetDuration(key string) time.Duration {
 // GetFloat64 returns a float64 config value by its full key.
 func (pv *ProviderValues) GetFloat64(key string) float64 {
 	return pv.backend.GetFloat64(key)
+}
+
+// gazUnmarshaler is implemented by backends that support gaz struct tags.
+type gazUnmarshaler interface {
+	UnmarshalWithGazTag(target any) error
+	UnmarshalKeyWithGazTag(key string, target any) error
+	HasKey(key string) bool
+}
+
+// Unmarshal unmarshals the entire config into target struct.
+// Uses "gaz" struct tags for field mapping.
+//
+// Example:
+//
+//	type AppConfig struct {
+//	    Redis RedisConfig `gaz:"redis"`
+//	    DB    DBConfig    `gaz:"database"`
+//	}
+//
+//	var cfg AppConfig
+//	if err := pv.Unmarshal(&cfg); err != nil {
+//	    return err
+//	}
+func (pv *ProviderValues) Unmarshal(target any) error {
+	if gu, ok := pv.backend.(gazUnmarshaler); ok {
+		return gu.UnmarshalWithGazTag(target)
+	}
+	// Fallback: use standard Unmarshal (uses mapstructure tag)
+	return pv.backend.Unmarshal(target)
+}
+
+// UnmarshalKey unmarshals config at the given key/namespace into target struct.
+// Uses "gaz" struct tags for field mapping.
+// Returns config.ErrKeyNotFound if the key/namespace doesn't exist.
+//
+// Example:
+//
+//	type RedisConfig struct {
+//	    Host string `gaz:"host"`
+//	    Port int    `gaz:"port"`
+//	}
+//
+//	var cfg RedisConfig
+//	if err := pv.UnmarshalKey("redis", &cfg); err != nil {
+//	    if errors.Is(err, config.ErrKeyNotFound) {
+//	        // Handle missing namespace
+//	    }
+//	    return err
+//	}
+func (pv *ProviderValues) UnmarshalKey(key string, target any) error {
+	if gu, ok := pv.backend.(gazUnmarshaler); ok {
+		if !gu.HasKey(key) {
+			return fmt.Errorf("%w: %s", config.ErrKeyNotFound, key)
+		}
+		return gu.UnmarshalKeyWithGazTag(key, target)
+	}
+	// Fallback: use standard UnmarshalKey (uses mapstructure tag)
+	// Note: no HasKey check in fallback since Backend doesn't have it
+	return pv.backend.UnmarshalKey(key, target)
 }
