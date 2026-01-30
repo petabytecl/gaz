@@ -185,19 +185,21 @@ func (b *EventBus) Name() string {
 	return "eventbus.EventBus"
 }
 
-// Start implements worker.Worker interface.
+// OnStart implements worker.Worker interface.
 //
 // EventBus is always ready - no initialization needed beyond New().
-// This method logs that the eventbus has started.
-func (b *EventBus) Start() {
+// This method logs that the eventbus has started and returns nil.
+func (b *EventBus) OnStart(ctx context.Context) error {
 	b.logger.Info("eventbus started")
+	return nil
 }
 
-// Stop implements worker.Worker interface.
+// OnStop implements worker.Worker interface.
 //
-// Calls Close() to drain in-flight handlers.
-func (b *EventBus) Stop() {
+// Calls Close() to drain in-flight handlers. Returns nil as stop doesn't fail.
+func (b *EventBus) OnStop(ctx context.Context) error {
 	b.Close()
+	return nil
 }
 
 // Close shuts down the EventBus and waits for in-flight handlers.

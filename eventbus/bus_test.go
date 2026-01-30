@@ -187,9 +187,12 @@ func TestWorkerInterface(t *testing.T) {
 
 	assert.Equal(t, "eventbus.EventBus", bus.Name())
 
-	// Start/Stop should not panic
-	bus.Start()
-	bus.Stop()
+	// OnStart/OnStop should not panic and return nil
+	err := bus.OnStart(context.Background())
+	assert.NoError(t, err)
+
+	err = bus.OnStop(context.Background())
+	assert.NoError(t, err)
 }
 
 func TestBufferSizeOption(t *testing.T) {
