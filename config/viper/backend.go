@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
@@ -95,6 +96,30 @@ func (b *Backend) Unmarshal(target any) error {
 // UnmarshalKey unmarshals a specific key into a struct.
 func (b *Backend) UnmarshalKey(key string, target any) error {
 	return b.v.UnmarshalKey(key, target)
+}
+
+// gazDecoderOption configures mapstructure to use "gaz" struct tags.
+func gazDecoderOption(dc *mapstructure.DecoderConfig) {
+	dc.TagName = "gaz"
+}
+
+// UnmarshalWithGazTag unmarshals entire config using gaz struct tags.
+func (b *Backend) UnmarshalWithGazTag(target any) error {
+	return b.v.Unmarshal(target, gazDecoderOption)
+}
+
+// UnmarshalKeyWithGazTag unmarshals a specific key using gaz struct tags.
+func (b *Backend) UnmarshalKeyWithGazTag(key string, target any) error {
+	return b.v.UnmarshalKey(key, target, gazDecoderOption)
+}
+
+// HasKey returns true if the key exists in config (either directly or as a parent namespace).
+func (b *Backend) HasKey(key string) bool {
+	if b.v.IsSet(key) {
+		return true
+	}
+	// Check if it's a namespace with children (viper.Sub returns non-nil)
+	return b.v.Sub(key) != nil
 }
 
 // =============================================================================

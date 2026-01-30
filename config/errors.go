@@ -10,6 +10,10 @@ import (
 // Use errors.Is(err, ErrConfigValidation) to check for validation errors.
 var ErrConfigValidation = errors.New("config: validation failed")
 
+// ErrKeyNotFound is returned when a config key/namespace doesn't exist.
+// Use errors.Is(err, ErrKeyNotFound) to check for missing keys.
+var ErrKeyNotFound = errors.New("config: key not found")
+
 // ValidationError holds multiple validation errors.
 // It implements the error interface and provides access to individual field errors.
 type ValidationError struct {
