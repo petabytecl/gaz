@@ -69,40 +69,48 @@ func (s *Scheduler) Name() string {
 	return "cron.Scheduler"
 }
 
-// Start implements worker.Worker interface.
+// OnStart implements worker.Worker interface.
 // Starts the cron scheduler, beginning job execution.
-func (s *Scheduler) Start() {
+//
+// The context is stored for future job context propagation if needed.
+// This method always returns nil as scheduler startup doesn't fail.
+func (s *Scheduler) OnStart(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.running {
-		return
+		return nil
 	}
 	s.running = true
 
 	s.logger.Info("starting cron scheduler", slog.Int("jobs", len(s.jobs)))
 	s.cron.Start()
+	return nil
 }
 
-// Stop implements worker.Worker interface.
+// OnStop implements worker.Worker interface.
 // Stops the cron scheduler and waits for all running jobs to complete.
 // This provides graceful shutdown per CRN-05.
-func (s *Scheduler) Stop() {
+//
+// The context can be used for shutdown deadline enforcement (optional enhancement).
+// This method always returns nil as scheduler stop doesn't fail.
+func (s *Scheduler) OnStop(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if !s.running {
-		return
+		return nil
 	}
 	s.running = false
 
 	s.logger.Info("stopping cron scheduler, waiting for running jobs")
 
 	// Stop() returns context that completes when running jobs finish
-	ctx := s.cron.Stop()
-	<-ctx.Done()
+	cronCtx := s.cron.Stop()
+	<-cronCtx.Done()
 
 	s.logger.Info("cron scheduler stopped")
+	return nil
 }
 
 // RegisterJob registers a job with the scheduler.

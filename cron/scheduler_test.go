@@ -153,19 +153,23 @@ func TestScheduler_StartStop(t *testing.T) {
 	assert.False(t, scheduler.IsRunning())
 
 	// Start
-	scheduler.Start()
+	err := scheduler.OnStart(ctx)
+	require.NoError(t, err)
 	assert.True(t, scheduler.IsRunning())
 
 	// Double start is idempotent
-	scheduler.Start()
+	err = scheduler.OnStart(ctx)
+	require.NoError(t, err)
 	assert.True(t, scheduler.IsRunning())
 
 	// Stop
-	scheduler.Stop()
+	err = scheduler.OnStop(ctx)
+	require.NoError(t, err)
 	assert.False(t, scheduler.IsRunning())
 
 	// Double stop is idempotent
-	scheduler.Stop()
+	err = scheduler.OnStop(ctx)
+	require.NoError(t, err)
 	assert.False(t, scheduler.IsRunning())
 }
 
@@ -198,8 +202,8 @@ func TestScheduler_HealthCheck_Running(t *testing.T) {
 	logger := slog.Default()
 
 	scheduler := NewScheduler(resolver, ctx, logger)
-	scheduler.Start()
-	defer scheduler.Stop()
+	_ = scheduler.OnStart(ctx)
+	defer func() { _ = scheduler.OnStop(ctx) }()
 
 	err := scheduler.HealthCheck(context.Background())
 	assert.NoError(t, err)
@@ -251,9 +255,9 @@ func TestScheduler_IsRunning_ThreadSafe(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			scheduler.Start()
+			_ = scheduler.OnStart(ctx)
 			_ = scheduler.IsRunning()
-			scheduler.Stop()
+			_ = scheduler.OnStop(ctx)
 		}()
 	}
 
