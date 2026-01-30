@@ -8,23 +8,9 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v2.1 API Enhancement
-
-**Goal:** Simplify API with interface auto-detection and add RuntimeX-inspired features for production readiness.
-
-**Target features:**
-- Interface auto-detection for Starter/Stopper (no explicit hook registration)
-- Build Info package (version, commit, branch via ldflags)
-- Command arguments injection (CLI args as DI dependency)
-- Pre/Post run hooks for App
-- Frame introspection utilities for debugging
-- Service Builder pattern (pre-configured common providers)
-- Unified Provider type (bundled flags + constructor + lifecycle)
-- Enhanced Test Builder (fxtest-like testing support)
-
 ## Current State
 
-**Shipped:** v2.0 Cleanup & Concurrency (2026-01-29)
+**Shipped:** v2.2 Test Coverage (2026-01-29)
 
 The framework now provides:
 - **DI Package** (`gaz/di`) — Standalone dependency injection with For[T](), Resolve[T]()
@@ -33,6 +19,13 @@ The framework now provides:
 - **Cron** — Scheduled tasks wrapping robfig/cron with DI-aware jobs
 - **EventBus** — Type-safe pub/sub with Publish[T]/Subscribe[T] generics
 - **CLI Integration** — RegisterCobraFlags() exposes ConfigProvider flags to CLI
+- **Lifecycle Auto-Detection** — Services implementing Starter/Stopper auto-detected
+- **CLI Args Injection** — `gaz.GetArgs(container)` for positional args access
+- **gaztest Package** — Test utilities with Builder API and auto-cleanup
+- **Service Builder** — `service.New()` for pre-configured production services
+- **Module System** — `NewModule(name).Provide().Flags().Build()` for bundled registrations
+
+**Test Coverage:** 92.9% overall (exceeds 90% target)
 
 **Codebase:** ~96,000 lines of Go (including examples)
 
@@ -63,6 +56,12 @@ The framework now provides:
 - ✓ Cron/scheduled task support — v2.0
 - ✓ EventBus with pub/sub pattern — v2.0
 - ✓ Cobra CLI flag integration — v2.0
+- ✓ Interface auto-detection for Starter/Stopper — v2.1
+- ✓ CLI args injection (`gaz.GetArgs()`) — v2.1
+- ✓ gaztest package with Builder API — v2.1
+- ✓ Service builder for production apps — v2.1
+- ✓ ModuleBuilder for bundled registrations — v2.1
+- ✓ 90%+ test coverage — v2.2
 
 ### Active
 
@@ -78,10 +77,10 @@ The framework now provides:
 
 ## Context
 
-Shipped v2.0 on 2026-01-29.
+Shipped v2.2 on 2026-01-29.
 Framework provides unified DI, Lifecycle, Config, Health, Logging, Workers, Cron, and EventBus.
-All v2.0 requirements verified (57/57 satisfied).
-Test coverage exceeds 70% on all packages.
+All requirements verified across 5 milestones (v1.0 through v2.2).
+Test coverage at 92.9% overall.
 
 This is an extraction and redesign of two internal libraries:
 
@@ -110,7 +109,7 @@ Target: Internal use first, open source viability later.
 - **Language**: Go 1.21+ (generics, slog in stdlib)
 - **Dependencies**: Minimize external deps; Cobra, Viper, robfig/cron, jpillora/backoff
 - **API Surface**: Convention over configuration — sensible defaults, escape hatches when needed
-- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health)
+- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service)
 
 ## Key Decisions
 
@@ -136,6 +135,10 @@ Target: Internal use first, open source viability later.
 | Scheduler implements Worker | Unified lifecycle for cron and workers | ✓ Good (v2.0) |
 | Async fire-and-forget EventBus | Non-blocking publish, buffered subscribers | ✓ Good (v2.0) |
 | RegisterCobraFlags explicit | CLI flag visibility before Execute() | ✓ Good (v2.0) |
+| Reflection for lifecycle interface check | Check both T and *T for Starter/Stopper | ✓ Good (v2.1) |
+| gaztest uses t.Cleanup() | Automatic cleanup, no manual Stop() required | ✓ Good (v2.1) |
+| Module flags to PersistentFlags | Available to all subcommands | ✓ Good (v2.1) |
+| Health auto-registration via interface | Config implements HealthConfigProvider for opt-in | ✓ Good (v2.1) |
 
 ---
-*Last updated: 2026-01-29 after v2.1 milestone started*
+*Last updated: 2026-01-29 after v2.2 milestone complete*

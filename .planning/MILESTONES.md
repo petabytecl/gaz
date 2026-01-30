@@ -1,5 +1,60 @@
 # Project Milestones: gaz
 
+## v2.2 Test Coverage (Shipped: 2026-01-29)
+
+**Delivered:** Pushed overall test coverage to 92.9%, exceeding 90% threshold with comprehensive tests across all packages.
+
+**Phases completed:** 22 (4 plans total)
+
+**Key accomplishments:**
+
+- Overall coverage: 84.3% → 92.9% (exceeds 90% target)
+- DI package: 73.3% → 96.7% with inject, types, lifecycle_engine tests
+- Config/Viper: 77.1% → 95.2% with validation, accessor, manager tests
+- Health package: 83.8% → 92.4% with error paths and integration tests
+- Worker package: → 95.7% with supervisor and pooled worker tests
+
+**Stats:**
+
+- 16 files created/modified
+- 1,847 lines added
+- 1 phase, 4 plans
+- Same day as v2.1
+
+**Git range:** `v2.1` → `02bfe7d`
+
+**What's next:** Next milestone TBD
+
+---
+
+## v2.1 API Enhancement (Shipped: 2026-01-29)
+
+**Delivered:** Interface auto-detection for lifecycle hooks, CLI args injection, gaztest package, service builder, and module system.
+
+**Phases completed:** 19-21 (8 plans total)
+
+**Key accomplishments:**
+
+- Services implementing Starter/Stopper interfaces auto-detected for lifecycle
+- CLI arguments accessible via `gaz.GetArgs(container)` helper
+- gaztest package with Builder API, auto-cleanup, mock injection via `Replace()`
+- service.Builder fluent API for production services with health auto-registration
+- ModuleBuilder with Flags() for bundling CLI flags and providers
+- Module composition with `Use()` for child modules
+
+**Stats:**
+
+- 28 files created/modified
+- 2,731 lines added
+- 3 phases, 8 plans
+- Same day as v2.0
+
+**Git range:** `v2.0` → (22 requirements, all complete)
+
+**What's next:** v2.2 Test Coverage
+
+---
+
 ## v2.0 Cleanup & Concurrency (Shipped: 2026-01-29)
 
 **Delivered:** Extracted DI and Config to standalone packages, added concurrency primitives (Workers, Cron, EventBus).
