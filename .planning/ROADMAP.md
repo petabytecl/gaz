@@ -75,10 +75,11 @@ Plans:
   1. ProviderValues has Unmarshal(namespace, &target) method that populates config structs
   2. Existing LoadInto() pattern continues to work (no breaking change there)
   3. Config namespacing enables module isolation (each module's config is prefixed)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 25-01: TBD
+- [ ] 25-01-PLAN.md — Add ErrKeyNotFound sentinel, viper gaz tag methods, and ProviderValues Unmarshal/UnmarshalKey
+- [ ] 25-02-PLAN.md — Add gaz tag to validator, comprehensive tests for Unmarshal functionality
 
 ### Phase 26: Module & Service Consolidation
 **Goal**: Simplified module system with consistent NewModule() patterns
@@ -145,7 +146,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 23. Foundation & Style Guide | v3.0 | 1/1 | Complete | 2026-01-30 |
 | 24. Lifecycle Interface Alignment | v3.0 | 5/5 | Complete | 2026-01-30 |
-| 25. Configuration Harmonization | v3.0 | 0/TBD | Not started | - |
+| 25. Configuration Harmonization | v3.0 | 0/2 | Planned | - |
 | 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
 | 27. Error Standardization | v3.0 | 0/TBD | Not started | - |
 | 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
