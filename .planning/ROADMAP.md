@@ -45,10 +45,10 @@ See `.planning/milestones/` for archived phase details.
   2. Constructor patterns documented (New*() vs builders vs fluent)
   3. Error naming conventions defined (ErrSubsystemAction format)
   4. Module factory function pattern documented (NewModule() returns gaz.Module)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 23-01: TBD
+- [ ] 23-01-PLAN.md — Create STYLE.md with API naming conventions
 
 ### Phase 24: Lifecycle Interface Alignment
 **Goal**: Unified interface-based lifecycle management across all service types
@@ -140,7 +140,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 23. Foundation & Style Guide | v3.0 | 0/TBD | Not started | - |
+| 23. Foundation & Style Guide | v3.0 | 0/1 | Planned | - |
 | 24. Lifecycle Interface Alignment | v3.0 | 0/TBD | Not started | - |
 | 25. Configuration Harmonization | v3.0 | 0/TBD | Not started | - |
 | 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
