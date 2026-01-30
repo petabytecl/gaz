@@ -19,13 +19,21 @@ var configValidator = newConfigValidator()
 func newConfigValidator() *validator.Validate {
 	v := validator.New(validator.WithRequiredStructEnabled())
 
-	// Register tag name function to use mapstructure tags for field names in error messages.
-	// Falls back to json tag, then to Go field name.
+	// Register tag name function to use gaz tags for field names in error messages.
+	// Priority: gaz -> mapstructure -> json -> Go field name.
+	// This ensures validation errors reference the config key name users expect.
 	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name, _, _ := strings.Cut(fld.Tag.Get("mapstructure"), ",")
+		// Try gaz tag first (our custom config tag)
+		name, _, _ := strings.Cut(fld.Tag.Get("gaz"), ",")
 		if name != "-" && name != "" {
 			return name
 		}
+		// Fall back to mapstructure tag (for compatibility with older code)
+		name, _, _ = strings.Cut(fld.Tag.Get("mapstructure"), ",")
+		if name != "-" && name != "" {
+			return name
+		}
+		// Fall back to json tag
 		name, _, _ = strings.Cut(fld.Tag.Get("json"), ",")
 		if name != "-" && name != "" {
 			return name
