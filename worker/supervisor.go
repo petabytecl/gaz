@@ -150,7 +150,7 @@ func (s *supervisor) supervise() {
 }
 
 // runWithRecovery runs the worker and recovers from any panic.
-// Returns true if the worker panicked, false if it exited normally.
+// Returns true if the worker panicked or failed to start, false if it exited normally.
 func (s *supervisor) runWithRecovery() (panicked bool) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -163,14 +163,22 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 		}
 	}()
 
-	s.logger.Info("worker starting")
-	s.worker.Start()
+	s.logger.Info("worker OnStart")
+	if err := s.worker.OnStart(s.ctx); err != nil {
+		s.logger.Error("worker failed to start", slog.Any("error", err))
+		// Treat start failure as a panic-equivalent (triggers restart logic)
+		panicked = true
+		return
+	}
 
 	// Wait for context cancellation (shutdown signal)
 	<-s.ctx.Done()
 
-	s.logger.Info("worker stopping")
-	s.worker.Stop()
+	s.logger.Info("worker OnStop")
+	if err := s.worker.OnStop(s.ctx); err != nil {
+		s.logger.Warn("worker stop error", slog.Any("error", err))
+		// Continue with shutdown even on error (stop errors are non-fatal)
+	}
 
 	return false
 }
