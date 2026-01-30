@@ -26,13 +26,23 @@ func WithHookTimeout(d time.Duration) HookOption {
 type HookOption func(*HookConfig)
 
 // Starter is an interface for services that need to perform action on startup.
-// If a service implements this, OnStart will be called automatically after creation.
+// Implementing this interface is the sole mechanism for lifecycle participation.
+// OnStart is called automatically after container Build() when the service is
+// first instantiated. Hooks are called in dependency order: dependencies start first.
+//
+// This interface is auto-detected by the DI container. No registration of lifecycle
+// hooks is needed - simply implement the interface.
 type Starter interface {
 	OnStart(context.Context) error
 }
 
 // Stopper is an interface for services that need to perform action on shutdown.
-// If a service implements this, OnStop will be called automatically during container shutdown.
+// Implementing this interface is the sole mechanism for lifecycle participation.
+// OnStop is called automatically during graceful shutdown. Hooks are called in
+// reverse dependency order: dependents stop first, then their dependencies.
+//
+// This interface is auto-detected by the DI container. No registration of lifecycle
+// hooks is needed - simply implement the interface.
 type Stopper interface {
 	OnStop(context.Context) error
 }
