@@ -5,9 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/petabytecl/gaz/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/petabytecl/gaz/config"
 )
 
 // RegisterCobraFlags registers ConfigProvider flags as persistent pflags on the command.
@@ -83,7 +84,7 @@ func (a *App) registerPFlags(cmd *cobra.Command) error {
 }
 
 // configKeyToFlagName transforms a config key to a POSIX flag name.
-// Example: "server.host" -> "server-host"
+// Example: "server.host" -> "server-host".
 func configKeyToFlagName(key string) string {
 	return strings.ReplaceAll(key, ".", "-")
 }

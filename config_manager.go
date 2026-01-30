@@ -1,9 +1,10 @@
 package gaz
 
 import (
+	"github.com/spf13/pflag"
+
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
-	"github.com/spf13/pflag"
 )
 
 // ConfigManager handles configuration loading, binding, and validation.

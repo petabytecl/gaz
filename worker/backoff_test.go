@@ -75,7 +75,7 @@ func TestBackoffDuration_CappedAtMax(t *testing.T) {
 	b := cfg.NewBackoff()
 
 	// Keep calling until we hit the cap
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		d := b.Duration()
 		assert.LessOrEqual(t, d, 10*time.Second, "duration should never exceed Max")
 	}

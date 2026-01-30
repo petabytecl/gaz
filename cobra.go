@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/petabytecl/gaz/di"
 	"github.com/spf13/cobra"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // contextKey is used to store App in context.

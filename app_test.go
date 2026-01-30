@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
-	"github.com/stretchr/testify/suite"
 )
 
 type AppTestSuite struct {

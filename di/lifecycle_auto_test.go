@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// simpleStarter implements Starter but has no other methods
+// simpleStarter implements Starter but has no other methods.
 type simpleStarter struct {
 	started bool
 }
@@ -17,7 +17,7 @@ func (s *simpleStarter) OnStart(ctx context.Context) error {
 	return nil
 }
 
-// simpleStopper implements Stopper but has no other methods
+// simpleStopper implements Stopper but has no other methods.
 type simpleStopper struct {
 	stopped bool
 }
@@ -27,7 +27,7 @@ func (s *simpleStopper) OnStop(ctx context.Context) error {
 	return nil
 }
 
-// valueStarter implements Starter on value receiver
+// valueStarter implements Starter on value receiver.
 type valueStarter struct {
 	started bool
 }
@@ -68,7 +68,7 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 	})
 }
 
-// doubleLifecycle implements both Starter and Stopper
+// doubleLifecycle implements both Starter and Stopper.
 type doubleLifecycle struct {
 	started      bool
 	stopped      bool

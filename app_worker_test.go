@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petabytecl/gaz/worker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/petabytecl/gaz/worker"
 )
 
 // =============================================================================
@@ -368,7 +369,7 @@ func TestAppWorker_MultipleWorkersStartConcurrently(t *testing.T) {
 	app := New()
 
 	workers := make([]*testWorker, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		workers[i] = newTestWorker("multi-worker")
 		err := For[*testWorker](app.Container()).Named("worker-" + string(rune('A'+i))).Instance(workers[i])
 		require.NoError(t, err)

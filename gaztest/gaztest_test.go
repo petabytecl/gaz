@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/gaztest"
-	"github.com/stretchr/testify/require"
 )
 
 // =============================================================================

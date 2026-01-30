@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/cron"
@@ -19,7 +21,6 @@ import (
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
-	"github.com/spf13/cobra"
 )
 
 const (

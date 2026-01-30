@@ -237,8 +237,10 @@ func (s *InjectSuite) TestInjectStruct_DependencyResolutionError() {
 // Test Helper Types
 // =============================================================================
 
-type testOptionalDep struct{}
-type testRequiredDep struct{}
-type testInjectableDep struct{ value string }
-type testNamedDep struct{ name string }
-type testFailingDep struct{}
+type (
+	testOptionalDep   struct{}
+	testRequiredDep   struct{}
+	testInjectableDep struct{ value string }
+	testNamedDep      struct{ name string }
+	testFailingDep    struct{}
+)

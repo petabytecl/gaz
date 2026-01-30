@@ -26,7 +26,7 @@ func TestContainerSuite(t *testing.T) {
 func (s *ContainerSuite) TestNew() {
 	c := New()
 	s.Require().NotNil(c)
-	s.Equal(0, len(c.List()), "New container should have no services")
+	s.Empty(c.List(), "New container should have no services")
 }
 
 func (s *ContainerSuite) TestNew_ReturnsDistinctInstances() {
@@ -130,7 +130,7 @@ func (s *ContainerSuite) TestList_Sorted() {
 	list := c.List()
 	// Should be sorted
 	for i := 1; i < len(list); i++ {
-		s.True(list[i-1] < list[i], "list should be sorted: %s should come before %s", list[i-1], list[i])
+		s.Less(list[i-1], list[i], "list should be sorted: %s should come before %s", list[i-1], list[i])
 	}
 }
 
@@ -426,15 +426,17 @@ func (s *ContainerSuite) TestDI09_CycleDetection() {
 // Test Helper Types
 // =============================================================================
 
-type testApp struct{}
-type testEagerPool struct{ id int }
-type testFailingService struct{}
-type testDatabase struct{ host string }
-type testLazyService struct{}
-type testDB struct{}
-type testRepo struct{ db *testDB }
-type testNamedDB struct{ name string }
-type testRequest struct{ id int }
-type testPool struct{}
-type testCycleA struct{ b *testCycleB }
-type testCycleB struct{ a *testCycleA }
+type (
+	testApp            struct{}
+	testEagerPool      struct{ id int }
+	testFailingService struct{}
+	testDatabase       struct{ host string }
+	testLazyService    struct{}
+	testDB             struct{}
+	testRepo           struct{ db *testDB }
+	testNamedDB        struct{ name string }
+	testRequest        struct{ id int }
+	testPool           struct{}
+	testCycleA         struct{ b *testCycleB }
+	testCycleB         struct{ a *testCycleA }
+)

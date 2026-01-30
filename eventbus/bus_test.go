@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testEvent implements Event interface for testing
+// testEvent implements Event interface for testing.
 type testEvent struct {
 	ID      string
 	Message string
@@ -205,7 +205,7 @@ func TestBufferSizeOption(t *testing.T) {
 	}, WithBufferSize(2))
 
 	// Publish several events
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		Publish(context.Background(), bus, testEvent{ID: "1"}, "")
 	}
 
@@ -226,7 +226,7 @@ func TestContextCancellation(t *testing.T) {
 	defer cancel()
 
 	// This should not block forever due to context cancellation
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		Publish(ctx, bus, testEvent{ID: "1"}, "")
 	}
 }
@@ -272,7 +272,7 @@ func TestConcurrentPublish(t *testing.T) {
 	})
 
 	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
@@ -291,7 +291,7 @@ func TestConcurrentSubscribe(t *testing.T) {
 	defer bus.Close()
 
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -306,7 +306,7 @@ func TestConcurrentSubscribe(t *testing.T) {
 	// If we get here without race detector complaints, thread safety is good
 }
 
-// anotherEvent is a second event type for testing type routing
+// anotherEvent is a second event type for testing type routing.
 type anotherEvent struct {
 	Value int
 }

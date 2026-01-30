@@ -25,14 +25,14 @@ func NewSlogAdapter(logger *slog.Logger) cron.Logger {
 // Info logs an informational message with key-value pairs.
 //
 // This is called by robfig/cron for routine operations like job scheduling.
-func (a *slogAdapter) Info(msg string, keysAndValues ...interface{}) {
+func (a *slogAdapter) Info(msg string, keysAndValues ...any) {
 	a.logger.Info(msg, keysAndValuesToSlog(keysAndValues)...)
 }
 
 // Error logs an error message with the error and key-value pairs.
 //
 // This is called by robfig/cron when operations fail.
-func (a *slogAdapter) Error(err error, msg string, keysAndValues ...interface{}) {
+func (a *slogAdapter) Error(err error, msg string, keysAndValues ...any) {
 	attrs := keysAndValuesToSlog(keysAndValues)
 	attrs = append(attrs, slog.Any("error", err))
 	a.logger.Error(msg, attrs...)
@@ -42,7 +42,7 @@ func (a *slogAdapter) Error(err error, msg string, keysAndValues ...interface{})
 //
 // Keys must be strings; non-string keys are skipped. Values are wrapped
 // with slog.Any to preserve their type.
-func keysAndValuesToSlog(kvs []interface{}) []any {
+func keysAndValuesToSlog(kvs []any) []any {
 	var attrs []any
 	for i := 0; i < len(kvs)-1; i += 2 {
 		key, ok := kvs[i].(string)

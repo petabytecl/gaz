@@ -332,7 +332,7 @@ func TestLoadInto_ValidatesStructTags(t *testing.T) {
 	err := mgr.LoadInto(&cfg)
 
 	assert.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 }
 
 func TestLoadInto_CallsCustomValidator(t *testing.T) {
@@ -439,7 +439,7 @@ func TestValidateProviderFlags_NoErrorsWhenSet(t *testing.T) {
 	}
 
 	errs := mgr.ValidateProviderFlags("myapp", flags)
-	assert.Len(t, errs, 0)
+	assert.Empty(t, errs)
 }
 
 // =============================================================================

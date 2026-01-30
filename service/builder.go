@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/health"
-	"github.com/spf13/cobra"
 )
 
 // Builder constructs a gaz.App with fluent configuration.

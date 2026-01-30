@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/petabytecl/gaz/di"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 type LifecycleEngineSuite struct {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -88,7 +87,7 @@ func TestNewJobWrapper(t *testing.T) {
 	assert.Equal(t, "@hourly", wrapper.Schedule())
 	assert.False(t, wrapper.IsRunning())
 	assert.True(t, wrapper.LastRun().IsZero())
-	assert.Nil(t, wrapper.LastError())
+	assert.NoError(t, wrapper.LastError())
 }
 
 func TestJobWrapper_Run_Success(t *testing.T) {
@@ -116,7 +115,7 @@ func TestJobWrapper_Run_Success(t *testing.T) {
 	assert.True(t, executed)
 	assert.False(t, wrapper.IsRunning())
 	assert.False(t, wrapper.LastRun().IsZero())
-	assert.Nil(t, wrapper.LastError())
+	assert.NoError(t, wrapper.LastError())
 
 	output := buf.String()
 	assert.Contains(t, output, "job started")
@@ -292,7 +291,7 @@ func TestJobWrapper_StatusTracking(t *testing.T) {
 	// Initial state
 	assert.False(t, wrapper.IsRunning())
 	assert.True(t, wrapper.LastRun().IsZero())
-	assert.Nil(t, wrapper.LastError())
+	assert.NoError(t, wrapper.LastError())
 
 	// Start job in background
 	done := make(chan struct{})
@@ -314,7 +313,7 @@ func TestJobWrapper_StatusTracking(t *testing.T) {
 	// After completion
 	assert.False(t, wrapper.IsRunning())
 	assert.False(t, wrapper.LastRun().IsZero())
-	assert.Nil(t, wrapper.LastError())
+	assert.NoError(t, wrapper.LastError())
 }
 
 func TestJobWrapper_TransientResolution(t *testing.T) {
@@ -469,7 +468,7 @@ func TestJobWrapper_ConcurrentAccess(t *testing.T) {
 	wrapper := NewJobWrapper(resolver, "*cron.ConcurrentJob", "concurrent-job", "@hourly", 0, ctx, logger)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -515,7 +514,7 @@ func TestJobWrapper_PanicWithError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(&buf, nil))
 
 	resolver := newCountingResolver()
-	panicErr := fmt.Errorf("panic error")
+	panicErr := errors.New("panic error")
 	resolver.services["*cron.PanicErrorJob"] = func() any {
 		return &wrapperMockJob{
 			name:     "panic-error-job",

@@ -3,12 +3,13 @@ package service_test
 import (
 	"testing"
 
-	"github.com/petabytecl/gaz"
-	"github.com/petabytecl/gaz/health"
-	"github.com/petabytecl/gaz/service"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/health"
+	"github.com/petabytecl/gaz/service"
 )
 
 // ServiceBuilderSuite tests the service.Builder API.
@@ -104,7 +105,7 @@ func (s *ServiceBuilderSuite) TestBuilder_Use() {
 	s.True(moduleApplied, "module should have been applied")
 }
 
-// testConfigWithHealth implements HealthConfigProvider
+// testConfigWithHealth implements HealthConfigProvider.
 type testConfigWithHealth struct {
 	AppName string
 	Health  health.Config
@@ -226,7 +227,7 @@ func (s *ServiceBuilderSuite) TestBuilder_MultipleModules() {
 }
 
 // TestBuilder_HealthManagerResolution verifies that when health auto-registers,
-// the health.Manager becomes resolvable after app.Build()
+// the health.Manager becomes resolvable after app.Build().
 func TestBuilder_HealthManagerResolution(t *testing.T) {
 	cfg := &testConfigWithHealth{
 		AppName: "test-app",

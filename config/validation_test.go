@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +57,7 @@ func TestValidateStruct_MissingRequired_ReturnsError(t *testing.T) {
 
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 
 	// Check error message contains field name
 	assert.Contains(t, err.Error(), "host")
@@ -72,7 +71,7 @@ func TestValidateStruct_MinViolation_ReturnsError(t *testing.T) {
 
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 
 	assert.Contains(t, err.Error(), "port")
 	assert.Contains(t, err.Error(), "at least")
@@ -85,7 +84,7 @@ func TestValidateStruct_MaxViolation_ReturnsError(t *testing.T) {
 
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 
 	assert.Contains(t, err.Error(), "count")
 	assert.Contains(t, err.Error(), "at most")
@@ -97,7 +96,7 @@ func TestValidateStruct_NestedStruct_ValidatesNested(t *testing.T) {
 
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 
 	assert.Contains(t, err.Error(), "server.host")
 }
@@ -118,7 +117,7 @@ func TestValidateStruct_OneOf_InvalidValue(t *testing.T) {
 
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, config.ErrConfigValidation))
+	assert.ErrorIs(t, err, config.ErrConfigValidation)
 
 	assert.Contains(t, err.Error(), "level")
 	assert.Contains(t, err.Error(), "one of")
@@ -145,7 +144,7 @@ func TestValidationErrors_Error_FormatsCorrectly(t *testing.T) {
 func TestValidationErrors_Unwrap_ReturnsErrConfigValidation(t *testing.T) {
 	ve := config.NewValidationErrors(nil)
 
-	assert.True(t, errors.Is(ve, config.ErrConfigValidation))
+	assert.ErrorIs(t, ve, config.ErrConfigValidation)
 }
 
 func TestFieldError_String_WithTag(t *testing.T) {
@@ -194,7 +193,7 @@ func TestValidateStruct_UsesMapstructureTagInErrorMessage(t *testing.T) {
 // Test humanizeTag coverage (indirectly via ValidateStruct)
 // =============================================================================
 
-// Test structs for each validation tag type
+// Test structs for each validation tag type.
 type gteConfig struct {
 	Value int `mapstructure:"value" validate:"gte=10"`
 }
@@ -386,6 +385,6 @@ func TestValidateStruct_MultipleErrors_ReportsAll(t *testing.T) {
 
 	// Check we can access the individual errors
 	var ve config.ValidationErrors
-	require.True(t, errors.As(err, &ve))
+	require.ErrorAs(t, err, &ve)
 	assert.Len(t, ve.Errors, 3)
 }

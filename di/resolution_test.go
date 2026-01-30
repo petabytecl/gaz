@@ -396,7 +396,7 @@ func (s *ResolutionSuite) TestMustResolve_WithNamed() {
 func (s *ResolutionSuite) TestNewTestContainer_ReturnsValidContainer() {
 	c := NewTestContainer()
 	s.NotNil(c, "NewTestContainer should return non-nil container")
-	s.Equal(0, len(c.List()), "NewTestContainer should return empty container")
+	s.Empty(c.List(), "NewTestContainer should return empty container")
 }
 
 func (s *ResolutionSuite) TestNewTestContainer_CanRegisterAndResolve() {

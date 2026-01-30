@@ -191,7 +191,7 @@ func TestManager_ConcurrentStart(t *testing.T) {
 
 	// Register multiple workers
 	workers := make([]*simpleWorker, 5)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		workers[i] = newSimpleWorker("concurrent-" + string(rune('A'+i)))
 		require.NoError(t, mgr.Register(workers[i]))
 	}

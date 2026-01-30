@@ -55,7 +55,7 @@ func TestGet_MissingKey_ReturnsZeroValue(t *testing.T) {
 	mgr := config.NewWithBackend(backend)
 
 	strResult := config.Get[string](mgr, "missing")
-	assert.Equal(t, "", strResult)
+	assert.Empty(t, strResult)
 
 	intResult := config.Get[int](mgr, "missing")
 	assert.Equal(t, 0, intResult)

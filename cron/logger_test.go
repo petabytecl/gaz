@@ -86,7 +86,7 @@ func TestSlogAdapter_Error_NilError(t *testing.T) {
 }
 
 func TestKeysAndValuesToSlog_ValidPairs(t *testing.T) {
-	kvs := []interface{}{"key1", "value1", "key2", 42, "key3", true}
+	kvs := []any{"key1", "value1", "key2", 42, "key3", true}
 
 	attrs := keysAndValuesToSlog(kvs)
 
@@ -95,7 +95,7 @@ func TestKeysAndValuesToSlog_ValidPairs(t *testing.T) {
 
 func TestKeysAndValuesToSlog_NonStringKey(t *testing.T) {
 	// Non-string keys should be skipped
-	kvs := []interface{}{123, "value1", "validKey", "value2"}
+	kvs := []any{123, "value1", "validKey", "value2"}
 
 	attrs := keysAndValuesToSlog(kvs)
 
@@ -105,7 +105,7 @@ func TestKeysAndValuesToSlog_NonStringKey(t *testing.T) {
 
 func TestKeysAndValuesToSlog_OddLength(t *testing.T) {
 	// Odd number of elements - last one should be ignored
-	kvs := []interface{}{"key1", "value1", "orphan"}
+	kvs := []any{"key1", "value1", "orphan"}
 
 	attrs := keysAndValuesToSlog(kvs)
 
@@ -117,7 +117,7 @@ func TestKeysAndValuesToSlog_Empty(t *testing.T) {
 	attrs := keysAndValuesToSlog(nil)
 	assert.Nil(t, attrs)
 
-	attrs = keysAndValuesToSlog([]interface{}{})
+	attrs = keysAndValuesToSlog([]any{})
 	assert.Nil(t, attrs)
 }
 

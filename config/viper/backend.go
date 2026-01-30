@@ -1,13 +1,15 @@
 package viper
 
 import (
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/petabytecl/gaz/config"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/petabytecl/gaz/config"
 )
 
 // Compile-time interface assertions.
@@ -243,7 +245,8 @@ func (b *Backend) Viper() *viper.Viper {
 // IsConfigFileNotFoundError returns true if the error is a config file not found error.
 // This is a helper for error handling.
 func IsConfigFileNotFoundError(err error) bool {
-	_, ok := err.(viper.ConfigFileNotFoundError)
+	var configFileNotFoundError viper.ConfigFileNotFoundError
+	ok := errors.As(err, &configFileNotFoundError)
 	return ok
 }
 

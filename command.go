@@ -1,8 +1,9 @@
 package gaz
 
 import (
-	"github.com/petabytecl/gaz/di"
 	"github.com/spf13/cobra"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // CommandArgs holds the Cobra command and arguments for the current execution.
