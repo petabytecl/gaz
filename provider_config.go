@@ -168,10 +168,16 @@ type gazUnmarshaler interface {
 //	}
 func (pv *ProviderValues) Unmarshal(target any) error {
 	if gu, ok := pv.backend.(gazUnmarshaler); ok {
-		return gu.UnmarshalWithGazTag(target)
+		if err := gu.UnmarshalWithGazTag(target); err != nil {
+			return fmt.Errorf("config: unmarshal: %w", err)
+		}
+		return nil
 	}
 	// Fallback: use standard Unmarshal (uses mapstructure tag)
-	return pv.backend.Unmarshal(target)
+	if err := pv.backend.Unmarshal(target); err != nil {
+		return fmt.Errorf("config: unmarshal: %w", err)
+	}
+	return nil
 }
 
 // UnmarshalKey unmarshals config at the given key/namespace into target struct.
@@ -197,9 +203,15 @@ func (pv *ProviderValues) UnmarshalKey(key string, target any) error {
 		if !gu.HasKey(key) {
 			return fmt.Errorf("%w: %s", config.ErrKeyNotFound, key)
 		}
-		return gu.UnmarshalKeyWithGazTag(key, target)
+		if err := gu.UnmarshalKeyWithGazTag(key, target); err != nil {
+			return fmt.Errorf("config: unmarshal key %q: %w", key, err)
+		}
+		return nil
 	}
 	// Fallback: use standard UnmarshalKey (uses mapstructure tag)
 	// Note: no HasKey check in fallback since Backend doesn't have it
-	return pv.backend.UnmarshalKey(key, target)
+	if err := pv.backend.UnmarshalKey(key, target); err != nil {
+		return fmt.Errorf("config: unmarshal key %q: %w", key, err)
+	}
+	return nil
 }

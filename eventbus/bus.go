@@ -190,14 +190,14 @@ func (b *EventBus) Name() string {
 // EventBus is always ready - no initialization needed beyond New().
 // This method logs that the eventbus has started and returns nil.
 func (b *EventBus) OnStart(ctx context.Context) error {
-	b.logger.Info("eventbus started")
+	b.logger.InfoContext(ctx, "eventbus started")
 	return nil
 }
 
 // OnStop implements worker.Worker interface.
 //
 // Calls Close() to drain in-flight handlers. Returns nil as stop doesn't fail.
-func (b *EventBus) OnStop(ctx context.Context) error {
+func (b *EventBus) OnStop(_ context.Context) error {
 	b.Close()
 	return nil
 }

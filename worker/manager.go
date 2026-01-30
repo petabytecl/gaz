@@ -187,6 +187,18 @@ type pooledWorker struct {
 	name     string
 }
 
-func (p *pooledWorker) OnStart(ctx context.Context) error { return p.delegate.OnStart(ctx) }
-func (p *pooledWorker) OnStop(ctx context.Context) error  { return p.delegate.OnStop(ctx) }
-func (p *pooledWorker) Name() string                      { return p.name }
+func (p *pooledWorker) OnStart(ctx context.Context) error {
+	if err := p.delegate.OnStart(ctx); err != nil {
+		return fmt.Errorf("pooled worker %s: OnStart: %w", p.name, err)
+	}
+	return nil
+}
+
+func (p *pooledWorker) OnStop(ctx context.Context) error {
+	if err := p.delegate.OnStop(ctx); err != nil {
+		return fmt.Errorf("pooled worker %s: OnStop: %w", p.name, err)
+	}
+	return nil
+}
+
+func (p *pooledWorker) Name() string { return p.name }

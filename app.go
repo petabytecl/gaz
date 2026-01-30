@@ -560,6 +560,8 @@ func (a *App) Build() error {
 
 // Run executes the application lifecycle.
 // It builds the container, starts services in order, and waits for a signal or stop call.
+//
+//nolint:gocognit // Run orchestrates the full app lifecycle, complexity is inherent
 func (a *App) Run(ctx context.Context) error {
 	if err := a.Build(); err != nil {
 		return err

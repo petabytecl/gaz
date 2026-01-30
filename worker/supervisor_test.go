@@ -355,7 +355,9 @@ func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	ctx := context.Background()
 
 	// OnStart should delegate to the base worker
-	go pooled.OnStart(ctx)
+	go func() {
+		_ = pooled.OnStart(ctx)
+	}()
 
 	select {
 	case <-worker.started:
@@ -367,6 +369,6 @@ func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	assert.Equal(t, 1, worker.getStartCount(), "delegate should have started")
 
 	// OnStop should delegate to the base worker
-	pooled.OnStop(ctx)
+	_ = pooled.OnStop(ctx)
 	assert.Equal(t, 1, worker.getStopCount(), "delegate should have stopped")
 }

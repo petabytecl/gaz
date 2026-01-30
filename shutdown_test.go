@@ -3,6 +3,7 @@ package gaz
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -111,7 +112,7 @@ func (s *slowShutdownService) OnStop(ctx context.Context) error {
 	case <-time.After(s.duration):
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("shutdown: %w", ctx.Err())
 	}
 }
 
@@ -173,7 +174,7 @@ func (s *shutdownTestServiceA) OnStop(ctx context.Context) error {
 		s.stopped.Store(true)
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("shutdown: %w", ctx.Err())
 	}
 }
 
@@ -184,7 +185,7 @@ func (s *shutdownTestServiceB) OnStop(ctx context.Context) error {
 		s.stopped.Store(true)
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("shutdown: %w", ctx.Err())
 	}
 }
 
@@ -220,7 +221,7 @@ func (s *namedSlowService) OnStop(ctx context.Context) error {
 	case <-time.After(s.duration):
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("shutdown: %w", ctx.Err())
 	}
 }
 

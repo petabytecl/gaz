@@ -83,7 +83,7 @@ func (s *Scheduler) OnStart(ctx context.Context) error {
 	}
 	s.running = true
 
-	s.logger.Info("starting cron scheduler", slog.Int("jobs", len(s.jobs)))
+	s.logger.InfoContext(ctx, "starting cron scheduler", slog.Int("jobs", len(s.jobs)))
 	s.cron.Start()
 	return nil
 }
@@ -103,13 +103,13 @@ func (s *Scheduler) OnStop(ctx context.Context) error {
 	}
 	s.running = false
 
-	s.logger.Info("stopping cron scheduler, waiting for running jobs")
+	s.logger.InfoContext(ctx, "stopping cron scheduler, waiting for running jobs")
 
 	// Stop() returns context that completes when running jobs finish
 	cronCtx := s.cron.Stop()
 	<-cronCtx.Done()
 
-	s.logger.Info("cron scheduler stopped")
+	s.logger.InfoContext(ctx, "cron scheduler stopped")
 	return nil
 }
 

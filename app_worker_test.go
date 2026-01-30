@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -197,7 +198,7 @@ func (s *AppTestSuite) TestApp_WorkerStartsAfterServices() {
 	s.Require().GreaterOrEqual(len(order), 2, "should have at least 2 events")
 
 	// Find first occurrence of each
-	var serviceIdx, workerIdx int = -1, -1
+	serviceIdx, workerIdx := -1, -1
 	for i, event := range order {
 		if event == "service-started" && serviceIdx == -1 {
 			serviceIdx = i
@@ -272,7 +273,7 @@ func (s *AppTestSuite) TestApp_WorkerStopsBeforeServices() {
 	s.Require().GreaterOrEqual(len(order), 2, "should have at least 2 events")
 
 	// Find first occurrence of each
-	var serviceIdx, workerIdx int = -1, -1
+	serviceIdx, workerIdx := -1, -1
 	for i, event := range order {
 		if event == "worker-stopped" && workerIdx == -1 {
 			workerIdx = i
@@ -349,14 +350,20 @@ func (w *orderTrackingWorker) OnStart(ctx context.Context) error {
 	if w.onStart != nil {
 		w.onStart()
 	}
-	return w.Worker.OnStart(ctx)
+	if err := w.Worker.OnStart(ctx); err != nil {
+		return fmt.Errorf("worker: OnStart: %w", err)
+	}
+	return nil
 }
 
 func (w *orderTrackingWorker) OnStop(ctx context.Context) error {
 	if w.onStop != nil {
 		w.onStop()
 	}
-	return w.Worker.OnStop(ctx)
+	if err := w.Worker.OnStop(ctx); err != nil {
+		return fmt.Errorf("worker: OnStop: %w", err)
+	}
+	return nil
 }
 
 // =============================================================================

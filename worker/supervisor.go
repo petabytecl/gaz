@@ -168,7 +168,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 		s.logger.Error("worker failed to start", slog.Any("error", err))
 		// Treat start failure as a panic-equivalent (triggers restart logic)
 		panicked = true
-		return
+		return panicked
 	}
 
 	// Wait for context cancellation (shutdown signal)
