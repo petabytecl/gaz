@@ -79,7 +79,7 @@ Plans:
 
 Plans:
 - [x] 25-01-PLAN.md — Add ErrKeyNotFound sentinel, viper gaz tag methods, and ProviderValues Unmarshal/UnmarshalKey
-- [ ] 25-02-PLAN.md — Add gaz tag to validator, comprehensive tests for Unmarshal functionality
+- [x] 25-02-PLAN.md — Add gaz tag to validator, comprehensive tests for Unmarshal functionality
 
 ### Phase 26: Module & Service Consolidation
 **Goal**: Simplified module system with consistent NewModule() patterns
@@ -146,7 +146,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 23. Foundation & Style Guide | v3.0 | 1/1 | Complete | 2026-01-30 |
 | 24. Lifecycle Interface Alignment | v3.0 | 5/5 | Complete | 2026-01-30 |
-| 25. Configuration Harmonization | v3.0 | 1/2 | In progress | - |
+| 25. Configuration Harmonization | v3.0 | 2/2 | Complete | 2026-01-30 |
 | 26. Module & Service Consolidation | v3.0 | 0/TBD | Not started | - |
 | 27. Error Standardization | v3.0 | 0/TBD | Not started | - |
 | 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
