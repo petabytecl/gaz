@@ -19,8 +19,7 @@ func defaultModuleConfig() *moduleConfig {
 }
 
 // NewModule creates a worker module with the given options.
-// Returns a function compatible with gaz.Module registration that provides
-// worker management infrastructure.
+// Returns a di.Module that provides worker management infrastructure.
 //
 // Prerequisites:
 //   - *slog.Logger must be registered (automatically registered by gaz.New())
@@ -32,14 +31,14 @@ func defaultModuleConfig() *moduleConfig {
 // Example:
 //
 //	app := gaz.New()
-//	app.Module("worker", worker.NewModule())
-func NewModule(opts ...ModuleOption) func(*di.Container) error {
+//	app.UseDI(worker.NewModule())
+func NewModule(opts ...ModuleOption) di.Module {
 	cfg := defaultModuleConfig()
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	return func(c *di.Container) error {
+	return di.NewModuleFunc("worker", func(c *di.Container) error {
 		// Validate prerequisites
 		if !di.Has[*slog.Logger](c) {
 			// Logger is auto-registered by gaz.New(), so this should never fail
@@ -53,5 +52,5 @@ func NewModule(opts ...ModuleOption) func(*di.Container) error {
 		_ = cfg // Future: use cfg for configuration
 
 		return nil
-	}
+	})
 }
