@@ -19,6 +19,7 @@ import (
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
+	"github.com/petabytecl/gaz/health"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
 )
@@ -525,6 +526,32 @@ func (a *App) Build() error {
 	// Now providers can inject *ProviderValues as a dependency
 	if err := a.collectProviderConfigs(); err != nil {
 		errs = append(errs, err)
+	}
+
+	// Auto-register health module if config implements HealthConfigProvider
+	// and health module is not already registered
+	if a.configTarget != nil {
+		if hp, ok := a.configTarget.(health.HealthConfigProvider); ok {
+			// Only auto-register if health module not already applied
+			if !a.modules["health"] {
+				cfg := hp.HealthConfig()
+
+				// Register health.Config in container
+				if err := For[health.Config](a.container).Instance(cfg); err != nil {
+					errs = append(errs, fmt.Errorf("register health config: %w", err))
+				} else {
+					// Create and apply health module
+					healthModule := NewModule("health").
+						Provide(health.Module).
+						Build()
+					if err := healthModule.Apply(a); err != nil {
+						errs = append(errs, fmt.Errorf("apply health module: %w", err))
+					} else {
+						a.modules["health"] = true
+					}
+				}
+			}
+		}
 	}
 
 	// Discover workers from registered services

@@ -12,16 +12,26 @@ import (
 	"github.com/petabytecl/gaz/health"
 )
 
+// testConfig implements health.HealthConfigProvider for auto-registration.
+type testConfig struct {
+	Health health.Config
+}
+
+// HealthConfig returns the health configuration.
+func (c *testConfig) HealthConfig() health.Config {
+	return c.Health
+}
+
 //nolint:gocognit // Integration tests are naturally complex
 func TestHealthIntegration(t *testing.T) {
-	// Configure app
-	cfg := health.DefaultConfig()
-	cfg.Port = 9093
+	// Configure app with HealthConfigProvider
+	cfg := &testConfig{
+		Health: health.DefaultConfig(),
+	}
+	cfg.Health.Port = 9093
 
-	app := gaz.New(
-
-		health.WithHealthChecks(cfg),
-	)
+	app := gaz.New()
+	app.WithConfig(cfg)
 
 	// Start app in background
 	ctx, cancel := context.WithCancel(context.Background())
@@ -33,7 +43,7 @@ func TestHealthIntegration(t *testing.T) {
 	}()
 
 	// Wait for server to be ready
-	url := fmt.Sprintf("http://localhost:%d/live", cfg.Port)
+	url := fmt.Sprintf("http://localhost:%d/live", cfg.Health.Port)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 	timeout := time.After(2 * time.Second)
@@ -64,13 +74,13 @@ func TestHealthIntegration(t *testing.T) {
 
 	// Verify endpoints
 	endpoints := []string{
-		cfg.LivenessPath,
-		cfg.ReadinessPath,
-		cfg.StartupPath,
+		cfg.Health.LivenessPath,
+		cfg.Health.ReadinessPath,
+		cfg.Health.StartupPath,
 	}
 
 	for _, path := range endpoints {
-		fullURL := fmt.Sprintf("http://localhost:%d%s", cfg.Port, path)
+		fullURL := fmt.Sprintf("http://localhost:%d%s", cfg.Health.Port, path)
 		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
 		if err != nil {
 			t.Errorf("NewRequest %s failed: %v", fullURL, err)

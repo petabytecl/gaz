@@ -4,48 +4,48 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/di"
 )
 
 func TestModule(t *testing.T) {
-	app := gaz.New()
+	c := di.New()
 
 	// Manually register config since module expects it
-	err := gaz.For[Config](app.Container()).Instance(DefaultConfig())
+	err := di.For[Config](c).Instance(DefaultConfig())
 	if err != nil {
 		t.Fatalf("Register config failed: %v", err)
 	}
 
 	// Register module
-	app.Module("health", Module)
+	if err := Module(c); err != nil {
+		t.Fatalf("Module failed: %v", err)
+	}
 
 	// Build
-	if err := app.Build(); err != nil {
+	if err := c.Build(); err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
 
 	// Verify components are registered
-	c := app.Container()
-
-	if _, err := gaz.Resolve[*Manager](c); err != nil {
+	if _, err := di.Resolve[*Manager](c); err != nil {
 		t.Errorf("Manager not resolved: %v", err)
 	}
 
-	if _, err := gaz.Resolve[*ShutdownCheck](c); err != nil {
+	if _, err := di.Resolve[*ShutdownCheck](c); err != nil {
 		t.Errorf("ShutdownCheck not resolved: %v", err)
 	}
 
-	if _, err := gaz.Resolve[*ManagementServer](c); err != nil {
+	if _, err := di.Resolve[*ManagementServer](c); err != nil {
 		t.Errorf("ManagementServer not resolved: %v", err)
 	}
 }
 
 func TestModule_ShutdownCheckError(t *testing.T) {
 	// Create container with ShutdownCheck already registered
-	c := gaz.NewContainer()
+	c := di.New()
 
 	// Pre-register ShutdownCheck to cause duplicate error
-	if err := gaz.For[*ShutdownCheck](c).Instance(NewShutdownCheck()); err != nil {
+	if err := di.For[*ShutdownCheck](c).Instance(NewShutdownCheck()); err != nil {
 		t.Fatalf("Pre-register ShutdownCheck failed: %v", err)
 	}
 
@@ -62,10 +62,10 @@ func TestModule_ShutdownCheckError(t *testing.T) {
 
 func TestModule_ManagerError(t *testing.T) {
 	// Create container with Manager already registered
-	c := gaz.NewContainer()
+	c := di.New()
 
 	// Pre-register Manager to cause duplicate error
-	if err := gaz.For[*Manager](c).Instance(NewManager()); err != nil {
+	if err := di.For[*Manager](c).Instance(NewManager()); err != nil {
 		t.Fatalf("Pre-register Manager failed: %v", err)
 	}
 
@@ -83,16 +83,16 @@ func TestModule_ManagerError(t *testing.T) {
 
 func TestModule_ManagementServerError(t *testing.T) {
 	// Create container with ManagementServer already registered
-	c := gaz.NewContainer()
+	c := di.New()
 
 	// Register Config so Module can proceed past ShutdownCheck and Manager
-	if err := gaz.For[Config](c).Instance(DefaultConfig()); err != nil {
+	if err := di.For[Config](c).Instance(DefaultConfig()); err != nil {
 		t.Fatalf("Register Config failed: %v", err)
 	}
 
 	// Pre-register ManagementServer to cause duplicate error
 	server := NewManagementServer(DefaultConfig(), NewManager(), NewShutdownCheck())
-	if err := gaz.For[*ManagementServer](c).Instance(server); err != nil {
+	if err := di.For[*ManagementServer](c).Instance(server); err != nil {
 		t.Fatalf("Pre-register ManagementServer failed: %v", err)
 	}
 
@@ -109,13 +109,15 @@ func TestModule_ManagementServerError(t *testing.T) {
 
 func TestModule_ConfigNotRegistered(t *testing.T) {
 	// Create container without Config registered
-	app := gaz.New()
+	c := di.New()
 
 	// Register module without registering Config first
-	app.Module("health", Module)
+	if err := Module(c); err != nil {
+		t.Fatalf("Module failed: %v", err)
+	}
 
 	// Build should fail when ManagementServer provider tries to resolve Config
-	err := app.Build()
+	err := c.Build()
 	if err == nil {
 		t.Fatal("Expected error from Build, got nil")
 	}

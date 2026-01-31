@@ -3,7 +3,7 @@ package health
 import (
 	"fmt"
 
-	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/di"
 )
 
 // Module registers the health module components.
@@ -14,22 +14,22 @@ import (
 //
 // It assumes that health.Config has been registered in the container
 // (e.g. via gaz.WithHealthChecks or manual registration).
-func Module(c *gaz.Container) error {
+func Module(c *di.Container) error {
 	// Register ShutdownCheck
-	if err := gaz.For[*ShutdownCheck](c).
-		ProviderFunc(func(_ *gaz.Container) *ShutdownCheck {
+	if err := di.For[*ShutdownCheck](c).
+		ProviderFunc(func(_ *di.Container) *ShutdownCheck {
 			return NewShutdownCheck()
 		}); err != nil {
 		return fmt.Errorf("register shutdown check: %w", err)
 	}
 
 	// Register Manager
-	if err := gaz.For[*Manager](c).
-		Provider(func(c *gaz.Container) (*Manager, error) {
+	if err := di.For[*Manager](c).
+		Provider(func(c *di.Container) (*Manager, error) {
 			m := NewManager()
 
 			// Wire up shutdown check
-			shutdownCheck, err := gaz.Resolve[*ShutdownCheck](c)
+			shutdownCheck, err := di.Resolve[*ShutdownCheck](c)
 			if err != nil {
 				return nil, err
 			}
@@ -43,20 +43,20 @@ func Module(c *gaz.Container) error {
 	}
 
 	// Register ManagementServer (implements di.Starter and di.Stopper)
-	if err := gaz.For[*ManagementServer](c).
+	if err := di.For[*ManagementServer](c).
 		Eager().
-		Provider(func(c *gaz.Container) (*ManagementServer, error) {
-			cfg, err := gaz.Resolve[Config](c)
+		Provider(func(c *di.Container) (*ManagementServer, error) {
+			cfg, err := di.Resolve[Config](c)
 			if err != nil {
 				return nil, err
 			}
 
-			manager, err := gaz.Resolve[*Manager](c)
+			manager, err := di.Resolve[*Manager](c)
 			if err != nil {
 				return nil, err
 			}
 
-			shutdownCheck, err := gaz.Resolve[*ShutdownCheck](c)
+			shutdownCheck, err := di.Resolve[*ShutdownCheck](c)
 			if err != nil {
 				return nil, err
 			}

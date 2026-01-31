@@ -3,7 +3,7 @@
 // This example shows:
 //   - Custom HTTP server with lifecycle hooks
 //   - Graceful shutdown using context timeout
-//   - Health check integration via health.WithHealthChecks
+//   - Health check integration via HealthConfigProvider pattern
 //   - Proper server.Shutdown() for connection draining
 //
 // Run with: go run .
@@ -25,6 +25,18 @@ import (
 	"github.com/petabytecl/gaz/health"
 )
 
+// AppConfig holds application configuration including health settings.
+// It implements health.HealthConfigProvider for automatic health module registration.
+type AppConfig struct {
+	Server ServerConfig  `json:"server" yaml:"server"`
+	Health health.Config `json:"health" yaml:"health"`
+}
+
+// HealthConfig returns the health configuration for auto-registration.
+func (c *AppConfig) HealthConfig() health.Config {
+	return c.Health
+}
+
 // ServerConfig holds HTTP server configuration.
 type ServerConfig struct {
 	Port            int           `json:"port" yaml:"port"`
@@ -33,13 +45,16 @@ type ServerConfig struct {
 	ShutdownTimeout time.Duration `json:"shutdown_timeout" yaml:"shutdown_timeout"`
 }
 
-// DefaultServerConfig returns sensible defaults for the HTTP server.
-func DefaultServerConfig() ServerConfig {
-	return ServerConfig{
-		Port:            8080,
-		ReadTimeout:     10 * time.Second,
-		WriteTimeout:    10 * time.Second,
-		ShutdownTimeout: 30 * time.Second,
+// DefaultAppConfig returns sensible defaults for the application.
+func DefaultAppConfig() *AppConfig {
+	return &AppConfig{
+		Server: ServerConfig{
+			Port:            8080,
+			ReadTimeout:     10 * time.Second,
+			WriteTimeout:    10 * time.Second,
+			ShutdownTimeout: 30 * time.Second,
+		},
+		Health: health.DefaultConfig(),
 	}
 }
 
@@ -123,17 +138,13 @@ func (h *Handler) handleHello(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Create app with health checks enabled
-	app := gaz.New(
-		gaz.WithShutdownTimeout(30*time.Second),
-		health.WithHealthChecks(health.DefaultConfig()),
-	)
+	// Create config that implements HealthConfigProvider
+	// Health module will be auto-registered during Build()
+	cfg := DefaultAppConfig()
 
-	// Register configuration using For[T]()
-	config := DefaultServerConfig()
-	if err := gaz.For[ServerConfig](app.Container()).Instance(config); err != nil {
-		log.Fatalf("Failed to register config: %v", err)
-	}
+	// Create app with config - health module auto-registers via HealthConfigProvider
+	app := gaz.New(gaz.WithShutdownTimeout(30 * time.Second))
+	app.WithConfig(cfg)
 
 	// Register HTTP handler using For[T]()
 	if err := gaz.For[*Handler](app.Container()).ProviderFunc(func(_ *gaz.Container) *Handler {
@@ -146,7 +157,7 @@ func main() {
 	if err := gaz.For[*Server](app.Container()).
 		Eager(). // Start immediately
 		Provider(func(c *gaz.Container) (*Server, error) {
-			cfg, err := gaz.Resolve[ServerConfig](c)
+			appCfg, err := gaz.Resolve[*AppConfig](c)
 			if err != nil {
 				return nil, err
 			}
@@ -154,7 +165,7 @@ func main() {
 			if err != nil {
 				return nil, err
 			}
-			return NewServer(cfg, handler), nil
+			return NewServer(appCfg.Server, handler), nil
 		}); err != nil {
 		log.Fatalf("Failed to register server: %v", err)
 	}
