@@ -19,10 +19,10 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Module Consolidation
 
-- [ ] **MOD-01**: service.Builder functionality is absorbed into gaz.App
-- [ ] **MOD-02**: gaz/service package is removed
-- [ ] **MOD-03**: Each subsystem package exports NewModule() function returning gaz.Module
-- [ ] **MOD-04**: di/gaz relationship is documented (which types are re-exported, when to import each)
+- [x] **MOD-01**: service.Builder functionality is absorbed into gaz.App
+- [x] **MOD-02**: gaz/service package is removed
+- [x] **MOD-03**: Each subsystem package exports NewModule() function returning gaz.Module
+- [x] **MOD-04**: di/gaz relationship is documented (which types are re-exported, when to import each)
 
 ### Error Handling
 
@@ -79,10 +79,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIF-01 | Phase 24 | Complete |
 | LIF-02 | Phase 24 | Complete |
 | LIF-03 | Phase 24 | Skipped |
-| MOD-01 | Phase 26 | Pending |
-| MOD-02 | Phase 26 | Pending |
-| MOD-03 | Phase 26 | Pending |
-| MOD-04 | Phase 26 | Pending |
+| MOD-01 | Phase 26 | Complete |
+| MOD-02 | Phase 26 | Complete |
+| MOD-03 | Phase 26 | Complete |
+| MOD-04 | Phase 26 | Complete |
 | ERR-01 | Phase 27 | Pending |
 | ERR-02 | Phase 27 | Pending |
 | ERR-03 | Phase 27 | Pending |
