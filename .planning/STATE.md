@@ -15,9 +15,9 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 - **Phase:** 26 of 29 (Module & Service Consolidation)
 - **Plan:** 4 of 5 complete
 - **Status:** In progress
-- **Last activity:** 2026-01-31 — Completed 26-04-PLAN.md
+- **Last activity:** 2026-01-31 — Completed 26-03-PLAN.md
 
-Progress: [██████░░░░] 56% (26-01 through 26-04 complete, 26-05 remaining)
+Progress: [██████░░░░] 56% (26-01, 26-03, 26-04 complete; 26-02 missing SUMMARY; 26-05 remaining)
 
 ## Milestones Shipped
 
@@ -59,9 +59,13 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - NewModule returns func(*di.Container) error, not gaz.Module interface
 - All five subsystem packages now have consistent NewModule() API
 
+**Phase 26-03 additions:**
+- worker.NewModule() and cron.NewModule() use di package (consistent with health pattern)
+- Subsystem modules use di.Container not gaz.Container to avoid import cycles
+
 ### Blockers/Concerns
 
-None - MOD-03 complete for eventbus and config.
+None - MOD-03 complete for worker and cron.
 
 ### Pending Todos
 
@@ -69,9 +73,9 @@ None - MOD-03 complete for eventbus and config.
 
 ## Session Continuity
 
-Last session: 2026-01-31 15:17
-Stopped at: Completed 26-04-PLAN.md (eventbus/config NewModule)
-Resume file: None - ready for 26-05-PLAN.md
+Last session: 2026-01-31 15:18
+Stopped at: Completed 26-03-PLAN.md (worker/cron NewModule)
+Resume file: None - 26-02 SUMMARY missing, then 26-05-PLAN.md
 
 ---
 
