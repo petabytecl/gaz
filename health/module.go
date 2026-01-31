@@ -54,6 +54,43 @@ func WithStartupPath(path string) ModuleOption {
 	}
 }
 
+// NewModule creates a health module with the given options.
+// Returns a di.Module that registers health check components.
+//
+// Components registered:
+//   - health.Config (from options or defaults)
+//   - *health.ShutdownCheck
+//   - *health.Manager
+//   - *health.ManagementServer (eager, starts HTTP server)
+//
+// Example:
+//
+//	app := gaz.New()
+//	app.UseDI(health.NewModule())                           // defaults
+//	app.UseDI(health.NewModule(health.WithPort(8081)))      // custom port
+func NewModule(opts ...ModuleOption) di.Module {
+	cfg := defaultModuleConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	return di.NewModuleFunc("health", func(c *di.Container) error {
+		// Register Config from module options
+		healthCfg := Config{
+			Port:          cfg.port,
+			LivenessPath:  cfg.livenessPath,
+			ReadinessPath: cfg.readinessPath,
+			StartupPath:   cfg.startupPath,
+		}
+		if err := di.For[Config](c).Instance(healthCfg); err != nil {
+			return fmt.Errorf("register health config: %w", err)
+		}
+
+		// Delegate to existing Module() for component registration
+		return Module(c)
+	})
+}
+
 // Module registers the health module components.
 // It provides:
 // - *ShutdownCheck
