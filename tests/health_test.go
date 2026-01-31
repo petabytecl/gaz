@@ -1,4 +1,3 @@
-//nolint:cyclop // Integration tests are naturally complex
 package tests
 
 import (

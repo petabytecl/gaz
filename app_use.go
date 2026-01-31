@@ -3,8 +3,9 @@ package gaz
 import (
 	"fmt"
 
-	"github.com/petabytecl/gaz/di"
 	"github.com/spf13/pflag"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // Use applies a module to the app's container.

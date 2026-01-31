@@ -190,6 +190,31 @@ linters:
       - linters:
           - ireturn
         path: di/container\.go
+      # NewModule returning di.Module interface is intentional design
+      - linters:
+          - ireturn
+        path: (config|cron|eventbus|health|worker)/module\.go
+        text: "NewModule returns interface"
+      # NewModuleFunc returning Module interface is intentional design
+      - linters:
+          - ireturn
+        path: di/module\.go
+        text: "NewModuleFunc returns interface"
+      # Build() has complex but well-structured setup logic
+      - linters:
+          - gocognit
+        path: app\.go
+        text: "(Build|cognitive complexity)"
+      # Build() has nested if blocks for config-based health module auto-registration
+      - linters:
+          - nestif
+        path: app\.go
+      # TestNewModule has many subtests which increase cognitive complexity
+      - linters:
+          - gocognit
+          - funlen
+        path: health/module_test\.go
+        text: "(cognitive complexity|TestNewModule)"
       # Magic numbers in default configurations are acceptable
       - linters:
           - mnd

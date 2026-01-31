@@ -4,8 +4,9 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/petabytecl/gaz/di"
 	"github.com/stretchr/testify/require"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 func TestNewModule(t *testing.T) {
