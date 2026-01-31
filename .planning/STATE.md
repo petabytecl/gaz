@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 26 of 29 (Module & Service Consolidation) - COMPLETE
-- **Plan:** 5 of 5 complete
+- **Plan:** 6 of 6 complete (includes gap closure plan)
 - **Status:** Phase complete
-- **Last activity:** 2026-01-31 — Completed 26-05-PLAN.md
+- **Last activity:** 2026-01-31 — Completed 26-06-PLAN.md (gap closure)
 
-Progress: [██████░░░░] 59% (Phase 26 complete, ready for Phase 27)
+Progress: [██████░░░░] 60% (Phase 26 complete with gap closure, ready for Phase 27)
 
 ## Milestones Shipped
 
@@ -71,7 +71,11 @@ All key decisions documented in PROJECT.md Key Decisions table.
 **Phase 26-05 additions:**
 - di/doc.go now explains "When to Use di vs gaz" for new users
 - All re-exported types listed in di package documentation
-- Phase 26 complete: all 4 MOD requirements verified
+
+**Phase 26-06 additions (gap closure):**
+- All 4 subsystem modules (worker, cron, eventbus, config) now return di.Module
+- Use di.NewModuleFunc() wrapper matching health.NewModule() pattern
+- MOD-03 fully satisfied: all NewModule() functions have consistent return type
 
 ### Blockers/Concerns
 
@@ -83,8 +87,8 @@ None - Phase 26 complete, ready for Phase 27.
 
 ## Session Continuity
 
-Last session: 2026-01-31 18:26
-Stopped at: Completed 26-05-PLAN.md (di/gaz relationship documented, Phase 26 complete)
+Last session: 2026-01-31 19:21
+Stopped at: Completed 26-06-PLAN.md (gap closure - all NewModule() return di.Module)
 Resume file: None - ready for Phase 27
 
 ---
