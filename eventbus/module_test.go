@@ -19,14 +19,15 @@ func TestNewModule(t *testing.T) {
 		require.NoError(t, err)
 
 		// Register module
-		moduleFn := NewModule()
-		err = moduleFn(c)
+		module := NewModule()
+		err = module.Register(c)
 		require.NoError(t, err)
 	})
 
-	t.Run("returns valid function", func(t *testing.T) {
+	t.Run("returns valid di.Module", func(t *testing.T) {
 		mod := NewModule()
 		require.NotNil(t, mod)
+		require.Equal(t, "eventbus", mod.Name())
 	})
 
 	t.Run("accepts options", func(t *testing.T) {
@@ -41,7 +42,7 @@ func TestNewModule(t *testing.T) {
 		err := di.For[*slog.Logger](c).Instance(logger)
 		require.NoError(t, err)
 
-		err = mod(c)
+		err = mod.Register(c)
 		require.NoError(t, err)
 	})
 
@@ -49,8 +50,8 @@ func TestNewModule(t *testing.T) {
 		// Module gracefully handles missing logger (returns nil, not error)
 		c := di.New()
 
-		moduleFn := NewModule()
-		err := moduleFn(c)
+		module := NewModule()
+		err := module.Register(c)
 		require.NoError(t, err) // Module doesn't fail, just doesn't validate
 	})
 }

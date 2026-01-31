@@ -12,14 +12,15 @@ func TestNewModule(t *testing.T) {
 		c := di.New()
 
 		// Register module
-		moduleFn := NewModule()
-		err := moduleFn(c)
+		module := NewModule()
+		err := module.Register(c)
 		require.NoError(t, err)
 	})
 
-	t.Run("returns valid function", func(t *testing.T) {
+	t.Run("returns valid di.Module", func(t *testing.T) {
 		mod := NewModule()
 		require.NotNil(t, mod)
+		require.Equal(t, "config", mod.Name())
 	})
 
 	t.Run("accepts options", func(t *testing.T) {
@@ -28,7 +29,7 @@ func TestNewModule(t *testing.T) {
 		require.NotNil(t, mod)
 
 		c := di.New()
-		err := mod(c)
+		err := mod.Register(c)
 		require.NoError(t, err)
 	})
 }

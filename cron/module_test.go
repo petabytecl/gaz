@@ -17,22 +17,23 @@ func TestNewModule(t *testing.T) {
 		require.NoError(t, err)
 
 		// Apply module
-		moduleFn := NewModule()
-		err = moduleFn(c)
+		module := NewModule()
+		err = module.Register(c)
 		require.NoError(t, err)
 	})
 
-	t.Run("returns valid function", func(t *testing.T) {
-		moduleFn := NewModule()
-		require.NotNil(t, moduleFn)
+	t.Run("returns valid di.Module", func(t *testing.T) {
+		module := NewModule()
+		require.NotNil(t, module)
+		require.Equal(t, "cron", module.Name())
 	})
 
 	t.Run("works without logger registered", func(t *testing.T) {
 		c := di.New()
 
 		// Don't register logger - module should handle gracefully
-		moduleFn := NewModule()
-		err := moduleFn(c)
+		module := NewModule()
+		err := module.Register(c)
 		require.NoError(t, err, "module should not error without logger")
 	})
 }
