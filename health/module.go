@@ -6,6 +6,54 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
+// ModuleOption configures the health module.
+type ModuleOption func(*moduleConfig)
+
+type moduleConfig struct {
+	port          int
+	livenessPath  string
+	readinessPath string
+	startupPath   string
+}
+
+func defaultModuleConfig() *moduleConfig {
+	cfg := DefaultConfig()
+	return &moduleConfig{
+		port:          cfg.Port,
+		livenessPath:  cfg.LivenessPath,
+		readinessPath: cfg.ReadinessPath,
+		startupPath:   cfg.StartupPath,
+	}
+}
+
+// WithPort sets the health server port. Default is 9090.
+func WithPort(port int) ModuleOption {
+	return func(c *moduleConfig) {
+		c.port = port
+	}
+}
+
+// WithLivenessPath sets the liveness endpoint path. Default is "/live".
+func WithLivenessPath(path string) ModuleOption {
+	return func(c *moduleConfig) {
+		c.livenessPath = path
+	}
+}
+
+// WithReadinessPath sets the readiness endpoint path. Default is "/ready".
+func WithReadinessPath(path string) ModuleOption {
+	return func(c *moduleConfig) {
+		c.readinessPath = path
+	}
+}
+
+// WithStartupPath sets the startup endpoint path. Default is "/startup".
+func WithStartupPath(path string) ModuleOption {
+	return func(c *moduleConfig) {
+		c.startupPath = path
+	}
+}
+
 // Module registers the health module components.
 // It provides:
 // - *ShutdownCheck
