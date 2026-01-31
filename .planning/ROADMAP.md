@@ -110,10 +110,13 @@ Plans:
   2. Error names include subsystem prefix (ErrDINotFound, ErrConfigNotFound, ErrWorkerStopped)
   3. All error wrapping uses consistent "pkg: context: %w" format
   4. errors.Is/As work correctly for all gaz error types
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 27-01: TBD
+- [ ] 27-01-PLAN.md — Consolidate sentinel errors + typed errors in gaz/errors.go
+- [ ] 27-02-PLAN.md — Migrate DI package to gaz errors
+- [ ] 27-03-PLAN.md — Migrate Config package to gaz errors
+- [ ] 27-04-PLAN.md — Migrate Worker/Cron + final verification
 
 ### Phase 28: Testing Infrastructure
 **Goal**: Comprehensive test support for v3 patterns
@@ -153,7 +156,7 @@ Plans:
 | 24. Lifecycle Interface Alignment | v3.0 | 5/5 | Complete | 2026-01-30 |
 | 25. Configuration Harmonization | v3.0 | 2/2 | Complete | 2026-01-30 |
 | 26. Module & Service Consolidation | v3.0 | 6/6 | Complete | 2026-01-31 |
-| 27. Error Standardization | v3.0 | 0/TBD | Not started | - |
+| 27. Error Standardization | v3.0 | 0/4 | Planned | - |
 | 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
 | 29. Documentation & Examples | v3.0 | 0/TBD | Not started | - |
 
