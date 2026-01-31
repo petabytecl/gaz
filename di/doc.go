@@ -1,9 +1,39 @@
 // Package di provides a lightweight, type-safe dependency injection container.
 //
-// The di package can be used standalone without the gaz framework,
-// or as part of gaz.App for full application lifecycle management.
+// # When to Use di vs gaz
 //
-// # Quick Start
+// Most applications should import "github.com/petabytecl/gaz" directly:
+//
+//	import "github.com/petabytecl/gaz"
+//
+//	app := gaz.New()
+//	gaz.For[*MyService](app.Container()).Provider(NewMyService)
+//	app.Build()
+//	app.Run(ctx)
+//
+// The gaz package re-exports all di types (Container, For, Resolve, Has, etc.)
+// and adds application lifecycle, configuration, workers, cron, health, and eventbus.
+//
+// Import di directly only when:
+//   - You need standalone DI without gaz.App lifecycle
+//   - You're building a library that depends only on the container
+//   - You want to minimize import surface in tests
+//
+// # Re-exported Types
+//
+// The following types are re-exported by the gaz package:
+//   - Container → gaz.Container
+//   - For[T]() → gaz.For[T]()
+//   - Resolve[T]() → gaz.Resolve[T]()
+//   - Has[T]() → gaz.Has[T]()
+//   - Named() → gaz.Named()
+//   - RegistrationBuilder → gaz.RegistrationBuilder
+//   - ServiceWrapper → gaz.ServiceWrapper
+//   - TypeName[T]() → gaz.TypeName[T]()
+//
+// For full application development, prefer the gaz package.
+//
+// # Container Usage
 //
 // Create a container, register services, and resolve them:
 //
@@ -56,4 +86,6 @@
 //
 //	// Registration is simple - no lifecycle methods needed
 //	di.For[*Server](c).Provider(NewServer)
+//
+// See the gaz package for full application examples with lifecycle management.
 package di
