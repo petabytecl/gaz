@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 26 of 29 (Module & Service Consolidation)
-- **Plan:** 1 of 5 complete
+- **Plan:** 4 of 5 complete
 - **Status:** In progress
-- **Last activity:** 2026-01-31 — Completed 26-01-PLAN.md
+- **Last activity:** 2026-01-31 — Completed 26-04-PLAN.md
 
-Progress: [████░░░░░░] 46% (26-01 complete, 26-02 through 26-05 remaining)
+Progress: [██████░░░░] 56% (26-01 through 26-04 complete, 26-05 remaining)
 
 ## Milestones Shipped
 
@@ -54,9 +54,14 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - health.WithHealthChecks() removed - superseded by HealthConfigProvider pattern
 - service package removed completely with no deprecation period (v3 clean break)
 
+**Phase 26-04 additions:**
+- eventbus.NewModule() and config.NewModule() use di package (same import cycle issue)
+- NewModule returns func(*di.Container) error, not gaz.Module interface
+- All five subsystem packages now have consistent NewModule() API
+
 ### Blockers/Concerns
 
-None - service package consolidation complete.
+None - MOD-03 complete for eventbus and config.
 
 ### Pending Todos
 
@@ -64,9 +69,9 @@ None - service package consolidation complete.
 
 ## Session Continuity
 
-Last session: 2026-01-31 15:08
-Stopped at: Completed 26-01-PLAN.md (service consolidation)
-Resume file: None - ready for 26-02-PLAN.md
+Last session: 2026-01-31 15:17
+Stopped at: Completed 26-04-PLAN.md (eventbus/config NewModule)
+Resume file: None - ready for 26-05-PLAN.md
 
 ---
 
