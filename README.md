@@ -137,6 +137,7 @@ Hooks are called in dependency order (dependencies start first, stop last).
 - [Configuration](docs/configuration.md) - Config loading, env vars, validation
 - [Validation](docs/validation.md) - Struct tags and custom validators
 - [Advanced](docs/advanced.md) - Modules, testing, Cobra integration
+- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 
 ## Examples
 
@@ -148,6 +149,8 @@ See the [examples](examples/) directory:
 - [lifecycle](examples/lifecycle/) - Services with OnStart/OnStop hooks
 - [modules](examples/modules/) - Organizing providers into modules
 - [cobra-cli](examples/cobra-cli/) - CLI application with Cobra
+- [background-workers](examples/background-workers/) - Background task processing
+- [microservice](examples/microservice/) - Complete microservice with health, workers, eventbus
 
 ## License
 

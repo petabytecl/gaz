@@ -106,11 +106,11 @@ The gaz lifecycle works in three phases:
 
 2. **Start Phase** (`app.Run()` calls `Start()` internally)
    - Computes startup order from dependency graph
-   - Calls `OnStart()` for services implementing `Starter`
+   - Calls `OnStart(ctx)` for services implementing `Starter`
    - Starts services layer by layer (dependencies first)
 
 3. **Shutdown Phase** (triggered by SIGTERM, SIGINT, or context cancellation)
-   - Calls `OnStop()` for services implementing `Stopper`
+   - Calls `OnStop(ctx)` for services implementing `Stopper`
    - Shuts down in reverse dependency order
    - Enforces per-hook timeouts (default: 10s)
 
@@ -165,3 +165,4 @@ func main() {
 - [Configuration](configuration.md) - Load config from files and environment
 - [Validation](validation.md) - Validate configuration with struct tags
 - [Advanced](advanced.md) - Modules, testing, and Cobra integration
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
