@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime/debug"
 	"sync"
@@ -22,6 +23,9 @@ type supervisor struct {
 	// Circuit breaker state
 	failures    int
 	windowStart time.Time
+
+	// Last error for dead letter reporting
+	lastError error
 
 	// Lifecycle
 	ctx    context.Context
@@ -113,6 +117,9 @@ func (s *supervisor) supervise() {
 				slog.Duration("window", s.opts.CircuitWindow),
 			)
 
+			// Invoke dead letter handler if configured
+			s.invokeDeadLetterHandler()
+
 			if s.opts.Critical && s.onCriticalFail != nil {
 				s.logger.Error("critical worker failed, triggering shutdown")
 				s.onCriticalFail()
@@ -159,6 +166,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 				slog.Any("panic", r),
 				slog.String("stack", string(stack)),
 			)
+			s.lastError = fmt.Errorf("panic: %v", r)
 			panicked = true
 		}
 	}()
@@ -166,6 +174,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	s.logger.Info("worker OnStart")
 	if err := s.worker.OnStart(s.ctx); err != nil {
 		s.logger.Error("worker failed to start", slog.Any("error", err))
+		s.lastError = err
 		// Treat start failure as a panic-equivalent (triggers restart logic)
 		panicked = true
 		return panicked
@@ -181,4 +190,29 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	}
 
 	return false
+}
+
+// invokeDeadLetterHandler calls the dead letter handler with panic recovery.
+// This ensures a buggy handler doesn't crash the supervisor.
+func (s *supervisor) invokeDeadLetterHandler() {
+	if s.opts.OnDeadLetter == nil {
+		return
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.Error("dead letter handler panicked",
+				slog.Any("panic", r),
+			)
+		}
+	}()
+
+	info := DeadLetterInfo{
+		WorkerName:    s.worker.Name(),
+		FinalError:    s.lastError,
+		PanicCount:    s.failures,
+		CircuitWindow: s.opts.CircuitWindow,
+		Timestamp:     time.Now(),
+	}
+	s.opts.OnDeadLetter(info)
 }
