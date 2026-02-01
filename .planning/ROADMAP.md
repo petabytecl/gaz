@@ -267,7 +267,7 @@ Plans:
 **Plans:** 3 plans in 3 waves
 
 Plans:
-- [ ] 34-01-PLAN.md — Core cronx package (types, schedule, parser)
+- [x] 34-01-PLAN.md — Core cronx package (types, schedule, parser)
 - [ ] 34-02-PLAN.md — Cron scheduler and chain wrappers
 - [ ] 34-03-PLAN.md — Integration into cron/scheduler and dependency removal
 
@@ -306,7 +306,7 @@ Plans:
 | 31. Feature Maturity | v3.2 | 2/2 | Complete | 2026-02-01 |
 | 32. Backoff Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 33. Tint Package | v4.0 | 3/3 | Complete | 2026-02-01 |
-| 34. Cron Package | v4.0 | 0/3 | Planned | - |
+| 34. Cron Package | v4.0 | 1/3 | In progress | - |
 | 35. Health Package + Integration | v4.0 | 0/? | Pending | - |
 
 ---
