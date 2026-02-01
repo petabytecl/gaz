@@ -92,16 +92,18 @@ func TestWorkerLifecycle(t *testing.T) {
     
     // Register and start
     mgr := worker.TestManager(nil)
-    mgr.Add(w)
+    mgr.Register(w)
     
     ctx := context.Background()
     require.NoError(t, mgr.Start(ctx))
     
-    // Assert
-    worker.RequireWorkerStarted(t, w)
+    // Wait for async start, then assert
+    require.Eventually(t, func() bool {
+        return w.Started.Load()
+    }, time.Second, 10*time.Millisecond)
     
     // Cleanup
-    require.NoError(t, mgr.Stop(ctx))
+    require.NoError(t, mgr.Stop())
     worker.RequireWorkerStopped(t, w)
 }
 ```
