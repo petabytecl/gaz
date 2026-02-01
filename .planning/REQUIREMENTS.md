@@ -35,17 +35,17 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 
 ### Tint Package
 
-- [ ] **TNT-01**: `tintx/` package exists with `Handler` implementing `slog.Handler`
-- [ ] **TNT-02**: ANSI color output for log levels (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
-- [ ] **TNT-03**: `Options.Level` filters logs by level (uses `slog.Leveler`)
-- [ ] **TNT-04**: `Options.AddSource` includes file:line in output
-- [ ] **TNT-05**: `Options.TimeFormat` customizes timestamp format
-- [ ] **TNT-06**: `WithAttrs()` returns new handler instance (not self) preserving attributes
-- [ ] **TNT-07**: `WithGroup()` returns new handler instance with group prefix
-- [ ] **TNT-08**: TTY detection auto-disables colors for non-terminal output
-- [ ] **TNT-09**: `Options.NoColor` explicitly disables color output
-- [ ] **TNT-10**: `logger/provider.go` uses internal `tintx/` package instead of lmittmann/tint
-- [ ] **TNT-11**: `lmittmann/tint` removed from go.mod
+- [x] **TNT-01**: `tintx/` package exists with `Handler` implementing `slog.Handler`
+- [x] **TNT-02**: ANSI color output for log levels (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
+- [x] **TNT-03**: `Options.Level` filters logs by level (uses `slog.Leveler`)
+- [x] **TNT-04**: `Options.AddSource` includes file:line in output
+- [x] **TNT-05**: `Options.TimeFormat` customizes timestamp format
+- [x] **TNT-06**: `WithAttrs()` returns new handler instance (not self) preserving attributes
+- [x] **TNT-07**: `WithGroup()` returns new handler instance with group prefix
+- [x] **TNT-08**: TTY detection auto-disables colors for non-terminal output
+- [x] **TNT-09**: `Options.NoColor` explicitly disables color output
+- [x] **TNT-10**: `logger/provider.go` uses internal `tintx/` package instead of lmittmann/tint
+- [x] **TNT-11**: `lmittmann/tint` removed from go.mod
 
 ### Health Package
 
@@ -130,17 +130,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TNT-01 | 33 | Pending |
-| TNT-02 | 33 | Pending |
-| TNT-03 | 33 | Pending |
-| TNT-04 | 33 | Pending |
-| TNT-05 | 33 | Pending |
-| TNT-06 | 33 | Pending |
-| TNT-07 | 33 | Pending |
-| TNT-08 | 33 | Pending |
-| TNT-09 | 33 | Pending |
-| TNT-10 | 33 | Pending |
-| TNT-11 | 33 | Pending |
+| TNT-01 | 33 | Complete |
+| TNT-02 | 33 | Complete |
+| TNT-03 | 33 | Complete |
+| TNT-04 | 33 | Complete |
+| TNT-05 | 33 | Complete |
+| TNT-06 | 33 | Complete |
+| TNT-07 | 33 | Complete |
+| TNT-08 | 33 | Complete |
+| TNT-09 | 33 | Complete |
+| TNT-10 | 33 | Complete |
+| TNT-11 | 33 | Complete |
 
 ### Phase 34: Cron Package
 
