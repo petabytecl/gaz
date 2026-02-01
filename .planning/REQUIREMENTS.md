@@ -1,4 +1,4 @@
-# Requirements: gaz v3.0 API Harmonization
+# Requirements: gaz v3.0 API Harmonization + v3.1 Performance & Stability
 
 **Defined:** 2026-01-29
 **Core Value:** Simple, type-safe dependency injection with sane defaults
@@ -41,6 +41,18 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 - [x] **DOC-01**: Style guide for contributors exists (API patterns, naming conventions, config requirements)
 - [x] **DOC-02**: User documentation exists (getting started, tutorials)
 - [x] **DOC-03**: All examples are updated to v3 patterns
+
+## v3.1 Requirements
+
+Requirements for v3.1 milestone. Address critical issues from GAZ_REVIEW.md.
+
+### Performance
+
+- [x] **PERF-01**: DI container uses goid.Get() instead of runtime.Stack() for goroutine ID
+
+### Stability
+
+- [x] **STAB-01**: collectProviderConfigs checks service type before instantiation (no side-effects)
 
 ## Future Requirements
 
@@ -92,12 +104,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-01 | Phase 23 | Complete |
 | DOC-02 | Phase 29 | Complete |
 | DOC-03 | Phase 29 | Complete |
+| PERF-01 | Phase 30 | Complete |
+| STAB-01 | Phase 30 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 17 total
-- Mapped to phases: 17 ✓
+- v3.1 requirements: 2 total
+- Mapped to phases: 19 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-29*
-*Last updated: 2026-01-29 after initial definition*
+*Last updated: 2026-02-01 after v3.1 completion*
