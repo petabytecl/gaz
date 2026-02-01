@@ -12,7 +12,7 @@ The v3.0 API Harmonization milestone transforms gaz's API patterns to align with
 - ✅ **v2.1 API Enhancement** - Phases 19-21 (shipped 2026-01-29)
 - ✅ **v2.2 Test Coverage** - Phase 22 (shipped 2026-01-29)
 - ✅ **v3.0 API Harmonization** - Phases 23-29 (shipped 2026-02-01)
-- 🚧 **v3.1 Performance & Stability** - Phase 30 (in progress)
+- ✅ **v3.1 Performance & Stability** - Phase 30 (shipped 2026-02-01)
 
 ## Phases
 
@@ -154,11 +154,11 @@ Plans:
 - [x] 29-04-PLAN.md — Tutorial Example Apps (background-workers, microservice)
 - [x] 29-05-PLAN.md — Documentation Finalization (troubleshooting, v3 verification)
 
-### 🚧 v3.1 Performance & Stability (In Progress)
+### ✅ v3.1 Performance & Stability (Complete)
 
 **Milestone Goal:** Address critical performance and stability issues identified in GAZ_REVIEW.md.
 
-- [ ] **Phase 30: DI Performance & Stability** - Remove goroutine ID hack, fix config discovery side-effects
+- [x] **Phase 30: DI Performance & Stability** - Remove goroutine ID hack, fix config discovery side-effects
 
 ## Phase Details (v3.1)
 
@@ -175,8 +175,8 @@ Plans:
 **Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 30-01-PLAN.md — Remove goroutine ID hack, use explicit chain parameter (PERF-01)
-- [ ] 30-02-PLAN.md — Fix config discovery to check type before instantiation (STAB-01)
+- [x] 30-01-PLAN.md — Remove goroutine ID hack, use explicit chain parameter (PERF-01)
+- [x] 30-02-PLAN.md — Fix config discovery to check type before instantiation (STAB-01)
 
 ## Progress
 
@@ -191,9 +191,9 @@ Plans:
 | 27. Error Standardization | v3.0 | 4/4 | Complete | 2026-01-31 |
 | 28. Testing Infrastructure | v3.0 | 4/4 | Complete | 2026-02-01 |
 | 29. Documentation & Examples | v3.0 | 5/5 | Complete | 2026-02-01 |
-| 30. DI Performance & Stability | v3.1 | 0/2 | Planned | - |
+| 30. DI Performance & Stability | v3.1 | 2/2 | Complete | 2026-02-01 |
 
 ---
 *Roadmap created: 2026-01-29*
 *Milestone: v3.0 API Harmonization - COMPLETE*
-*Current: v3.1 Performance & Stability - Phase 30*
+*Milestone: v3.1 Performance & Stability - COMPLETE*
