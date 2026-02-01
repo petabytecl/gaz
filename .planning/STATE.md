@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 
 ## Current Position
 
-- **Phase:** 27 of 29 (Error Standardization) COMPLETE
-- **Plan:** 4 of 4 complete
-- **Status:** Phase complete - all plans executed with re-export pattern
-- **Last activity:** 2026-02-01 — Completed 27-04-PLAN.md (worker/cron error re-exports)
+- **Phase:** 28 of 29 (Testing Infrastructure)
+- **Plan:** 3 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-01 — Completed 28-03-PLAN.md (config/eventbus testing helpers)
 
-Progress: [███████░░░] 68% (Phase 27 complete, ready for Phase 28)
+Progress: [████████░░] 75% (Phase 28: 3/4 plans complete)
 
 ## Milestones Shipped
 
@@ -100,9 +100,16 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - All four subsystems (di, config, worker, cron) now use consistent re-export pattern
 - ERR-01/02/03 requirements fully satisfied via re-export architecture
 
+**Phase 28-03 additions:**
+- config.MapBackend: in-memory Backend implementation for testing
+- config.TestManager() factory for creating test managers
+- eventbus.TestBus() factory for creating test EventBus
+- eventbus.TestSubscriber[T] with WaitFor synchronization for async testing
+- All helpers use testing.TB and tb.Helper() for proper reporting
+
 ### Blockers/Concerns
 
-None - Phase 27 complete. Ready for Phase 28.
+None - Phase 28 in progress.
 
 ### Pending Todos
 
@@ -110,9 +117,9 @@ None - Phase 27 complete. Ready for Phase 28.
 
 ## Session Continuity
 
-Last session: 2026-02-01 01:31
-Stopped at: Completed 27-04-PLAN.md (worker/cron error re-exports)
-Resume file: None - Phase 27 complete, ready for Phase 28
+Last session: 2026-02-01 02:29
+Stopped at: Completed 28-03-PLAN.md (config/eventbus testing helpers)
+Resume file: None - ready for 28-04-PLAN.md
 
 ---
 
