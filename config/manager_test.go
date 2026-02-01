@@ -589,3 +589,117 @@ func TestWithConfigFile_NonExistentFile_ReturnsError(t *testing.T) {
 	// Should return error for explicit missing file
 	assert.Error(t, err)
 }
+
+// =============================================================================
+// Test LoadIntoStrict()
+// =============================================================================
+
+type strictTestConfig struct {
+	Host    string        `mapstructure:"host"`
+	Port    int           `mapstructure:"port"`
+	Debug   bool          `mapstructure:"debug"`
+	Timeout time.Duration `mapstructure:"timeout"`
+}
+
+func TestLoadIntoStrict_NilTarget_NoError(t *testing.T) {
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend,
+		config.WithName("nonexistent"),
+		config.WithSearchPaths(t.TempDir()),
+	)
+
+	err := mgr.LoadIntoStrict(nil)
+	assert.NoError(t, err)
+}
+
+func TestLoadIntoStrict_ValidConfig_Succeeds(t *testing.T) {
+	backend := cfgviper.New()
+	testdataDir := filepath.Join("testdata")
+
+	mgr := config.NewWithBackend(backend,
+		config.WithName("config"),
+		config.WithSearchPaths(testdataDir),
+	)
+
+	var cfg strictTestConfig
+	err := mgr.LoadIntoStrict(&cfg)
+	require.NoError(t, err)
+
+	assert.Equal(t, "testhost", cfg.Host)
+	assert.Equal(t, 9000, cfg.Port)
+}
+
+func TestLoadIntoStrict_UnknownKeys_ReturnsError(t *testing.T) {
+	// Create a temp config file with unknown keys
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	content := `
+host: localhost
+port: 8080
+unknown_key: should_fail
+another_unknown: also_fail
+`
+	require.NoError(t, os.WriteFile(configPath, []byte(content), 0o644))
+
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend,
+		config.WithName("config"),
+		config.WithSearchPaths(tmpDir),
+	)
+
+	var cfg strictTestConfig
+	err := mgr.LoadIntoStrict(&cfg)
+
+	// Should fail because of unknown keys
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "strict validation failed")
+}
+
+func TestLoadIntoStrict_WithDefaulter_AppliesDefaults(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	content := `host: fromfile`
+	require.NoError(t, os.WriteFile(configPath, []byte(content), 0o644))
+
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend,
+		config.WithName("config"),
+		config.WithSearchPaths(tmpDir),
+	)
+
+	var cfg strictConfigWithDefault
+	err := mgr.LoadIntoStrict(&cfg)
+	require.NoError(t, err)
+
+	assert.Equal(t, "fromfile", cfg.Host)
+	assert.Equal(t, 9999, cfg.Port) // Default applied
+}
+
+type strictConfigWithDefault struct {
+	Host string `mapstructure:"host"`
+	Port int    `mapstructure:"port"`
+}
+
+func (c *strictConfigWithDefault) Default() {
+	if c.Port == 0 {
+		c.Port = 9999
+	}
+}
+
+func TestLoadIntoStrict_WithEnvPrefix_BindsEnvVars(t *testing.T) {
+	require.NoError(t, os.Setenv("STRICTTEST_HOST", "envhost"))
+	defer os.Unsetenv("STRICTTEST_HOST")
+
+	backend := cfgviper.New()
+	mgr := config.NewWithBackend(backend,
+		config.WithName("nonexistent"),
+		config.WithSearchPaths(t.TempDir()),
+		config.WithEnvPrefix("STRICTTEST"),
+	)
+
+	var cfg strictTestConfig
+	err := mgr.LoadIntoStrict(&cfg)
+	require.NoError(t, err)
+
+	assert.Equal(t, "envhost", cfg.Host)
+}

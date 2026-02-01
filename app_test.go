@@ -615,3 +615,18 @@ func (s *AppTestSuite) TestDiscoverCronJobs_NonTransient() {
 	// Build should log warning about non-transient CronJob
 	s.Require().NoError(app.Build())
 }
+
+// =============================================================================
+// Tests for WithStrictConfig
+// =============================================================================
+
+func (s *AppTestSuite) TestWithStrictConfig_SetsFlag() {
+	app := New(WithStrictConfig())
+	s.True(app.strictConfig, "strictConfig should be set to true")
+}
+
+func (s *AppTestSuite) TestWithStrictConfig_WithoutConfigTarget_NoEffect() {
+	// WithStrictConfig without WithConfig should have no effect
+	app := New(WithStrictConfig())
+	s.Require().NoError(app.Build())
+}

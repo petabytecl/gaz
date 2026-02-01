@@ -372,3 +372,126 @@ func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	_ = pooled.OnStop(ctx)
 	assert.Equal(t, 1, worker.getStopCount(), "delegate should have stopped")
 }
+
+// =============================================================================
+// Test DeadLetterHandler
+// =============================================================================
+
+// TestSupervisor_DeadLetterHandler tests that the dead letter handler is called when circuit breaker trips.
+func TestSupervisor_DeadLetterHandler(t *testing.T) {
+	logger := slog.Default()
+	worker := &panicWorker{name: "dead-letter-worker"}
+
+	var handlerCalled bool
+	var receivedInfo DeadLetterInfo
+	var mu sync.Mutex
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour // Won't reset
+	opts.OnDeadLetter = func(info DeadLetterInfo) {
+		mu.Lock()
+		defer mu.Unlock()
+		handlerCalled = true
+		receivedInfo = info
+	}
+
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	// Wait for supervisor to stop (circuit breaker trips)
+	select {
+	case <-sup.wait():
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop after circuit breaker tripped")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	assert.True(t, handlerCalled, "dead letter handler should be called when circuit breaker trips")
+	assert.Equal(t, "dead-letter-worker", receivedInfo.WorkerName)
+	assert.NotNil(t, receivedInfo.FinalError)
+	assert.Equal(t, opts.MaxRestarts, receivedInfo.PanicCount)
+	assert.Equal(t, opts.CircuitWindow, receivedInfo.CircuitWindow)
+	assert.False(t, receivedInfo.Timestamp.IsZero())
+}
+
+// TestSupervisor_DeadLetterHandler_NotCalledWithoutHandler tests default behavior when no handler is set.
+func TestSupervisor_DeadLetterHandler_NotCalledWithoutHandler(t *testing.T) {
+	logger := slog.Default()
+	worker := &panicWorker{name: "no-handler-worker"}
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour
+	// No OnDeadLetter set
+
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	// Should not panic or error even without handler
+	select {
+	case <-sup.wait():
+		// Supervisor stopped normally
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop")
+	}
+}
+
+// TestSupervisor_DeadLetterHandler_PanicRecovery tests that handler panics are recovered.
+func TestSupervisor_DeadLetterHandler_PanicRecovery(t *testing.T) {
+	logger := slog.Default()
+	worker := &panicWorker{name: "handler-panic-worker"}
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour
+	opts.OnDeadLetter = func(info DeadLetterInfo) {
+		panic("handler panic - should be recovered")
+	}
+
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	// Should not crash even with panicking handler
+	select {
+	case <-sup.wait():
+		// Supervisor stopped normally despite handler panic
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop")
+	}
+}
+
+// TestWithDeadLetterHandler_SetsOption tests the WithDeadLetterHandler option function.
+func TestWithDeadLetterHandler_SetsOption(t *testing.T) {
+	called := false
+	handler := func(info DeadLetterInfo) {
+		called = true
+	}
+
+	opts := DefaultWorkerOptions()
+	assert.Nil(t, opts.OnDeadLetter)
+
+	WithDeadLetterHandler(handler)(opts)
+	assert.NotNil(t, opts.OnDeadLetter)
+
+	// Invoke to verify it's the right handler
+	opts.OnDeadLetter(DeadLetterInfo{})
+	assert.True(t, called)
+}
