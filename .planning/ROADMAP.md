@@ -147,8 +147,8 @@ Plans:
 **Plans**: 5 plans in 2 waves
 
 Plans:
-- [ ] 29-01-PLAN.md — Core Package Examples (di + config)
-- [ ] 29-02-PLAN.md — Health & EventBus Examples
+- [x] 29-01-PLAN.md — Core Package Examples (di + config)
+- [x] 29-02-PLAN.md — Health & EventBus Examples
 - [ ] 29-03-PLAN.md — Worker & Cron Examples
 - [ ] 29-04-PLAN.md — Tutorial Example Apps (background-workers, microservice)
 - [ ] 29-05-PLAN.md — Documentation Finalization (troubleshooting, v3 verification)
@@ -165,7 +165,7 @@ Plans:
 | 26. Module & Service Consolidation | v3.0 | 6/6 | Complete | 2026-01-31 |
 | 27. Error Standardization | v3.0 | 4/4 | Complete | 2026-01-31 |
 | 28. Testing Infrastructure | v3.0 | 4/4 | Complete | 2026-02-01 |
-| 29. Documentation & Examples | v3.0 | 0/5 | Not started | - |
+| 29. Documentation & Examples | v3.0 | 2/5 | In progress | - |
 
 ---
 *Roadmap created: 2026-01-29*

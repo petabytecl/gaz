@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v3.0 API Harmonization - Phase 28: Testing Infrastructure
+**Current focus:** v3.0 API Harmonization - Phase 29: Documentation & Examples
 
 ## Current Position
 
-- **Phase:** 28 of 29 (Testing Infrastructure)
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-01 — Completed 28-04-PLAN.md (Testing guide documentation)
+- **Phase:** 29 of 29 (Documentation & Examples)
+- **Plan:** 3 of 5 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-01 — Completed 29-03-PLAN.md (Worker & Cron Examples)
 
-Progress: [████████░░] 100% (Phase 28: 4/4 plans complete)
+Progress: [█████████░] 94% (Phase 29: 3/5 plans complete)
 
 ## Milestones Shipped
 
@@ -128,9 +128,20 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - gaztest/doc.go updated to reference v3 patterns
 - Phase 28 complete: all testing infrastructure in place
 
+**Phase 29-02 additions:**
+- health/doc.go: Package-level documentation for health package
+- health/example_test.go: 13 godoc examples for health package APIs
+- eventbus/example_test.go: 14 godoc examples for eventbus package APIs
+- DOC-03 (godoc examples) partially complete for health and eventbus
+
+**Phase 29-03 additions:**
+- worker/example_test.go: 13 godoc examples for worker package APIs
+- cron/example_test.go: 14 godoc examples for cron package APIs
+- DOC-03 (godoc examples) now covers health, eventbus, worker, cron
+
 ### Blockers/Concerns
 
-None - Phase 28 complete, ready for Phase 29.
+None - Phase 29 in progress.
 
 ### Pending Todos
 
@@ -138,9 +149,9 @@ None - Phase 28 complete, ready for Phase 29.
 
 ## Session Continuity
 
-Last session: 2026-02-01 02:42
-Stopped at: Completed 28-04-PLAN.md (Testing guide documentation) - Phase 28 complete
-Resume file: None - ready for Phase 29 (Documentation & Examples)
+Last session: 2026-02-01 04:02
+Stopped at: Completed 29-03-PLAN.md (Worker & Cron Examples)
+Resume file: None - ready for 29-04 (Tutorial Example Apps)
 
 ---
 
