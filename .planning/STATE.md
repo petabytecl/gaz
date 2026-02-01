@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 - **Milestone:** v4.0 Dependency Reduction
 - **Phase:** 32 (Backoff Package) — In Progress
-- **Plan:** 1 of 3 in current phase
-- **Status:** Plan 32-01 complete
-- **Last activity:** 2026-02-01 — Completed 32-01-PLAN.md (Core BackOff types)
+- **Plan:** 2 of 3 in current phase
+- **Status:** Plan 32-02 complete
+- **Last activity:** 2026-02-01 — Completed 32-02-PLAN.md (Wrappers and Retry helpers)
 
-Progress: [███░░░░░░░] 33% (Phase 32: 1/3 plans complete)
+Progress: [██████░░░░] 67% (Phase 32: 2/3 plans complete)
 
 ## Milestones Shipped
 
@@ -39,7 +39,7 @@ Progress: [███░░░░░░░] 33% (Phase 32: 1/3 plans complete)
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 32 | Backoff Package | BKF-01 to BKF-08 (8) | In Progress (1/3 plans) |
+| 32 | Backoff Package | BKF-01 to BKF-08 (8) | In Progress (2/3 plans) |
 | 33 | Tint Package | TNT-01 to TNT-11 (11) | Pending |
 | 34 | Cron Package | CRN-01 to CRN-12 (12) | Pending |
 | 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | Pending |
@@ -74,9 +74,9 @@ None — fresh milestone with clear research.
 
 ## Session Continuity
 
-Last session: 2026-02-01T20:27:36Z
-Stopped at: Completed 32-01-PLAN.md
-Resume with: `/gsd-execute-phase` for 32-02
+Last session: 2026-02-01T20:35:52Z
+Stopped at: Completed 32-02-PLAN.md
+Resume with: `/gsd-execute-phase` for 32-03
 
 ---
 
