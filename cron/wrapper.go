@@ -19,7 +19,7 @@ type Resolver interface {
 	ResolveByName(name string, opts []string) (any, error)
 }
 
-// diJobWrapper wraps a CronJob type to implement robfig/cron's Job interface.
+// diJobWrapper wraps a CronJob type to implement cronx's Job interface.
 // It resolves a fresh job instance from the container for each execution,
 // providing transient lifecycle semantics as specified in CONTEXT.md.
 //
@@ -74,8 +74,8 @@ func NewJobWrapper(
 	}
 }
 
-// Run implements cron.Job interface.
-// This method is called by robfig/cron scheduler on each scheduled execution.
+// Run implements cronx.Job interface.
+// This method is called by cronx scheduler on each scheduled execution.
 func (w *diJobWrapper) Run() {
 	w.mu.Lock()
 	w.running = true

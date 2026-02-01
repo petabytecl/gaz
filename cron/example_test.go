@@ -46,7 +46,7 @@ func Example_job() {
 }
 
 // ExampleNewScheduler demonstrates creating a cron scheduler.
-// The scheduler wraps robfig/cron with DI-aware job execution.
+// The scheduler uses internal cronx with DI-aware job execution.
 // Note: In real applications, use gaz.New() which creates the scheduler automatically.
 func ExampleNewScheduler() {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
