@@ -208,6 +208,66 @@ func (m *Manager) LoadInto(target any) error {
 	return nil
 }
 
+// LoadIntoStrict loads configuration and unmarshals with strict validation.
+// Unlike LoadInto, this fails if the config contains keys that don't map
+// to fields in the target struct. Use this to catch typos and obsolete config.
+//
+// It performs the following steps in order:
+//  1. Bind struct env vars (for automatic env binding)
+//  2. Load config from files/environment
+//  3. Strict unmarshal into target struct (fails on unknown keys)
+//  4. Apply Defaulter interface if implemented
+//  5. Validate using struct tags (go-playground/validator)
+//  6. Validate using Validator interface if implemented
+func (m *Manager) LoadIntoStrict(target any) error {
+	if target == nil {
+		return nil
+	}
+
+	// Bind struct env vars before loading (for automatic env binding)
+	if m.envPrefix != "" {
+		if eb, ok := m.backend.(EnvBinder); ok {
+			m.bindStructEnv(eb, target, "")
+		}
+	}
+
+	// Load from files/env
+	if err := m.Load(); err != nil {
+		return err
+	}
+
+	// Use strict unmarshal if backend supports it
+	if su, ok := m.backend.(StrictUnmarshaler); ok {
+		if err := su.UnmarshalStrict(target); err != nil {
+			return fmt.Errorf("config: strict validation failed: %w", err)
+		}
+	} else {
+		// Fallback to normal unmarshal
+		if err := m.backend.Unmarshal(target); err != nil {
+			return fmt.Errorf("config: failed to unmarshal: %w", err)
+		}
+	}
+
+	// Apply Defaulter interface
+	if d, ok := target.(Defaulter); ok {
+		d.Default()
+	}
+
+	// Validate using struct tags
+	if err := ValidateStruct(target); err != nil {
+		return err // Already wrapped with ErrConfigValidation
+	}
+
+	// Validate using Validator interface
+	if v, ok := target.(Validator); ok {
+		if err := v.Validate(); err != nil {
+			return fmt.Errorf("config: custom validation failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // Backend returns the underlying Backend for direct access.
 // This is useful for advanced operations not covered by the Manager API.
 func (m *Manager) Backend() Backend {
