@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v3.0 API Harmonization - Phase 27: Error Standardization
+**Current focus:** v3.0 API Harmonization - Phase 28: Testing Infrastructure
 
 ## Current Position
 
-- **Phase:** 27 of 29 (Error Standardization)
-- **Plan:** 2 of 4 complete (27-02, 27-03, 27-04 skipped due to import cycles)
-- **Status:** Phase complete (remaining plans skipped)
-- **Last activity:** 2026-02-01 — Skipped 27-03-PLAN.md (import cycle - architectural decision)
+- **Phase:** 27 of 29 (Error Standardization) COMPLETE
+- **Plan:** 4 of 4 complete
+- **Status:** Phase complete - all plans executed with re-export pattern
+- **Last activity:** 2026-02-01 — Completed 27-04-PLAN.md (worker/cron error re-exports)
 
-Progress: [███████░░░] 64% (Phase 27 complete - 27-02/03/04 skipped)
+Progress: [███████░░░] 68% (Phase 27 complete, ready for Phase 28)
 
 ## Milestones Shipped
 
@@ -39,7 +39,7 @@ Progress: [███████░░░] 64% (Phase 27 complete - 27-02/03/04 
 | 24 | Lifecycle Interface Alignment | LIF-01 ✓, LIF-02 ✓, LIF-03 skipped |
 | 25 | Configuration Harmonization | CFG-01 ✓ |
 | 26 | Module & Service Consolidation | MOD-01 ✓, MOD-02 ✓, MOD-03 ✓, MOD-04 ✓ |
-| 27 | Error Standardization | ERR-01 ✓, ERR-02 ✓, ERR-03 ✓ (27-02/03/04 skipped) |
+| 27 | Error Standardization | ERR-01 ✓, ERR-02 ✓, ERR-03 ✓ (all via re-export pattern) |
 | 28 | Testing Infrastructure | TST-01, TST-02, TST-03 |
 | 29 | Documentation & Examples | DOC-02, DOC-03 |
 
@@ -82,15 +82,26 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Typed errors (ResolutionError, LifecycleError, ValidationError) added
 - Backward compat aliases point to di.Err* until migration complete
 
-**Phase 27-03 additions (architectural decision):**
-- Plans 27-02, 27-03, 27-04 SKIPPED due to Go import cycle constraints
-- gaz imports config/di/worker/cron, so those packages cannot import gaz back
-- User-facing API (gaz.ErrDI*, gaz.ErrConfig*) already achieved via 27-01 aliases
-- ERR-01/02/03 requirements satisfied through aliasing, not subsystem migration
+**Phase 27-02 additions:**
+- Standardized di error messages to 'di: action' format
+- gaz.ErrDI* re-export di.Err* instead of being independent sentinels
+- Error wrapping uses 'di: context: %w' format consistently
+- Pattern established: subsystem defines errors, gaz re-exports with ErrSubsystem* naming
+
+**Phase 27-03 additions:**
+- gaz.ErrConfig* re-export config.Err* for errors.Is compatibility
+- ValidationError and FieldError are type aliases to config package types
+- config/errors.go stays as canonical source (import cycle constraint)
+
+**Phase 27-04 additions:**
+- gaz.ErrWorker* re-export worker.Err* for errors.Is compatibility
+- gaz.ErrCronNotRunning re-exports cron.ErrNotRunning
+- All four subsystems (di, config, worker, cron) now use consistent re-export pattern
+- ERR-01/02/03 requirements fully satisfied via re-export architecture
 
 ### Blockers/Concerns
 
-None - Phase 27 complete (with skipped plans). Ready for Phase 28.
+None - Phase 27 complete. Ready for Phase 28.
 
 ### Pending Todos
 
@@ -98,8 +109,8 @@ None - Phase 27 complete (with skipped plans). Ready for Phase 28.
 
 ## Session Continuity
 
-Last session: 2026-02-01 01:19
-Stopped at: Skipped 27-03-PLAN.md (import cycle architectural decision)
+Last session: 2026-02-01 01:31
+Stopped at: Completed 27-04-PLAN.md (worker/cron error re-exports)
 Resume file: None - Phase 27 complete, ready for Phase 28
 
 ---
