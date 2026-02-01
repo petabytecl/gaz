@@ -13,6 +13,7 @@ The v3.0 API Harmonization milestone transforms gaz's API patterns to align with
 - ✅ **v2.2 Test Coverage** - Phase 22 (shipped 2026-01-29)
 - ✅ **v3.0 API Harmonization** - Phases 23-29 (shipped 2026-02-01)
 - ✅ **v3.1 Performance & Stability** - Phase 30 (shipped 2026-02-01)
+- **v3.2 Feature Maturity** - Phase 31 (in progress)
 
 ## Phases
 
@@ -178,6 +179,25 @@ Plans:
 - [x] 30-01-PLAN.md — Remove goroutine ID hack, use explicit chain parameter (PERF-01)
 - [x] 30-02-PLAN.md — Fix config discovery to check type before instantiation (STAB-01)
 
+## Current Milestone: v3.2 Feature Maturity
+
+**Milestone Goal:** Add feature maturity improvements identified in GAZ_REVIEW.md Phase 2.
+
+### Phase 31: Feature Maturity
+
+**Goal:** Strict config validation and enhanced worker dead letter handling
+**Depends on:** Phase 30
+**Requirements:** FEAT-01, FEAT-02
+**Success Criteria** (what must be TRUE):
+  1. WithStrictConfig() option fails startup if config file contains unregistered keys
+  2. Worker manager has dead letter handling for workers that panic repeatedly
+  3. All existing tests pass with new features
+**Plans**: 2 plans in 1 wave
+
+Plans:
+- [ ] 31-01-PLAN.md — Strict config validation (WithStrictConfig option)
+- [ ] 31-02-PLAN.md — Worker dead letter handling (DeadLetterHandler callback)
+
 ## Progress
 
 **Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29
@@ -192,8 +212,10 @@ Plans:
 | 28. Testing Infrastructure | v3.0 | 4/4 | Complete | 2026-02-01 |
 | 29. Documentation & Examples | v3.0 | 5/5 | Complete | 2026-02-01 |
 | 30. DI Performance & Stability | v3.1 | 2/2 | Complete | 2026-02-01 |
+| 31. Feature Maturity | v3.2 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-01-29*
 *Milestone: v3.0 API Harmonization - COMPLETE*
 *Milestone: v3.1 Performance & Stability - COMPLETE*
+*Milestone: v3.2 Feature Maturity - IN PROGRESS*
