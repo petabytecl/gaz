@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 27 of 29 (Error Standardization)
-- **Plan:** 1 of 4 complete
-- **Status:** In progress
-- **Last activity:** 2026-02-01 — Completed 27-01-PLAN.md (error consolidation)
+- **Plan:** 2 of 4 complete (27-02, 27-03, 27-04 skipped due to import cycles)
+- **Status:** Phase complete (remaining plans skipped)
+- **Last activity:** 2026-02-01 — Skipped 27-03-PLAN.md (import cycle - architectural decision)
 
-Progress: [██████░░░░] 62% (Phase 27 plan 1 of 4 complete)
+Progress: [███████░░░] 64% (Phase 27 complete - 27-02/03/04 skipped)
 
 ## Milestones Shipped
 
@@ -39,7 +39,7 @@ Progress: [██████░░░░] 62% (Phase 27 plan 1 of 4 complete)
 | 24 | Lifecycle Interface Alignment | LIF-01 ✓, LIF-02 ✓, LIF-03 skipped |
 | 25 | Configuration Harmonization | CFG-01 ✓ |
 | 26 | Module & Service Consolidation | MOD-01 ✓, MOD-02 ✓, MOD-03 ✓, MOD-04 ✓ |
-| 27 | Error Standardization | ERR-01, ERR-02, ERR-03 |
+| 27 | Error Standardization | ERR-01 ✓, ERR-02 ✓, ERR-03 ✓ (27-02/03/04 skipped) |
 | 28 | Testing Infrastructure | TST-01, TST-02, TST-03 |
 | 29 | Documentation & Examples | DOC-02, DOC-03 |
 
@@ -82,9 +82,15 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Typed errors (ResolutionError, LifecycleError, ValidationError) added
 - Backward compat aliases point to di.Err* until migration complete
 
+**Phase 27-03 additions (architectural decision):**
+- Plans 27-02, 27-03, 27-04 SKIPPED due to Go import cycle constraints
+- gaz imports config/di/worker/cron, so those packages cannot import gaz back
+- User-facing API (gaz.ErrDI*, gaz.ErrConfig*) already achieved via 27-01 aliases
+- ERR-01/02/03 requirements satisfied through aliasing, not subsystem migration
+
 ### Blockers/Concerns
 
-None - Phase 27 plan 1 complete, ready for plan 2.
+None - Phase 27 complete (with skipped plans). Ready for Phase 28.
 
 ### Pending Todos
 
@@ -92,9 +98,9 @@ None - Phase 27 plan 1 complete, ready for plan 2.
 
 ## Session Continuity
 
-Last session: 2026-02-01 01:10
-Stopped at: Completed 27-01-PLAN.md (error consolidation)
-Resume file: None - ready for 27-02-PLAN.md
+Last session: 2026-02-01 01:19
+Stopped at: Skipped 27-03-PLAN.md (import cycle architectural decision)
+Resume file: None - Phase 27 complete, ready for Phase 28
 
 ---
 
