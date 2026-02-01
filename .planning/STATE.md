@@ -115,6 +115,13 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - eventbus.TestSubscriber[T] with WaitFor synchronization for async testing
 - All helpers use testing.TB and tb.Helper() for proper reporting
 
+**Phase 28-01 additions:**
+- gaztest.WithModules(m ...di.Module) for module registration in test apps
+- gaztest.WithConfigMap(map[string]any) for config injection in tests
+- gaztest.RequireResolve[T](tb, app) generic helper for type-safe resolution
+- gaz.App.MergeConfigMap() method for config injection
+- WithApp and WithModules are mutually exclusive (panic on both)
+
 ### Blockers/Concerns
 
 None - Phase 28 in progress.
@@ -125,9 +132,9 @@ None - Phase 28 in progress.
 
 ## Session Continuity
 
-Last session: 2026-02-01 02:30
-Stopped at: Completed 28-02-PLAN.md (health/worker/cron testing helpers)
-Resume file: None - ready for 28-04-PLAN.md
+Last session: 2026-02-01 02:33
+Stopped at: Completed 28-01-PLAN.md (gaztest Builder API enhancements)
+Resume file: None - ready for 28-04-PLAN.md (Testing guide documentation)
 
 ---
 
