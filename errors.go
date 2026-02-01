@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -50,14 +51,20 @@ var (
 )
 
 // Config subsystem errors.
+// These are re-exports from the config package with standardized ErrConfig* naming.
+// Use errors.Is(err, gaz.ErrConfig*) to check for these errors.
+//
+// Note: Due to Go's import cycle constraints, the canonical source of config
+// errors is config/errors.go. These are aliases that point to the same error
+// values, ensuring errors.Is compatibility.
 var (
 	// ErrConfigValidation is returned when config struct validation fails.
-	// Use errors.Is(err, ErrConfigValidation) to check for validation errors.
-	ErrConfigValidation = errors.New("config: validation failed")
+	// Check with: errors.Is(err, gaz.ErrConfigValidation) or errors.Is(err, config.ErrConfigValidation)
+	ErrConfigValidation = config.ErrConfigValidation
 
 	// ErrConfigNotFound is returned when a config key/namespace doesn't exist.
-	// Use errors.Is(err, ErrConfigNotFound) to check for missing keys.
-	ErrConfigNotFound = errors.New("config: key not found")
+	// Check with: errors.Is(err, gaz.ErrConfigNotFound) or errors.Is(err, config.ErrKeyNotFound)
+	ErrConfigNotFound = config.ErrKeyNotFound
 )
 
 // Worker subsystem errors.
@@ -199,64 +206,23 @@ func (e *LifecycleError) Unwrap() error {
 // ValidationError holds multiple validation errors from config struct validation.
 // It implements the error interface and provides access to individual field errors.
 // Use errors.Is(err, ErrConfigValidation) to check for validation errors.
-type ValidationError struct {
-	// Errors is the list of individual field validation failures.
-	Errors []FieldError
-}
-
-// Error implements the error interface.
-func (ve ValidationError) Error() string {
-	if len(ve.Errors) == 0 {
-		return ErrConfigValidation.Error()
-	}
-
-	msgs := make([]string, len(ve.Errors))
-	for i, e := range ve.Errors {
-		msgs[i] = e.String()
-	}
-	return fmt.Sprintf("%s:\n%s", ErrConfigValidation.Error(), strings.Join(msgs, "\n"))
-}
-
-// Unwrap returns the underlying ErrConfigValidation sentinel error.
-// This allows errors.Is(err, ErrConfigValidation) to work correctly.
-func (ve ValidationError) Unwrap() error {
-	return ErrConfigValidation
-}
+//
+// This is a type alias for config.ValidationError, ensuring compatibility
+// between gaz and config packages.
+type ValidationError = config.ValidationError
 
 // FieldError represents a single field validation failure.
-type FieldError struct {
-	// Namespace is the full path to the field (e.g., "Config.database.host").
-	Namespace string
-
-	// Tag is the validation tag that failed (e.g., "required", "min").
-	Tag string
-
-	// Param is the parameter for the validation tag (e.g., "5" for min=5).
-	Param string
-
-	// Message is a human-readable error message.
-	Message string
-}
-
-// String returns a formatted string representation of the field error.
-func (fe FieldError) String() string {
-	if fe.Tag != "" {
-		return fmt.Sprintf("%s: %s (validate:\"%s\")", fe.Namespace, fe.Message, fe.Tag)
-	}
-	return fmt.Sprintf("%s: %s", fe.Namespace, fe.Message)
-}
+// This is a type alias for config.FieldError.
+type FieldError = config.FieldError
 
 // NewFieldError creates a new FieldError with the given parameters.
+// This is a convenience wrapper for config.NewFieldError.
 func NewFieldError(namespace, tag, param, message string) FieldError {
-	return FieldError{
-		Namespace: namespace,
-		Tag:       tag,
-		Param:     param,
-		Message:   message,
-	}
+	return config.NewFieldError(namespace, tag, param, message)
 }
 
 // NewValidationError creates a ValidationError from a slice of FieldErrors.
+// This is a convenience wrapper for config.NewValidationError.
 func NewValidationError(errs []FieldError) ValidationError {
-	return ValidationError{Errors: errs}
+	return config.NewValidationError(errs)
 }
