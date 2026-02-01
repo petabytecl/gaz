@@ -222,7 +222,12 @@ Plans:
 4. Jitter is thread-safe (concurrent calls don't cause race conditions)
 5. worker/supervisor uses internal `backoff/` package and jpillora/backoff is removed from go.mod
 
-**Plans:** TBD
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 32-01-PLAN.md — Core BackOff types (interface, Stop constant, ExponentialBackOff)
+- [ ] 32-02-PLAN.md — Wrappers and retry helpers (Context, MaxRetries, Retry, Ticker)
+- [ ] 32-03-PLAN.md — Worker integration and dependency removal
 
 ### Phase 33: Tint Package
 
@@ -289,7 +294,7 @@ Plans:
 | 29. Documentation & Examples | v3.0 | 5/5 | Complete | 2026-02-01 |
 | 30. DI Performance & Stability | v3.1 | 2/2 | Complete | 2026-02-01 |
 | 31. Feature Maturity | v3.2 | 2/2 | Complete | 2026-02-01 |
-| 32. Backoff Package | v4.0 | 0/? | Pending | - |
+| 32. Backoff Package | v4.0 | 0/3 | Pending | - |
 | 33. Tint Package | v4.0 | 0/? | Pending | - |
 | 34. Cron Package | v4.0 | 0/? | Pending | - |
 | 35. Health Package + Integration | v4.0 | 0/? | Pending | - |
