@@ -207,3 +207,61 @@ func TestRequireConfigIsSet(t *testing.T) {
 
 	config.RequireConfigIsSet(t, backend, "key")
 }
+
+// =============================================================================
+// MapBackend Unmarshal/UnmarshalKey tests
+// =============================================================================
+
+func TestMapBackend_Unmarshal(t *testing.T) {
+	backend := config.NewMapBackend(map[string]any{
+		"host": "localhost",
+		"port": 8080,
+	})
+
+	// Unmarshal is a no-op for MapBackend but should not error
+	type cfg struct {
+		Host string
+		Port int
+	}
+	var c cfg
+	err := backend.Unmarshal(&c)
+	require.NoError(t, err)
+	// Note: MapBackend.Unmarshal is a no-op, so values won't be populated
+	// This is documented behavior - use Get* methods instead
+}
+
+func TestMapBackend_UnmarshalKey(t *testing.T) {
+	backend := config.NewMapBackend(map[string]any{
+		"database.host": "dbhost",
+		"database.port": 5432,
+	})
+
+	// UnmarshalKey is a no-op for MapBackend but should not error
+	type dbCfg struct {
+		Host string
+		Port int
+	}
+	var db dbCfg
+	err := backend.UnmarshalKey("database", &db)
+	require.NoError(t, err)
+	// Note: MapBackend.UnmarshalKey is a no-op
+}
+
+// =============================================================================
+// RequireConfigLoaded tests
+// =============================================================================
+
+func TestRequireConfigLoaded(t *testing.T) {
+	mgr := config.TestManager(map[string]any{
+		"host":  "localhost",
+		"port":  8080,
+		"debug": false,
+	})
+
+	cfg := &config.SampleConfig{}
+	config.RequireConfigLoaded(t, mgr, cfg)
+
+	// Verify defaults were applied
+	assert.Equal(t, "localhost", cfg.Host)
+	assert.Equal(t, 8080, cfg.Port)
+}

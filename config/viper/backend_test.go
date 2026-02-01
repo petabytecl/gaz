@@ -539,3 +539,114 @@ func TestBackend_BindPFlag_WithDefault(t *testing.T) {
 func TestBackend_ImplementsFlagBinder(t *testing.T) {
 	var _ config.FlagBinder = (*cfgviper.Backend)(nil)
 }
+
+// =============================================================================
+// Test Gaz tag unmarshal functions
+// =============================================================================
+
+func TestBackend_UnmarshalWithGazTag(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("host", "gaz-host")
+	backend.Set("port", 9999)
+	backend.Set("debug", true)
+
+	type cfg struct {
+		Host  string `gaz:"host"`
+		Port  int    `gaz:"port"`
+		Debug bool   `gaz:"debug"`
+	}
+
+	var c cfg
+	err := backend.UnmarshalWithGazTag(&c)
+	require.NoError(t, err)
+
+	assert.Equal(t, "gaz-host", c.Host)
+	assert.Equal(t, 9999, c.Port)
+	assert.True(t, c.Debug)
+}
+
+func TestBackend_UnmarshalKeyWithGazTag(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("database.host", "db-host")
+	backend.Set("database.port", 5432)
+
+	type dbConfig struct {
+		Host string `gaz:"host"`
+		Port int    `gaz:"port"`
+	}
+
+	var db dbConfig
+	err := backend.UnmarshalKeyWithGazTag("database", &db)
+	require.NoError(t, err)
+
+	assert.Equal(t, "db-host", db.Host)
+	assert.Equal(t, 5432, db.Port)
+}
+
+// =============================================================================
+// Test HasKey function
+// =============================================================================
+
+func TestBackend_HasKey_DirectKey(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("host", "localhost")
+
+	assert.True(t, backend.HasKey("host"))
+	assert.False(t, backend.HasKey("nonexistent"))
+}
+
+func TestBackend_HasKey_NestedKey(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("database.host", "dbhost")
+	backend.Set("database.port", 5432)
+
+	// Direct key check
+	assert.True(t, backend.HasKey("database.host"))
+	assert.True(t, backend.HasKey("database.port"))
+
+	// Parent namespace should exist (viper.Sub returns non-nil for parent)
+	assert.True(t, backend.HasKey("database"))
+
+	// Non-existent keys
+	assert.False(t, backend.HasKey("database.user"))
+	assert.False(t, backend.HasKey("server"))
+}
+
+// =============================================================================
+// Test MergeConfigMap function
+// =============================================================================
+
+func TestBackend_MergeConfigMap(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("port", 8080)
+
+	// Merge new values
+	err := backend.MergeConfigMap(map[string]any{
+		"host":  "merged-host",
+		"debug": true,
+	})
+	require.NoError(t, err)
+
+	// New values should be accessible
+	assert.Equal(t, "merged-host", backend.GetString("host"))
+	assert.Equal(t, 8080, backend.GetInt("port")) // unchanged
+	assert.True(t, backend.GetBool("debug"))      // new value
+}
+
+func TestBackend_MergeConfigMap_Nested(t *testing.T) {
+	backend := cfgviper.New()
+	backend.Set("database.port", 5432)
+
+	// Merge nested values
+	err := backend.MergeConfigMap(map[string]any{
+		"database": map[string]any{
+			"host": "merged-db-host",
+			"name": "mydb",
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "merged-db-host", backend.GetString("database.host"))
+	assert.Equal(t, 5432, backend.GetInt("database.port"))
+	assert.Equal(t, "mydb", backend.GetString("database.name"))
+}

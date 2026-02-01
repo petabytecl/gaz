@@ -177,3 +177,67 @@ func (s *ConfigManagerSuite) TestBindFlags() {
 
 	s.Equal("flag-host", cfg.Host)
 }
+
+func (s *ConfigManagerSuite) TestRegisterProviderFlags() {
+	var cfg TestManagerConfig
+	cm := gaz.NewConfigManager(&cfg)
+
+	flags := []gaz.ConfigFlag{
+		{Key: "host", Default: "redis-host"},
+		{Key: "port", Default: 6379},
+	}
+
+	err := cm.RegisterProviderFlags("redis", flags)
+	s.Require().NoError(err)
+
+	// Verify defaults were registered
+	backend := cm.Backend()
+	s.Equal("redis-host", backend.GetString("redis.host"))
+	s.Equal(6379, backend.GetInt("redis.port"))
+}
+
+func (s *ConfigManagerSuite) TestValidateProviderFlags_AllValid() {
+	var cfg TestManagerConfig
+	cm := gaz.NewConfigManager(&cfg)
+
+	// Set required values
+	backend := cm.Backend()
+	backend.Set("database.host", "dbhost")
+	backend.Set("database.port", 5432)
+
+	flags := []gaz.ConfigFlag{
+		{Key: "host", Required: true},
+		{Key: "port", Required: true},
+	}
+
+	errs := cm.ValidateProviderFlags("database", flags)
+	s.Require().Empty(errs)
+}
+
+func (s *ConfigManagerSuite) TestValidateProviderFlags_MissingRequired() {
+	var cfg TestManagerConfig
+	cm := gaz.NewConfigManager(&cfg)
+
+	// Don't set required values
+	flags := []gaz.ConfigFlag{
+		{Key: "host", Required: true},
+		{Key: "port", Required: true},
+	}
+
+	errs := cm.ValidateProviderFlags("database", flags)
+	s.Require().Len(errs, 2)
+	s.Contains(errs[0].Error(), "database.host")
+	s.Contains(errs[1].Error(), "database.port")
+}
+
+func (s *ConfigManagerSuite) TestBackend_ReturnsViperBackend() {
+	var cfg TestManagerConfig
+	cm := gaz.NewConfigManager(&cfg)
+
+	backend := cm.Backend()
+	s.Require().NotNil(backend)
+
+	// Should be able to get/set values
+	backend.Set("test.key", "test-value")
+	s.Equal("test-value", backend.GetString("test.key"))
+}
