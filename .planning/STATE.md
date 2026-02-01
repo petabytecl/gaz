@@ -30,8 +30,9 @@ Progress: [██████████] 100% (Milestone v3.2: 2/2 plans, 1/1 
 | v2.2 | Test Coverage | 22 | 4 | 2026-01-29 |
 | v3.0 | API Harmonization | 23-29 | 27 | 2026-02-01 |
 | v3.1 | Performance & Stability | 30 | 2 | 2026-02-01 |
+| v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
 
-**Total:** 128 plans across 30 phases (v3.2 in progress)
+**Total:** 130 plans across 31 phases
 
 ## v3.1 Phase Overview
 

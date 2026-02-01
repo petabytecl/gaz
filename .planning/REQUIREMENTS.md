@@ -54,6 +54,15 @@ Requirements for v3.1 milestone. Address critical issues from GAZ_REVIEW.md.
 
 - [x] **STAB-01**: collectProviderConfigs checks service type before instantiation (no side-effects)
 
+## v3.2 Requirements
+
+Requirements for v3.2 milestone. Feature maturity improvements from GAZ_REVIEW.md Phase 2.
+
+### Features
+
+- [x] **FEAT-01**: WithStrictConfig() option fails startup if config file contains unregistered keys
+- [x] **FEAT-02**: Worker manager has dead letter handling for workers that panic repeatedly
+
 ## Future Requirements
 
 Deferred to v3.1 or later.
@@ -106,13 +115,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-03 | Phase 29 | Complete |
 | PERF-01 | Phase 30 | Complete |
 | STAB-01 | Phase 30 | Complete |
+| FEAT-01 | Phase 31 | Complete |
+| FEAT-02 | Phase 31 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 17 total
 - v3.1 requirements: 2 total
-- Mapped to phases: 19 ✓
+- v3.2 requirements: 2 total
+- Mapped to phases: 21 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-29*
-*Last updated: 2026-02-01 after v3.1 completion*
+*Last updated: 2026-02-01 after v3.2 completion*

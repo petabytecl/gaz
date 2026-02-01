@@ -13,7 +13,7 @@ The v3.0 API Harmonization milestone transforms gaz's API patterns to align with
 - ✅ **v2.2 Test Coverage** - Phase 22 (shipped 2026-01-29)
 - ✅ **v3.0 API Harmonization** - Phases 23-29 (shipped 2026-02-01)
 - ✅ **v3.1 Performance & Stability** - Phase 30 (shipped 2026-02-01)
-- **v3.2 Feature Maturity** - Phase 31 (in progress)
+- ✅ **v3.2 Feature Maturity** - Phase 31 (shipped 2026-02-01)
 
 ## Phases
 
