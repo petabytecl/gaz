@@ -2,6 +2,29 @@ package worker
 
 import "time"
 
+// DeadLetterInfo contains information about a worker that has permanently failed.
+// This is passed to the DeadLetterHandler when the circuit breaker trips.
+type DeadLetterInfo struct {
+	// WorkerName is the name of the failed worker
+	WorkerName string
+	// FinalError is the last error or panic value before the circuit tripped
+	FinalError error
+	// PanicCount is the number of panics/failures in the circuit window
+	PanicCount int
+	// CircuitWindow is the duration of the failure tracking window
+	CircuitWindow time.Duration
+	// Timestamp is when the circuit breaker tripped
+	Timestamp time.Time
+}
+
+// DeadLetterHandler is called when a worker exhausts restart attempts
+// and the circuit breaker trips. Use this to log, alert, persist to
+// external queue, or take other action on permanently failed workers.
+//
+// The handler is wrapped in recover() to prevent handler panics from
+// crashing the supervisor.
+type DeadLetterHandler func(info DeadLetterInfo)
+
 // WorkerOptions holds configuration for worker registration.
 type WorkerOptions struct {
 	// PoolSize is the number of worker instances to create.
@@ -32,6 +55,11 @@ type WorkerOptions struct {
 	// trips. The window resets after CircuitWindow duration passes.
 	// Default: 10 minutes
 	CircuitWindow time.Duration
+
+	// OnDeadLetter is called when the circuit breaker trips.
+	// Use this to log, alert, or persist failed worker info.
+	// The handler is wrapped in recover() for safety.
+	OnDeadLetter DeadLetterHandler
 }
 
 // WorkerOption configures WorkerOptions.
@@ -134,5 +162,28 @@ func WithCircuitWindow(d time.Duration) WorkerOption {
 		if d > 0 {
 			o.CircuitWindow = d
 		}
+	}
+}
+
+// WithDeadLetterHandler sets a callback for dead letter handling.
+// The handler is called when a worker's circuit breaker trips
+// (after MaxRestarts failures within CircuitWindow).
+//
+// Use this to implement logging, alerting, or external persistence
+// for permanently failed workers.
+//
+// Example:
+//
+//	manager.Register(worker, WithDeadLetterHandler(func(info DeadLetterInfo) {
+//	    log.Error("worker permanently failed",
+//	        "name", info.WorkerName,
+//	        "error", info.FinalError,
+//	        "panics", info.PanicCount,
+//	    )
+//	    // Optionally persist to external queue, send alert, etc.
+//	}))
+func WithDeadLetterHandler(fn DeadLetterHandler) WorkerOption {
+	return func(o *WorkerOptions) {
+		o.OnDeadLetter = fn
 	}
 }
