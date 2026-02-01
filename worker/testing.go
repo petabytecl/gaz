@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
+	"github.com/stretchr/testify/mock"
 )
 
 // MockWorker is a testify mock implementing worker.Worker.
@@ -45,13 +45,13 @@ func (m *MockWorker) Name() string {
 // OnStart records the start call and returns the mocked error.
 func (m *MockWorker) OnStart(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
+	return args.Error(0)
 }
 
 // OnStop records the stop call and returns the mocked error.
 func (m *MockWorker) OnStop(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
+	return args.Error(0)
 }
 
 // SimpleWorker is a test worker that tracks OnStart/OnStop calls.

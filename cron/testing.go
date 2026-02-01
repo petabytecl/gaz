@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
+	"github.com/stretchr/testify/mock"
 )
 
 // DefaultJobTimeout is the default timeout for test jobs.
@@ -55,7 +55,7 @@ func (m *MockJob) Timeout() time.Duration {
 // Run executes the job and returns the mocked error.
 func (m *MockJob) Run(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
+	return args.Error(0)
 }
 
 // SimpleJob is a test job that tracks Run calls.

@@ -340,8 +340,6 @@ func (m *Manager) ValidateProviderFlags(namespace string, flags []ConfigFlag) []
 }
 
 // ConfigFlag represents a configuration flag for provider registration.
-//
-//nolint:revive // ConfigFlag stutters but renaming would break public API
 type ConfigFlag struct {
 	Key      string
 	Default  any

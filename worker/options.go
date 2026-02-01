@@ -3,8 +3,6 @@ package worker
 import "time"
 
 // WorkerOptions holds configuration for worker registration.
-//
-//nolint:revive // WorkerOptions stutters but renaming would break public API
 type WorkerOptions struct {
 	// PoolSize is the number of worker instances to create.
 	// Each instance runs in its own goroutine with a unique name suffix.
@@ -37,8 +35,6 @@ type WorkerOptions struct {
 }
 
 // WorkerOption configures WorkerOptions.
-//
-//nolint:revive // WorkerOption stutters but renaming would break public API
 type WorkerOption func(*WorkerOptions)
 
 // DefaultWorkerOptions returns WorkerOptions with sensible defaults.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
+	"github.com/stretchr/testify/mock"
 )
 
 // TestConfig returns a health.Config with safe defaults for testing.

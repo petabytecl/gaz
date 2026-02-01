@@ -290,11 +290,10 @@ linters:
           - gosec
         path: cron/logger\.go
         text: "G602"
-      # deprecatedComment style in compat layer is acceptable
+      # depguard for testing.go files (need testify/mock for test helpers)
       - linters:
-          - gocritic
-        path: config_manager\.go
-        text: "deprecatedComment"
+          - depguard
+        path: testing\.go
       # unexported-return for internal factory functions
       - linters:
           - revive
@@ -318,10 +317,24 @@ linters:
       - linters:
           - wrapcheck
         path: config/viper/backend\.go
-      # wrapcheck for deprecated compatibility layer (thin wrapper)
+      # revive stuttering for public API types (renaming would break API)
+      - linters:
+          - revive
+        path: (health/config_provider\.go|worker/options\.go|config/manager\.go|cron/job\.go)
+        text: "stutters"
+      # ireturn for health/manager.go (returns external health.Checker interface)
+      - linters:
+          - ireturn
+        path: health/manager\.go
+        text: "health.Checker"
+      # wrapcheck for mock methods (return user-provided errors)
       - linters:
           - wrapcheck
-        path: config_manager\.go
+        path: (worker|cron|health)/testing\.go
+      # wrapcheck for logger handler (thin pass-through)
+      - linters:
+          - wrapcheck
+        path: logger/handler\.go
       # wrapcheck for gaztest builder (thin wrapper)
       - linters:
           - wrapcheck

@@ -49,8 +49,6 @@ import (
 //	    }
 //	    return j.mailer.SendReport(ctx, data)
 //	}
-//
-//nolint:revive // CronJob stutters but renaming would break public API
 type CronJob interface {
 	// Name returns a human-readable identifier for logging.
 	//
