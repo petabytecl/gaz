@@ -15,11 +15,12 @@ import (
 
 // Compile-time interface assertions.
 var (
-	_ config.Backend    = (*Backend)(nil)
-	_ config.Watcher    = (*Backend)(nil)
-	_ config.Writer     = (*Backend)(nil)
-	_ config.EnvBinder  = (*Backend)(nil)
-	_ config.FlagBinder = (*Backend)(nil)
+	_ config.Backend           = (*Backend)(nil)
+	_ config.Watcher           = (*Backend)(nil)
+	_ config.Writer            = (*Backend)(nil)
+	_ config.EnvBinder         = (*Backend)(nil)
+	_ config.FlagBinder        = (*Backend)(nil)
+	_ config.StrictUnmarshaler = (*Backend)(nil)
 )
 
 // Backend implements config.Backend, config.Watcher, config.Writer, and config.EnvBinder
@@ -103,6 +104,12 @@ func gazDecoderOption(dc *mapstructure.DecoderConfig) {
 	dc.TagName = "gaz"
 }
 
+// strictDecoderOption configures mapstructure to error on unused keys.
+// This catches typos and obsolete configuration keys.
+func strictDecoderOption(dc *mapstructure.DecoderConfig) {
+	dc.ErrorUnused = true
+}
+
 // UnmarshalWithGazTag unmarshals entire config using gaz struct tags.
 func (b *Backend) UnmarshalWithGazTag(target any) error {
 	return b.v.Unmarshal(target, gazDecoderOption)
@@ -111,6 +118,12 @@ func (b *Backend) UnmarshalWithGazTag(target any) error {
 // UnmarshalKeyWithGazTag unmarshals a specific key using gaz struct tags.
 func (b *Backend) UnmarshalKeyWithGazTag(key string, target any) error {
 	return b.v.UnmarshalKey(key, target, gazDecoderOption)
+}
+
+// UnmarshalStrict unmarshals config into target, failing if config contains
+// keys that don't map to struct fields. This catches typos and obsolete config.
+func (b *Backend) UnmarshalStrict(target any) error {
+	return b.v.Unmarshal(target, strictDecoderOption)
 }
 
 // HasKey returns true if the key exists in config (either directly or as a parent namespace).

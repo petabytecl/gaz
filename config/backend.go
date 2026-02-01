@@ -95,3 +95,10 @@ type EnvBinder interface {
 type StringReplacer interface {
 	Replace(s string) string
 }
+
+// StrictUnmarshaler is implemented by backends that support strict unmarshal.
+// Strict unmarshal fails if config contains keys that don't map to struct fields.
+// This helps catch typos and obsolete configuration keys at startup.
+type StrictUnmarshaler interface {
+	UnmarshalStrict(target any) error
+}
