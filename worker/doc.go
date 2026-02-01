@@ -71,7 +71,7 @@
 //
 // # Backoff Configuration
 //
-// The [BackoffConfig] wraps jpillora/backoff with sensible defaults:
+// The [BackoffConfig] wraps the internal [backoff.ExponentialBackOff] with sensible defaults:
 //
 //   - Min: 1 second (first retry delay)
 //   - Max: 5 minutes (cap on retry delay)
