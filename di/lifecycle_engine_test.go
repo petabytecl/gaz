@@ -274,3 +274,4 @@ func (m *mockLifecycleService) Start(_ context.Context) error                   
 func (m *mockLifecycleService) Stop(_ context.Context) error                      { return nil }
 func (m *mockLifecycleService) HasLifecycle() bool                                { return m.hasLifecycle }
 func (m *mockLifecycleService) ServiceType() reflect.Type                         { return nil }
+func (m *mockLifecycleService) IsBuilt() bool                                     { return true }

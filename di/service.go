@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"sync/atomic"
 )
 
 // ServiceWrapper is the interface for service lifecycle management.
@@ -38,6 +39,10 @@ type ServiceWrapper interface {
 	// ServiceType returns the reflect.Type of the service.
 	// Used for type-checking without instantiation (e.g., interface implementation checks).
 	ServiceType() reflect.Type
+
+	// IsBuilt returns true if the service instance is already created/ready.
+	// Used for optimization to skip cycle detection locks.
+	IsBuilt() bool
 }
 
 // baseService implements common functionality for all service wrappers.
@@ -105,7 +110,7 @@ type lazySingleton[T any] struct {
 
 	mu       sync.Mutex
 	instance T
-	built    bool
+	built    atomic.Bool
 }
 
 // newLazySingleton creates a new lazy singleton service wrapper.
@@ -139,11 +144,15 @@ func (s *lazySingleton[T]) ServiceType() reflect.Type {
 	return reflect.TypeOf(zero)
 }
 
+func (s *lazySingleton[T]) IsBuilt() bool {
+	return s.built.Load()
+}
+
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.built {
+	if s.built.Load() {
 		return s.instance, nil
 	}
 
@@ -158,19 +167,19 @@ func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error
 	}
 
 	s.instance = instance
-	s.built = true
+	s.built.Store(true)
 	return instance, nil
 }
 
 func (s *lazySingleton[T]) Start(ctx context.Context) error {
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
 	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *lazySingleton[T]) Stop(ctx context.Context) error {
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
 	return s.runStopLifecycle(ctx, s.instance)
@@ -236,6 +245,10 @@ func (s *transientService[T]) ServiceType() reflect.Type {
 	return reflect.TypeOf(zero)
 }
 
+func (s *transientService[T]) IsBuilt() bool {
+	return false
+}
+
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
 // The IsEager() method returns true so Build() knows to instantiate it.
 type eagerSingleton[T any] struct {
@@ -244,7 +257,7 @@ type eagerSingleton[T any] struct {
 
 	mu       sync.Mutex
 	instance T
-	built    bool
+	built    atomic.Bool
 }
 
 // newEagerSingleton creates a new eager singleton service wrapper.
@@ -273,7 +286,7 @@ func (s *eagerSingleton[T]) GetInstance(c *Container, chain []string) (any, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.built {
+	if s.built.Load() {
 		return s.instance, nil
 	}
 
@@ -288,7 +301,7 @@ func (s *eagerSingleton[T]) GetInstance(c *Container, chain []string) (any, erro
 	}
 
 	s.instance = instance
-	s.built = true
+	s.built.Store(true)
 	return instance, nil
 }
 
@@ -296,7 +309,7 @@ func (s *eagerSingleton[T]) Start(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.built {
+	if !s.built.Load() {
 		// Should have been built, but just in case
 		return nil
 	}
@@ -308,7 +321,7 @@ func (s *eagerSingleton[T]) Stop(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
 
@@ -322,6 +335,10 @@ func (s *eagerSingleton[T]) HasLifecycle() bool {
 func (s *eagerSingleton[T]) ServiceType() reflect.Type {
 	var zero T
 	return reflect.TypeOf(zero)
+}
+
+func (s *eagerSingleton[T]) IsBuilt() bool {
+	return s.built.Load()
 }
 
 // instanceService wraps a pre-built value. No provider is called.
@@ -372,6 +389,10 @@ func (s *instanceService[T]) HasLifecycle() bool {
 func (s *instanceService[T]) ServiceType() reflect.Type {
 	var zero T
 	return reflect.TypeOf(zero)
+}
+
+func (s *instanceService[T]) IsBuilt() bool {
+	return true
 }
 
 // =============================================================================
@@ -428,4 +449,8 @@ func (s *instanceServiceAny) HasLifecycle() bool {
 
 func (s *instanceServiceAny) ServiceType() reflect.Type {
 	return reflect.TypeOf(s.value)
+}
+
+func (s *instanceServiceAny) IsBuilt() bool {
+	return true
 }

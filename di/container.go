@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/petermattis/goid"
 )
@@ -29,6 +30,10 @@ type Container struct {
 	// This enables cycle detection when providers call Resolve[T]().
 	resolutionChains map[int64][]string
 	chainMu          sync.Mutex
+
+	// activeResolutions tracks the global count of active resolution chains.
+	// Used for optimization to skip chain locking when no resolutions are active.
+	activeResolutions int64
 
 	// dependencyGraph stores the dependency graph as an adjacency list (parent -> children).
 	// This is used for lifecycle management (ordered startup/shutdown).
@@ -116,6 +121,7 @@ func (c *Container) getChain() []string {
 
 // pushChain adds a service name to the resolution chain for this goroutine.
 func (c *Container) pushChain(name string) {
+	atomic.AddInt64(&c.activeResolutions, 1)
 	c.chainMu.Lock()
 	defer c.chainMu.Unlock()
 	gid := getGoroutineID()
@@ -134,6 +140,7 @@ func (c *Container) popChain() {
 	if len(c.resolutionChains[gid]) == 0 {
 		delete(c.resolutionChains, gid)
 	}
+	atomic.AddInt64(&c.activeResolutions, -1)
 }
 
 // Build instantiates all eager services and validates the container.
@@ -192,6 +199,27 @@ func (c *Container) Build() error {
 // ResolveByName resolves a service by name, tracking the chain for cycle detection.
 // Exported for use by gaz.App for config provider collection.
 func (c *Container) ResolveByName(name string, _ []string) (any, error) {
+	// Look up service
+	c.mu.RLock()
+	svc, ok := c.services[name]
+	c.mu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrNotFound, name)
+	}
+
+	wrapper, ok := svc.(ServiceWrapper)
+	if !ok {
+		return nil, fmt.Errorf("di: invalid service wrapper type for %s", name)
+	}
+
+	// Optimization: if service is already built AND no resolutions are active,
+	// we can skip cycle detection and dependency recording (since chain must be empty).
+	// This avoids global lock contention during runtime resolution (after Build).
+	if wrapper.IsBuilt() && atomic.LoadInt64(&c.activeResolutions) == 0 {
+		return wrapper.GetInstance(c, nil)
+	}
+
 	// Get current chain for this goroutine
 	chain := c.getChain()
 
@@ -203,24 +231,10 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 		}
 	}
 
-	// Look up service
-	c.mu.RLock()
-	svc, ok := c.services[name]
-	c.mu.RUnlock()
-
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrNotFound, name)
-	}
-
 	// Record dependency if we are being resolved by another service
 	if len(chain) > 0 {
 		parent := chain[len(chain)-1]
 		c.recordDependency(parent, name)
-	}
-
-	wrapper, ok := svc.(ServiceWrapper)
-	if !ok {
-		return nil, fmt.Errorf("di: invalid service wrapper type for %s", name)
 	}
 
 	// Add current service to chain before getting instance
