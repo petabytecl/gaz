@@ -3,14 +3,12 @@ package di
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
-)
 
-// decimalBase is used for parsing decimal digits from goroutine ID.
-const decimalBase = 10
+	"github.com/petermattis/goid"
+)
 
 // Container is the dependency injection container.
 // Use New() to create a new container, register services with For[T](),
@@ -105,17 +103,7 @@ func (c *Container) GetService(name string) (ServiceWrapper, bool) {
 // getGoroutineID returns a unique identifier for the current goroutine.
 // This is used for tracking resolution chains per-goroutine.
 func getGoroutineID() int64 {
-	var buf [64]byte
-	n := runtime.Stack(buf[:], false)
-	// Parse goroutine ID from stack trace: "goroutine 123 [running]:"
-	var id int64
-	for i := 10; i < n; i++ { // Skip "goroutine "
-		if buf[i] == ' ' {
-			break
-		}
-		id = id*decimalBase + int64(buf[i]-'0')
-	}
-	return id
+	return goid.Get()
 }
 
 // getChain returns the current resolution chain for this goroutine.
