@@ -227,7 +227,7 @@ func TestTestSubscriber_ThreadSafety(t *testing.T) {
 	eventbus.Subscribe(bus, ts.Handler())
 
 	// Publish concurrently
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		go func(id int) {
 			eventbus.Publish(context.Background(), bus, eventbus.TestEvent{
 				ID: string(rune('0' + id%10)),

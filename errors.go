@@ -24,31 +24,31 @@ import (
 // same error values, ensuring errors.Is compatibility.
 var (
 	// ErrDINotFound is returned when a requested service is not registered in the container.
-	// Check with: errors.Is(err, gaz.ErrDINotFound)
+	// Check with: errors.Is(err, gaz.ErrDINotFound).
 	ErrDINotFound = di.ErrNotFound
 
 	// ErrDICycle is returned when a circular dependency is detected during resolution.
-	// Check with: errors.Is(err, gaz.ErrDICycle)
+	// Check with: errors.Is(err, gaz.ErrDICycle).
 	ErrDICycle = di.ErrCycle
 
 	// ErrDIDuplicate is returned when attempting to register a service that already exists.
-	// Check with: errors.Is(err, gaz.ErrDIDuplicate)
+	// Check with: errors.Is(err, gaz.ErrDIDuplicate).
 	ErrDIDuplicate = di.ErrDuplicate
 
 	// ErrDINotSettable is returned when a struct field cannot be set during injection.
-	// Check with: errors.Is(err, gaz.ErrDINotSettable)
+	// Check with: errors.Is(err, gaz.ErrDINotSettable).
 	ErrDINotSettable = di.ErrNotSettable
 
 	// ErrDITypeMismatch is returned when a resolved service cannot be assigned to the target type.
-	// Check with: errors.Is(err, gaz.ErrDITypeMismatch)
+	// Check with: errors.Is(err, gaz.ErrDITypeMismatch).
 	ErrDITypeMismatch = di.ErrTypeMismatch
 
 	// ErrDIAlreadyBuilt is returned when attempting to register after Build() was called.
-	// Check with: errors.Is(err, gaz.ErrDIAlreadyBuilt)
+	// Check with: errors.Is(err, gaz.ErrDIAlreadyBuilt).
 	ErrDIAlreadyBuilt = di.ErrAlreadyBuilt
 
 	// ErrDIInvalidProvider is returned when a provider function has invalid signature.
-	// Check with: errors.Is(err, gaz.ErrDIInvalidProvider)
+	// Check with: errors.Is(err, gaz.ErrDIInvalidProvider).
 	ErrDIInvalidProvider = di.ErrInvalidProvider
 )
 
@@ -61,11 +61,11 @@ var (
 // values, ensuring errors.Is compatibility.
 var (
 	// ErrConfigValidation is returned when config struct validation fails.
-	// Check with: errors.Is(err, gaz.ErrConfigValidation) or errors.Is(err, config.ErrConfigValidation)
+	// Check with: errors.Is(err, gaz.ErrConfigValidation) or errors.Is(err, config.ErrConfigValidation).
 	ErrConfigValidation = config.ErrConfigValidation
 
 	// ErrConfigNotFound is returned when a config key/namespace doesn't exist.
-	// Check with: errors.Is(err, gaz.ErrConfigNotFound) or errors.Is(err, config.ErrKeyNotFound)
+	// Check with: errors.Is(err, gaz.ErrConfigNotFound) or errors.Is(err, config.ErrKeyNotFound).
 	ErrConfigNotFound = config.ErrKeyNotFound
 )
 
@@ -127,34 +127,42 @@ var (
 
 var (
 	// ErrDuplicate is an alias for di.ErrDuplicate for backward compatibility.
+	//
 	// Deprecated: Use ErrDIDuplicate instead.
 	ErrDuplicate = di.ErrDuplicate
 
 	// ErrInvalidProvider is an alias for di.ErrInvalidProvider for backward compatibility.
+	//
 	// Deprecated: Use ErrDIInvalidProvider instead.
 	ErrInvalidProvider = di.ErrInvalidProvider
 
 	// ErrDuplicateModule is an alias for ErrModuleDuplicate.
+	//
 	// Deprecated: Use ErrModuleDuplicate instead.
 	ErrDuplicateModule = ErrModuleDuplicate
 
 	// ErrNotFound is an alias for di.ErrNotFound for backward compatibility.
+	//
 	// Deprecated: Use ErrDINotFound instead.
 	ErrNotFound = di.ErrNotFound
 
 	// ErrCycle is an alias for di.ErrCycle for backward compatibility.
+	//
 	// Deprecated: Use ErrDICycle instead.
 	ErrCycle = di.ErrCycle
 
 	// ErrNotSettable is an alias for di.ErrNotSettable for backward compatibility.
+	//
 	// Deprecated: Use ErrDINotSettable instead.
 	ErrNotSettable = di.ErrNotSettable
 
 	// ErrTypeMismatch is an alias for di.ErrTypeMismatch for backward compatibility.
+	//
 	// Deprecated: Use ErrDITypeMismatch instead.
 	ErrTypeMismatch = di.ErrTypeMismatch
 
 	// ErrAlreadyBuilt is an alias for di.ErrAlreadyBuilt for backward compatibility.
+	//
 	// Deprecated: Use ErrDIAlreadyBuilt instead.
 	ErrAlreadyBuilt = di.ErrAlreadyBuilt
 )

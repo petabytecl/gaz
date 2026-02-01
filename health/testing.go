@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
 )
 
 // TestConfig returns a health.Config with safe defaults for testing.
@@ -38,6 +38,16 @@ type MockRegistrar struct {
 	mock.Mock
 }
 
+// NewMockRegistrar creates a MockRegistrar with default expectations.
+// All Add* methods accept any arguments and return without error.
+func NewMockRegistrar() *MockRegistrar {
+	m := &MockRegistrar{}
+	m.On("AddLivenessCheck", mock.Anything, mock.Anything).Return()
+	m.On("AddReadinessCheck", mock.Anything, mock.Anything).Return()
+	m.On("AddStartupCheck", mock.Anything, mock.Anything).Return()
+	return m
+}
+
 // AddLivenessCheck records a liveness check registration.
 func (m *MockRegistrar) AddLivenessCheck(name string, check CheckFunc) {
 	m.Called(name, check)
@@ -51,16 +61,6 @@ func (m *MockRegistrar) AddReadinessCheck(name string, check CheckFunc) {
 // AddStartupCheck records a startup check registration.
 func (m *MockRegistrar) AddStartupCheck(name string, check CheckFunc) {
 	m.Called(name, check)
-}
-
-// NewMockRegistrar creates a MockRegistrar with default expectations.
-// All Add* methods accept any arguments and return without error.
-func NewMockRegistrar() *MockRegistrar {
-	m := &MockRegistrar{}
-	m.On("AddLivenessCheck", mock.Anything, mock.Anything).Return()
-	m.On("AddReadinessCheck", mock.Anything, mock.Anything).Return()
-	m.On("AddStartupCheck", mock.Anything, mock.Anything).Return()
-	return m
 }
 
 // TestManager creates a Manager with no checks registered, suitable for testing.

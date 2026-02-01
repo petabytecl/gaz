@@ -7,31 +7,13 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
 )
 
 // MockWorker is a testify mock implementing worker.Worker.
 // Use NewMockWorker() or NewMockWorkerNamed() for pre-configured instances.
 type MockWorker struct {
 	mock.Mock
-}
-
-// Name returns the mock worker's name.
-func (m *MockWorker) Name() string {
-	args := m.Called()
-	return args.String(0)
-}
-
-// OnStart records the start call and returns the mocked error.
-func (m *MockWorker) OnStart(ctx context.Context) error {
-	args := m.Called(ctx)
-	return args.Error(0)
-}
-
-// OnStop records the stop call and returns the mocked error.
-func (m *MockWorker) OnStop(ctx context.Context) error {
-	args := m.Called(ctx)
-	return args.Error(0)
 }
 
 // NewMockWorker creates a MockWorker with default expectations.
@@ -52,6 +34,24 @@ func NewMockWorkerNamed(name string) *MockWorker {
 	m.On("OnStart", mock.Anything).Return(nil)
 	m.On("OnStop", mock.Anything).Return(nil)
 	return m
+}
+
+// Name returns the mock worker's name.
+func (m *MockWorker) Name() string {
+	args := m.Called()
+	return args.String(0)
+}
+
+// OnStart records the start call and returns the mocked error.
+func (m *MockWorker) OnStart(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
+}
+
+// OnStop records the stop call and returns the mocked error.
+func (m *MockWorker) OnStop(ctx context.Context) error {
+	args := m.Called(ctx)
+	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
 }
 
 // SimpleWorker is a test worker that tracks OnStart/OnStop calls.

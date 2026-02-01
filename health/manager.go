@@ -52,7 +52,7 @@ func (m *Manager) AddStartupCheck(name string, check CheckFunc) {
 
 // LivenessChecker builds the health.Checker for liveness checks.
 //
-//nolint:ireturn // health.Checker is external interface we must return
+//nolint:ireturn // health.Checker is an external interface we must return.
 func (m *Manager) LivenessChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
 
@@ -69,7 +69,7 @@ func (m *Manager) LivenessChecker(opts ...health.CheckerOption) health.Checker {
 
 // ReadinessChecker builds the health.Checker for readiness checks.
 //
-//nolint:ireturn // health.Checker is external interface we must return
+//nolint:ireturn // health.Checker is an external interface we must return.
 func (m *Manager) ReadinessChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
 
@@ -86,7 +86,7 @@ func (m *Manager) ReadinessChecker(opts ...health.CheckerOption) health.Checker 
 
 // StartupChecker builds the health.Checker for startup checks.
 //
-//nolint:ireturn // health.Checker is external interface we must return
+//nolint:ireturn // health.Checker is an external interface we must return.
 func (m *Manager) StartupChecker(opts ...health.CheckerOption) health.Checker {
 	m.mu.Lock()
 

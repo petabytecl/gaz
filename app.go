@@ -273,7 +273,10 @@ func (a *App) MergeConfigMap(cfg map[string]any) error {
 	}
 	backend := a.configMgr.Backend()
 	if merger, ok := backend.(configMapMerger); ok {
-		return merger.MergeConfigMap(cfg)
+		if err := merger.MergeConfigMap(cfg); err != nil {
+			return fmt.Errorf("gaz: merge config map: %w", err)
+		}
+		return nil
 	}
 	// Fallback: use Set() for each key (loses nested structure but works for flat keys)
 	for k, v := range cfg {

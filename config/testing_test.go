@@ -99,14 +99,14 @@ func TestMapBackend_ThreadSafety(t *testing.T) {
 	// Concurrent writes
 	done := make(chan struct{})
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			backend.Set("key", i)
 		}
 		close(done)
 	}()
 
 	// Concurrent reads
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		_ = backend.GetInt("key")
 	}
 

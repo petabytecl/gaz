@@ -8,13 +8,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock" //nolint:depguard // testing helpers need mock
 )
+
+// DefaultJobTimeout is the default timeout for test jobs.
+const DefaultJobTimeout = 30 * time.Second
 
 // MockJob is a testify mock implementing cron.CronJob.
 // Use NewMockJob() for a pre-configured instance.
 type MockJob struct {
 	mock.Mock
+}
+
+// NewMockJob creates a MockJob with default expectations.
+// Schedule returns "@every 1m", Timeout returns 30s, Run returns nil.
+func NewMockJob(name string) *MockJob {
+	m := &MockJob{}
+	m.On("Name").Return(name)
+	m.On("Schedule").Return("@every 1m")
+	m.On("Timeout").Return(DefaultJobTimeout)
+	m.On("Run", mock.Anything).Return(nil)
+	return m
 }
 
 // Name returns the job's name.
@@ -32,24 +46,16 @@ func (m *MockJob) Schedule() string {
 // Timeout returns the job's timeout.
 func (m *MockJob) Timeout() time.Duration {
 	args := m.Called()
-	return args.Get(0).(time.Duration)
+	if d, ok := args.Get(0).(time.Duration); ok {
+		return d
+	}
+	return DefaultJobTimeout
 }
 
 // Run executes the job and returns the mocked error.
 func (m *MockJob) Run(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0)
-}
-
-// NewMockJob creates a MockJob with default expectations.
-// Schedule returns "@every 1m", Timeout returns 30s, Run returns nil.
-func NewMockJob(name string) *MockJob {
-	m := &MockJob{}
-	m.On("Name").Return(name)
-	m.On("Schedule").Return("@every 1m")
-	m.On("Timeout").Return(30 * time.Second)
-	m.On("Run", mock.Anything).Return(nil)
-	return m
+	return args.Error(0) //nolint:wrapcheck // mock returns user-provided error
 }
 
 // SimpleJob is a test job that tracks Run calls.
@@ -68,7 +74,7 @@ func NewSimpleJob(name, schedule string) *SimpleJob {
 	return &SimpleJob{
 		name:     name,
 		schedule: schedule,
-		timeout:  30 * time.Second,
+		timeout:  DefaultJobTimeout,
 	}
 }
 
@@ -98,16 +104,16 @@ type MockResolver struct {
 	mock.Mock
 }
 
-// ResolveByName returns the mocked service instance.
-func (m *MockResolver) ResolveByName(name string, opts []string) (any, error) {
-	args := m.Called(name, opts)
-	return args.Get(0), args.Error(1)
-}
-
 // NewMockResolver creates a MockResolver ready for test setup.
 // Configure expectations with On("ResolveByName", ...).
 func NewMockResolver() *MockResolver {
 	return &MockResolver{}
+}
+
+// ResolveByName returns the mocked service instance.
+func (m *MockResolver) ResolveByName(name string, opts []string) (any, error) {
+	args := m.Called(name, opts)
+	return args.Get(0), args.Error(1)
 }
 
 // TestScheduler creates a cron.Scheduler suitable for testing.

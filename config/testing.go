@@ -225,7 +225,7 @@ func RequireConfigValue(tb testing.TB, b Backend, key string, expected any) {
 // # Example
 //
 //	config.RequireConfigString(t, backend, "server.host", "localhost")
-func RequireConfigString(tb testing.TB, b Backend, key string, expected string) {
+func RequireConfigString(tb testing.TB, b Backend, key, expected string) {
 	tb.Helper()
 	actual := b.GetString(key)
 	if actual != expected {
