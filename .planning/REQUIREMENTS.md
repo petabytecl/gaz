@@ -20,18 +20,18 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 
 ### Cron Package
 
-- [ ] **CRN-01**: `cronx/` package exists with `Cron` scheduler type
-- [ ] **CRN-02**: Standard 5-field cron expression parser (minute, hour, dom, month, dow)
-- [ ] **CRN-03**: Descriptor support (@daily, @hourly, @weekly, @monthly, @yearly, @annually, @every)
-- [ ] **CRN-04**: `Start()` method begins scheduling, `Stop()` returns context for graceful wait
-- [ ] **CRN-05**: `AddJob(spec, Job)` registers jobs with cron schedules
-- [ ] **CRN-06**: `SkipIfStillRunning` job wrapper prevents overlapping executions
-- [ ] **CRN-07**: `Logger` interface compatible with slog patterns (Info, Error methods)
-- [ ] **CRN-08**: `WithLogger()` and `WithChain()` functional options
-- [ ] **CRN-09**: CRON_TZ prefix support for timezone-specific schedules
-- [ ] **CRN-10**: DST transitions handled correctly (spring forward skips, fall back runs once)
-- [ ] **CRN-11**: `cron/scheduler.go` uses internal `cronx/` package instead of robfig/cron/v3
-- [ ] **CRN-12**: `robfig/cron/v3` removed from go.mod
+- [x] **CRN-01**: `cronx/` package exists with `Cron` scheduler type
+- [x] **CRN-02**: Standard 5-field cron expression parser (minute, hour, dom, month, dow)
+- [x] **CRN-03**: Descriptor support (@daily, @hourly, @weekly, @monthly, @yearly, @annually, @every)
+- [x] **CRN-04**: `Start()` method begins scheduling, `Stop()` returns context for graceful wait
+- [x] **CRN-05**: `AddJob(spec, Job)` registers jobs with cron schedules
+- [x] **CRN-06**: `SkipIfStillRunning` job wrapper prevents overlapping executions
+- [x] **CRN-07**: `Logger` interface compatible with slog patterns (Info, Error methods)
+- [x] **CRN-08**: `WithLogger()` and `WithChain()` functional options
+- [x] **CRN-09**: CRON_TZ prefix support for timezone-specific schedules
+- [x] **CRN-10**: DST transitions handled correctly (spring forward skips, fall back runs once)
+- [x] **CRN-11**: `cron/scheduler.go` uses internal `cronx/` package instead of robfig/cron/v3
+- [x] **CRN-12**: `robfig/cron/v3` removed from go.mod
 
 ### Tint Package
 
@@ -146,18 +146,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CRN-01 | 34 | Pending |
-| CRN-02 | 34 | Pending |
-| CRN-03 | 34 | Pending |
-| CRN-04 | 34 | Pending |
-| CRN-05 | 34 | Pending |
-| CRN-06 | 34 | Pending |
-| CRN-07 | 34 | Pending |
-| CRN-08 | 34 | Pending |
-| CRN-09 | 34 | Pending |
-| CRN-10 | 34 | Pending |
-| CRN-11 | 34 | Pending |
-| CRN-12 | 34 | Pending |
+| CRN-01 | 34 | Complete |
+| CRN-02 | 34 | Complete |
+| CRN-03 | 34 | Complete |
+| CRN-04 | 34 | Complete |
+| CRN-05 | 34 | Complete |
+| CRN-06 | 34 | Complete |
+| CRN-07 | 34 | Complete |
+| CRN-08 | 34 | Complete |
+| CRN-09 | 34 | Complete |
+| CRN-10 | 34 | Complete |
+| CRN-11 | 34 | Complete |
+| CRN-12 | 34 | Complete |
 
 ### Phase 35: Health Package + Integration
 
