@@ -1,5 +1,3 @@
-// Package health provides health check mechanisms for the application,
-// including liveness, readiness, and startup probes.
 package health
 
 import "time"
