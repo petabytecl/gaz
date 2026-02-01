@@ -1,41 +1,120 @@
 package gaz
 
-import (
-	"errors"
+import "errors"
 
-	"github.com/petabytecl/gaz/di"
+// =============================================================================
+// Sentinel Errors
+// =============================================================================
+
+// DI subsystem errors.
+var (
+	// ErrDINotFound is returned when a requested service is not registered in the container.
+	ErrDINotFound = errors.New("di: not found")
+
+	// ErrDICycle is returned when a circular dependency is detected during resolution.
+	ErrDICycle = errors.New("di: circular dependency")
+
+	// ErrDIDuplicate is returned when attempting to register a service that already exists.
+	ErrDIDuplicate = errors.New("di: duplicate registration")
+
+	// ErrDINotSettable is returned when a struct field cannot be set during injection.
+	ErrDINotSettable = errors.New("di: field not settable")
+
+	// ErrDITypeMismatch is returned when a resolved service cannot be assigned to the target type.
+	ErrDITypeMismatch = errors.New("di: type mismatch")
+
+	// ErrDIAlreadyBuilt is returned when attempting to register after Build() was called.
+	ErrDIAlreadyBuilt = errors.New("di: already built")
+
+	// ErrDIInvalidProvider is returned when a provider function has invalid signature.
+	ErrDIInvalidProvider = errors.New("di: invalid provider")
 )
 
-// Re-export di errors for backward compatibility.
-// Code that uses errors.Is(err, gaz.ErrNotFound) will work correctly
-// since these are aliases to the actual error values in di.
+// Config subsystem errors.
 var (
-	// ErrNotFound is returned when a requested service is not registered in the container.
-	ErrNotFound = di.ErrNotFound
+	// ErrConfigValidation is returned when config struct validation fails.
+	// Use errors.Is(err, ErrConfigValidation) to check for validation errors.
+	ErrConfigValidation = errors.New("config: validation failed")
 
-	// ErrCycle is returned when a circular dependency is detected during resolution.
-	ErrCycle = di.ErrCycle
+	// ErrConfigNotFound is returned when a config key/namespace doesn't exist.
+	// Use errors.Is(err, ErrConfigNotFound) to check for missing keys.
+	ErrConfigNotFound = errors.New("config: key not found")
+)
 
-	// ErrDuplicate is returned when attempting to register a service that already exists.
-	ErrDuplicate = di.ErrDuplicate
+// Worker subsystem errors.
+var (
+	// ErrWorkerCircuitTripped indicates a worker exhausted its restart attempts
+	// within the configured circuit window. The worker will not be restarted
+	// until the application is restarted.
+	ErrWorkerCircuitTripped = errors.New("worker: circuit breaker tripped")
 
-	// ErrNotSettable is returned when a struct field cannot be set during injection.
-	ErrNotSettable = di.ErrNotSettable
+	// ErrWorkerStopped indicates a worker stopped normally without error.
+	// This is not an error condition - it signals clean shutdown.
+	ErrWorkerStopped = errors.New("worker: stopped normally")
 
-	// ErrTypeMismatch is returned when a resolved service cannot be assigned to the target type.
-	ErrTypeMismatch = di.ErrTypeMismatch
+	// ErrWorkerCriticalFailed indicates a critical worker failed and exhausted
+	// its restart attempts. This error triggers application shutdown.
+	ErrWorkerCriticalFailed = errors.New("worker: critical worker failed")
 
-	// ErrAlreadyBuilt is returned when attempting to register after Build() was called.
-	ErrAlreadyBuilt = di.ErrAlreadyBuilt
+	// ErrWorkerManagerRunning indicates an attempt to register a worker
+	// after the manager has started.
+	ErrWorkerManagerRunning = errors.New("worker: manager already running")
+)
 
-	// ErrInvalidProvider is returned when a provider function has invalid signature.
-	ErrInvalidProvider = di.ErrInvalidProvider
+// Cron subsystem errors.
+var (
+	// ErrCronNotRunning indicates an operation was attempted on a scheduler
+	// that is not running.
+	ErrCronNotRunning = errors.New("cron: scheduler not running")
+)
 
-	// ErrDuplicateModule is returned when a module with the same name is registered twice.
-	// This error is specific to gaz (not in di or config packages).
-	ErrDuplicateModule = errors.New("gaz: duplicate module name")
+// Module errors (gaz-specific).
+var (
+	// ErrModuleDuplicate is returned when a module with the same name is registered twice.
+	ErrModuleDuplicate = errors.New("gaz: duplicate module")
 
 	// ErrConfigKeyCollision is returned when two providers register the same config key.
-	// This error is specific to gaz (not in di or config packages).
 	ErrConfigKeyCollision = errors.New("gaz: config key collision")
+)
+
+// =============================================================================
+// Backward Compatibility Aliases
+// =============================================================================
+
+// These aliases preserve backward compatibility with existing code that uses
+// the short error names. They will be removed in a future release when all
+// code is migrated to use the namespaced names (ErrDI*, ErrConfig*, etc.).
+
+var (
+	// ErrDuplicate is an alias for ErrDIDuplicate.
+	// Deprecated: Use ErrDIDuplicate instead.
+	ErrDuplicate = ErrDIDuplicate
+
+	// ErrInvalidProvider is an alias for ErrDIInvalidProvider.
+	// Deprecated: Use ErrDIInvalidProvider instead.
+	ErrInvalidProvider = ErrDIInvalidProvider
+
+	// ErrDuplicateModule is an alias for ErrModuleDuplicate.
+	// Deprecated: Use ErrModuleDuplicate instead.
+	ErrDuplicateModule = ErrModuleDuplicate
+
+	// ErrNotFound is an alias for ErrDINotFound.
+	// Deprecated: Use ErrDINotFound instead.
+	ErrNotFound = ErrDINotFound
+
+	// ErrCycle is an alias for ErrDICycle.
+	// Deprecated: Use ErrDICycle instead.
+	ErrCycle = ErrDICycle
+
+	// ErrNotSettable is an alias for ErrDINotSettable.
+	// Deprecated: Use ErrDINotSettable instead.
+	ErrNotSettable = ErrDINotSettable
+
+	// ErrTypeMismatch is an alias for ErrDITypeMismatch.
+	// Deprecated: Use ErrDITypeMismatch instead.
+	ErrTypeMismatch = ErrDITypeMismatch
+
+	// ErrAlreadyBuilt is an alias for ErrDIAlreadyBuilt.
+	// Deprecated: Use ErrDIAlreadyBuilt instead.
+	ErrAlreadyBuilt = ErrDIAlreadyBuilt
 )
