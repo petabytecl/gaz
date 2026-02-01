@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 - **Milestone:** v4.0 Dependency Reduction
 - **Phase:** 34 (Cron Package) — In progress
-- **Plan:** 1 of 3 in current phase
+- **Plan:** 2 of 3 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-01 — Completed 34-01-PLAN.md (Core cronx package)
+- **Last activity:** 2026-02-01 — Completed 34-02-PLAN.md (Cron scheduler and chain wrappers)
 
-Progress: [███████░░░] 70% (Phase 34: 1/3 plans complete)
+Progress: [████████░░] 80% (Phase 34: 2/3 plans complete)
 
 ## Milestones Shipped
 
@@ -41,7 +41,7 @@ Progress: [███████░░░] 70% (Phase 34: 1/3 plans complete)
 |-------|------|--------------|--------|
 | 32 | Backoff Package | BKF-01 to BKF-08 (8) | Complete (3/3 plans) |
 | 33 | Tint Package | TNT-01 to TNT-11 (11) | Complete (3/3 plans) |
-| 34 | Cron Package | CRN-01 to CRN-12 (12) | In progress (1/3 plans) |
+| 34 | Cron Package | CRN-01 to CRN-12 (12) | In progress (2/3 plans) |
 | 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | Pending |
 
 **Total v4.0:** 47 requirements across 4 phases
@@ -75,8 +75,8 @@ None — fresh milestone with clear research.
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 34-01-PLAN.md (Core cronx package)
-Resume with: `/gsd-execute-phase` for 34-02-PLAN.md
+Stopped at: Completed 34-02-PLAN.md (Cron scheduler and chain wrappers)
+Resume with: `/gsd-execute-phase` for 34-03-PLAN.md
 
 ---
 
