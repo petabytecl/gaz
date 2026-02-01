@@ -243,7 +243,12 @@ Plans:
 4. TTY detection auto-disables colors for non-terminal output (or NoColor option)
 5. logger/provider uses internal `tintx/` package and lmittmann/tint is removed from go.mod
 
-**Plans:** TBD
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 33-01-PLAN.md — Core tintx package (Handler, Options, buffer pool, TTY detection)
+- [ ] 33-02-PLAN.md — Handle method with colorized output + comprehensive tests
+- [ ] 33-03-PLAN.md — Logger integration and dependency removal
 
 ### Phase 34: Cron Package
 
