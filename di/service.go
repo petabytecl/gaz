@@ -3,6 +3,7 @@ package di
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -33,6 +34,10 @@ type ServiceWrapper interface {
 
 	// HasLifecycle returns true if the service has any lifecycle hooks registered.
 	HasLifecycle() bool
+
+	// ServiceType returns the reflect.Type of the service.
+	// Used for type-checking without instantiation (e.g., interface implementation checks).
+	ServiceType() reflect.Type
 }
 
 // baseService implements common functionality for all service wrappers.
@@ -129,6 +134,11 @@ func (s *lazySingleton[T]) HasLifecycle() bool {
 	return hasLifecycleImpl[T]()
 }
 
+func (s *lazySingleton[T]) ServiceType() reflect.Type {
+	var zero T
+	return reflect.TypeOf(zero)
+}
+
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -221,6 +231,11 @@ func (s *transientService[T]) Start(context.Context) error { return nil }
 func (s *transientService[T]) Stop(context.Context) error  { return nil }
 func (s *transientService[T]) HasLifecycle() bool          { return false }
 
+func (s *transientService[T]) ServiceType() reflect.Type {
+	var zero T
+	return reflect.TypeOf(zero)
+}
+
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
 // The IsEager() method returns true so Build() knows to instantiate it.
 type eagerSingleton[T any] struct {
@@ -304,6 +319,11 @@ func (s *eagerSingleton[T]) HasLifecycle() bool {
 	return hasLifecycleImpl[T]()
 }
 
+func (s *eagerSingleton[T]) ServiceType() reflect.Type {
+	var zero T
+	return reflect.TypeOf(zero)
+}
+
 // instanceService wraps a pre-built value. No provider is called.
 // Used by .Instance(val) registration.
 type instanceService[T any] struct {
@@ -347,6 +367,11 @@ func (s *instanceService[T]) Stop(ctx context.Context) error {
 
 func (s *instanceService[T]) HasLifecycle() bool {
 	return hasLifecycleImpl[T]()
+}
+
+func (s *instanceService[T]) ServiceType() reflect.Type {
+	var zero T
+	return reflect.TypeOf(zero)
 }
 
 // =============================================================================
@@ -399,4 +424,8 @@ func (s *instanceServiceAny) HasLifecycle() bool {
 		return true
 	}
 	return false
+}
+
+func (s *instanceServiceAny) ServiceType() reflect.Type {
+	return reflect.TypeOf(s.value)
 }
