@@ -11,7 +11,7 @@ The v3.0 API Harmonization milestone transforms gaz's API patterns to align with
 - ✅ **v2.0 Cleanup & Concurrency** - Phases 11-18 (shipped 2026-01-29)
 - ✅ **v2.1 API Enhancement** - Phases 19-21 (shipped 2026-01-29)
 - ✅ **v2.2 Test Coverage** - Phase 22 (shipped 2026-01-29)
-- 🚧 **v3.0 API Harmonization** - Phases 23-29 (in progress)
+- ✅ **v3.0 API Harmonization** - Phases 23-29 (shipped 2026-02-01)
 
 ## Phases
 
@@ -22,7 +22,7 @@ See `.planning/milestones/` for archived phase details.
 
 </details>
 
-### 🚧 v3.0 API Harmonization (In Progress)
+### ✅ v3.0 API Harmonization (Complete)
 
 **Milestone Goal:** Harmonize gaz API with industry-standard patterns for lifecycle, modules, config, and errors.
 
@@ -32,7 +32,7 @@ See `.planning/milestones/` for archived phase details.
 - [x] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
 - [x] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
 - [x] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
-- [ ] **Phase 29: Documentation & Examples** - Complete user documentation and examples
+- [x] **Phase 29: Documentation & Examples** - Complete user documentation and examples
 
 ## Phase Details
 

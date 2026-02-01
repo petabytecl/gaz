@@ -39,8 +39,8 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 ### Documentation
 
 - [x] **DOC-01**: Style guide for contributors exists (API patterns, naming conventions, config requirements)
-- [ ] **DOC-02**: User documentation exists (getting started, tutorials)
-- [ ] **DOC-03**: All examples are updated to v3 patterns
+- [x] **DOC-02**: User documentation exists (getting started, tutorials)
+- [x] **DOC-03**: All examples are updated to v3 patterns
 
 ## Future Requirements
 
@@ -90,8 +90,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TST-02 | Phase 28 | Complete |
 | TST-03 | Phase 28 | Complete |
 | DOC-01 | Phase 23 | Complete |
-| DOC-02 | Phase 29 | Pending |
-| DOC-03 | Phase 29 | Pending |
+| DOC-02 | Phase 29 | Complete |
+| DOC-03 | Phase 29 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 17 total

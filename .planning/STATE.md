@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v3.0 API Harmonization - Phase 29: Documentation & Examples
+**Current focus:** v3.0 API Harmonization complete — milestone shipped 2026-02-01
 
 ## Current Position
 
-- **Phase:** 29 of 29 (Documentation & Examples)
-- **Plan:** 5 of 5 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-01 — Completed 29-05-PLAN.md (Documentation Finalization)
+- **Milestone:** v3.0 API Harmonization complete
+- **Phase:** 29 of 29 (Documentation & Examples) — final phase
+- **Status:** Milestone complete
+- **Last activity:** 2026-02-01 — All 7 phases (23-29) completed
 
-Progress: [██████████] 100% (Phase 29: 5/5 plans complete)
+Progress: [██████████] 100% (Milestone v3.0: 27/27 plans complete)
 
 ## Milestones Shipped
 
@@ -28,8 +28,9 @@ Progress: [██████████] 100% (Phase 29: 5/5 plans complete)
 | v2.0 | Cleanup & Concurrency | 11-18 | 34 | 2026-01-29 |
 | v2.1 | API Enhancement | 19-21 | 8 | 2026-01-29 |
 | v2.2 | Test Coverage | 22 | 4 | 2026-01-29 |
+| v3.0 | API Harmonization | 23-29 | 27 | 2026-02-01 |
 
-**Total:** 99 plans across 24 phases
+**Total:** 126 plans across 29 phases
 
 ## v3.0 Phase Overview
 
