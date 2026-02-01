@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 29 of 29 (Documentation & Examples)
-- **Plan:** 4 of 5 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-01 — Completed 29-04-PLAN.md (Tutorial Example Apps)
+- **Plan:** 5 of 5 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-01 — Completed 29-05-PLAN.md (Documentation Finalization)
 
-Progress: [█████████░] 96% (Phase 29: 4/5 plans complete)
+Progress: [██████████] 100% (Phase 29: 5/5 plans complete)
 
 ## Milestones Shipped
 
@@ -41,7 +41,7 @@ Progress: [█████████░] 96% (Phase 29: 4/5 plans complete)
 | 26 | Module & Service Consolidation | MOD-01 ✓, MOD-02 ✓, MOD-03 ✓, MOD-04 ✓ |
 | 27 | Error Standardization | ERR-01 ✓, ERR-02 ✓, ERR-03 ✓ (all via re-export pattern) |
 | 28 | Testing Infrastructure | TST-01 ✓, TST-02 ✓, TST-03 ✓ |
-| 29 | Documentation & Examples | DOC-02, DOC-03 |
+| 29 | Documentation & Examples | DOC-02 ✓, DOC-03 ✓ |
 
 ## Accumulated Context
 
@@ -145,9 +145,16 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Both examples compile and use v3 patterns exclusively
 - DOC-03 (examples) partially complete for background workers and microservice tutorials
 
+**Phase 29-05 additions:**
+- docs/troubleshooting.md: Comprehensive troubleshooting guide (375 lines)
+- README updated with background-workers and microservice examples
+- Troubleshooting linked from README and getting-started.md
+- v3 patterns verified across all documentation
+- Phase 29 complete: DOC-02 and DOC-03 requirements fully satisfied
+
 ### Blockers/Concerns
 
-None - Phase 29 in progress.
+None - v3.0 API Harmonization milestone complete.
 
 ### Pending Todos
 
@@ -155,9 +162,9 @@ None - Phase 29 in progress.
 
 ## Session Continuity
 
-Last session: 2026-02-01 04:04
-Stopped at: Completed 29-04-PLAN.md (Tutorial Example Apps)
-Resume file: None - ready for 29-05 (Documentation Finalization)
+Last session: 2026-02-01 04:09
+Stopped at: Completed 29-05-PLAN.md (Documentation Finalization)
+Resume file: None - v3.0 milestone complete
 
 ---
 
