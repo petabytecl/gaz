@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jpillora/backoff"
+	"github.com/petabytecl/gaz/backoff"
 )
 
 // supervisor wraps a single worker with panic recovery, restart logic,
@@ -17,7 +17,7 @@ import (
 type supervisor struct {
 	worker  Worker
 	opts    *WorkerOptions
-	backoff *backoff.Backoff
+	backoff *backoff.ExponentialBackOff
 	logger  *slog.Logger
 
 	// Circuit breaker state
@@ -39,13 +39,15 @@ type supervisor struct {
 
 // newSupervisor creates a new supervisor for the given worker.
 func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCriticalFail func()) *supervisor {
-	// Create backoff configuration from defaults
-	cfg := NewBackoffConfig()
-
 	return &supervisor{
-		worker:         w,
-		opts:           opts,
-		backoff:        cfg.NewBackoff(),
+		worker: w,
+		opts:   opts,
+		backoff: backoff.NewExponentialBackOff(
+			backoff.WithInitialInterval(1*time.Second),
+			backoff.WithMaxInterval(5*time.Minute),
+			backoff.WithMultiplier(2.0),
+			backoff.WithRandomizationFactor(0.5),
+		),
 		logger:         logger.With(slog.String("worker", w.Name())),
 		done:           make(chan struct{}),
 		onCriticalFail: onCriticalFail,
@@ -138,7 +140,7 @@ func (s *supervisor) supervise() {
 		}
 
 		// Calculate restart delay
-		delay := s.backoff.Duration()
+		delay := s.backoff.NextBackOff()
 		s.logger.Warn("worker will restart",
 			slog.Int("failures", s.failures),
 			slog.Int("max_restarts", s.opts.MaxRestarts),

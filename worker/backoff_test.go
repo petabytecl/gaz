@@ -21,54 +21,63 @@ func TestNewBackoff_CreatesValidInstance(t *testing.T) {
 	b := cfg.NewBackoff()
 
 	assert.NotNil(t, b)
-	assert.Equal(t, 1*time.Second, b.Min)
-	assert.Equal(t, 5*time.Minute, b.Max)
-	assert.Equal(t, 2.0, b.Factor)
-	assert.True(t, b.Jitter)
+	// Verify internal backoff was configured with our settings
+	assert.Equal(t, 1*time.Second, b.InitialInterval)
+	assert.Equal(t, 5*time.Minute, b.MaxInterval)
+	assert.Equal(t, 2.0, b.Multiplier)
+	assert.Equal(t, 0.5, b.RandomizationFactor) // Jitter: true = 0.5
 }
 
-func TestBackoffDuration_IncreasesExponentially(t *testing.T) {
+func TestNewBackoff_JitterDisabled(t *testing.T) {
+	cfg := NewBackoffConfig()
+	cfg.Jitter = false
+	b := cfg.NewBackoff()
+
+	assert.Equal(t, 0.0, b.RandomizationFactor) // Jitter: false = 0
+}
+
+func TestBackoffNextBackOff_IncreasesExponentially(t *testing.T) {
 	cfg := NewBackoffConfig()
 	// Disable jitter for predictable testing
 	cfg.Jitter = false
 	b := cfg.NewBackoff()
 
-	// First call should return Min (1s)
-	d1 := b.Duration()
+	// First call should return InitialInterval (1s)
+	d1 := b.NextBackOff()
 	assert.Equal(t, 1*time.Second, d1)
 
-	// Second call should return Min * Factor (2s)
-	d2 := b.Duration()
+	// Second call should return InitialInterval * Multiplier (2s)
+	d2 := b.NextBackOff()
 	assert.Equal(t, 2*time.Second, d2)
 
 	// Third call should return 4s
-	d3 := b.Duration()
+	d3 := b.NextBackOff()
 	assert.Equal(t, 4*time.Second, d3)
 
 	// Fourth call should return 8s
-	d4 := b.Duration()
+	d4 := b.NextBackOff()
 	assert.Equal(t, 8*time.Second, d4)
 }
 
-func TestBackoffReset_ResetsToMinimum(t *testing.T) {
+func TestBackoffReset_ResetsToInitial(t *testing.T) {
 	cfg := NewBackoffConfig()
 	cfg.Jitter = false
 	b := cfg.NewBackoff()
 
 	// Advance the backoff a few times
-	_ = b.Duration() // 1s
-	_ = b.Duration() // 2s
-	_ = b.Duration() // 4s
+	_ = b.NextBackOff() // 1s
+	_ = b.NextBackOff() // 2s
+	_ = b.NextBackOff() // 4s
 
 	// Reset
 	b.Reset()
 
-	// Next duration should be back to Min
-	d := b.Duration()
+	// Next interval should be back to InitialInterval
+	d := b.NextBackOff()
 	assert.Equal(t, 1*time.Second, d)
 }
 
-func TestBackoffDuration_CappedAtMax(t *testing.T) {
+func TestBackoffNextBackOff_CappedAtMax(t *testing.T) {
 	cfg := NewBackoffConfig()
 	cfg.Jitter = false
 	cfg.Max = 10 * time.Second // Set low max for testing
@@ -76,7 +85,7 @@ func TestBackoffDuration_CappedAtMax(t *testing.T) {
 
 	// Keep calling until we hit the cap
 	for range 10 {
-		d := b.Duration()
+		d := b.NextBackOff()
 		assert.LessOrEqual(t, d, 10*time.Second, "duration should never exceed Max")
 	}
 }
@@ -151,4 +160,21 @@ func TestBackoffApply_ChainsMultipleOptions(t *testing.T) {
 	assert.Equal(t, 1*time.Minute, cfg.Max)
 	assert.Equal(t, 1.5, cfg.Factor)
 	assert.False(t, cfg.Jitter)
+}
+
+func TestNewBackoff_ConfigValuesApplied(t *testing.T) {
+	cfg := NewBackoffConfig()
+	cfg.Apply(
+		WithBackoffMin(2*time.Second),
+		WithBackoffMax(30*time.Second),
+		WithBackoffFactor(1.5),
+		WithBackoffJitter(false),
+	)
+	b := cfg.NewBackoff()
+
+	// Verify the internal backoff was configured correctly
+	assert.Equal(t, 2*time.Second, b.InitialInterval)
+	assert.Equal(t, 30*time.Second, b.MaxInterval)
+	assert.Equal(t, 1.5, b.Multiplier)
+	assert.Equal(t, 0.0, b.RandomizationFactor) // Jitter: false = 0
 }

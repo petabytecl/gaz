@@ -3,14 +3,14 @@ package worker
 import (
 	"time"
 
-	"github.com/jpillora/backoff"
+	"github.com/petabytecl/gaz/backoff"
 )
 
 // BackoffConfig holds configuration for exponential backoff during worker restarts.
 //
-// This configuration wraps jpillora/backoff parameters with sensible defaults
-// for worker supervision. The backoff algorithm doubles the delay after each
-// failure, with optional jitter to prevent thundering herd problems.
+// This configuration provides sensible defaults for worker supervision.
+// The backoff algorithm doubles the delay after each failure, with optional
+// jitter to prevent thundering herd problems.
 type BackoffConfig struct {
 	// Min is the minimum delay before the first retry.
 	// Default: 1 second
@@ -25,7 +25,7 @@ type BackoffConfig struct {
 	Factor float64
 
 	// Jitter adds randomization to delays to prevent thundering herd.
-	// When true, delays are randomized within a range.
+	// When true, delays are randomized within a range (±50%).
 	// Default: true
 	Jitter bool
 }
@@ -56,21 +56,27 @@ func (c *BackoffConfig) Apply(opts ...BackoffOption) {
 	}
 }
 
-// NewBackoff creates a jpillora/backoff.Backoff instance from this config.
+// NewBackoff creates an ExponentialBackOff instance from this config.
 //
-// The returned Backoff can be used to calculate successive delays:
+// The returned BackOff can be used to calculate successive delays:
 //
 //	b := cfg.NewBackoff()
-//	delay := b.Duration() // Get next delay
+//	delay := b.NextBackOff() // Get next delay
 //	// ... wait ...
 //	b.Reset() // Reset after stable run period
-func (c *BackoffConfig) NewBackoff() *backoff.Backoff {
-	return &backoff.Backoff{
-		Min:    c.Min,
-		Max:    c.Max,
-		Factor: c.Factor,
-		Jitter: c.Jitter,
+func (c *BackoffConfig) NewBackoff() *backoff.ExponentialBackOff {
+	// Jitter: true = 0.5 (default), false = 0 (no randomization)
+	randomizationFactor := 0.5
+	if !c.Jitter {
+		randomizationFactor = 0
 	}
+
+	return backoff.NewExponentialBackOff(
+		backoff.WithInitialInterval(c.Min),
+		backoff.WithMaxInterval(c.Max),
+		backoff.WithMultiplier(c.Factor),
+		backoff.WithRandomizationFactor(randomizationFactor),
+	)
 }
 
 // WithBackoffMin sets the minimum delay before the first retry.
