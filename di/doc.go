@@ -33,6 +33,24 @@
 //
 // For full application development, prefer the gaz package.
 //
+// # Error Handling
+//
+// DI errors use the "di: action" format and are defined in this package.
+// The gaz package re-exports them with ErrDI* naming:
+//
+//	di.ErrNotFound     → gaz.ErrDINotFound
+//	di.ErrCycle        → gaz.ErrDICycle
+//	di.ErrDuplicate    → gaz.ErrDIDuplicate
+//	di.ErrNotSettable  → gaz.ErrDINotSettable
+//	di.ErrTypeMismatch → gaz.ErrDITypeMismatch
+//	di.ErrAlreadyBuilt → gaz.ErrDIAlreadyBuilt
+//	di.ErrInvalidProvider → gaz.ErrDIInvalidProvider
+//
+// Both forms work with errors.Is:
+//
+//	if errors.Is(err, di.ErrNotFound) { ... }
+//	if errors.Is(err, gaz.ErrDINotFound) { ... } // same error
+//
 // # Container Usage
 //
 // Create a container, register services, and resolve them:

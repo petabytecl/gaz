@@ -190,7 +190,7 @@ func (c *Container) Build() error {
 		// cycle detection and dependency graph building.
 		_, err := c.ResolveByName(svc.Name(), nil)
 		if err != nil {
-			return fmt.Errorf("building eager service %s: %w", svc.Name(), err)
+			return fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
 		}
 	}
 
@@ -232,7 +232,7 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 
 	wrapper, ok := svc.(ServiceWrapper)
 	if !ok {
-		return nil, fmt.Errorf("invalid service wrapper type for %s", name)
+		return nil, fmt.Errorf("di: invalid service wrapper type for %s", name)
 	}
 
 	// Add current service to chain before getting instance
@@ -245,10 +245,10 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 	if err != nil {
 		// Wrap error with resolution context
 		if len(chain) > 0 {
-			return nil, fmt.Errorf("resolving %s -> %s: %w",
+			return nil, fmt.Errorf("di: resolving %s -> %s: %w",
 				strings.Join(chain, " -> "), name, err)
 		}
-		return nil, fmt.Errorf("resolving %s: %w", name, err)
+		return nil, fmt.Errorf("di: resolving %s: %w", name, err)
 	}
 
 	return instance, nil

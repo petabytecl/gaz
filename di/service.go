@@ -53,7 +53,7 @@ func (s *baseService) TypeName() string {
 func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error {
 	if starter, ok := instance.(Starter); ok {
 		if err := starter.OnStart(ctx); err != nil {
-			return fmt.Errorf("service %s: start failed: %w", s.serviceName, err)
+			return fmt.Errorf("di: service %s start failed: %w", s.serviceName, err)
 		}
 	}
 	return nil
@@ -62,7 +62,7 @@ func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error
 func (s *baseService) runStopLifecycle(ctx context.Context, instance any) error {
 	if stopper, ok := instance.(Stopper); ok {
 		if err := stopper.OnStop(ctx); err != nil {
-			return fmt.Errorf("service %s: stop failed: %w", s.serviceName, err)
+			return fmt.Errorf("di: service %s stop failed: %w", s.serviceName, err)
 		}
 	}
 	return nil

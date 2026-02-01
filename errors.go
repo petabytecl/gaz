@@ -13,27 +13,40 @@ import (
 // =============================================================================
 
 // DI subsystem errors.
+// These are re-exports from the di package with standardized ErrDI* naming.
+// Use errors.Is(err, gaz.ErrDI*) to check for these errors.
+//
+// Note: Due to Go's import cycle constraints (gaz imports di), the canonical
+// source of DI errors is di/errors.go. These are aliases that point to the
+// same error values, ensuring errors.Is compatibility.
 var (
 	// ErrDINotFound is returned when a requested service is not registered in the container.
-	ErrDINotFound = errors.New("di: not found")
+	// Check with: errors.Is(err, gaz.ErrDINotFound)
+	ErrDINotFound = di.ErrNotFound
 
 	// ErrDICycle is returned when a circular dependency is detected during resolution.
-	ErrDICycle = errors.New("di: circular dependency")
+	// Check with: errors.Is(err, gaz.ErrDICycle)
+	ErrDICycle = di.ErrCycle
 
 	// ErrDIDuplicate is returned when attempting to register a service that already exists.
-	ErrDIDuplicate = errors.New("di: duplicate registration")
+	// Check with: errors.Is(err, gaz.ErrDIDuplicate)
+	ErrDIDuplicate = di.ErrDuplicate
 
 	// ErrDINotSettable is returned when a struct field cannot be set during injection.
-	ErrDINotSettable = errors.New("di: field not settable")
+	// Check with: errors.Is(err, gaz.ErrDINotSettable)
+	ErrDINotSettable = di.ErrNotSettable
 
 	// ErrDITypeMismatch is returned when a resolved service cannot be assigned to the target type.
-	ErrDITypeMismatch = errors.New("di: type mismatch")
+	// Check with: errors.Is(err, gaz.ErrDITypeMismatch)
+	ErrDITypeMismatch = di.ErrTypeMismatch
 
 	// ErrDIAlreadyBuilt is returned when attempting to register after Build() was called.
-	ErrDIAlreadyBuilt = errors.New("di: already built")
+	// Check with: errors.Is(err, gaz.ErrDIAlreadyBuilt)
+	ErrDIAlreadyBuilt = di.ErrAlreadyBuilt
 
 	// ErrDIInvalidProvider is returned when a provider function has invalid signature.
-	ErrDIInvalidProvider = errors.New("di: invalid provider")
+	// Check with: errors.Is(err, gaz.ErrDIInvalidProvider)
+	ErrDIInvalidProvider = di.ErrInvalidProvider
 )
 
 // Config subsystem errors.

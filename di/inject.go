@@ -86,7 +86,7 @@ func injectStruct(c *Container, target any, chain []string) error {
 			if opts.optional && errors.Is(err, ErrNotFound) {
 				continue // Leave as zero value
 			}
-			return fmt.Errorf("injecting field %s.%s: %w",
+			return fmt.Errorf("di: injecting field %s.%s: %w",
 				structType.Name(), field.Name, err)
 		}
 
