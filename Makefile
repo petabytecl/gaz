@@ -36,7 +36,7 @@ fmt-check: ## Check formatting
 	fi
 
 lint: ## Run linter
-	@command -v golangci-lint >/dev/null || (echo "golangci-lint not installed. Run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+	@command -v golangci-lint >/dev/null || (echo "golangci-lint not installed. Run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest" && exit 1)
 	golangci-lint run
 
 clean: ## Clean generated files
