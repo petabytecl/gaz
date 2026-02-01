@@ -12,7 +12,7 @@ func TestWithContext_PanicsOnNil(t *testing.T) {
 			t.Error("expected panic on nil context")
 		}
 	}()
-	WithContext(nil, &ZeroBackOff{})
+	WithContext(nil, &ZeroBackOff{}) //nolint:staticcheck // testing nil context panic
 }
 
 func TestWithContext_ReturnsStopOnCancelled(t *testing.T) {

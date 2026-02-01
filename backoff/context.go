@@ -16,7 +16,7 @@ type Context interface {
 // backOffContext implements the Context interface.
 type backOffContext struct {
 	BackOff
-	ctx context.Context //nolint:containedctx
+	ctx context.Context //nolint:containedctx // required for context-aware backoff
 }
 
 // Context returns the context associated with this backoff.
@@ -42,6 +42,8 @@ func (b *backOffContext) NextBackOff() time.Duration {
 // with the new context to avoid double-wrapping.
 //
 // Panics if ctx is nil.
+//
+//nolint:ireturn // returns Context interface by design for API consistency
 func WithContext(ctx context.Context, backOff BackOff) Context {
 	if ctx == nil {
 		panic("nil context")
@@ -77,5 +79,5 @@ func getContext(b BackOff) context.Context {
 	return context.Background()
 }
 
-// Interface compliance assertion
+// Interface compliance assertion.
 var _ Context = (*backOffContext)(nil)

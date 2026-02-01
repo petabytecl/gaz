@@ -233,7 +233,7 @@ func TestExponentialBackOff_RandomizationInRange(t *testing.T) {
 	minExpected := 50 * time.Millisecond  // 100ms - 50%
 	maxExpected := 151 * time.Millisecond // 100ms + 50% + 1 (due to formula)
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		// Reset to always get first interval
 		b.Reset()
 		got := b.NextBackOff()

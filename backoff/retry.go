@@ -130,7 +130,7 @@ func doRetryNotify[T any](operation OperationWithData[T], backOff BackOff, notif
 
 		if next = backOff.NextBackOff(); next == Stop {
 			if cerr := ctx.Err(); cerr != nil {
-				return res, cerr
+				return res, cerr //nolint:wrapcheck // returning context error directly is intentional
 			}
 			return res, err
 		}
@@ -143,7 +143,7 @@ func doRetryNotify[T any](operation OperationWithData[T], backOff BackOff, notif
 
 		select {
 		case <-ctx.Done():
-			return res, ctx.Err()
+			return res, ctx.Err() //nolint:wrapcheck // returning context error directly is intentional
 		case <-timer.C():
 		}
 	}

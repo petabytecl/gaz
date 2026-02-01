@@ -10,7 +10,7 @@ func TestWithMaxRetries_StopsAfterMaxAttempts(t *testing.T) {
 	b := WithMaxRetries(&ZeroBackOff{}, maxTries)
 
 	// Should return zero for first 3 calls
-	for i := uint64(0); i < maxTries; i++ {
+	for i := range maxTries {
 		result := b.NextBackOff()
 		if result != 0 {
 			t.Errorf("call %d: expected 0, got %v", i+1, result)
@@ -38,7 +38,7 @@ func TestWithMaxRetries_ResetResetsCounter(t *testing.T) {
 	b := WithMaxRetries(&ZeroBackOff{}, maxTries)
 
 	// Exhaust retries
-	for i := uint64(0); i < maxTries; i++ {
+	for range maxTries {
 		b.NextBackOff()
 	}
 	if b.NextBackOff() != Stop {

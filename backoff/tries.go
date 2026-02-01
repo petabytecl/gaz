@@ -14,8 +14,10 @@ type backOffTries struct {
 // the last time Reset() was called.
 //
 // Note: Implementation is not thread-safe.
-func WithMaxRetries(b BackOff, max uint64) BackOff {
-	return &backOffTries{delegate: b, maxTries: max}
+//
+//nolint:ireturn // returns BackOff interface by design for composability
+func WithMaxRetries(b BackOff, maxRetries uint64) BackOff {
+	return &backOffTries{delegate: b, maxTries: maxRetries}
 }
 
 // NextBackOff returns the next backoff delay from the delegate,
@@ -39,5 +41,5 @@ func (b *backOffTries) Reset() {
 	b.delegate.Reset()
 }
 
-// Interface compliance assertion
+// Interface compliance assertion.
 var _ BackOff = (*backOffTries)(nil)

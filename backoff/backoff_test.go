@@ -14,7 +14,7 @@ func TestStop(t *testing.T) {
 func TestZeroBackOff(t *testing.T) {
 	t.Run("NextBackOff returns 0", func(t *testing.T) {
 		b := &ZeroBackOff{}
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			got := b.NextBackOff()
 			if got != 0 {
 				t.Errorf("NextBackOff() = %v, want 0", got)
@@ -31,7 +31,7 @@ func TestZeroBackOff(t *testing.T) {
 func TestStopBackOff(t *testing.T) {
 	t.Run("NextBackOff returns Stop", func(t *testing.T) {
 		b := &StopBackOff{}
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			got := b.NextBackOff()
 			if got != Stop {
 				t.Errorf("NextBackOff() = %v, want Stop (%v)", got, Stop)
@@ -50,7 +50,7 @@ func TestConstantBackOff(t *testing.T) {
 
 	t.Run("NextBackOff returns configured delay", func(t *testing.T) {
 		b := NewConstantBackOff(delay)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			got := b.NextBackOff()
 			if got != delay {
 				t.Errorf("NextBackOff() = %v, want %v", got, delay)

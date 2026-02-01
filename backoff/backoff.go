@@ -5,7 +5,7 @@ import "time"
 // Stop indicates that the operation should not be retried.
 const Stop time.Duration = -1
 
-// Interface compliance assertions
+// Interface compliance assertions.
 var (
 	_ BackOff = (*ZeroBackOff)(nil)
 	_ BackOff = (*StopBackOff)(nil)
@@ -47,13 +47,13 @@ type ConstantBackOff struct {
 	Delay time.Duration
 }
 
+// NewConstantBackOff creates a new [ConstantBackOff] with the given delay.
+func NewConstantBackOff(delay time.Duration) *ConstantBackOff {
+	return &ConstantBackOff{Delay: delay}
+}
+
 // Reset is a no-op for [ConstantBackOff].
 func (c *ConstantBackOff) Reset() {}
 
 // NextBackOff always returns the configured [Delay].
 func (c *ConstantBackOff) NextBackOff() time.Duration { return c.Delay }
-
-// NewConstantBackOff creates a new [ConstantBackOff] with the given delay.
-func NewConstantBackOff(delay time.Duration) *ConstantBackOff {
-	return &ConstantBackOff{Delay: delay}
-}

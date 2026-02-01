@@ -13,7 +13,6 @@ func TestRetry_SucceedsOnFirstTry(t *testing.T) {
 		attempts++
 		return nil
 	}, &ZeroBackOff{})
-
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -33,7 +32,6 @@ func TestRetry_RetriesOnTransientErrors(t *testing.T) {
 		}
 		return nil
 	}, WithMaxRetries(&ZeroBackOff{}, uint64(maxAttempts)))
-
 	if err != nil {
 		t.Errorf("expected success, got %v", err)
 	}
@@ -86,7 +84,6 @@ func TestRetryWithData_ReturnsDataOnSuccess(t *testing.T) {
 	result, err := RetryWithData(func() (int, error) {
 		return 42, nil
 	}, &ZeroBackOff{})
-
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -104,7 +101,6 @@ func TestRetryWithData_ReturnsDataAfterRetries(t *testing.T) {
 		}
 		return "success", nil
 	}, WithMaxRetries(&ZeroBackOff{}, 5))
-
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -126,7 +122,6 @@ func TestRetryNotify_CallsNotifyOnError(t *testing.T) {
 	}, WithMaxRetries(&ZeroBackOff{}, 5), func(err error, d time.Duration) {
 		notifyCalls++
 	})
-
 	if err != nil {
 		t.Errorf("expected success, got %v", err)
 	}
@@ -146,7 +141,7 @@ func TestPermanentError_Unwrap(t *testing.T) {
 	inner := errors.New("inner error")
 	pe := &PermanentError{Err: inner}
 
-	if pe.Unwrap() != inner {
+	if !errors.Is(pe.Unwrap(), inner) {
 		t.Error("Unwrap should return inner error")
 	}
 }
@@ -168,7 +163,7 @@ func TestPermanentError_ErrorsAs(t *testing.T) {
 		t.Fatal("errors.As should extract PermanentError")
 	}
 
-	if pe.Err != originalErr {
+	if !errors.Is(pe.Err, originalErr) {
 		t.Error("inner error should be preserved")
 	}
 }
@@ -184,7 +179,7 @@ func TestRetry_ReturnsLastErrorOnStop(t *testing.T) {
 		return lastErr
 	}, WithMaxRetries(&ZeroBackOff{}, 3))
 
-	if err != lastErr {
+	if !errors.Is(err, lastErr) {
 		t.Errorf("expected last error, got %v", err)
 	}
 	// 1 initial attempt + 3 retries = 4 total

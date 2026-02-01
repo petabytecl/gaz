@@ -11,6 +11,13 @@ import (
 	"github.com/petabytecl/gaz/backoff"
 )
 
+// Default backoff configuration for supervisor.
+const (
+	defaultMaxInterval         = 5 * time.Minute
+	defaultMultiplier          = 2.0
+	defaultRandomizationFactor = 0.5
+)
+
 // supervisor wraps a single worker with panic recovery, restart logic,
 // and circuit breaker protection. It is created by the Manager for each
 // registered worker (or pool instance).
@@ -44,9 +51,9 @@ func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCritica
 		opts:   opts,
 		backoff: backoff.NewExponentialBackOff(
 			backoff.WithInitialInterval(1*time.Second),
-			backoff.WithMaxInterval(5*time.Minute),
-			backoff.WithMultiplier(2.0),
-			backoff.WithRandomizationFactor(0.5),
+			backoff.WithMaxInterval(defaultMaxInterval),
+			backoff.WithMultiplier(defaultMultiplier),
+			backoff.WithRandomizationFactor(defaultRandomizationFactor),
 		),
 		logger:         logger.With(slog.String("worker", w.Name())),
 		done:           make(chan struct{}),

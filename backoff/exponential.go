@@ -26,6 +26,8 @@ type systemClock struct{}
 func (t systemClock) Now() time.Time { return time.Now() }
 
 // SystemClock is the default [Clock] implementation using [time.Now].
+//
+//nolint:gochecknoglobals // singleton clock instance is intentional
 var SystemClock Clock = systemClock{}
 
 // ExponentialBackOff implements a [BackOff] that increases the delay
@@ -161,7 +163,7 @@ func (b *ExponentialBackOff) Reset() {
 // Returns [Stop] if [MaxElapsedTime] is exceeded.
 func (b *ExponentialBackOff) NextBackOff() time.Duration {
 	elapsed := b.GetElapsedTime()
-	next := getRandomValueFromInterval(b.RandomizationFactor, rand.Float64(), b.currentInterval)
+	next := getRandomValueFromInterval(b.RandomizationFactor, rand.Float64(), b.currentInterval) //nolint:gosec // weak random is acceptable for jitter
 	b.incrementCurrentInterval()
 
 	if b.MaxElapsedTime != 0 && elapsed+next > b.MaxElapsedTime {
@@ -200,5 +202,5 @@ func getRandomValueFromInterval(randomizationFactor, random float64, currentInte
 	return time.Duration(minInterval + (random * (maxInterval - minInterval + 1)))
 }
 
-// Compile-time interface check
+// Compile-time interface check.
 var _ BackOff = (*ExponentialBackOff)(nil)
