@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 
 ## Current Position
 
-- **Milestone:** v3.1 Performance & Stability — COMPLETE
-- **Phase:** 30 of 30 (DI Performance & Stability) — COMPLETE
-- **Status:** Milestone complete
-- **Last activity:** 2026-02-01 — v3.1 milestone shipped
+- **Milestone:** v3.2 Feature Maturity — IN PROGRESS
+- **Phase:** 31 of 31 (Feature Maturity) — In Progress
+- **Status:** Plan 02 complete, Plan 01 pending
+- **Last activity:** 2026-02-01 — Completed 31-02-PLAN.md (Worker Dead Letter Handling)
 
-Progress: [██████████] 100% (Milestone v3.1: 2/2 plans, 1/1 phases)
+Progress: [█████████░] 50% (Milestone v3.2: 1/2 plans, 0/1 phases)
 
 ## Milestones Shipped
 
@@ -31,13 +31,19 @@ Progress: [██████████] 100% (Milestone v3.1: 2/2 plans, 1/1 
 | v3.0 | API Harmonization | 23-29 | 27 | 2026-02-01 |
 | v3.1 | Performance & Stability | 30 | 2 | 2026-02-01 |
 
-**Total:** 128 plans across 30 phases
+**Total:** 128 plans across 30 phases (v3.2 in progress)
 
 ## v3.1 Phase Overview
 
 | Phase | Name | Requirements |
 |-------|------|--------------|
 | 30 | DI Performance & Stability | PERF-01 ✓, STAB-01 ✓ |
+
+## v3.2 Phase Overview
+
+| Phase | Name | Requirements |
+|-------|------|--------------|
+| 31 | Feature Maturity | FEAT-01 (pending), FEAT-02 ✓ |
 
 ## v3.0 Phase Overview
 
@@ -171,6 +177,13 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Uses reflect.TypeOf and reflect.PointerTo for interface checks
 - STAB-01 requirement satisfied: non-ConfigProvider services not instantiated
 
+**Phase 31-02 additions:**
+- DeadLetterInfo struct for failed worker information
+- DeadLetterHandler callback type with panic protection
+- WithDeadLetterHandler option function for per-worker handlers
+- invokeDeadLetterHandler method with defer/recover in supervisor
+- FEAT-02 requirement satisfied: dead letter handling for permanently failed workers
+
 ### Blockers/Concerns
 
 None - v3.1 Performance & Stability milestone complete.
@@ -178,6 +191,7 @@ None - v3.1 Performance & Stability milestone complete.
 ### Roadmap Evolution
 
 - Phase 30 added: DI Performance & Stability (from GAZ_REVIEW.md critical recommendations)
+- Phase 31 added: Feature Maturity (from GAZ_REVIEW.md Phase 2 - Strict Config Validation + Dead Letter Workers)
 
 ### Pending Todos
 
@@ -185,9 +199,9 @@ None - v3.1 Performance & Stability milestone complete.
 
 ## Session Continuity
 
-Last session: 2026-02-01 16:00
-Stopped at: v3.1 milestone complete
-Resume file: None - all milestones complete
+Last session: 2026-02-01
+Stopped at: Completed 31-02-PLAN.md (Worker Dead Letter Handling)
+Resume file: .planning/phases/31-feature-maturity/31-01-PLAN.md (next plan)
 
 ---
 
