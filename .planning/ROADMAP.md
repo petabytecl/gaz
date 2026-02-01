@@ -30,7 +30,7 @@ See `.planning/milestones/` for archived phase details.
 - [x] **Phase 24: Lifecycle Interface Alignment** - Remove fluent hooks, unify Starter/Stopper patterns
 - [x] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
 - [x] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
-- [ ] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
+- [x] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
 - [ ] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
 - [ ] **Phase 29: Documentation & Examples** - Complete user documentation and examples
 
@@ -113,10 +113,10 @@ Plans:
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 27-01-PLAN.md — Consolidate sentinel errors + typed errors in gaz/errors.go
-- [ ] 27-02-PLAN.md — Migrate DI package to gaz errors
-- [ ] 27-03-PLAN.md — Migrate Config package to gaz errors
-- [ ] 27-04-PLAN.md — Migrate Worker/Cron + final verification
+- [x] 27-01-PLAN.md — Consolidate sentinel errors + typed errors in gaz/errors.go
+- [x] 27-02-PLAN.md — Migrate DI package to gaz errors
+- [x] 27-03-PLAN.md — Migrate Config package to gaz errors
+- [x] 27-04-PLAN.md — Migrate Worker/Cron + final verification
 
 ### Phase 28: Testing Infrastructure
 **Goal**: Comprehensive test support for v3 patterns
@@ -156,7 +156,7 @@ Plans:
 | 24. Lifecycle Interface Alignment | v3.0 | 5/5 | Complete | 2026-01-30 |
 | 25. Configuration Harmonization | v3.0 | 2/2 | Complete | 2026-01-30 |
 | 26. Module & Service Consolidation | v3.0 | 6/6 | Complete | 2026-01-31 |
-| 27. Error Standardization | v3.0 | 0/4 | Planned | - |
+| 27. Error Standardization | v3.0 | 4/4 | Complete | 2026-01-31 |
 | 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
 | 29. Documentation & Examples | v3.0 | 0/TBD | Not started | - |
 

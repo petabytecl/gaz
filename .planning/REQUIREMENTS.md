@@ -26,9 +26,9 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Error Handling
 
-- [ ] **ERR-01**: Sentinel errors are consolidated in gaz/errors.go
-- [ ] **ERR-02**: Error sentinels use namespaced naming (ErrDINotFound, ErrConfigNotFound, etc.)
-- [ ] **ERR-03**: All packages use consistent wrapping pattern: fmt.Errorf("pkg: context: %w", err)
+- [x] **ERR-01**: Sentinel errors are consolidated in gaz/errors.go
+- [x] **ERR-02**: Error sentinels use namespaced naming (ErrDINotFound, ErrConfigNotFound, etc.)
+- [x] **ERR-03**: All packages use consistent wrapping pattern: fmt.Errorf("pkg: context: %w", err)
 
 ### Testing
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-02 | Phase 26 | Complete |
 | MOD-03 | Phase 26 | Complete |
 | MOD-04 | Phase 26 | Complete |
-| ERR-01 | Phase 27 | Pending |
-| ERR-02 | Phase 27 | Pending |
-| ERR-03 | Phase 27 | Pending |
+| ERR-01 | Phase 27 | Complete |
+| ERR-02 | Phase 27 | Complete |
+| ERR-03 | Phase 27 | Complete |
 | TST-01 | Phase 28 | Pending |
 | TST-02 | Phase 28 | Pending |
 | TST-03 | Phase 28 | Pending |
