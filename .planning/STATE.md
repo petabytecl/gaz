@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 29 of 29 (Documentation & Examples)
-- **Plan:** 3 of 5 in current phase
+- **Plan:** 4 of 5 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-01 — Completed 29-03-PLAN.md (Worker & Cron Examples)
+- **Last activity:** 2026-02-01 — Completed 29-04-PLAN.md (Tutorial Example Apps)
 
-Progress: [█████████░] 94% (Phase 29: 3/5 plans complete)
+Progress: [█████████░] 96% (Phase 29: 4/5 plans complete)
 
 ## Milestones Shipped
 
