@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -167,7 +166,7 @@ func (s *Scheduler) HealthCheck(_ context.Context) error {
 	defer s.mu.Unlock()
 
 	if !s.running {
-		return errors.New("scheduler not running")
+		return ErrNotRunning
 	}
 
 	return nil

@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/petabytecl/gaz/config"
+	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/worker"
 )
 
 // =============================================================================
@@ -68,30 +70,42 @@ var (
 )
 
 // Worker subsystem errors.
+// These are re-exports from the worker package with standardized ErrWorker* naming.
+// Use errors.Is(err, gaz.ErrWorker*) to check for these errors.
+//
+// Note: Due to Go's import cycle constraints, the canonical source of worker
+// errors is worker/errors.go. These are aliases that point to the same error
+// values, ensuring errors.Is compatibility.
 var (
 	// ErrWorkerCircuitTripped indicates a worker exhausted its restart attempts
 	// within the configured circuit window. The worker will not be restarted
 	// until the application is restarted.
-	ErrWorkerCircuitTripped = errors.New("worker: circuit breaker tripped")
+	ErrWorkerCircuitTripped = worker.ErrCircuitBreakerTripped
 
 	// ErrWorkerStopped indicates a worker stopped normally without error.
 	// This is not an error condition - it signals clean shutdown.
-	ErrWorkerStopped = errors.New("worker: stopped normally")
+	ErrWorkerStopped = worker.ErrWorkerStopped
 
 	// ErrWorkerCriticalFailed indicates a critical worker failed and exhausted
 	// its restart attempts. This error triggers application shutdown.
-	ErrWorkerCriticalFailed = errors.New("worker: critical worker failed")
+	ErrWorkerCriticalFailed = worker.ErrCriticalWorkerFailed
 
 	// ErrWorkerManagerRunning indicates an attempt to register a worker
 	// after the manager has started.
-	ErrWorkerManagerRunning = errors.New("worker: manager already running")
+	ErrWorkerManagerRunning = worker.ErrManagerAlreadyRunning
 )
 
 // Cron subsystem errors.
+// These are re-exports from the cron package with standardized ErrCron* naming.
+// Use errors.Is(err, gaz.ErrCron*) to check for these errors.
+//
+// Note: Due to Go's import cycle constraints, the canonical source of cron
+// errors is cron/errors.go. These are aliases that point to the same error
+// values, ensuring errors.Is compatibility.
 var (
 	// ErrCronNotRunning indicates an operation was attempted on a scheduler
 	// that is not running.
-	ErrCronNotRunning = errors.New("cron: scheduler not running")
+	ErrCronNotRunning = cron.ErrNotRunning
 )
 
 // Module errors (gaz-specific).
