@@ -9,14 +9,14 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 
 ### Backoff Package
 
-- [ ] **BKF-01**: `backoff/` package exists with `BackOff` interface defining `NextBackOff()` and `Reset()` methods
-- [ ] **BKF-02**: `ExponentialBackOff` implementation with configurable InitialInterval, MaxInterval, Multiplier, RandomizationFactor
-- [ ] **BKF-03**: Overflow protection clamps result to MaxInterval when calculation exceeds int64
-- [ ] **BKF-04**: Jitter is thread-safe (uses math/rand/v2 or per-instance mutex)
-- [ ] **BKF-05**: `Stop` sentinel constant signals "no more retries"
-- [ ] **BKF-06**: `WithContext()` wrapper for cancellation-aware backoff
-- [ ] **BKF-07**: `worker/backoff.go` uses internal `backoff/` package instead of jpillora/backoff
-- [ ] **BKF-08**: `jpillora/backoff` removed from go.mod
+- [x] **BKF-01**: `backoff/` package exists with `BackOff` interface defining `NextBackOff()` and `Reset()` methods
+- [x] **BKF-02**: `ExponentialBackOff` implementation with configurable InitialInterval, MaxInterval, Multiplier, RandomizationFactor
+- [x] **BKF-03**: Overflow protection clamps result to MaxInterval when calculation exceeds int64
+- [x] **BKF-04**: Jitter is thread-safe (uses math/rand/v2 or per-instance mutex)
+- [x] **BKF-05**: `Stop` sentinel constant signals "no more retries"
+- [x] **BKF-06**: `WithContext()` wrapper for cancellation-aware backoff
+- [x] **BKF-07**: `worker/backoff.go` uses internal `backoff/` package instead of jpillora/backoff
+- [x] **BKF-08**: `jpillora/backoff` removed from go.mod
 
 ### Cron Package
 
@@ -117,14 +117,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BKF-01 | 32 | Pending |
-| BKF-02 | 32 | Pending |
-| BKF-03 | 32 | Pending |
-| BKF-04 | 32 | Pending |
-| BKF-05 | 32 | Pending |
-| BKF-06 | 32 | Pending |
-| BKF-07 | 32 | Pending |
-| BKF-08 | 32 | Pending |
+| BKF-01 | 32 | Complete |
+| BKF-02 | 32 | Complete |
+| BKF-03 | 32 | Complete |
+| BKF-04 | 32 | Complete |
+| BKF-05 | 32 | Complete |
+| BKF-06 | 32 | Complete |
+| BKF-07 | 32 | Complete |
+| BKF-08 | 32 | Complete |
 
 ### Phase 33: Tint Package
 
