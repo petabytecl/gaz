@@ -8,16 +8,16 @@
 See: .planning/PROJECT.md (updated 2026-01-29)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v3.0 API Harmonization complete — milestone shipped 2026-02-01
+**Current focus:** v3.1 Performance & Stability — addressing critical issues from GAZ_REVIEW.md
 
 ## Current Position
 
-- **Milestone:** v3.0 API Harmonization complete
-- **Phase:** 29 of 29 (Documentation & Examples) — final phase
-- **Status:** Milestone complete
-- **Last activity:** 2026-02-01 — All 7 phases (23-29) completed
+- **Milestone:** v3.1 Performance & Stability
+- **Phase:** 30 of 30 (DI Performance & Stability) — first phase of v3.1
+- **Status:** Phase complete
+- **Last activity:** 2026-02-01 — Completed 30-02-PLAN.md (Config Discovery Type Check)
 
-Progress: [██████████] 100% (Milestone v3.0: 27/27 plans complete)
+Progress: [██████████] 100% (Milestone v3.1: 2/2 plans)
 
 ## Milestones Shipped
 
@@ -153,9 +153,24 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - v3 patterns verified across all documentation
 - Phase 29 complete: DOC-02 and DOC-03 requirements fully satisfied
 
+**Phase 30-01 additions:**
+- Replaced runtime.Stack() goroutine ID parsing with goid.Get()
+- Resolve[T] now uses c.getChain() to get current resolution chain
+- Performance improvement: no more buffer allocation and string parsing
+
+**Phase 30-02 additions:**
+- ServiceType() method added to ServiceWrapper interface
+- collectProviderConfigs checks type before instantiation
+- Uses reflect.TypeOf and reflect.PointerTo for interface checks
+- STAB-01 requirement satisfied: non-ConfigProvider services not instantiated
+
 ### Blockers/Concerns
 
 None - v3.0 API Harmonization milestone complete.
+
+### Roadmap Evolution
+
+- Phase 30 added: DI Performance & Stability (from GAZ_REVIEW.md critical recommendations)
 
 ### Pending Todos
 
@@ -163,9 +178,9 @@ None - v3.0 API Harmonization milestone complete.
 
 ## Session Continuity
 
-Last session: 2026-02-01 04:09
-Stopped at: Completed 29-05-PLAN.md (Documentation Finalization)
-Resume file: None - v3.0 milestone complete
+Last session: 2026-02-01 15:55
+Stopped at: Completed 30-02-PLAN.md (Config Discovery Type Check)
+Resume file: None - Phase 30 complete, v3.1 milestone complete
 
 ---
 
