@@ -167,7 +167,7 @@ func (s *CobraSuite) TestWithCobraBuildError() {
 		return &cobraTestService{}, nil
 	})
 	s.Require().Error(err) // Duplicate error on registration
-	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Require().ErrorIs(err, ErrDIDuplicate)
 }
 
 func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {

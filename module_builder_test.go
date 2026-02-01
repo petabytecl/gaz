@@ -233,7 +233,7 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_ProviderError() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.ErrorIs(err, ErrDuplicate)
+	s.ErrorIs(err, ErrDIDuplicate)
 }
 
 func TestNewModule_ReturnsBuilder(t *testing.T) {

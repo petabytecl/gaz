@@ -6,7 +6,7 @@ import (
 
 // Module registers a named group of providers.
 // The name is used for debugging and error messages.
-// Duplicate module names result in ErrDuplicateModule error during Build().
+// Duplicate module names result in ErrModuleDuplicate error during Build().
 //
 // Each registration should be a function that accepts *Container and returns error.
 // This allows using the For[T]() fluent API within modules.
@@ -27,7 +27,7 @@ func (a *App) Module(name string, registrations ...func(*Container) error) *App 
 	// Check for duplicate module name
 	if a.modules[name] {
 		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrDuplicateModule, name))
+			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
 		return a
 	}
 	a.modules[name] = true

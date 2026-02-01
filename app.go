@@ -289,14 +289,14 @@ func (a *App) MergeConfigMap(cfg map[string]any) error {
 func (a *App) registerInstance(instance any) error {
 	instanceType := reflect.TypeOf(instance)
 	if instanceType == nil {
-		return fmt.Errorf("%w: instance cannot be nil", ErrInvalidProvider)
+		return fmt.Errorf("%w: instance cannot be nil", ErrDIInvalidProvider)
 	}
 
 	typeNameStr := typeName(instanceType)
 
 	// Check for duplicate registration
 	if a.container.HasService(typeNameStr) {
-		return fmt.Errorf("%w: %s", ErrDuplicate, typeNameStr)
+		return fmt.Errorf("%w: %s", ErrDIDuplicate, typeNameStr)
 	}
 
 	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance)

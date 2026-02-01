@@ -74,7 +74,7 @@ func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
 	err = gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 2}, nil
 	})
-	s.Require().ErrorIs(err, gaz.ErrDuplicate)
+	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
 }
 
 func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
@@ -86,7 +86,7 @@ func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
 
 	// Second registration of same type should return ErrDuplicate
 	err = gaz.For[*testConfig](c).Instance(&testConfig{value: "second"})
-	s.Require().ErrorIs(err, gaz.ErrDuplicate)
+	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
 }
 
 func (s *RegistrationSuite) TestFor_Replace_AllowsOverwrite() {
@@ -146,7 +146,7 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
 	err = gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary-2"}, nil
 	})
-	s.Require().ErrorIs(err, gaz.ErrDuplicate)
+	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
 }
 
 func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {

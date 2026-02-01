@@ -9,6 +9,7 @@ import (
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/config"
+	"github.com/petabytecl/gaz/di"
 )
 
 // =============================================================================
@@ -153,16 +154,16 @@ func TestValidationError_Errors(t *testing.T) {
 }
 
 // =============================================================================
-// Sentinel Error alias tests
+// Sentinel Error tests
 // =============================================================================
 
-func TestSentinelErrorAliases(t *testing.T) {
-	// Test that gaz error aliases match their source
-	assert.True(t, errors.Is(gaz.ErrDINotFound, gaz.ErrNotFound))
-	assert.True(t, errors.Is(gaz.ErrDICycle, gaz.ErrCycle))
-	assert.True(t, errors.Is(gaz.ErrDIDuplicate, gaz.ErrDuplicate))
-	assert.True(t, errors.Is(gaz.ErrDINotSettable, gaz.ErrNotSettable))
-	assert.True(t, errors.Is(gaz.ErrDITypeMismatch, gaz.ErrTypeMismatch))
-	assert.True(t, errors.Is(gaz.ErrDIAlreadyBuilt, gaz.ErrAlreadyBuilt))
-	assert.True(t, errors.Is(gaz.ErrDIInvalidProvider, gaz.ErrInvalidProvider))
+func TestSentinelErrors_DIPackageCompatibility(t *testing.T) {
+	// Test that gaz ErrDI* errors match di.Err* errors (re-export verification)
+	assert.True(t, errors.Is(gaz.ErrDINotFound, di.ErrNotFound))
+	assert.True(t, errors.Is(gaz.ErrDICycle, di.ErrCycle))
+	assert.True(t, errors.Is(gaz.ErrDIDuplicate, di.ErrDuplicate))
+	assert.True(t, errors.Is(gaz.ErrDINotSettable, di.ErrNotSettable))
+	assert.True(t, errors.Is(gaz.ErrDITypeMismatch, di.ErrTypeMismatch))
+	assert.True(t, errors.Is(gaz.ErrDIAlreadyBuilt, di.ErrAlreadyBuilt))
+	assert.True(t, errors.Is(gaz.ErrDIInvalidProvider, di.ErrInvalidProvider))
 }

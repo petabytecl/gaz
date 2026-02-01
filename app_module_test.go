@@ -50,7 +50,7 @@ func (s *ModuleSuite) TestModuleDuplicateNameError() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.Require().ErrorIs(err, ErrDuplicateModule)
+	s.Require().ErrorIs(err, ErrModuleDuplicate)
 	s.Contains(err.Error(), "database")
 }
 

@@ -118,56 +118,6 @@ var (
 )
 
 // =============================================================================
-// Backward Compatibility Aliases
-// =============================================================================
-
-// These aliases preserve backward compatibility with existing code that uses
-// the short error names. They will be removed in a future release when all
-// code is migrated to use the namespaced names (ErrDI*, ErrConfig*, etc.).
-
-var (
-	// ErrDuplicate is an alias for di.ErrDuplicate for backward compatibility.
-	//
-	// Deprecated: Use ErrDIDuplicate instead.
-	ErrDuplicate = di.ErrDuplicate
-
-	// ErrInvalidProvider is an alias for di.ErrInvalidProvider for backward compatibility.
-	//
-	// Deprecated: Use ErrDIInvalidProvider instead.
-	ErrInvalidProvider = di.ErrInvalidProvider
-
-	// ErrDuplicateModule is an alias for ErrModuleDuplicate.
-	//
-	// Deprecated: Use ErrModuleDuplicate instead.
-	ErrDuplicateModule = ErrModuleDuplicate
-
-	// ErrNotFound is an alias for di.ErrNotFound for backward compatibility.
-	//
-	// Deprecated: Use ErrDINotFound instead.
-	ErrNotFound = di.ErrNotFound
-
-	// ErrCycle is an alias for di.ErrCycle for backward compatibility.
-	//
-	// Deprecated: Use ErrDICycle instead.
-	ErrCycle = di.ErrCycle
-
-	// ErrNotSettable is an alias for di.ErrNotSettable for backward compatibility.
-	//
-	// Deprecated: Use ErrDINotSettable instead.
-	ErrNotSettable = di.ErrNotSettable
-
-	// ErrTypeMismatch is an alias for di.ErrTypeMismatch for backward compatibility.
-	//
-	// Deprecated: Use ErrDITypeMismatch instead.
-	ErrTypeMismatch = di.ErrTypeMismatch
-
-	// ErrAlreadyBuilt is an alias for di.ErrAlreadyBuilt for backward compatibility.
-	//
-	// Deprecated: Use ErrDIAlreadyBuilt instead.
-	ErrAlreadyBuilt = di.ErrAlreadyBuilt
-)
-
-// =============================================================================
 // Typed Errors
 // =============================================================================
 

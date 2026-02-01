@@ -81,7 +81,7 @@
 // Resolve dependencies from the container using [Resolve]:
 //
 //	db, err := gaz.Resolve[*Database](c)
-//	if errors.Is(err, gaz.ErrNotFound) {
+//	if errors.Is(err, gaz.ErrDINotFound) {
 //	    // Handle missing dependency
 //	}
 //

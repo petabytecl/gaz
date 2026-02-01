@@ -434,7 +434,7 @@ func (s *AppTestSuite) TestBuildAggregatesErrors() {
 		return &FluentTestDB{}, nil
 	})
 	s.Require().Error(err, "should have error for duplicate registration")
-	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Require().ErrorIs(err, ErrDIDuplicate)
 }
 
 func (s *AppTestSuite) TestBuildIsIdempotent() {

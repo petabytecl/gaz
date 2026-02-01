@@ -159,7 +159,7 @@ None - v3.0 API Harmonization milestone complete.
 
 ### Pending Todos
 
-1 todo(s) in `.planning/todos/pending/`
+0 todo(s) in `.planning/todos/pending/`
 
 ## Session Continuity
 

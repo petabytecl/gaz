@@ -68,7 +68,7 @@ func (s *ResolutionSuite) TestNotFound() {
 	_, err := Resolve[*testServiceA](c)
 
 	s.Require().Error(err, "expected error for unregistered service")
-	s.Require().ErrorIs(err, ErrNotFound)
+	s.Require().ErrorIs(err, ErrDINotFound)
 
 	// Verify error message contains type name
 	s.Contains(err.Error(), "testServiceA", "error should contain type name")
@@ -128,7 +128,7 @@ func (s *ResolutionSuite) TestCycleDetection() {
 	_, resolveErr := Resolve[*cyclicA](c)
 
 	s.Require().Error(resolveErr, "expected cycle detection error")
-	s.Require().ErrorIs(resolveErr, ErrCycle)
+	s.Require().ErrorIs(resolveErr, ErrDICycle)
 
 	// Verify chain is in error message
 	errMsg := resolveErr.Error()
@@ -271,7 +271,7 @@ func (s *ResolutionSuite) TestTypeMismatch() {
 	_, resolveErr := Resolve[*testServiceB](c, Named(aTypeName))
 
 	s.Require().Error(resolveErr, "expected type mismatch error")
-	s.Require().ErrorIs(resolveErr, ErrTypeMismatch)
+	s.Require().ErrorIs(resolveErr, ErrDITypeMismatch)
 }
 
 func (s *ResolutionSuite) TestInstanceDirectValue() {
@@ -304,7 +304,7 @@ func (s *ResolutionSuite) TestNamedNotFound() {
 	_, resolveErr := Resolve[*testServiceA](c, Named("nonexistent"))
 
 	s.Require().Error(resolveErr, "expected error for non-existent name")
-	s.Require().ErrorIs(resolveErr, ErrNotFound)
+	s.Require().ErrorIs(resolveErr, ErrDINotFound)
 
 	// Error should contain the name we searched for
 	s.Contains(
@@ -314,7 +314,7 @@ func (s *ResolutionSuite) TestNamedNotFound() {
 }
 
 // =============================================================================
-// MustResolve[T]() Backward Compatibility Tests
+// MustResolve[T]() Tests
 // =============================================================================
 
 func (s *ResolutionSuite) TestMustResolve_Success() {
@@ -351,7 +351,7 @@ func (s *ResolutionSuite) TestMustResolve_WithNamed() {
 }
 
 // =============================================================================
-// Has[T]() Backward Compatibility Tests
+// Has[T]() Tests
 // =============================================================================
 
 func (s *ResolutionSuite) TestHas_NotRegistered() {

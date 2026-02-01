@@ -50,7 +50,7 @@ func (s *AppUseSuite) TestApp_Use_DuplicateModuleReturnsError() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.ErrorIs(err, ErrDuplicateModule)
+	s.ErrorIs(err, ErrModuleDuplicate)
 	s.Contains(err.Error(), "test")
 }
 

@@ -50,7 +50,7 @@ func (a *App) Use(m Module) *App {
 	// Check for duplicate module name
 	if a.modules[name] {
 		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrDuplicateModule, name))
+			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
 		return a
 	}
 	a.modules[name] = true
@@ -97,7 +97,7 @@ func (a *App) UseDI(m di.Module) *App {
 	// Check for duplicate module name
 	if a.modules[name] {
 		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrDuplicateModule, name))
+			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
 		return a
 	}
 	a.modules[name] = true

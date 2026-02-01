@@ -170,7 +170,7 @@ func (s *IntegrationSuite) TestBuildAggregatesAllErrors() {
 		return &testDatabase{}
 	})
 	s.Require().Error(err) // Duplicate error on registration
-	s.Require().ErrorIs(err, gaz.ErrDuplicate)
+	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
 
 	// Duplicate module name
 	app.Module("dup").Module("dup")
@@ -179,7 +179,7 @@ func (s *IntegrationSuite) TestBuildAggregatesAllErrors() {
 	s.Require().Error(err)
 
 	// Should contain module duplicate error
-	s.Require().ErrorIs(err, gaz.ErrDuplicateModule)
+	s.Require().ErrorIs(err, gaz.ErrModuleDuplicate)
 }
 
 func (s *IntegrationSuite) TestMissingDependencyDetected() {
@@ -198,7 +198,7 @@ func (s *IntegrationSuite) TestMissingDependencyDetected() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.ErrorIs(err, gaz.ErrNotFound)
+	s.ErrorIs(err, gaz.ErrDINotFound)
 }
 
 func (s *IntegrationSuite) TestCyclicDependencyDetected() {
@@ -226,7 +226,7 @@ func (s *IntegrationSuite) TestCyclicDependencyDetected() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.ErrorIs(err, gaz.ErrCycle)
+	s.ErrorIs(err, gaz.ErrDICycle)
 }
 
 func (s *IntegrationSuite) TestModuleRegistrationError() {
@@ -249,7 +249,7 @@ func (s *IntegrationSuite) TestModuleRegistrationError() {
 	err := app.Build()
 	s.Require().Error(err)
 	s.Contains(err.Error(), "failing") // Module name should be in error
-	s.ErrorIs(err, gaz.ErrDuplicate)
+	s.ErrorIs(err, gaz.ErrDIDuplicate)
 }
 
 // =============================================================================

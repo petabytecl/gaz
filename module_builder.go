@@ -163,7 +163,7 @@ func (m *builtModule) Apply(app *App) error {
 
 		// Check for duplicate child module name
 		if app.modules[childName] {
-			return fmt.Errorf("%w: %s", ErrDuplicateModule, childName)
+			return fmt.Errorf("%w: %s", ErrModuleDuplicate, childName)
 		}
 		app.modules[childName] = true
 
