@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/gaztest"
 )
 
@@ -550,4 +551,103 @@ func TestRequireStart_Idempotent(t *testing.T) {
 	// Second start - should NOT error or double-start
 	app.RequireStart()
 	// If we get here without panic/error, test passes
+}
+
+// =============================================================================
+// TestBuilder_WithModules
+// =============================================================================
+
+func TestBuilder_WithModules(t *testing.T) {
+	// Create a simple test module that registers a string service
+	testModule := di.NewModuleFunc("test-module", func(c *di.Container) error {
+		return di.For[string](c).Instance("test-value-from-module")
+	})
+
+	app, err := gaztest.New(t).
+		WithModules(testModule).
+		Build()
+	require.NoError(t, err)
+
+	// Service should be available from the module
+	value, err := gaz.Resolve[string](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "test-value-from-module", value)
+}
+
+// =============================================================================
+// TestBuilder_WithModules_MultipleModules
+// =============================================================================
+
+func TestBuilder_WithModules_MultipleModules(t *testing.T) {
+	// Create multiple modules
+	module1 := di.NewModuleFunc("module-1", func(c *di.Container) error {
+		return di.For[int](c).Instance(42)
+	})
+	module2 := di.NewModuleFunc("module-2", func(c *di.Container) error {
+		return di.For[float64](c).Instance(3.14)
+	})
+
+	app, err := gaztest.New(t).
+		WithModules(module1, module2).
+		Build()
+	require.NoError(t, err)
+
+	// Both services should be available
+	intVal, err := gaz.Resolve[int](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, 42, intVal)
+
+	floatVal, err := gaz.Resolve[float64](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, 3.14, floatVal)
+}
+
+// =============================================================================
+// TestBuilder_WithApp_AndModules_Panics
+// =============================================================================
+
+func TestBuilder_WithApp_AndModules_Panics(t *testing.T) {
+	// Create a base app
+	baseApp := gaz.New()
+	err := baseApp.Build()
+	require.NoError(t, err)
+
+	// Create a module
+	testModule := di.NewModuleFunc("test", func(c *di.Container) error {
+		return nil
+	})
+
+	// Using both WithApp and WithModules should panic
+	require.Panics(t, func() {
+		_, _ = gaztest.New(t).
+			WithApp(baseApp).
+			WithModules(testModule).
+			Build()
+	}, "using WithApp and WithModules together should panic")
+}
+
+// =============================================================================
+// TestBuilder_WithConfigMap
+// =============================================================================
+
+func TestBuilder_WithConfigMap(t *testing.T) {
+	// Build test app with config map
+	app, err := gaztest.New(t).
+		WithConfigMap(map[string]any{
+			"test.key":     "test-value",
+			"test.number":  123,
+			"test.enabled": true,
+		}).
+		Build()
+	require.NoError(t, err)
+
+	// Resolve ProviderValues to check config
+	pv, err := gaz.Resolve[*gaz.ProviderValues](app.Container())
+	require.NoError(t, err)
+	require.NotNil(t, pv)
+
+	// Verify config values are accessible
+	require.Equal(t, "test-value", pv.GetString("test.key"))
+	require.Equal(t, 123, pv.GetInt("test.number"))
+	require.Equal(t, true, pv.GetBool("test.enabled"))
 }
