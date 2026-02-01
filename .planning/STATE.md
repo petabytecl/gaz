@@ -100,6 +100,14 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - All four subsystems (di, config, worker, cron) now use consistent re-export pattern
 - ERR-01/02/03 requirements fully satisfied via re-export architecture
 
+**Phase 28-02 additions:**
+- health.TestConfig() and NewTestConfig() for safe test defaults
+- health.MockRegistrar with testify/mock for mocking Registrar interface
+- worker.MockWorker and SimpleWorker for worker testing
+- cron.MockJob, SimpleJob, and MockResolver for cron testing
+- TestManager/TestScheduler factories with discard loggers
+- All Require* assertion helpers use testing.TB and t.Helper()
+
 **Phase 28-03 additions:**
 - config.MapBackend: in-memory Backend implementation for testing
 - config.TestManager() factory for creating test managers
@@ -117,8 +125,8 @@ None - Phase 28 in progress.
 
 ## Session Continuity
 
-Last session: 2026-02-01 02:29
-Stopped at: Completed 28-03-PLAN.md (config/eventbus testing helpers)
+Last session: 2026-02-01 02:30
+Stopped at: Completed 28-02-PLAN.md (health/worker/cron testing helpers)
 Resume file: None - ready for 28-04-PLAN.md
 
 ---
