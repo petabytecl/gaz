@@ -32,9 +32,9 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TST-01**: gaztest package is enhanced for v3 patterns (Builder API updated, new helpers)
-- [ ] **TST-02**: Per-package testing helpers exist (health/testing.go, worker/testing.go, config/testing.go)
-- [ ] **TST-03**: Testing guide documentation exists
+- [x] **TST-01**: gaztest package is enhanced for v3 patterns (Builder API updated, new helpers)
+- [x] **TST-02**: Per-package testing helpers exist (health/testing.go, worker/testing.go, config/testing.go)
+- [x] **TST-03**: Testing guide documentation exists
 
 ### Documentation
 
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ERR-01 | Phase 27 | Complete |
 | ERR-02 | Phase 27 | Complete |
 | ERR-03 | Phase 27 | Complete |
-| TST-01 | Phase 28 | Pending |
-| TST-02 | Phase 28 | Pending |
-| TST-03 | Phase 28 | Pending |
+| TST-01 | Phase 28 | Complete |
+| TST-02 | Phase 28 | Complete |
+| TST-03 | Phase 28 | Complete |
 | DOC-01 | Phase 23 | Complete |
 | DOC-02 | Phase 29 | Pending |
 | DOC-03 | Phase 29 | Pending |

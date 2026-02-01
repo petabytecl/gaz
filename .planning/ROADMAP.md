@@ -130,10 +130,10 @@ Plans:
 **Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 28-01-PLAN.md — Enhance gaztest Builder API (WithModules, WithConfigMap, RequireResolve)
-- [ ] 28-02-PLAN.md — Per-subsystem testing.go for health, worker, cron
-- [ ] 28-03-PLAN.md — Per-subsystem testing.go for config, eventbus
-- [ ] 28-04-PLAN.md — Testing guide documentation and example tests
+- [x] 28-01-PLAN.md — Enhance gaztest Builder API (WithModules, WithConfigMap, RequireResolve)
+- [x] 28-02-PLAN.md — Per-subsystem testing.go for health, worker, cron
+- [x] 28-03-PLAN.md — Per-subsystem testing.go for config, eventbus
+- [x] 28-04-PLAN.md — Testing guide documentation and example tests
 
 ### Phase 29: Documentation & Examples
 **Goal**: Complete user-facing documentation for v3
