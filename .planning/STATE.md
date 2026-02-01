@@ -13,11 +13,11 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 ## Current Position
 
 - **Phase:** 28 of 29 (Testing Infrastructure)
-- **Plan:** 3 of 4 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-01 — Completed 28-03-PLAN.md (config/eventbus testing helpers)
+- **Plan:** 4 of 4 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-01 — Completed 28-04-PLAN.md (Testing guide documentation)
 
-Progress: [████████░░] 75% (Phase 28: 3/4 plans complete)
+Progress: [████████░░] 100% (Phase 28: 4/4 plans complete)
 
 ## Milestones Shipped
 
@@ -40,7 +40,7 @@ Progress: [████████░░] 75% (Phase 28: 3/4 plans complete)
 | 25 | Configuration Harmonization | CFG-01 ✓ |
 | 26 | Module & Service Consolidation | MOD-01 ✓, MOD-02 ✓, MOD-03 ✓, MOD-04 ✓ |
 | 27 | Error Standardization | ERR-01 ✓, ERR-02 ✓, ERR-03 ✓ (all via re-export pattern) |
-| 28 | Testing Infrastructure | TST-01, TST-02, TST-03 |
+| 28 | Testing Infrastructure | TST-01 ✓, TST-02 ✓, TST-03 ✓ |
 | 29 | Documentation & Examples | DOC-02, DOC-03 |
 
 ## Accumulated Context
@@ -122,9 +122,15 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - gaz.App.MergeConfigMap() method for config injection
 - WithApp and WithModules are mutually exclusive (panic on both)
 
+**Phase 28-04 additions:**
+- gaztest/README.md testing guide with Quick Reference and patterns
+- gaztest/examples_test.go with v3 pattern examples (WithModules, RequireResolve, subsystem helpers)
+- gaztest/doc.go updated to reference v3 patterns
+- Phase 28 complete: all testing infrastructure in place
+
 ### Blockers/Concerns
 
-None - Phase 28 in progress.
+None - Phase 28 complete, ready for Phase 29.
 
 ### Pending Todos
 
@@ -132,9 +138,9 @@ None - Phase 28 in progress.
 
 ## Session Continuity
 
-Last session: 2026-02-01 02:33
-Stopped at: Completed 28-01-PLAN.md (gaztest Builder API enhancements)
-Resume file: None - ready for 28-04-PLAN.md (Testing guide documentation)
+Last session: 2026-02-01 02:42
+Stopped at: Completed 28-04-PLAN.md (Testing guide documentation) - Phase 28 complete
+Resume file: None - ready for Phase 29 (Documentation & Examples)
 
 ---
 

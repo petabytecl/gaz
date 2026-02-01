@@ -31,7 +31,7 @@ See `.planning/milestones/` for archived phase details.
 - [x] **Phase 25: Configuration Harmonization** - Add struct-based config unmarshaling
 - [x] **Phase 26: Module & Service Consolidation** - Merge service package, standardize NewModule()
 - [x] **Phase 27: Error Standardization** - Consolidate and namespace all sentinel errors
-- [ ] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
+- [x] **Phase 28: Testing Infrastructure** - Enhance gaztest and per-package helpers
 - [ ] **Phase 29: Documentation & Examples** - Complete user documentation and examples
 
 ## Phase Details
@@ -160,7 +160,7 @@ Plans:
 | 25. Configuration Harmonization | v3.0 | 2/2 | Complete | 2026-01-30 |
 | 26. Module & Service Consolidation | v3.0 | 6/6 | Complete | 2026-01-31 |
 | 27. Error Standardization | v3.0 | 4/4 | Complete | 2026-01-31 |
-| 28. Testing Infrastructure | v3.0 | 3/4 | In progress | - |
+| 28. Testing Infrastructure | v3.0 | 4/4 | Complete | 2026-02-01 |
 | 29. Documentation & Examples | v3.0 | 0/TBD | Not started | - |
 
 ---
