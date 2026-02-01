@@ -86,6 +86,19 @@ func WithLoggerConfig(cfg *logger.Config) Option {
 	}
 }
 
+// WithStrictConfig enables strict configuration validation.
+// If enabled, Build() fails if the config file contains any keys
+// that are not mapped to fields in the config struct.
+// This helps catch typos and obsolete configuration.
+//
+// Strict validation is only applied when a config target is set
+// via WithConfig(). It has no effect on ConfigProvider pattern.
+func WithStrictConfig() Option {
+	return func(a *App) {
+		a.strictConfig = true
+	}
+}
+
 // App is the application runtime wrapper.
 // It orchestrates dependency injection, lifecycle management, and signal handling.
 type App struct {
@@ -102,6 +115,7 @@ type App struct {
 	// Configuration
 	configMgr    *config.Manager
 	configTarget any
+	strictConfig bool // enables strict config validation
 
 	// Provider config tracking
 	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
@@ -320,8 +334,14 @@ func (a *App) loadConfig() error {
 	}
 	// If a target struct is provided, load and unmarshal into it
 	if a.configTarget != nil {
-		if err := a.configMgr.LoadInto(a.configTarget); err != nil {
-			return fmt.Errorf("loading config into target: %w", err)
+		if a.strictConfig {
+			if err := a.configMgr.LoadIntoStrict(a.configTarget); err != nil {
+				return fmt.Errorf("loading config (strict mode): %w", err)
+			}
+		} else {
+			if err := a.configMgr.LoadInto(a.configTarget); err != nil {
+				return fmt.Errorf("loading config into target: %w", err)
+			}
 		}
 	} else {
 		// Otherwise just load the config file (for ConfigProvider pattern)
