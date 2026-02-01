@@ -339,6 +339,31 @@ linters:
       - linters:
           - wrapcheck
         path: gaztest/builder\.go
+      # errcheck for tint buffer operations (can't fail, just append to slice)
+      - linters:
+          - errcheck
+        path: logger/tint/(handler|buffer)\.go
+      # gosec G104 for tint buffer operations (can't fail, just append to slice)
+      - linters:
+          - gosec
+        path: logger/tint/handler\.go
+        text: "G104"
+      # gochecknoglobals for tint buffer pool (standard sync.Pool pattern)
+      - linters:
+          - gochecknoglobals
+        path: logger/tint/buffer\.go
+      # mnd for tint (10 is base, 64 is float64 bits, 1024 is buffer size)
+      - linters:
+          - mnd
+        path: logger/tint/(handler|buffer)\.go
+      # unparam for tint (groups kept for future use)
+      - linters:
+          - unparam
+        path: logger/tint/handler\.go
+      # wrapcheck for tint handler (thin pass-through to io.Writer)
+      - linters:
+          - wrapcheck
+        path: logger/tint/handler\.go
 
   settings:
     cyclop:
@@ -391,6 +416,7 @@ linters:
             - github.com/jpillora/backoff
             - go.uber.org/atomic
             - github.com/petermattis/goid
+            - golang.org/x/term
           # List of packages that are not allowed.
           # Entries can be a variable (starting with $), a string prefix, or an exact match (if ending with $).
           # Default: []
@@ -417,6 +443,7 @@ linters:
             - github.com/jpillora/backoff
             - go.uber.org/atomic
             - github.com/petermattis/goid
+            - golang.org/x/term
           deny:
             - pkg: math/rand$
               desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
@@ -437,6 +464,7 @@ linters:
             - github.com/jpillora/backoff
             - go.uber.org/atomic
             - github.com/petermattis/goid
+            - golang.org/x/term
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog

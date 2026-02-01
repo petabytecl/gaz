@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/petabytecl/gaz/tintx"
+	"github.com/petabytecl/gaz/logger/tint"
 )
 
 // NewLogger creates a new slog.Logger based on the configuration.
@@ -18,8 +18,8 @@ func NewLogger(cfg *Config) *slog.Logger {
 
 	// Default to JSON if not text
 	if cfg.Format == "text" {
-		// Use tintx for text output (nice colors for dev)
-		handler = tintx.NewHandler(os.Stdout, &tintx.Options{
+		// Use tint for text output (nice colors for dev)
+		handler = tint.NewHandler(os.Stdout, &tint.Options{
 			Level:      lvl,
 			AddSource:  cfg.AddSource,
 			TimeFormat: "15:04:05.000",

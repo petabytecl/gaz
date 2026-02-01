@@ -70,8 +70,7 @@ None — fresh milestone with clear research.
 
 ### Pending Todos
 
-1 todo(s) in `.planning/todos/pending/`
-- Move tintx package to logger/tint
+0 todo(s) in `.planning/todos/pending/`
 
 ## Session Continuity
 
