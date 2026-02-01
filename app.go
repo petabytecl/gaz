@@ -253,6 +253,35 @@ func (a *App) WithConfig(target any, opts ...config.Option) *App {
 	return a
 }
 
+// configMapMerger is implemented by backends that support merging config maps.
+type configMapMerger interface {
+	MergeConfigMap(cfg map[string]any) error
+}
+
+// MergeConfigMap merges raw config values into the app's configuration.
+// This is primarily intended for testing scenarios where you want to inject
+// config values without loading from files.
+//
+// Must be called before Build().
+// Panics if called after Build().
+func (a *App) MergeConfigMap(cfg map[string]any) error {
+	if a.built {
+		panic("gaz: cannot merge config after Build()")
+	}
+	if a.configMgr == nil {
+		return nil
+	}
+	backend := a.configMgr.Backend()
+	if merger, ok := backend.(configMapMerger); ok {
+		return merger.MergeConfigMap(cfg)
+	}
+	// Fallback: use Set() for each key (loses nested structure but works for flat keys)
+	for k, v := range cfg {
+		backend.Set(k, v)
+	}
+	return nil
+}
+
 // registerInstance registers a pre-built instance using reflection.
 func (a *App) registerInstance(instance any) error {
 	instanceType := reflect.TypeOf(instance)

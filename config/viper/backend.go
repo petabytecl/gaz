@@ -280,3 +280,10 @@ func IsConfigFileNotFoundError(err error) bool {
 func (b *Backend) IsConfigFileNotFoundError(err error) bool {
 	return IsConfigFileNotFoundError(err)
 }
+
+// MergeConfigMap merges a map of config values into the current configuration.
+// This is useful for testing scenarios where you want to inject config values
+// without loading from files.
+func (b *Backend) MergeConfigMap(cfg map[string]any) error {
+	return b.v.MergeConfigMap(cfg)
+}

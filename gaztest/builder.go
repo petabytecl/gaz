@@ -37,6 +37,8 @@ type Builder struct {
 	timeout      time.Duration
 	replacements []replacement
 	baseApp      *gaz.App
+	modules      []di.Module
+	configMap    map[string]any
 	errs         []error
 }
 
@@ -59,8 +61,44 @@ func (b *Builder) WithTimeout(d time.Duration) *Builder {
 // WithApp sets a base gaz.App to use for the test.
 // This allows testing with pre-registered services that can be replaced with mocks.
 // The base app should have been built already.
+//
+// Note: WithApp cannot be used together with WithModules - they are mutually exclusive.
+// Use either WithApp for pre-built apps or WithModules for module-based registration.
 func (b *Builder) WithApp(app *gaz.App) *Builder {
 	b.baseApp = app
+	return b
+}
+
+// WithModules registers the given modules with the test app during build.
+// Modules are registered in order via app.Use().
+//
+// Note: WithModules cannot be used together with WithApp - they are mutually exclusive.
+// Build() will panic if both are used.
+//
+// Example:
+//
+//	app, err := gaztest.New(t).
+//	    WithModules(health.NewModule(), worker.NewModule()).
+//	    Build()
+func (b *Builder) WithModules(m ...di.Module) *Builder {
+	b.modules = append(b.modules, m...)
+	return b
+}
+
+// WithConfigMap injects raw config values for testing.
+// The values are merged into the app's configuration via viper.MergeConfigMap
+// before the app is built.
+//
+// Example:
+//
+//	app, err := gaztest.New(t).
+//	    WithConfigMap(map[string]any{
+//	        "worker.pool_size": 2,
+//	        "health.port": 0,
+//	    }).
+//	    Build()
+func (b *Builder) WithConfigMap(values map[string]any) *Builder {
+	b.configMap = values
 	return b
 }
 
@@ -94,11 +132,17 @@ func (b *Builder) Replace(instance any) *Builder {
 //   - A replacement type is not registered in the container
 //   - The underlying gaz.App fails to build
 //
+// Build panics if both WithApp and WithModules are used (mutually exclusive).
 // Build registers t.Cleanup() to automatically stop the app when the test completes.
 func (b *Builder) Build() (*App, error) {
 	// Check for accumulated errors from Replace() calls
 	if len(b.errs) > 0 {
 		return nil, errors.Join(b.errs...)
+	}
+
+	// Check for conflicting patterns: cannot use WithApp and WithModules together
+	if b.baseApp != nil && len(b.modules) > 0 {
+		panic("gaztest: cannot use WithApp and WithModules together - use either a pre-built app or module registration")
 	}
 
 	var gazApp *gaz.App
@@ -111,6 +155,18 @@ func (b *Builder) Build() (*App, error) {
 			gaz.WithShutdownTimeout(b.timeout),
 			gaz.WithPerHookTimeout(b.timeout),
 		)
+
+		// Register modules if provided
+		for _, m := range b.modules {
+			gazApp.UseDI(m)
+		}
+	}
+
+	// Apply config map if provided
+	if b.configMap != nil {
+		if err := gazApp.MergeConfigMap(b.configMap); err != nil {
+			return nil, fmt.Errorf("gaztest: failed to merge config map: %w", err)
+		}
 	}
 
 	// Apply replacements to container
