@@ -127,10 +127,13 @@ Plans:
   2. Each subsystem has testing.go with test helpers (health, worker, config, cron, eventbus)
   3. Testing guide documentation explains common testing patterns
   4. Example tests demonstrate all v3 patterns
-**Plans**: TBD
+**Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 28-01: TBD
+- [ ] 28-01-PLAN.md — Enhance gaztest Builder API (WithModules, WithConfigMap, RequireResolve)
+- [ ] 28-02-PLAN.md — Per-subsystem testing.go for health, worker, cron
+- [ ] 28-03-PLAN.md — Per-subsystem testing.go for config, eventbus
+- [ ] 28-04-PLAN.md — Testing guide documentation and example tests
 
 ### Phase 29: Documentation & Examples
 **Goal**: Complete user-facing documentation for v3
@@ -157,7 +160,7 @@ Plans:
 | 25. Configuration Harmonization | v3.0 | 2/2 | Complete | 2026-01-30 |
 | 26. Module & Service Consolidation | v3.0 | 6/6 | Complete | 2026-01-31 |
 | 27. Error Standardization | v3.0 | 4/4 | Complete | 2026-01-31 |
-| 28. Testing Infrastructure | v3.0 | 0/TBD | Not started | - |
+| 28. Testing Infrastructure | v3.0 | 0/4 | Not started | - |
 | 29. Documentation & Examples | v3.0 | 0/TBD | Not started | - |
 
 ---
