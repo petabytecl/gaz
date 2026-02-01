@@ -12,12 +12,12 @@ See: .planning/PROJECT.md (updated 2026-01-29)
 
 ## Current Position
 
-- **Milestone:** v3.2 Feature Maturity — IN PROGRESS
-- **Phase:** 31 of 31 (Feature Maturity) — In Progress
-- **Status:** Plan 02 complete, Plan 01 pending
-- **Last activity:** 2026-02-01 — Completed 31-02-PLAN.md (Worker Dead Letter Handling)
+- **Milestone:** v3.2 Feature Maturity — COMPLETE
+- **Phase:** 31 of 31 (Feature Maturity) — Complete
+- **Status:** All plans complete
+- **Last activity:** 2026-02-01 — Completed 31-01-PLAN.md (Strict Config Validation)
 
-Progress: [█████████░] 50% (Milestone v3.2: 1/2 plans, 0/1 phases)
+Progress: [██████████] 100% (Milestone v3.2: 2/2 plans, 1/1 phases)
 
 ## Milestones Shipped
 
@@ -43,7 +43,7 @@ Progress: [█████████░] 50% (Milestone v3.2: 1/2 plans, 0/1 p
 
 | Phase | Name | Requirements |
 |-------|------|--------------|
-| 31 | Feature Maturity | FEAT-01 (pending), FEAT-02 ✓ |
+| 31 | Feature Maturity | FEAT-01 ✓, FEAT-02 ✓ |
 
 ## v3.0 Phase Overview
 
@@ -184,9 +184,16 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - invokeDeadLetterHandler method with defer/recover in supervisor
 - FEAT-02 requirement satisfied: dead letter handling for permanently failed workers
 
+**Phase 31-01 additions:**
+- UnmarshalStrict in viper backend with mapstructure ErrorUnused
+- StrictUnmarshaler interface for backend abstraction
+- LoadIntoStrict in config Manager
+- WithStrictConfig() option in gaz package
+- FEAT-01 requirement satisfied: strict config validation at startup
+
 ### Blockers/Concerns
 
-None - v3.1 Performance & Stability milestone complete.
+None - v3.2 Feature Maturity milestone complete.
 
 ### Roadmap Evolution
 
@@ -200,8 +207,8 @@ None - v3.1 Performance & Stability milestone complete.
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 31-02-PLAN.md (Worker Dead Letter Handling)
-Resume file: .planning/phases/31-feature-maturity/31-01-PLAN.md (next plan)
+Stopped at: Completed 31-01-PLAN.md (Strict Config Validation)
+Resume file: None (Phase 31 complete, v3.2 milestone complete)
 
 ---
 

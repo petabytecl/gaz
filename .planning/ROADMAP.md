@@ -195,7 +195,7 @@ Plans:
 **Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 31-01-PLAN.md — Strict config validation (WithStrictConfig option)
+- [x] 31-01-PLAN.md — Strict config validation (WithStrictConfig option)
 - [x] 31-02-PLAN.md — Worker dead letter handling (DeadLetterHandler callback)
 
 ## Progress
@@ -212,10 +212,10 @@ Plans:
 | 28. Testing Infrastructure | v3.0 | 4/4 | Complete | 2026-02-01 |
 | 29. Documentation & Examples | v3.0 | 5/5 | Complete | 2026-02-01 |
 | 30. DI Performance & Stability | v3.1 | 2/2 | Complete | 2026-02-01 |
-| 31. Feature Maturity | v3.2 | 1/2 | In progress | - |
+| 31. Feature Maturity | v3.2 | 2/2 | Complete | 2026-02-01 |
 
 ---
 *Roadmap created: 2026-01-29*
 *Milestone: v3.0 API Harmonization - COMPLETE*
 *Milestone: v3.1 Performance & Stability - COMPLETE*
-*Milestone: v3.2 Feature Maturity - IN PROGRESS*
+*Milestone: v3.2 Feature Maturity - COMPLETE*
