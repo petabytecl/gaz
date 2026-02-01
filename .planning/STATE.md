@@ -94,6 +94,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - config/errors.go stays as canonical source (import cycle constraint)
 
 **Phase 27-04 additions:**
+- cron/errors.go created with ErrNotRunning as canonical sentinel
 - gaz.ErrWorker* re-export worker.Err* for errors.Is compatibility
 - gaz.ErrCronNotRunning re-exports cron.ErrNotRunning
 - All four subsystems (di, config, worker, cron) now use consistent re-export pattern
