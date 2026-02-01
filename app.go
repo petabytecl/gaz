@@ -30,6 +30,8 @@ const (
 )
 
 // configProviderType is cached for efficient interface checks.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
 var configProviderType = reflect.TypeOf((*ConfigProvider)(nil)).Elem()
 
 // exitFunc is the function called for force exit. Variable for testability.
