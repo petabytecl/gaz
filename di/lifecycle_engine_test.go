@@ -2,6 +2,7 @@ package di
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -272,3 +273,4 @@ func (m *mockLifecycleService) GetInstance(_ *Container, _ []string) (any, error
 func (m *mockLifecycleService) Start(_ context.Context) error                     { return nil }
 func (m *mockLifecycleService) Stop(_ context.Context) error                      { return nil }
 func (m *mockLifecycleService) HasLifecycle() bool                                { return m.hasLifecycle }
+func (m *mockLifecycleService) ServiceType() reflect.Type                         { return nil }
