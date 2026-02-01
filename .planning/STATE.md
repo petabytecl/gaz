@@ -139,6 +139,12 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - cron/example_test.go: 14 godoc examples for cron package APIs
 - DOC-03 (godoc examples) now covers health, eventbus, worker, cron
 
+**Phase 29-04 additions:**
+- examples/background-workers/: Tutorial app demonstrating worker.Worker interface
+- examples/microservice/: Tutorial app with health, workers, and eventbus integration
+- Both examples compile and use v3 patterns exclusively
+- DOC-03 (examples) partially complete for background workers and microservice tutorials
+
 ### Blockers/Concerns
 
 None - Phase 29 in progress.
@@ -149,9 +155,9 @@ None - Phase 29 in progress.
 
 ## Session Continuity
 
-Last session: 2026-02-01 04:02
-Stopped at: Completed 29-03-PLAN.md (Worker & Cron Examples)
-Resume file: None - ready for 29-04 (Tutorial Example Apps)
+Last session: 2026-02-01 04:04
+Stopped at: Completed 29-04-PLAN.md (Tutorial Example Apps)
+Resume file: None - ready for 29-05 (Documentation Finalization)
 
 ---
 
