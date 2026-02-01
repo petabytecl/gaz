@@ -198,9 +198,85 @@ Plans:
 - [x] 31-01-PLAN.md — Strict config validation (WithStrictConfig option)
 - [x] 31-02-PLAN.md — Worker dead letter handling (DeadLetterHandler callback)
 
+## Current Milestone: v4.0 Dependency Reduction
+
+**Milestone Goal:** Replace external dependencies with internal implementations to reduce dependency footprint and gain full control over critical infrastructure.
+
+**Target:** Replace 4 external dependencies:
+- `jpillora/backoff` → internal `backoff/` package
+- `lmittmann/tint` → internal `tintx/` package
+- `robfig/cron/v3` → internal `cronx/` package
+- `alexliesenfeld/health` → internal `healthx/` package
+
+### Phase 32: Backoff Package
+
+**Goal:** Workers can retry operations with exponential backoff using internal implementation
+**Depends on:** None (first phase of v4.0)
+**Requirements:** BKF-01, BKF-02, BKF-03, BKF-04, BKF-05, BKF-06, BKF-07, BKF-08
+**Estimate:** 1-2 hours (reference implementation exists in `_tmp_trust/srex/backoff/`)
+
+**Success Criteria** (what must be TRUE):
+1. `backoff/` package exists with `BackOff` interface defining `NextBackOff()` and `Reset()` methods
+2. ExponentialBackOff correctly increases delays with configurable min/max/multiplier/jitter
+3. Overflow protection clamps result to MaxInterval (no negative durations)
+4. Jitter is thread-safe (concurrent calls don't cause race conditions)
+5. worker/supervisor uses internal `backoff/` package and jpillora/backoff is removed from go.mod
+
+**Plans:** TBD
+
+### Phase 33: Tint Package
+
+**Goal:** Colored console logging uses internal slog handler implementation
+**Depends on:** Phase 32
+**Requirements:** TNT-01, TNT-02, TNT-03, TNT-04, TNT-05, TNT-06, TNT-07, TNT-08, TNT-09, TNT-10, TNT-11
+**Estimate:** 2-3 hours (no reference, but slog.Handler interface well-defined)
+
+**Success Criteria** (what must be TRUE):
+1. `tintx/` package exists with `Handler` implementing `slog.Handler` interface
+2. Log levels display in correct ANSI colors (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
+3. `WithAttrs()` and `WithGroup()` return new handler instances preserving context
+4. TTY detection auto-disables colors for non-terminal output (or NoColor option)
+5. logger/provider uses internal `tintx/` package and lmittmann/tint is removed from go.mod
+
+**Plans:** TBD
+
+### Phase 34: Cron Package
+
+**Goal:** Scheduled tasks use internal cron engine implementation
+**Depends on:** Phase 33
+**Requirements:** CRN-01, CRN-02, CRN-03, CRN-04, CRN-05, CRN-06, CRN-07, CRN-08, CRN-09, CRN-10, CRN-11, CRN-12
+**Estimate:** 4-6 hours (reference implementation exists in `_tmp_trust/cronx/`)
+
+**Success Criteria** (what must be TRUE):
+1. `cronx/` package exists with `Cron` scheduler type and standard 5-field parser
+2. Descriptor shortcuts (@daily, @hourly, @weekly, @monthly, @yearly, @every) work correctly
+3. SkipIfStillRunning wrapper prevents overlapping job executions
+4. CRON_TZ prefix and DST transitions are handled correctly
+5. cron/scheduler uses internal `cronx/` package and robfig/cron/v3 is removed from go.mod
+
+**Plans:** TBD
+
+### Phase 35: Health Package + Integration
+
+**Goal:** Health checks use internal implementation and all tests pass with maintained coverage
+**Depends on:** Phase 34
+**Requirements:** HLT-01, HLT-02, HLT-03, HLT-04, HLT-05, HLT-06, HLT-07, HLT-08, HLT-09, HLT-10, HLT-11, HLT-12, HLT-13, INT-01, INT-02, INT-03
+**Estimate:** 3-4 hours (no reference, highest API surface)
+
+**Success Criteria** (what must be TRUE):
+1. `healthx/` package exists with `Check`, `Checker`, `Handler`, and `ResultWriter` types
+2. Health handler returns correct status codes (200 for up, configurable for down)
+3. Liveness handler returns 200 even when checks fail (matching current behavior)
+4. IETF health+json response format is built-in default
+5. health/manager uses internal `healthx/` package and alexliesenfeld/health is removed from go.mod
+6. All existing tests pass (`go test ./...` succeeds)
+7. Test coverage maintained at 90%+ overall
+
+**Plans:** TBD
+
 ## Progress
 
-**Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29
+**Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 31 → 32 → 33 → 34 → 35
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -213,9 +289,14 @@ Plans:
 | 29. Documentation & Examples | v3.0 | 5/5 | Complete | 2026-02-01 |
 | 30. DI Performance & Stability | v3.1 | 2/2 | Complete | 2026-02-01 |
 | 31. Feature Maturity | v3.2 | 2/2 | Complete | 2026-02-01 |
+| 32. Backoff Package | v4.0 | 0/? | Pending | - |
+| 33. Tint Package | v4.0 | 0/? | Pending | - |
+| 34. Cron Package | v4.0 | 0/? | Pending | - |
+| 35. Health Package + Integration | v4.0 | 0/? | Pending | - |
 
 ---
 *Roadmap created: 2026-01-29*
 *Milestone: v3.0 API Harmonization - COMPLETE*
 *Milestone: v3.1 Performance & Stability - COMPLETE*
 *Milestone: v3.2 Feature Maturity - COMPLETE*
+*Milestone: v4.0 Dependency Reduction - IN PROGRESS (added 2026-02-01)*

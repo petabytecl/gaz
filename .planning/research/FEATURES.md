@@ -1,695 +1,535 @@
-# Feature Landscape: API Harmonization
+# Feature Landscape: Dependency Replacement
 
-**Domain:** Go DI Framework - API Consistency and Developer Experience
-**Researched:** 2026-01-29
-**Research Confidence:** HIGH (Context7 + Official Docs + Codebase Analysis + Industry Patterns)
+**Project:** gaz - Dependency Internalization
+**Researched:** 2026-02-01
 
----
+## Overview
 
-## Executive Summary
-
-This research documents the features that define a well-designed Go framework API, specifically for gaz v3.0's API Harmonization milestone. The goal is to create consistent, intuitive patterns across all gaz packages while maintaining the framework's "convention over configuration" philosophy.
-
-**Key findings:**
-
-1. **Table stakes** are primarily about consistency and predictability - users expect the same patterns everywhere
-2. **Differentiators** come from reducing cognitive load - fewer concepts to learn, more "just works" behavior
-3. **Anti-features** are magic behaviors that hide what's happening - Go developers prefer explicit over implicit
-
-The research draws from:
-- **uber-go/fx**: Lifecycle hooks, module patterns, error handling (Context7 - HIGH confidence)
-- **google/wire**: Interface bindings, provider patterns (Context7 - HIGH confidence)
-- **Industry consensus (2025)**: Generics for type safety, constructor injection, explicit dependencies
-- **gaz codebase**: Existing patterns in `di/`, `config/`, `worker/`, `health/`, `gaztest/`
+This document analyzes the exact features gaz currently uses from four external dependencies, categorizing requirements for internal implementations into table stakes (must have), differentiators (improvements), and anti-features (things to NOT implement).
 
 ---
 
-## Current gaz State (What's Already Built)
+## 1. jpillora/backoff
 
-Understanding existing patterns is critical for harmonization:
+### Current Usage in gaz
 
-| Pattern | Current Implementation | Location | Consistency Issue |
-|---------|------------------------|----------|-------------------|
-| Registration API | `For[T](c).Provider(fn)` fluent | `di/registration.go` | Solid foundation |
-| Lifecycle interfaces | `Starter`, `Stopper` | `di/lifecycle.go`, `gaz/lifecycle.go` | Duplicated in two packages |
-| Module builder | `NewModule(name).Provide().Build()` | `module_builder.go` | Different from di registration |
-| Config unmarshaling | `LoadInto(target)` with Defaulter/Validator | `config/manager.go` | Good pattern |
-| Error types | Per-package sentinel errors | `errors.go`, `di/`, `config/`, `worker/` | Inconsistent naming |
-| Test utilities | `gaztest.New(t).Replace().Build()` | `gaztest/builder.go` | Good pattern |
-| Service builder | `service.New().WithCmd().Build()` | `service/builder.go` | Similar to gaztest |
+**Files:** `worker/backoff.go`, `worker/supervisor.go`
 
----
-
-## Table Stakes: Must-Have Features for Professional Go Framework
-
-Features users expect in any serious Go DI framework. Missing these feels incomplete or broken.
-
-### 1. Type-Safe Registration API
-
-**What:** Generic-based registration that catches type errors at compile time.
-
-**Why Expected:** Go 1.18+ established generics as the standard. Reflection-based registration feels outdated.
-
-| Criterion | Requirement | gaz Status |
-|-----------|-------------|------------|
-| Compile-time type checking | `For[*MyService](c).Provider(fn)` | Yes |
-| Error on type mismatch | Provider return type must match T | Yes |
-| IDE autocompletion | Generic type flows through chain | Yes |
-
-**Acceptance Criteria:**
-- [ ] All registration functions use generics (no `interface{}` in public API)
-- [ ] Type mismatches are compile errors, not runtime panics
-- [ ] Provider signature `func(*Container) (T, error)` is enforced by compiler
-
-**gaz Alignment:** Already implemented via `For[T]()`. Table stakes met.
-
-### 2. Context-Aware Lifecycle Hooks
-
-**What:** All lifecycle operations accept `context.Context` for timeout/cancellation.
-
-**Why Expected:** Standard Go pattern since Go 1.7. Essential for graceful shutdown.
-
-| Interface | Expected Signature |
-|-----------|-------------------|
-| Starter | `OnStart(ctx context.Context) error` |
-| Stopper | `OnStop(ctx context.Context) error` |
-| Hook function | `func(ctx context.Context) error` |
-
-**Acceptance Criteria:**
-- [ ] All lifecycle interfaces use `context.Context` as first parameter
-- [ ] Timeout enforcement via context deadline
-- [ ] Per-hook timeouts configurable
-
-**gaz Alignment:** Already implemented. Both `Starter` and `Stopper` accept context.
-
-### 3. Consistent Error Types
-
-**What:** Predictable error handling with sentinel errors and proper wrapping.
-
-**Why Expected:** Go's `errors.Is()` and `errors.As()` are the standard. Magic string matching is fragile.
-
-| Pattern | Expected | gaz Current Status |
-|---------|----------|-------------------|
-| Sentinel errors | `ErrNotFound`, `ErrCycle`, etc. | Yes, in di package |
-| Wrapped errors | `fmt.Errorf("context: %w", err)` | Partial |
-| Package prefix | `"di: ..."`, `"config: ..."` | Inconsistent |
-| Error unwrapping | Implements `Unwrap() error` | Yes (ValidationError) |
-
-**Acceptance Criteria:**
-- [ ] All packages use `Err<PackageName><ErrorType>` naming pattern
-- [ ] All errors from public API are wrapped with context
-- [ ] `errors.Is()` works for all sentinel errors
-- [ ] Error messages include package prefix
-
-**gaz Alignment:** Partial. Pattern exists but inconsistent across packages.
-
-### 4. Builder Pattern with Validation
-
-**What:** Fluent builders that validate at Build() time, not use time.
-
-**Why Expected:** Catches configuration errors early. Standard Go pattern for complex configuration.
-
-| Builder | Expected Methods | gaz Status |
-|---------|------------------|------------|
-| Registration | `For[T]().Named().Transient().Eager().Provider()` | Yes |
-| Module | `NewModule(name).Provide().Flags().Build()` | Yes |
-| Test App | `gaztest.New(t).Replace().Build()` | Yes |
-| Service | `service.New().WithCmd().WithConfig().Build()` | Yes |
-
-**Acceptance Criteria:**
-- [ ] All builders validate input before returning
-- [ ] Build() returns error, not panic
-- [ ] Errors from builder methods are accumulated and returned at Build()
-- [ ] Invalid state is not silently ignored
-
-**gaz Alignment:** Good pattern exists. Needs verification of consistent validation.
-
-### 5. Config Unmarshaling with Defaults and Validation
-
-**What:** Struct tag-based configuration with automatic defaults and validation.
-
-**Why Expected:** Industry standard (viper + validator). Reduces boilerplate.
-
-| Feature | Expected Behavior |
-|---------|------------------|
-| Struct tags | `mapstructure:"key"`, `validate:"required"` |
-| Defaults | `Defaulter` interface or struct tags |
-| Validation | `go-playground/validator` integration |
-| Env vars | `MYAPP_KEY` maps to `key` with prefix |
-
-**Acceptance Criteria:**
-- [ ] `LoadInto(target)` applies defaults, then validates
-- [ ] Validation errors are detailed (field name, tag, value)
-- [ ] Defaulter interface called after unmarshal, before validate
-- [ ] Validator interface called after struct tag validation
-
-**gaz Alignment:** Already implemented in `config/manager.go`. Excellent pattern.
-
-### 6. Testing Utilities
-
-**What:** Dedicated package for testing DI applications.
-
-**Why Expected:** Testing DI without utilities is painful. fxtest set the standard.
-
-| Feature | Expected |
-|---------|----------|
-| Test app wrapper | `gaztest.New(t)` with automatic cleanup |
-| Mock injection | `Replace(mockInstance)` for interface swapping |
-| RequireStart/Stop | Fatal on error (t.Helper pattern) |
-| Shorter timeouts | 5s default instead of 30s |
-
-**Acceptance Criteria:**
-- [ ] `gaztest.New(t)` registers t.Cleanup automatically
-- [ ] `Replace(instance)` works with type inference
-- [ ] `RequireStart()`, `RequireStop()` use `t.Helper()`
-- [ ] Errors are descriptive for debugging
-
-**gaz Alignment:** Already implemented in `gaztest/`. Good foundation.
-
----
-
-## Differentiators: Features That Set gaz Apart
-
-Features that go beyond table stakes to provide competitive advantage.
-
-### 1. Interface Auto-Detection for Lifecycle
-
-**What:** Automatic registration of OnStart/OnStop when service implements Starter/Stopper.
-
-**Why Valuable:** Reduces boilerplate. Services "just work" without explicit hook registration.
-
-**Current Pattern (Explicit):**
+**Exact API surface used:**
 ```go
-gaz.For[*HTTPServer](c).
-    Provider(NewHTTPServer).
-    OnStart(func(ctx context.Context, s *HTTPServer) error { return s.Start(ctx) }).
-    OnStop(func(ctx context.Context, s *HTTPServer) error { return s.Stop(ctx) })
-```
-
-**Proposed Pattern (Auto-Detection):**
-```go
-// HTTPServer implements gaz.Starter and gaz.Stopper
-gaz.For[*HTTPServer](c).Provider(NewHTTPServer) // Auto-detects OnStart/OnStop
-```
-
-**Acceptance Criteria:**
-- [ ] Detection happens at registration time (not runtime)
-- [ ] Explicit hooks override auto-detected hooks
-- [ ] Works with both Starter and Stopper interfaces
-- [ ] No additional imports or configuration required
-
-**Complexity:** Medium - requires changes to `di.ServiceWrapper`
-
-**Differentiator Level:** HIGH - Most frameworks require explicit hook registration.
-
-### 2. Unified Module Pattern
-
-**What:** Consistent bundling of providers, flags, and configuration into reusable modules.
-
-**Why Valuable:** Reduces duplication. Makes packages self-contained and composable.
-
-**Current Pattern:**
-```go
-// Module groups providers but flags are registered separately
-module := gaz.NewModule("http").
-    Provide(func(c *gaz.Container) error {
-        return gaz.For[*HTTPServer](c).Provider(NewHTTPServer)
-    }).
-    Build()
-
-// Flags registered separately
-fs.Int("http-port", 8080, "HTTP server port")
-```
-
-**Proposed Pattern:**
-```go
-// Module bundles everything
-var HTTPModule = gaz.NewModule("http").
-    Flags(func(fs *pflag.FlagSet) {
-        fs.Int("http-port", 8080, "HTTP server port")
-    }).
-    Provide(func(c *gaz.Container) error {
-        return gaz.For[*HTTPServer](c).Provider(NewHTTPServer)
-    }).
-    Build()
-
-// Single Use() call registers all
-app.Use(HTTPModule)
-```
-
-**Acceptance Criteria:**
-- [ ] Module.Flags() registers flags when module is applied
-- [ ] Flags work with both Cobra and standalone
-- [ ] Module composition via Use() works as expected
-- [ ] Duplicate module detection remains functional
-
-**Complexity:** Low - extend existing ModuleBuilder
-
-**Differentiator Level:** MEDIUM - fx has modules but without integrated flags
-
-### 3. Consistent Fluent API Across All Packages
-
-**What:** Same API patterns in every gaz package.
-
-**Why Valuable:** Learn once, use everywhere. Reduces cognitive load.
-
-| Package | Builder Pattern | Build Method |
-|---------|-----------------|--------------|
-| di | `For[T](c).Provider(fn)` | Returns error |
-| module | `NewModule(name).Provide().Build()` | Returns Module |
-| gaztest | `New(t).Replace().Build()` | Returns (*App, error) |
-| service | `New().WithCmd().Build()` | Returns (*App, error) |
-| worker | `worker.New().WithPolicy().Build()` | Should follow pattern |
-
-**Acceptance Criteria:**
-- [ ] All builders follow same chain pattern
-- [ ] Error accumulation in builders (not fail-fast)
-- [ ] Build() is always the terminal method
-- [ ] Documentation uses consistent terminology
-
-**Complexity:** Medium - requires audit and updates across packages
-
-**Differentiator Level:** HIGH - Most frameworks have inconsistent APIs across packages
-
-### 4. Rich Error Context
-
-**What:** Errors that tell you exactly what went wrong and where.
-
-**Why Valuable:** Faster debugging. Reduces "what does this error mean" time.
-
-**Current Error:**
-```
-gaz: duplicate module name: http
-```
-
-**Proposed Error:**
-```
-gaz: duplicate module name
-    module: "http"
-    first registered: service.go:42
-    second attempt: main.go:18
-    hint: use Replace() if intentional
-```
-
-**Acceptance Criteria:**
-- [ ] Errors include relevant context (names, types, locations)
-- [ ] Error types support structured access via errors.As()
-- [ ] Hints for common mistakes
-- [ ] Stack information when debugging enabled
-
-**Complexity:** Medium - requires updating error creation throughout
-
-**Differentiator Level:** MEDIUM - Good error messages are rare in DI frameworks
-
-### 5. Opt-in Debug Mode
-
-**What:** Verbose logging of DI operations for troubleshooting.
-
-**Why Valuable:** Understanding DI ordering is hard. Visibility helps.
-
-**Proposed Pattern:**
-```go
-app := gaz.New(gaz.WithDebug())
-// Logs:
-// gaz/di: registering *HTTPServer (singleton, lazy)
-// gaz/di: registering *Database (singleton, eager)
-// gaz/di: building container (2 services)
-// gaz/di: resolving *Database (eager)
-// gaz/di: resolved *Database in 1.2ms
-// gaz/lifecycle: starting services (order: Database, HTTPServer)
-```
-
-**Acceptance Criteria:**
-- [ ] Debug mode is opt-in (off by default)
-- [ ] Uses standard slog for logging
-- [ ] Shows resolution order
-- [ ] Shows timing information
-- [ ] Works with existing logger configuration
-
-**Complexity:** Low-Medium - add logging calls at key points
-
-**Differentiator Level:** MEDIUM - fx has debug logging, wire doesn't
-
----
-
-## Anti-Features: Deliberate Non-Goals
-
-Features to explicitly NOT build. These seem helpful but create problems.
-
-### 1. Global Container / Singleton Pattern
-
-**Why Requested:** "Just let me call gaz.Get[*Service]() anywhere"
-
-**Why Problematic:**
-- Breaks testability (can't parallel test with different mocks)
-- Hidden dependencies (imports don't show dependencies)
-- Race conditions in concurrent registration
-
-**What to Do Instead:**
-- Always inject Container explicitly
-- Use constructor injection: `func NewService(dep *Dependency) *Service`
-
-### 2. Spring-Style Field Injection Tags
-
-**Why Requested:** "Just inject into struct fields automatically"
-
-```go
-// Anti-pattern
-type MyService struct {
-    Logger   *slog.Logger `inject:""`
-    Database *sql.DB      `inject:""`
-}
-```
-
-**Why Problematic:**
-- Hides dependencies (not visible in constructor)
-- Breaks refactoring (changing fields breaks magic)
-- Requires reflection at resolution time
-- Makes testing harder (can't use struct literal)
-
-**What to Do Instead:**
-- Constructor injection: `func NewService(logger *slog.Logger, db *sql.DB) *Service`
-- Dependencies visible in function signature
-
-### 3. Automatic Retry for Failed Providers
-
-**Why Requested:** "If a service fails to start, retry automatically"
-
-**Why Problematic:**
-- Hides real errors (transient or permanent?)
-- Delays startup without user awareness
-- Hard to reason about state
-
-**What to Do Instead:**
-- Fail fast with clear error
-- Let user implement retry in provider if needed
-- Workers can have retry policies; providers should not
-
-### 4. Dynamic Registration After Build
-
-**Why Requested:** "Let me add services at runtime"
-
-**Why Problematic:**
-- Breaks static analysis
-- Creates race conditions
-- Dependency graph becomes unpredictable
-
-**What to Do Instead:**
-- Register everything before Build()
-- Use factory patterns for dynamic instances
-- Transient scope for per-request objects
-
-### 5. Implicit Type Coercion
-
-**Why Requested:** "Automatically convert string env vars to int/duration"
-
-**Why Problematic:**
-- Silent failures ("5" works, "five" crashes at runtime)
-- Unexpected behavior (empty string becomes 0?)
-- Type safety is Go's strength
-
-**What to Do Instead:**
-- Use mapstructure decode hooks (explicit)
-- Fail fast on type mismatch
-- Provide clear error messages
-
-### 6. Automatic Config File Discovery
-
-**Why Requested:** "Just find config.yaml anywhere on the system"
-
-**Why Problematic:**
-- Security issue (wrong config in production)
-- Hard to debug (which file was loaded?)
-- Different behavior per environment
-
-**What to Do Instead:**
-- Explicit config paths in priority order
-- Clear precedence rules (flags > env > file)
-- Log which config was loaded
-
----
-
-## Feature Matrix by Category
-
-| Feature | Category | Complexity | Priority | Depends On |
-|---------|----------|------------|----------|------------|
-| **Table Stakes** |
-| Type-safe registration | Table Stakes | Done | P0 | - |
-| Context-aware lifecycle | Table Stakes | Done | P0 | - |
-| Builder pattern with validation | Table Stakes | Low | P1 | - |
-| Consistent error types | Table Stakes | Medium | P1 | - |
-| Config with defaults/validation | Table Stakes | Done | P0 | - |
-| Testing utilities | Table Stakes | Done | P0 | - |
-| **Differentiators** |
-| Interface auto-detection | Differentiator | Medium | P1 | di changes |
-| Unified module pattern | Differentiator | Low | P1 | - |
-| Consistent fluent API | Differentiator | Medium | P1 | Audit |
-| Rich error context | Differentiator | Medium | P2 | - |
-| Opt-in debug mode | Differentiator | Low | P2 | slog integration |
-
----
-
-## Alignment with gaz v3.0 Goals
-
-| Goal | Relevant Features |
-|------|------------------|
-| **Developer Experience** | Interface auto-detection, consistent API, rich errors |
-| **Consistency** | Error type naming, fluent API patterns, module pattern |
-| **Documentation** | Builder validation (errors guide users), debug mode |
-| **Extensibility** | Module pattern, unified provider interface |
-
----
-
-## Config Unmarshaling: Best Practices
-
-Based on research, gaz's config pattern should follow:
-
-### Expected Flow
-
-```
-1. Load from sources (files, env, flags)
-2. Unmarshal into struct (mapstructure)
-3. Apply Defaulter interface
-4. Apply struct tag validation (validator)
-5. Apply Validator interface (custom logic)
-6. Return config or detailed error
-```
-
-### Struct Tags
-
-```go
-type Config struct {
-    // mapstructure for unmarshal key mapping
-    Host string `mapstructure:"host" validate:"required"`
-    
-    // validate for struct-level validation
-    Port int `mapstructure:"port" validate:"required,min=1,max=65535"`
-    
-    // Complex validation
-    TLS struct {
-        Enabled  bool   `mapstructure:"enabled"`
-        CertFile string `mapstructure:"cert_file" validate:"required_if=Enabled true"`
-    } `mapstructure:"tls"`
-}
-```
-
-### Acceptance Criteria for Config
-
-- [ ] All config structs use `mapstructure` tags
-- [ ] Required fields use `validate:"required"`
-- [ ] Cross-field validation uses `required_if`, `required_with`
-- [ ] Custom validators registered for domain types
-- [ ] Validation errors include field path
-
----
-
-## Lifecycle Interface Design: Best Practices
-
-Based on research, gaz's lifecycle interfaces should follow:
-
-### Interface Definition
-
-```go
-// Starter is called during app.Start() in dependency order
-type Starter interface {
-    OnStart(ctx context.Context) error
+// worker/backoff.go:67-74
+func (c *BackoffConfig) NewBackoff() *backoff.Backoff {
+    return &backoff.Backoff{
+        Min:    c.Min,    // minimum delay (time.Duration)
+        Max:    c.Max,    // maximum delay cap (time.Duration)
+        Factor: c.Factor, // multiplier (float64)
+        Jitter: c.Jitter, // randomization (bool)
+    }
 }
 
-// Stopper is called during app.Stop() in reverse dependency order
-type Stopper interface {
-    OnStop(ctx context.Context) error
-}
+// worker/supervisor.go:137
+s.backoff.Reset()
+
+// worker/supervisor.go:141
+delay := s.backoff.Duration()
 ```
 
-### Execution Order
+**Features actually used:**
+| Feature | Used | How |
+|---------|------|-----|
+| `Backoff` struct | YES | Created via struct literal |
+| `Min` field | YES | Minimum delay (1s default) |
+| `Max` field | YES | Maximum cap (5m default) |
+| `Factor` field | YES | Multiplier (2 default) |
+| `Jitter` field | YES | Enable randomization |
+| `Duration()` method | YES | Get next backoff delay |
+| `Reset()` method | YES | Reset after stable run |
+| `Attempt` field | NO | Internal counter, not accessed |
 
-```
-Start Order (dependency-first):
-1. Database (no deps)
-2. Cache (depends on nothing)
-3. UserService (depends on Database)
-4. HTTPServer (depends on UserService)
+### Table Stakes (Must Have)
 
-Stop Order (reverse):
-1. HTTPServer
-2. UserService
-3. Cache
-4. Database
-```
+| Feature | Reason | Reference Implementation |
+|---------|--------|-------------------------|
+| `NewExponentialBackoff()` constructor | Standard creation pattern | `_tmp_trust/srex/backoff/exponential.go:80` |
+| `Min/Max` duration bounds | Core exponential behavior | srex uses `InitialInterval`/`MaxInterval` |
+| `Factor/Multiplier` | Exponential growth rate | srex uses `Multiplier` field |
+| `Jitter/RandomizationFactor` | Prevent thundering herd | srex has `RandomizationFactor` (0.5 default) |
+| `NextBackOff()` method | Return next delay | srex interface: `NextBackOff() time.Duration` |
+| `Reset()` method | Reset to initial state | srex interface: `Reset()` |
+| Thread-safe usage | supervisor uses in goroutine | Note: jpillora/backoff is NOT thread-safe either |
 
-### Timeout Enforcement
+### Differentiators (Improvements over jpillora/backoff)
 
+| Feature | Value | From Reference |
+|---------|-------|----------------|
+| `BackOff` interface | Enables strategy pattern (constant, exponential, stop) | srex `BackOff` interface |
+| `Stop` sentinel value | Signal "no more retries" | `const Stop time.Duration = -1` |
+| `MaxElapsedTime` | Auto-stop after total elapsed time | srex `ExponentialBackOff.MaxElapsedTime` |
+| Context support via `WithContext()` | Cancellation-aware backoff | srex `WithContext()` wrapper |
+| `WithMaxRetries()` wrapper | Limit total retry attempts | srex `WithMaxRetries()` decorator |
+| `Clock` interface | Testable time (mock time.Now) | srex `Clock` interface |
+
+### Anti-Features (Do NOT Implement)
+
+| Feature | Why Avoid | What gaz Needs Instead |
+|---------|-----------|------------------------|
+| `Retry()` helper function | gaz supervisor handles retry loop itself | Keep retry logic in supervisor |
+| `Ticker` abstraction | Adds complexity; supervisor uses simple `time.After` | Use standard time.After |
+| `Timer` abstraction | Over-engineering for gaz use case | Not needed |
+| Notification callbacks | gaz uses slog logging directly | Use slog in supervisor |
+| Generic retry with data | Over-engineered for backoff-only use | Not needed |
+
+### Migration Path
+
+**Current jpillora API:**
 ```go
-// Per-service timeout with fallback to global
-type HookConfig struct {
-    Timeout time.Duration // Zero = use app default
-}
-
-// Hook execution with timeout
-func runHook(ctx context.Context, fn HookFunc, timeout time.Duration) error {
-    ctx, cancel := context.WithTimeout(ctx, timeout)
-    defer cancel()
-    return fn(ctx)
-}
+b := &backoff.Backoff{Min: 1*time.Second, Max: 5*time.Minute, Factor: 2, Jitter: true}
+delay := b.Duration()
+b.Reset()
 ```
 
-### Acceptance Criteria for Lifecycle
-
-- [ ] Interfaces accept context as first parameter
-- [ ] Start order follows dependency graph
-- [ ] Stop order is reverse of start order
-- [ ] Per-hook timeout is configurable
-- [ ] Force exit if timeout exceeded
+**Internal implementation API:**
+```go
+b := backoff.NewExponentialBackOff(
+    backoff.WithInitialInterval(1*time.Second),
+    backoff.WithMaxInterval(5*time.Minute),
+    backoff.WithMultiplier(2),
+    backoff.WithRandomizationFactor(0.5),
+)
+delay := b.NextBackOff()
+b.Reset()
+```
 
 ---
 
-## Error Handling Strategy: Best Practices
+## 2. robfig/cron/v3
 
-Based on research, gaz's error handling should follow:
+### Current Usage in gaz
 
-### Error Type Pattern
+**Files:** `cron/scheduler.go`, `cron/logger.go`, `cron/wrapper.go`
 
+**Exact API surface used:**
 ```go
-// Package-level sentinel errors
-var (
-    ErrDINotFound     = errors.New("di: service not found")
-    ErrDICycle        = errors.New("di: circular dependency")
-    ErrDIDuplicate    = errors.New("di: duplicate registration")
-    ErrDITypeMismatch = errors.New("di: type mismatch")
+// cron/scheduler.go:51-54 - Cron creation
+c := cron.New(
+    cron.WithLogger(adapter),
+    cron.WithChain(cron.SkipIfStillRunning(adapter)),
 )
 
-// Structured error with context
-type ResolutionError struct {
-    ServiceName string
-    ServiceType string
-    Cause       error
+// cron/scheduler.go:86
+s.cron.Start()
+
+// cron/scheduler.go:108-109 - Graceful shutdown
+cronCtx := s.cron.Stop()
+<-cronCtx.Done()
+
+// cron/scheduler.go:145
+_, err := s.cron.AddJob(schedule, wrapper)
+
+// cron/logger.go:21 - Logger interface implementation
+func NewSlogAdapter(logger *slog.Logger) cron.Logger {
+    return &slogAdapter{...}
 }
 
-func (e *ResolutionError) Error() string {
-    return fmt.Sprintf("di: failed to resolve %s (%s): %v", 
-        e.ServiceName, e.ServiceType, e.Cause)
-}
-
-func (e *ResolutionError) Unwrap() error {
-    return e.Cause
-}
+// cron.Logger interface
+Info(msg string, keysAndValues ...any)
+Error(err error, msg string, keysAndValues ...any)
 ```
 
-### Error Wrapping
+**Features actually used:**
+| Feature | Used | How |
+|---------|------|-----|
+| `cron.New()` constructor | YES | Create scheduler |
+| `WithLogger()` option | YES | Inject slog adapter |
+| `WithChain()` option | YES | Apply job wrappers |
+| `SkipIfStillRunning()` wrapper | YES | Prevent overlapping runs |
+| `Start()` method | YES | Start scheduler |
+| `Stop()` method | YES | Stop + return wait context |
+| `AddJob(spec, Job)` method | YES | Register jobs |
+| `cron.Job` interface (`Run()`) | YES | Job implementation |
+| `cron.Logger` interface | YES | Logging adapter |
+| Schedule expression parsing | YES | Standard cron expressions |
+| Descriptor support (@daily, etc) | YES | Via standard parser |
 
+**Features NOT used:**
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `AddFunc()` | NOT USED | gaz uses `AddJob()` |
+| `Entry`, `EntryID` | NOT USED | gaz wraps jobs differently |
+| `Remove()` | NOT USED | Jobs registered once at startup |
+| `Entries()` | NOT USED | gaz tracks jobs separately |
+| `WithSeconds()` option | NOT USED | Standard 5-field cron |
+| `WithParser()` option | NOT USED | Default parser sufficient |
+| `WithLocation()` option | NOT USED | Uses local time |
+| `Recover()` wrapper | NOT USED | gaz has custom panic recovery |
+| `DelayIfStillRunning()` wrapper | NOT USED | Uses SkipIfStillRunning |
+
+### Table Stakes (Must Have)
+
+| Feature | Reason | Reference Implementation |
+|---------|--------|-------------------------|
+| `New()` constructor with options | Standard pattern | `_tmp_trust/cronx/cron.go:100` |
+| Standard cron parser (5-field) | Parse `"*/5 * * * *"` | `_tmp_trust/cronx/parser.go` |
+| Descriptor support | Parse `@daily`, `@hourly`, etc | `_tmp_trust/cronx/parser.go:362-430` |
+| `Start()` method | Begin scheduling | cronx has `Start()` |
+| `Stop()` returning wait context | Graceful shutdown | cronx returns `context.Context` |
+| `AddJob(spec, Job)` | Register jobs with schedule | cronx has `AddJob()` |
+| `Job` interface (`Run()`) | Job abstraction | cronx `Job` interface |
+| `Logger` interface (Info/Error) | Structured logging | cronx uses `logx.Logger` |
+| `WithLogger()` option | Inject logger | cronx `WithLogger()` |
+| `WithChain()` option | Apply job wrappers | cronx `WithChain()` |
+| `SkipIfStillRunning()` wrapper | Prevent overlapping | cronx `SkipIfStillRunning()` |
+
+### Differentiators (Improvements over robfig/cron)
+
+| Feature | Value | Notes |
+|---------|-------|-------|
+| slog.Logger native support | Use `slog.Logger` directly, not adapter | Simpler integration |
+| Timezone in spec (`CRON_TZ=`) | Already in cronx parser | More flexible scheduling |
+| `@every` descriptor | Interval scheduling | Already in cronx |
+| Clean interface boundaries | cronx has cleaner `ScheduleParser` interface | Better testability |
+
+### Anti-Features (Do NOT Implement)
+
+| Feature | Why Avoid | What gaz Needs Instead |
+|---------|-----------|------------------------|
+| `Entry`/`EntryID` tracking | gaz tracks jobs in `diJobWrapper` array | Use existing wrapper tracking |
+| `Entries()` introspection | Adds complexity, not used | Not needed |
+| `Remove()` dynamic removal | Jobs are static at startup | Not needed |
+| `Schedule()` direct method | `AddJob()` is sufficient | Not needed |
+| `Run()` blocking mode | gaz uses `Start()` non-blocking | Not needed |
+| `FuncJob` adapter | gaz uses `Job` interface directly | Not needed |
+| `SecondOptional` parser option | Over-engineering | Standard 5-field sufficient |
+| `Recover()` wrapper | gaz has custom recovery in `diJobWrapper` | Keep custom recovery |
+| `DelayIfStillRunning()` wrapper | Skip is preferred over delay | Not needed |
+
+### Migration Path
+
+**Current robfig/cron API:**
 ```go
-// Always wrap with context
-func (c *Container) Resolve(name string) (any, error) {
-    svc, err := c.get(name)
-    if err != nil {
-        return nil, &ResolutionError{
-            ServiceName: name,
-            ServiceType: c.getType(name),
-            Cause:       err,
-        }
-    }
-    return svc, nil
-}
+c := cron.New(
+    cron.WithLogger(adapter),
+    cron.WithChain(cron.SkipIfStillRunning(adapter)),
+)
+c.AddJob("*/5 * * * *", job)
+c.Start()
+ctx := c.Stop()
+<-ctx.Done()
 ```
 
-### Acceptance Criteria for Errors
-
-- [ ] All sentinel errors follow `Err<Package><Type>` naming
-- [ ] All public functions return wrapped errors
-- [ ] `errors.Is()` works for sentinel matching
-- [ ] `errors.As()` works for structured access
-- [ ] Error messages are actionable
+**Internal implementation API:**
+```go
+c := cron.New(
+    cron.WithLogger(logger),  // Direct slog.Logger
+    cron.WithChain(cron.SkipIfStillRunning(logger)),
+)
+c.AddJob("*/5 * * * *", job)
+c.Start()
+ctx := c.Stop()
+<-ctx.Done()
+```
 
 ---
 
-## Module Pattern: Best Practices
+## 3. lmittmann/tint
 
-Based on research, gaz's module pattern should follow:
+### Current Usage in gaz
 
-### Module Interface
+**Files:** `logger/provider.go`
 
+**Exact API surface used:**
 ```go
-type Module interface {
-    Name() string
-    Apply(app *App) error
-}
-
-// Optional interface for flags
-type FlagProvider interface {
-    Flags() func(*pflag.FlagSet)
-}
-
-// Optional interface for env prefix
-type EnvPrefixProvider interface {
-    EnvPrefix() string
-}
+// logger/provider.go:22-26
+handler = tint.NewHandler(os.Stdout, &tint.Options{
+    Level:      lvl,           // *slog.LevelVar
+    AddSource:  cfg.AddSource, // bool
+    TimeFormat: "15:04:05.000", // string
+})
 ```
 
-### Module Builder
+**Features actually used:**
+| Feature | Used | How |
+|---------|------|-----|
+| `tint.NewHandler()` | YES | Create colored handler |
+| `tint.Options.Level` | YES | Dynamic log level |
+| `tint.Options.AddSource` | YES | Include source location |
+| `tint.Options.TimeFormat` | YES | Custom time format |
 
+**Features NOT used:**
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `Options.ReplaceAttr` | NOT USED | No attribute transformation |
+| `Options.NoColor` | NOT USED | Always colored when text format |
+| `tint.Attr()` for colored attrs | NOT USED | Standard attributes only |
+| `tint.Err()` helper | NOT USED | Uses `slog.Any("error", err)` |
+
+### Table Stakes (Must Have)
+
+| Feature | Reason | Implementation Notes |
+|---------|--------|---------------------|
+| `NewHandler(w, opts)` constructor | Standard slog.Handler pattern | Return `slog.Handler` |
+| ANSI color output | Visual distinction of levels | Level-based colors |
+| `Options.Level` (Leveler) | Filter by log level | Use `slog.Leveler` |
+| `Options.AddSource` (bool) | Include file:line | Standard slog option |
+| `Options.TimeFormat` (string) | Custom timestamp format | Use time.Format layout |
+| Implement `slog.Handler` interface | Drop-in replacement | `Enabled`, `Handle`, `WithAttrs`, `WithGroup` |
+| Structured attribute output | Key=value pairs | Match tint format |
+
+### Differentiators (Improvements over tint)
+
+| Feature | Value | Notes |
+|---------|-------|-------|
+| Level-aware coloring | Different colors per level | DEBUG=blue, INFO=green, WARN=yellow, ERROR=red |
+| Attribute highlighting | Highlight error attributes in red | Better visibility |
+| `Options.NoColor` | Disable colors (for CI/logs) | Useful for non-TTY output |
+| Terminal detection | Auto-detect TTY | Use `isatty` or `term` package |
+
+### Anti-Features (Do NOT Implement)
+
+| Feature | Why Avoid | What gaz Needs Instead |
+|---------|-----------|------------------------|
+| `ReplaceAttr` callback | Adds complexity, not used | Not needed for gaz |
+| `tint.Attr()` color customization | Over-engineering | Standard coloring sufficient |
+| Windows colorable support | gaz targets Linux | Use standard ANSI codes |
+| Custom level names (`TRC`) | Not used in gaz | Standard level names |
+
+### Migration Path
+
+**Current tint API:**
 ```go
-var HTTPModule = gaz.NewModule("http").
-    // Bundle flags with module
-    Flags(func(fs *pflag.FlagSet) {
-        fs.Int("http-port", 8080, "HTTP server port")
-        fs.Duration("http-timeout", 30*time.Second, "Request timeout")
-    }).
-    // Bundle config prefix
-    WithEnvPrefix("http").
-    // Bundle providers
-    Provide(
-        func(c *gaz.Container) error { return gaz.For[*Router](c).Provider(NewRouter) },
-        func(c *gaz.Container) error { return gaz.For[*Server](c).Provider(NewServer) },
-    ).
-    // Bundle child modules
-    Use(LoggingModule).
-    // Build immutable module
-    Build()
+handler = tint.NewHandler(os.Stdout, &tint.Options{
+    Level:      lvl,
+    AddSource:  cfg.AddSource,
+    TimeFormat: "15:04:05.000",
+})
 ```
 
-### Acceptance Criteria for Modules
-
-- [ ] Modules are immutable after Build()
-- [ ] Child modules applied before parent providers
-- [ ] Flags registered when module applied (if cobra attached)
-- [ ] Duplicate module detection by name
-- [ ] Module name in error messages
+**Internal implementation API:**
+```go
+handler = color.NewHandler(os.Stdout, &color.Options{
+    Level:      lvl,
+    AddSource:  cfg.AddSource,
+    TimeFormat: "15:04:05.000",
+    NoColor:    !isTerminal,  // Optional enhancement
+})
+```
 
 ---
 
-## Sources
+## 4. alexliesenfeld/health
 
-| Source | Type | Confidence |
-|--------|------|------------|
-| uber-go/fx documentation | Context7 | HIGH |
-| google/wire documentation | Context7 | HIGH |
-| Go 1.25 stdlib | Official | HIGH |
-| WebSearch (Go DI patterns 2025) | Community | MEDIUM |
-| WebSearch (Go config patterns) | Community | MEDIUM |
-| gaz codebase analysis | Internal | HIGH |
-| spf13/viper patterns | Context7/Official | HIGH |
+### Current Usage in gaz
+
+**Files:** `health/manager.go`, `health/handlers.go`, `health/writer.go`, `health/types.go`
+
+**Exact API surface used:**
+```go
+// health/manager.go - Check struct
+health.Check{
+    Name:  name,
+    Check: check,  // func(context.Context) error
+}
+
+// health/manager.go:61, 76, 91 - Build checkers
+health.WithCheck(c)
+health.NewChecker(finalOpts...)
+
+// health/handlers.go:16-20 - Create HTTP handlers
+health.NewHandler(checker,
+    health.WithResultWriter(NewIETFResultWriter()),
+    health.WithStatusCodeUp(http.StatusOK),
+    health.WithStatusCodeDown(http.StatusOK),  // or 503
+)
+
+// health/writer.go - ResultWriter interface
+type IETFResultWriter struct{}
+func (rw *IETFResultWriter) Write(
+    result *health.CheckerResult,
+    statusCode int,
+    w http.ResponseWriter,
+    _ *http.Request,
+) error
+
+// health/writer.go - CheckerResult access
+result.Status                           // health.AvailabilityStatus
+result.Details                          // map[string]*CheckResult
+checkResult.Status                      // health.AvailabilityStatus
+checkResult.Timestamp                   // time.Time
+checkResult.Error                       // error
+
+// health/writer.go - AvailabilityStatus constants
+health.StatusUp
+health.StatusDown
+health.StatusUnknown
+```
+
+**Features actually used:**
+| Feature | Used | How |
+|---------|------|-----|
+| `health.Check` struct | YES | Check configuration |
+| `health.Check.Name` | YES | Check identifier |
+| `health.Check.Check` | YES | Check function |
+| `health.NewChecker()` | YES | Create checker |
+| `health.WithCheck()` | YES | Add synchronous check |
+| `health.NewHandler()` | YES | Create HTTP handler |
+| `health.WithResultWriter()` | YES | Custom JSON format (IETF) |
+| `health.WithStatusCodeUp()` | YES | 200 on success |
+| `health.WithStatusCodeDown()` | YES | 200 or 503 on failure |
+| `health.CheckerResult` | YES | Result structure |
+| `health.AvailabilityStatus` | YES | Status enum |
+| `health.StatusUp/Down/Unknown` | YES | Status constants |
+
+**Features NOT used:**
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `WithPeriodicCheck()` | NOT USED | All checks are synchronous |
+| `WithTimeout()` global | NOT USED | Per-check timeout via context |
+| `WithCacheDuration()` | NOT USED | Fresh checks each request |
+| `WithStatusListener()` | NOT USED | No status change callbacks |
+| `WithDisabledAutostart()` | NOT USED | Auto-start is fine |
+| `Check.Timeout` field | NOT USED | Uses context deadline |
+| `checker.Start()/Stop()` | NOT USED | Automatic lifecycle |
+| `checker.IsStarted()` | NOT USED | No lifecycle introspection |
+
+### Table Stakes (Must Have)
+
+| Feature | Reason | Implementation Notes |
+|---------|--------|---------------------|
+| `Check` struct with Name/Check | Check configuration | Keep same structure |
+| `NewChecker(opts...)` | Create checker instance | Functional options |
+| `WithCheck()` option | Add synchronous check | Executed per request |
+| `Checker` interface | Abstract checker | For testability |
+| `NewHandler(checker, opts...)` | Create HTTP handler | Return `http.Handler` |
+| `WithResultWriter()` option | Custom response format | For IETF format |
+| `WithStatusCodeUp()` option | HTTP status on success | Default 200 |
+| `WithStatusCodeDown()` option | HTTP status on failure | Default 503 |
+| `ResultWriter` interface | Custom response format | `Write(result, status, w, r)` |
+| `CheckerResult` struct | Aggregated results | Status + Details map |
+| `CheckResult` per check | Individual result | Status + Timestamp + Error |
+| `AvailabilityStatus` enum | Up/Down/Unknown | For status representation |
+
+### Differentiators (Improvements over alexliesenfeld/health)
+
+| Feature | Value | Notes |
+|---------|-------|-------|
+| Simpler API | Remove unused features | No periodic checks, no caching |
+| Built-in IETF writer | Include IETF format by default | Currently custom in gaz |
+| slog integration | Log check failures | Structured logging |
+| Check metadata | Additional context fields | For richer responses |
+
+### Anti-Features (Do NOT Implement)
+
+| Feature | Why Avoid | What gaz Needs Instead |
+|---------|-----------|------------------------|
+| `WithPeriodicCheck()` | Not used, adds goroutine complexity | Synchronous checks only |
+| `WithCacheDuration()` | Not used, fresh checks needed | Real-time checks |
+| `WithTimeout()` global | Per-check timeout via context | Context deadlines |
+| `WithStatusListener()` | Not used | Not needed |
+| `WithDisabledAutostart()` | Over-engineering | Not needed |
+| `WithInterceptors()` | Not used | Not needed |
+| `checker.Start()/Stop()` lifecycle | Synchronous checks don't need this | Automatic |
+| `checker.Check()` manual trigger | Not used | Via HTTP handler |
+| `GetRunningPeriodicCheckCount()` | Not applicable | Not needed |
+
+### Migration Path
+
+**Current alexliesenfeld/health API:**
+```go
+// Manager
+m.livenessChecks = append(m.livenessChecks, health.Check{
+    Name:  name,
+    Check: check,
+})
+
+checker := health.NewChecker(
+    health.WithCheck(check1),
+    health.WithCheck(check2),
+)
+
+handler := health.NewHandler(checker,
+    health.WithResultWriter(NewIETFResultWriter()),
+    health.WithStatusCodeUp(http.StatusOK),
+    health.WithStatusCodeDown(http.StatusServiceUnavailable),
+)
+```
+
+**Internal implementation API:**
+```go
+// Manager (same structure)
+m.livenessChecks = append(m.livenessChecks, health.Check{
+    Name:  name,
+    Check: check,
+})
+
+checker := health.NewChecker(
+    health.WithCheck(check1),
+    health.WithCheck(check2),
+)
+
+handler := health.NewHandler(checker,
+    health.WithResultWriter(health.IETFWriter()),  // Built-in
+    health.WithStatusCodeUp(http.StatusOK),
+    health.WithStatusCodeDown(http.StatusServiceUnavailable),
+)
+```
 
 ---
 
-*Feature research for: gaz v3.0 API Harmonization*
-*Researched: 2026-01-29*
+## Feature Dependencies
+
+### Dependency Graph
+
+```
+backoff (internal)
+    └── used by: worker/supervisor.go
+
+cron (internal)
+    └── used by: cron/scheduler.go
+
+color (tint replacement)
+    └── used by: logger/provider.go
+
+health (internal)
+    └── used by: health/manager.go, health/handlers.go
+```
+
+### Cross-Package Dependencies
+
+- **backoff**: No dependencies on other gaz packages
+- **cron**: Uses slog for logging (already in gaz)
+- **color**: Implements slog.Handler (standard library)
+- **health**: No dependencies on other gaz packages
+
+---
+
+## Implementation Priority
+
+Based on complexity and value:
+
+| Priority | Package | Complexity | Reason |
+|----------|---------|------------|--------|
+| 1 | color (tint) | LOW | Simple handler, minimal API |
+| 2 | backoff | LOW-MED | Reference impl available, small API |
+| 3 | health | MEDIUM | Larger API but well-defined |
+| 4 | cron | MEDIUM-HIGH | Parser complexity, scheduler logic |
+
+---
+
+## Summary
+
+### Total Features to Implement
+
+| Package | Table Stakes | Differentiators | Anti-Features |
+|---------|--------------|-----------------|---------------|
+| backoff | 7 | 6 | 5 |
+| cron | 11 | 4 | 9 |
+| color (tint) | 7 | 4 | 4 |
+| health | 12 | 4 | 9 |
+| **Total** | **37** | **18** | **27** |
+
+### Key Takeaways
+
+1. **backoff**: Reference implementation in `_tmp_trust/srex/backoff/` covers table stakes; strip retry/ticker complexity
+2. **cron**: Reference implementation in `_tmp_trust/cronx/` is comprehensive; adapt logger interface to slog
+3. **color (tint)**: Simple implementation, focus on ANSI color output with slog.Handler interface
+4. **health**: Most API surface used; simplify by removing periodic checks and caching

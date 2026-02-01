@@ -8,23 +8,21 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v3.0 API Harmonization
+## Current Milestone: v4.0 Dependency Reduction
 
-**Goal:** Harmonize the gaz framework API for consistency, discoverability, and extensibility.
+**Goal:** Replace external dependencies with internal implementations to reduce dependency footprint and gain full control over critical infrastructure.
 
 **Target features:**
-- Merge `service` package into core `gaz`
-- Remove fluent `OnStart`/`OnStop` from `For[T]()` (interface-only lifecycle)
-- Align `worker.Worker` interface with `Starter`/`Stopper` patterns
-- Add `ProviderValues.Unmarshal()` for config namespace resolution
-- Standardize `NewModule()` factory pattern across subsystems
-- Consolidate sentinel errors in `gaz/errors.go`
-- Enhanced gaztest and per-package testing helpers
-- Comprehensive documentation and style guides
+- Replace `jpillora/backoff` with internal `srex/backoff` package
+- Replace `robfig/cron/v3` with internal `cronx` package  
+- Replace `lmittmann/tint` with internal `tintx` colored logger
+- Replace `alexliesenfeld/health` with internal health check implementation
+- Update all consumers to use internal implementations
+- Remove external dependencies from go.mod
 
 ## Current State
 
-**Shipped:** v2.2 Test Coverage (2026-01-29)
+**Shipped:** v3.2 Feature Maturity (2026-02-01)
 
 The framework now provides:
 - **DI Package** (`gaz/di`) — Standalone dependency injection with For[T](), Resolve[T]()
@@ -160,4 +158,4 @@ Target: Internal use first, open source viability later.
 | Health auto-registration via interface | Config implements HealthConfigProvider for opt-in | ✓ Good (v2.1) |
 
 ---
-*Last updated: 2026-01-29 after v3.0 milestone started*
+*Last updated: 2026-02-01 after v4.0 milestone started*

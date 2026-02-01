@@ -1,81 +1,100 @@
-# Requirements: gaz v3.0 API Harmonization + v3.1 Performance & Stability
+# Requirements: gaz v4.0 Dependency Reduction
 
-**Defined:** 2026-01-29
+**Defined:** 2026-02-01
 **Core Value:** Simple, type-safe dependency injection with sane defaults
 
-## v3.0 Requirements
+## v4.0 Requirements
 
-Requirements for v3.0 milestone. Each maps to roadmap phases.
+Requirements for v4.0 milestone. Each maps to roadmap phases.
 
-### Configuration
+### Backoff Package
 
-- [x] **CFG-01**: ProviderValues has Unmarshal(namespace, &target) method for struct-based config resolution
+- [ ] **BKF-01**: `backoff/` package exists with `BackOff` interface defining `NextBackOff()` and `Reset()` methods
+- [ ] **BKF-02**: `ExponentialBackOff` implementation with configurable InitialInterval, MaxInterval, Multiplier, RandomizationFactor
+- [ ] **BKF-03**: Overflow protection clamps result to MaxInterval when calculation exceeds int64
+- [ ] **BKF-04**: Jitter is thread-safe (uses math/rand/v2 or per-instance mutex)
+- [ ] **BKF-05**: `Stop` sentinel constant signals "no more retries"
+- [ ] **BKF-06**: `WithContext()` wrapper for cancellation-aware backoff
+- [ ] **BKF-07**: `worker/backoff.go` uses internal `backoff/` package instead of jpillora/backoff
+- [ ] **BKF-08**: `jpillora/backoff` removed from go.mod
 
-### Lifecycle
+### Cron Package
 
-- [x] **LIF-01**: RegistrationBuilder does not have OnStart/OnStop fluent methods (interface-only lifecycle)
-- [x] **LIF-02**: worker.Worker interface uses OnStart(ctx context.Context) error and OnStop(ctx context.Context) error
-- [x] **LIF-03**: Adapt() helper exists for wrapping third-party types (sql.DB, http.Server) with lifecycle hooks (SKIPPED per user decision)
+- [ ] **CRN-01**: `cronx/` package exists with `Cron` scheduler type
+- [ ] **CRN-02**: Standard 5-field cron expression parser (minute, hour, dom, month, dow)
+- [ ] **CRN-03**: Descriptor support (@daily, @hourly, @weekly, @monthly, @yearly, @annually, @every)
+- [ ] **CRN-04**: `Start()` method begins scheduling, `Stop()` returns context for graceful wait
+- [ ] **CRN-05**: `AddJob(spec, Job)` registers jobs with cron schedules
+- [ ] **CRN-06**: `SkipIfStillRunning` job wrapper prevents overlapping executions
+- [ ] **CRN-07**: `Logger` interface compatible with slog patterns (Info, Error methods)
+- [ ] **CRN-08**: `WithLogger()` and `WithChain()` functional options
+- [ ] **CRN-09**: CRON_TZ prefix support for timezone-specific schedules
+- [ ] **CRN-10**: DST transitions handled correctly (spring forward skips, fall back runs once)
+- [ ] **CRN-11**: `cron/scheduler.go` uses internal `cronx/` package instead of robfig/cron/v3
+- [ ] **CRN-12**: `robfig/cron/v3` removed from go.mod
 
-### Module Consolidation
+### Tint Package
 
-- [x] **MOD-01**: service.Builder functionality is absorbed into gaz.App
-- [x] **MOD-02**: gaz/service package is removed
-- [x] **MOD-03**: Each subsystem package exports NewModule() function returning gaz.Module
-- [x] **MOD-04**: di/gaz relationship is documented (which types are re-exported, when to import each)
+- [ ] **TNT-01**: `tintx/` package exists with `Handler` implementing `slog.Handler`
+- [ ] **TNT-02**: ANSI color output for log levels (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
+- [ ] **TNT-03**: `Options.Level` filters logs by level (uses `slog.Leveler`)
+- [ ] **TNT-04**: `Options.AddSource` includes file:line in output
+- [ ] **TNT-05**: `Options.TimeFormat` customizes timestamp format
+- [ ] **TNT-06**: `WithAttrs()` returns new handler instance (not self) preserving attributes
+- [ ] **TNT-07**: `WithGroup()` returns new handler instance with group prefix
+- [ ] **TNT-08**: TTY detection auto-disables colors for non-terminal output
+- [ ] **TNT-09**: `Options.NoColor` explicitly disables color output
+- [ ] **TNT-10**: `logger/provider.go` uses internal `tintx/` package instead of lmittmann/tint
+- [ ] **TNT-11**: `lmittmann/tint` removed from go.mod
 
-### Error Handling
+### Health Package
 
-- [x] **ERR-01**: Sentinel errors are consolidated in gaz/errors.go
-- [x] **ERR-02**: Error sentinels use namespaced naming (ErrDINotFound, ErrConfigNotFound, etc.)
-- [x] **ERR-03**: All packages use consistent wrapping pattern: fmt.Errorf("pkg: context: %w", err)
+- [ ] **HLT-01**: `healthx/` package exists with `Check` struct (Name, Check func)
+- [ ] **HLT-02**: `NewChecker(opts...)` creates checker instance
+- [ ] **HLT-03**: `WithCheck(check)` option adds synchronous health check
+- [ ] **HLT-04**: `NewHandler(checker, opts...)` creates HTTP handler
+- [ ] **HLT-05**: `WithResultWriter(writer)` option for custom response format
+- [ ] **HLT-06**: `WithStatusCodeUp(code)` and `WithStatusCodeDown(code)` options
+- [ ] **HLT-07**: `CheckerResult` struct with Status and Details map
+- [ ] **HLT-08**: `AvailabilityStatus` enum (StatusUnknown, StatusUp, StatusDown)
+- [ ] **HLT-09**: `ResultWriter` interface for custom response formatting
+- [ ] **HLT-10**: Liveness handler returns 200 even on check failure (matches current behavior)
+- [ ] **HLT-11**: IETF health+json response format (built-in writer)
+- [ ] **HLT-12**: `health/manager.go` uses internal `healthx/` package instead of alexliesenfeld/health
+- [ ] **HLT-13**: `alexliesenfeld/health` removed from go.mod
 
-### Testing
+### Integration
 
-- [x] **TST-01**: gaztest package is enhanced for v3 patterns (Builder API updated, new helpers)
-- [x] **TST-02**: Per-package testing helpers exist (health/testing.go, worker/testing.go, config/testing.go)
-- [x] **TST-03**: Testing guide documentation exists
-
-### Documentation
-
-- [x] **DOC-01**: Style guide for contributors exists (API patterns, naming conventions, config requirements)
-- [x] **DOC-02**: User documentation exists (getting started, tutorials)
-- [x] **DOC-03**: All examples are updated to v3 patterns
-
-## v3.1 Requirements
-
-Requirements for v3.1 milestone. Address critical issues from GAZ_REVIEW.md.
-
-### Performance
-
-- [x] **PERF-01**: DI container uses goid.Get() instead of runtime.Stack() for goroutine ID
-
-### Stability
-
-- [x] **STAB-01**: collectProviderConfigs checks service type before instantiation (no side-effects)
-
-## v3.2 Requirements
-
-Requirements for v3.2 milestone. Feature maturity improvements from GAZ_REVIEW.md Phase 2.
-
-### Features
-
-- [x] **FEAT-01**: WithStrictConfig() option fails startup if config file contains unregistered keys
-- [x] **FEAT-02**: Worker manager has dead letter handling for workers that panic repeatedly
+- [ ] **INT-01**: All existing tests pass after migration
+- [ ] **INT-02**: Test coverage maintained at 90%+ after migration
+- [ ] **INT-03**: No import cycles introduced by new packages
 
 ## Future Requirements
 
-Deferred to v3.1 or later.
+Deferred to v4.1 or later.
 
-### Configuration
+### Backoff
 
-- **CFG-02**: Config struct standard with mapstructure/yaml/json tags on all types
-- **CFG-03**: DefaultConfig() function exists for all config types
+- **BKF-09**: `WithMaxRetries(n)` wrapper limits total attempts
+- **BKF-10**: `Retry()` and `RetryWithData()` helper functions
 
-### Developer Experience
+### Cron
 
-- **DX-01**: Opt-in debug mode for DI operations visibility
-- **DX-02**: Rich structured error types with hints and suggestions
+- **CRN-13**: `Entry`/`EntryID` tracking for job management
+- **CRN-14**: `Remove(id)` for dynamic job removal
+- **CRN-15**: `Entries()` introspection
+
+### Tint
+
+- **TNT-12**: `ReplaceAttr` callback for attribute transformation
+- **TNT-13**: Custom color themes
+- **TNT-14**: Windows console API support
+
+### Health
+
+- **HLT-14**: `WithPeriodicCheck()` for background health polling
+- **HLT-15**: `WithCacheDuration()` for result caching
+- **HLT-16**: `WithTimeout()` global check timeout
 
 ## Out of Scope
 
@@ -83,48 +102,89 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Migration tooling | Clean break, no backward compatibility |
-| Backward compatibility | Breaking changes are allowed in v3 |
-| Changes to _tmp packages | Internal/experimental code |
-| Global container singleton | Anti-pattern, explicitly avoided |
-| Spring-style field injection | Anti-pattern in Go |
-| Dynamic registration after Build() | Violates build-time guarantees |
+| Ticker abstraction in backoff | Adds complexity, supervisor uses time.After |
+| 6-field cron (seconds) | Standard 5-field sufficient for gaz |
+| Cron dynamic job removal | Jobs are static at startup |
+| Windows terminal colors | gaz targets Linux environments |
+| Periodic health checks | Synchronous checks sufficient |
+| Health result caching | Fresh checks needed per request |
 
 ## Traceability
 
 Which phases cover which requirements. Updated during roadmap creation.
 
+### Phase 32: Backoff Package
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 25 | Complete |
-| LIF-01 | Phase 24 | Complete |
-| LIF-02 | Phase 24 | Complete |
-| LIF-03 | Phase 24 | Skipped |
-| MOD-01 | Phase 26 | Complete |
-| MOD-02 | Phase 26 | Complete |
-| MOD-03 | Phase 26 | Complete |
-| MOD-04 | Phase 26 | Complete |
-| ERR-01 | Phase 27 | Complete |
-| ERR-02 | Phase 27 | Complete |
-| ERR-03 | Phase 27 | Complete |
-| TST-01 | Phase 28 | Complete |
-| TST-02 | Phase 28 | Complete |
-| TST-03 | Phase 28 | Complete |
-| DOC-01 | Phase 23 | Complete |
-| DOC-02 | Phase 29 | Complete |
-| DOC-03 | Phase 29 | Complete |
-| PERF-01 | Phase 30 | Complete |
-| STAB-01 | Phase 30 | Complete |
-| FEAT-01 | Phase 31 | Complete |
-| FEAT-02 | Phase 31 | Complete |
+| BKF-01 | 32 | Pending |
+| BKF-02 | 32 | Pending |
+| BKF-03 | 32 | Pending |
+| BKF-04 | 32 | Pending |
+| BKF-05 | 32 | Pending |
+| BKF-06 | 32 | Pending |
+| BKF-07 | 32 | Pending |
+| BKF-08 | 32 | Pending |
+
+### Phase 33: Tint Package
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| TNT-01 | 33 | Pending |
+| TNT-02 | 33 | Pending |
+| TNT-03 | 33 | Pending |
+| TNT-04 | 33 | Pending |
+| TNT-05 | 33 | Pending |
+| TNT-06 | 33 | Pending |
+| TNT-07 | 33 | Pending |
+| TNT-08 | 33 | Pending |
+| TNT-09 | 33 | Pending |
+| TNT-10 | 33 | Pending |
+| TNT-11 | 33 | Pending |
+
+### Phase 34: Cron Package
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CRN-01 | 34 | Pending |
+| CRN-02 | 34 | Pending |
+| CRN-03 | 34 | Pending |
+| CRN-04 | 34 | Pending |
+| CRN-05 | 34 | Pending |
+| CRN-06 | 34 | Pending |
+| CRN-07 | 34 | Pending |
+| CRN-08 | 34 | Pending |
+| CRN-09 | 34 | Pending |
+| CRN-10 | 34 | Pending |
+| CRN-11 | 34 | Pending |
+| CRN-12 | 34 | Pending |
+
+### Phase 35: Health Package + Integration
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| HLT-01 | 35 | Pending |
+| HLT-02 | 35 | Pending |
+| HLT-03 | 35 | Pending |
+| HLT-04 | 35 | Pending |
+| HLT-05 | 35 | Pending |
+| HLT-06 | 35 | Pending |
+| HLT-07 | 35 | Pending |
+| HLT-08 | 35 | Pending |
+| HLT-09 | 35 | Pending |
+| HLT-10 | 35 | Pending |
+| HLT-11 | 35 | Pending |
+| HLT-12 | 35 | Pending |
+| HLT-13 | 35 | Pending |
+| INT-01 | 35 | Pending |
+| INT-02 | 35 | Pending |
+| INT-03 | 35 | Pending |
 
 **Coverage:**
-- v3.0 requirements: 17 total
-- v3.1 requirements: 2 total
-- v3.2 requirements: 2 total
-- Mapped to phases: 21 ✓
+- v4.0 requirements: 47 total
+- Mapped to phases: 47 ✓
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-01-29*
-*Last updated: 2026-02-01 after v3.2 completion*
+*Requirements defined: 2026-02-01*
+*Last updated: 2026-02-01 after roadmap creation*
