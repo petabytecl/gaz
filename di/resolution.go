@@ -30,8 +30,11 @@ func Resolve[T any](c *Container, opts ...ResolveOption) (T, error) {
 		name = TypeName[T]()
 	}
 
-	// Start resolution with empty chain for cycle detection
-	instance, err := c.ResolveByName(name, nil)
+	// Get current chain from container (may be non-nil if called from provider)
+	chain := c.getChain()
+
+	// Continue resolution with current chain for proper cycle detection
+	instance, err := c.ResolveByName(name, chain)
 	if err != nil {
 		var zero T
 		return zero, err
