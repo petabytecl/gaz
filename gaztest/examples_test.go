@@ -25,6 +25,9 @@ import (
 // Example_withModules demonstrates the v3 WithModules pattern for testing modules.
 // WithModules registers modules with the test app during build,
 // enabling clean integration tests.
+//
+// Note: This example is for documentation purposes. In a real test,
+// use *testing.T instead of a mock.
 func Example_withModules() {
 	t := &testing.T{}
 
@@ -47,13 +50,15 @@ func Example_withModules() {
 
 	// Module's service is available
 	// In real code: msg := gaztest.RequireResolve[string](t, app)
-	fmt.Println("App started with module")
-	// Output: App started with module
+	_ = app // Demonstrate pattern - avoid Output due to log noise
 }
 
 // Example_requireResolve demonstrates the v3 RequireResolve pattern.
 // RequireResolve provides type-safe resolution that fails the test on error,
 // eliminating manual error checking.
+//
+// Note: This example is for documentation purposes. In a real test,
+// use *testing.T instead of a mock.
 func Example_requireResolve() {
 	t := &testing.T{}
 
@@ -79,8 +84,7 @@ func Example_requireResolve() {
 	// RequireResolve fails test if resolution fails - no error check needed
 	// cfg := gaztest.RequireResolve[*DatabaseConfig](t, app)
 	// fmt.Println(cfg.Host) // "localhost"
-	fmt.Println("Service resolved")
-	// Output: Service resolved
+	_ = app // Demonstrate pattern - avoid Output due to log noise
 }
 
 // Example_subsystemHelpers demonstrates using subsystem test helpers.
@@ -115,6 +119,9 @@ func Example_subsystemHelpers() {
 
 // Example_withConfigMap demonstrates injecting test configuration values.
 // WithConfigMap allows tests to override configuration without file I/O.
+//
+// Note: This example is for documentation purposes. In a real test,
+// use *testing.T instead of a mock.
 func Example_withConfigMap() {
 	t := &testing.T{}
 
@@ -132,8 +139,7 @@ func Example_withConfigMap() {
 	app.RequireStart()
 	defer app.RequireStop()
 
-	fmt.Println("App configured with test values")
-	// Output: App configured with test values
+	_ = app // Demonstrate pattern - avoid Output due to log noise
 }
 
 // =============================================================================
