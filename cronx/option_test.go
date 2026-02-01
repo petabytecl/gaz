@@ -3,6 +3,7 @@ package cronx
 import (
 	"io"
 	"log/slog"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -39,10 +40,10 @@ func TestWithLogger(t *testing.T) {
 }
 
 func TestWithChain(t *testing.T) {
-	var called bool
+	var called atomic.Bool
 	wrapper := func(j Job) Job {
 		return FuncJob(func() {
-			called = true
+			called.Store(true)
 			j.Run()
 		})
 	}
@@ -53,7 +54,7 @@ func TestWithChain(t *testing.T) {
 	time.Sleep(OneSecond)
 	c.Stop()
 
-	if !called {
+	if !called.Load() {
 		t.Error("expected wrapper to be called")
 	}
 }
