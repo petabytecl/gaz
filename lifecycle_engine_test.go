@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -146,3 +147,4 @@ func (m *mockServiceWrapper) GetInstance(
 func (m *mockServiceWrapper) Start(context.Context) error { return nil }
 func (m *mockServiceWrapper) Stop(context.Context) error  { return nil }
 func (m *mockServiceWrapper) HasLifecycle() bool          { return m.hasLifecycleVal }
+func (m *mockServiceWrapper) ServiceType() reflect.Type   { return nil }

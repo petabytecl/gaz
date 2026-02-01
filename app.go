@@ -29,6 +29,9 @@ const (
 	defaultPerHookTimeout  = 10 * time.Second
 )
 
+// configProviderType is cached for efficient interface checks.
+var configProviderType = reflect.TypeOf((*ConfigProvider)(nil)).Elem()
+
 // exitFunc is the function called for force exit. Variable for testability.
 // Protected by exitFuncMu for thread-safe access during tests.
 //
@@ -374,7 +377,27 @@ func (a *App) collectProviderConfigs() error {
 			continue
 		}
 
-		// Use ResolveByName() instead of GetInstance() to ensure dependencies are recorded
+		// Check if service type implements ConfigProvider BEFORE instantiation
+		// This avoids side effects of instantiating non-ConfigProvider services
+		serviceType := wrapper.ServiceType()
+		if serviceType == nil {
+			continue
+		}
+
+		// For pointer types, check both pointer and element type
+		if !serviceType.Implements(configProviderType) {
+			// Also check pointer-to-type in case methods are on *T
+			if serviceType.Kind() != reflect.Ptr {
+				ptrType := reflect.PointerTo(serviceType)
+				if !ptrType.Implements(configProviderType) {
+					continue
+				}
+			} else {
+				continue
+			}
+		}
+
+		// Only now instantiate - we know it implements ConfigProvider
 		instance, err := a.container.ResolveByName(typeName, nil)
 		if err != nil {
 			continue // Skip services that fail to resolve
@@ -382,6 +405,7 @@ func (a *App) collectProviderConfigs() error {
 
 		cp, ok := instance.(ConfigProvider)
 		if !ok {
+			// This shouldn't happen if type check above is correct, but be defensive
 			continue
 		}
 
