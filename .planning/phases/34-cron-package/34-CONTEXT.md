@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Replace `robfig/cron/v3` with internal `cronx/` package. The internal implementation handles cron expression parsing, schedule calculation, and job scheduling. The existing `cron/scheduler.go` will switch from robfig/cron to cronx.
+Replace `robfig/cron/v3` with internal `cron/internal/` package. The internal implementation handles cron expression parsing, schedule calculation, and job scheduling. The existing `cron/scheduler.go` will switch from robfig/cron to internal.
 
 </domain>
 
@@ -32,10 +32,10 @@ Replace `robfig/cron/v3` with internal `cronx/` package. The internal implementa
 - Document DST handling in package godoc
 
 ### Migration approach
-- Direct replacement: cron/scheduler.go uses cronx types directly, no adapter
+- Direct replacement: cron/scheduler.go uses cron/internal types directly, no adapter
 - Existing tests verify parity: cron/scheduler_test.go covers real usage patterns
-- Remove cron/logger.go (robfig adapter) since cronx uses slog directly
-- Start from reference: Copy _tmp_trust/cronx/, adapt imports and logger
+- Remove cron/logger.go (robfig adapter) since cron/internal uses slog directly
+- Start from reference: Copy _tmp_trust/cron/internal/, adapt imports and logger
 
 ### Claude's Discretion
 - Internal implementation details of schedule calculation
@@ -47,7 +47,7 @@ Replace `robfig/cron/v3` with internal `cronx/` package. The internal implementa
 <specifics>
 ## Specific Ideas
 
-- Reference implementation exists at `_tmp_trust/cronx/` - feature complete with tests
+- Reference implementation exists at `_tmp_trust/cron/internal/` - feature complete with tests
 - Current usage in cron/scheduler.go is straightforward: New(), AddJob(), Start(), Stop()
 - SkipIfStillRunning wrapper is already used - must be supported
 

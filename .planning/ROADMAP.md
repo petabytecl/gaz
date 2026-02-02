@@ -204,9 +204,9 @@ Plans:
 
 **Target:** Replace 4 external dependencies:
 - `jpillora/backoff` → internal `backoff/` package
-- `lmittmann/tint` → internal `tintx/` package
-- `robfig/cron/v3` → internal `cronx/` package
-- `alexliesenfeld/health` → internal `healthx/` package
+- `lmittmann/tint` → internal `logger/tint/` package
+- `robfig/cron/v3` → internal `cron/internal/` package
+- `alexliesenfeld/health` → internal `health/internal/` package
 
 ### Phase 32: Backoff Package
 
@@ -237,16 +237,16 @@ Plans:
 **Estimate:** 2-3 hours (no reference, but slog.Handler interface well-defined)
 
 **Success Criteria** (what must be TRUE):
-1. `tintx/` package exists with `Handler` implementing `slog.Handler` interface
+1. `logger/tint/` package exists with `Handler` implementing `slog.Handler` interface
 2. Log levels display in correct ANSI colors (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
 3. `WithAttrs()` and `WithGroup()` return new handler instances preserving context
 4. TTY detection auto-disables colors for non-terminal output (or NoColor option)
-5. logger/provider uses internal `tintx/` package and lmittmann/tint is removed from go.mod
+5. logger/provider uses internal `logger/tint/` package and lmittmann/tint is removed from go.mod
 
 **Plans:** 3 plans in 3 waves
 
 Plans:
-- [x] 33-01-PLAN.md — Core tintx package (Handler, Options, buffer pool, TTY detection)
+- [x] 33-01-PLAN.md — Core logger/tint package (Handler, Options, buffer pool, TTY detection)
 - [x] 33-02-PLAN.md — Handle method with colorized output + comprehensive tests
 - [x] 33-03-PLAN.md — Logger integration and dependency removal
 
@@ -255,19 +255,19 @@ Plans:
 **Goal:** Scheduled tasks use internal cron engine implementation
 **Depends on:** Phase 33
 **Requirements:** CRN-01, CRN-02, CRN-03, CRN-04, CRN-05, CRN-06, CRN-07, CRN-08, CRN-09, CRN-10, CRN-11, CRN-12
-**Estimate:** 4-6 hours (reference implementation exists in `_tmp_trust/cronx/`)
+**Estimate:** 4-6 hours (reference implementation exists in `_tmp_trust/cron/internal/`)
 
 **Success Criteria** (what must be TRUE):
-1. `cronx/` package exists with `Cron` scheduler type and standard 5-field parser
+1. `cron/internal/` package exists with `Cron` scheduler type and standard 5-field parser
 2. Descriptor shortcuts (@daily, @hourly, @weekly, @monthly, @yearly, @every) work correctly
 3. SkipIfStillRunning wrapper prevents overlapping job executions
 4. CRON_TZ prefix and DST transitions are handled correctly
-5. cron/scheduler uses internal `cronx/` package and robfig/cron/v3 is removed from go.mod
+5. cron/scheduler uses internal `cron/internal/` package and robfig/cron/v3 is removed from go.mod
 
 **Plans:** 3 plans in 3 waves
 
 Plans:
-- [x] 34-01-PLAN.md — Core cronx package (types, schedule, parser)
+- [x] 34-01-PLAN.md — Core cron/internal package (types, schedule, parser)
 - [x] 34-02-PLAN.md — Cron scheduler and chain wrappers
 - [x] 34-03-PLAN.md — Integration into cron/scheduler and dependency removal
 
@@ -279,18 +279,18 @@ Plans:
 **Estimate:** 3-4 hours (no reference, highest API surface)
 
 **Success Criteria** (what must be TRUE):
-1. `healthx/` package exists with `Check`, `Checker`, `Handler`, and `ResultWriter` types
+1. `health/internal/` package exists with `Check`, `Checker`, `Handler`, and `ResultWriter` types
 2. Health handler returns correct status codes (200 for up, configurable for down)
 3. Liveness handler returns 200 even when checks fail (matching current behavior)
 4. IETF health+json response format is built-in default
-5. health/manager uses internal `healthx/` package and alexliesenfeld/health is removed from go.mod
+5. health/manager uses internal `health/internal/` package and alexliesenfeld/health is removed from go.mod
 6. All existing tests pass (`go test ./...` succeeds)
 7. Test coverage maintained at 90%+ overall
 
 **Plans:** 3 plans in 3 waves
 
 Plans:
-- [x] 35-01-PLAN.md — Core healthx package (Check, Checker, parallel execution)
+- [x] 35-01-PLAN.md — Core health/internal package (Check, Checker, parallel execution)
 - [x] 35-02-PLAN.md — HTTP handler and IETF result writer
 - [x] 35-03-PLAN.md — Integration and dependency removal
 

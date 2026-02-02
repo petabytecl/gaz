@@ -9,9 +9,9 @@ requires:
   - phase: 34-01
     provides: Schedule, ScheduleParser, SpecSchedule, Parser
 provides:
-  - cronx/cron.go - Cron scheduler with Start/Stop/AddJob/AddFunc/Entries/Entry/Remove
-  - cronx/chain.go - JobWrapper, Chain, SkipIfStillRunning, Recover, DelayIfStillRunning
-  - cronx/option.go - Option, WithLogger, WithChain, WithLocation, WithParser, WithSeconds
+  - cron/internal/cron.go - Cron scheduler with Start/Stop/AddJob/AddFunc/Entries/Entry/Remove
+  - cron/internal/chain.go - JobWrapper, Chain, SkipIfStillRunning, Recover, DelayIfStillRunning
+  - cron/internal/option.go - Option, WithLogger, WithChain, WithLocation, WithParser, WithSeconds
 affects: [34-03, cron]
 
 # Tech tracking
@@ -21,12 +21,12 @@ tech-stack:
 
 key-files:
   created:
-    - cronx/cron.go
-    - cronx/cron_test.go
-    - cronx/chain.go
-    - cronx/chain_test.go
-    - cronx/option.go
-    - cronx/option_test.go
+    - cron/internal/cron.go
+    - cron/internal/cron_test.go
+    - cron/internal/chain.go
+    - cron/internal/chain_test.go
+    - cron/internal/option.go
+    - cron/internal/option_test.go
   modified: []
 
 key-decisions:
@@ -77,12 +77,12 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- `cronx/cron.go` - Main Cron type with Start/Stop/AddJob lifecycle
-- `cronx/cron_test.go` - Comprehensive scheduler behavior tests
-- `cronx/chain.go` - JobWrapper, Chain, SkipIfStillRunning, Recover, DelayIfStillRunning
-- `cronx/chain_test.go` - Chain wrapper tests
-- `cronx/option.go` - Functional options for Cron configuration
-- `cronx/option_test.go` - Option tests
+- `cron/internal/cron.go` - Main Cron type with Start/Stop/AddJob lifecycle
+- `cron/internal/cron_test.go` - Comprehensive scheduler behavior tests
+- `cron/internal/chain.go` - JobWrapper, Chain, SkipIfStillRunning, Recover, DelayIfStillRunning
+- `cron/internal/chain_test.go` - Chain wrapper tests
+- `cron/internal/option.go` - Functional options for Cron configuration
+- `cron/internal/option_test.go` - Option tests
 
 ## Decisions Made
 
@@ -104,7 +104,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- Full cronx package ready for Phase 34-03 (Integration into cron/scheduler and dependency removal)
+- Full cron/internal package ready for Phase 34-03 (Integration into cron/scheduler and dependency removal)
 - Cron scheduler exports all required types: Cron, Entry, EntryID, Job, FuncJob, New
 - Chain wrappers provide SkipIfStillRunning, Recover, DelayIfStillRunning
 - Options provide WithLogger, WithChain, WithLocation, WithParser, WithSeconds

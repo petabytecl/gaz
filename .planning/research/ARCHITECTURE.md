@@ -47,16 +47,16 @@ gaz/
 |   |-- exponential.go # ExponentialBackOff implementation
 |   |-- options.go     # Functional options
 |
-|-- cronx/             # NEW: internal cron engine (forked from _tmp_trust/cronx)
+|-- cron/internal/             # NEW: internal cron engine (forked from _tmp_trust/cronx)
 |   |-- cron.go        # Cron scheduler core
 |   |-- chain.go       # Job wrappers (Recover, SkipIfStillRunning)
 |   |-- parser.go      # Schedule parsing
 |   |-- logger.go      # Logger interface (uses slog, not logx)
 |
-|-- tintx/             # NEW: colored slog handler
+|-- logger/tint/             # NEW: colored slog handler
 |   |-- handler.go     # slog.Handler implementation with colors
 |
-|-- healthx/           # NEW: health check core (replaces alexliesenfeld/health)
+|-- health/internal/           # NEW: health check core (replaces alexliesenfeld/health)
 |   |-- checker.go     # Checker interface and implementation
 |   |-- check.go       # Check struct and execution
 |   |-- result.go      # CheckerResult, AvailabilityStatus
@@ -66,17 +66,17 @@ gaz/
 |   |-- backoff.go     # Config wraps backoff.ExponentialBackOff
 |   |-- supervisor.go  # Uses internal backoff.BackOff
 |
-|-- cron/              # MODIFIED: use internal cronx
-|   |-- scheduler.go   # Wraps cronx.Cron instead of robfig/cron
-|   |-- logger.go      # Adapter cronx.Logger to slog
+|-- cron/              # MODIFIED: use cron/internal
+|   |-- scheduler.go   # Wraps internal.Cron instead of robfig/cron
+|   |-- logger.go      # Adapter internal.Logger to slog
 |
-|-- logger/            # MODIFIED: use internal tintx
-|   |-- provider.go    # Uses tintx.Handler for text format
+|-- logger/            # MODIFIED: use logger/tint
+|   |-- provider.go    # Uses tint.Handler for text format
 |
-|-- health/            # MODIFIED: use internal healthx
-    |-- manager.go     # Returns healthx.Checker
-    |-- handlers.go    # Uses healthx.NewHandler
-    |-- writer.go      # Uses healthx.CheckerResult
+|-- health/            # MODIFIED: use health/internal
+    |-- manager.go     # Returns internal.Checker
+    |-- handlers.go    # Uses internal.NewHandler
+    |-- writer.go      # Uses internal.CheckerResult
 ```
 
 ## Integration Points
@@ -156,22 +156,22 @@ func NewSlogAdapter(logger *slog.Logger) cron.Logger {
 **Target integration:**
 ```go
 // cron/scheduler.go
-import "github.com/petabytecl/gaz/cronx"
+import "github.com/petabytecl/gaz/cron/internal"
 
 type Scheduler struct {
-    cron *cronx.Cron
+    cron *internal.Cron
 }
 
 func NewScheduler(...) *Scheduler {
-    c := cronx.New(
-        cronx.WithLogger(NewSlogAdapter(logger)),
-        cronx.WithChain(cronx.SkipIfStillRunning(NewSlogAdapter(logger))),
+    c := internal.New(
+        internal.WithLogger(NewSlogAdapter(logger)),
+        internal.WithChain(internal.SkipIfStillRunning(NewSlogAdapter(logger))),
     )
     return &Scheduler{cron: c}
 }
 
 // cron/logger.go - NEW INTERFACE
-// cronx uses its own Logger interface that matches slog patterns
+// cron/internal uses its own Logger interface that matches slog patterns
 type CronLogger interface {
     Info(msg string, keysAndValues ...any)
     Error(err error, msg string, keysAndValues ...any)
@@ -180,9 +180,9 @@ type CronLogger interface {
 
 **API Change:** Internal only. `Scheduler` public API unchanged.
 
-**Key consideration:** The cronx reference uses `logx.Logger` (go-logr/logr). We must replace this with an slog-compatible interface:
+**Key consideration:** The cron/internal reference uses `logx.Logger` (go-logr/logr). We must replace this with an slog-compatible interface:
 ```go
-// In cronx package
+// In cron/internal package
 type Logger interface {
     Info(msg string, keysAndValues ...any)
     Error(err error, msg string, keysAndValues ...any)
@@ -212,11 +212,11 @@ func NewLogger(cfg *Config) *slog.Logger {
 **Target integration:**
 ```go
 // logger/provider.go
-import "github.com/petabytecl/gaz/tintx"
+import "github.com/petabytecl/gaz/logger/tint"
 
 func NewLogger(cfg *Config) *slog.Logger {
     if cfg.Format == "text" {
-        handler = tintx.NewHandler(os.Stdout, &tintx.Options{
+        handler = tint.NewHandler(os.Stdout, &tint.Options{
             Level:      lvl,
             AddSource:  cfg.AddSource,
             TimeFormat: "15:04:05.000",
@@ -225,9 +225,9 @@ func NewLogger(cfg *Config) *slog.Logger {
 }
 ```
 
-**API Change:** None. `tintx.Handler` implements `slog.Handler` just like `tint.Handler`.
+**API Change:** None. `tint.Handler` implements `slog.Handler` just like `tint.Handler`.
 
-**Implementation note:** tintx needs to implement:
+**Implementation note:** logger/tint needs to implement:
 - ANSI color codes for levels (ERROR=red, WARN=yellow, INFO=green, DEBUG=gray)
 - Timestamp formatting
 - Source file/line info
@@ -270,42 +270,42 @@ func (rw *IETFResultWriter) Write(
 **Target integration:**
 ```go
 // health/manager.go
-import "github.com/petabytecl/gaz/healthx"
+import "github.com/petabytecl/gaz/health/internal"
 
 type Manager struct {
-    livenessChecks  []healthx.Check
-    readinessChecks []healthx.Check
+    livenessChecks  []internal.Check
+    readinessChecks []internal.Check
 }
 
-func (m *Manager) LivenessChecker(opts ...healthx.CheckerOption) healthx.Checker {
-    return healthx.NewChecker(finalOpts...)
+func (m *Manager) LivenessChecker(opts ...internal.CheckerOption) internal.Checker {
+    return internal.NewChecker(finalOpts...)
 }
 
 // health/handlers.go
 func (m *Manager) NewLivenessHandler() http.Handler {
     checker := m.LivenessChecker()
-    return healthx.NewHandler(checker,
-        healthx.WithResultWriter(NewIETFResultWriter()),
+    return internal.NewHandler(checker,
+        internal.WithResultWriter(NewIETFResultWriter()),
     )
 }
 
-// health/writer.go - implements healthx.ResultWriter
+// health/writer.go - implements internal.ResultWriter
 func (rw *IETFResultWriter) Write(
-    result *healthx.CheckerResult,
+    result *internal.CheckerResult,
     statusCode int,
     w http.ResponseWriter,
     _ *http.Request,
 ) error
 ```
 
-**API Change:** Method signatures change from `health.*` types to `healthx.*` types. This is a **breaking change** for any consumer that:
+**API Change:** Method signatures change from `health.*` types to `internal.*` types. This is a **breaking change** for any consumer that:
 1. Uses `health.CheckerOption` type directly
 2. Stores `health.Checker` interface
 3. Accesses `health.CheckerResult` fields
 
 **Migration strategy:**
-1. healthx types must exactly match alexliesenfeld/health API signatures
-2. Type aliases can ease migration: `type Check = healthx.Check`
+1. health/internal types must exactly match alexliesenfeld/health API signatures
+2. Type aliases can ease migration: `type Check = internal.Check`
 3. Deprecation period with both available (optional)
 
 ## New Components Needed
@@ -324,17 +324,17 @@ func (rw *IETFResultWriter) Write(
 - Remove `github.com/pkg/errors` dependency (use standard `errors` package)
 - Keep API surface minimal (no ticker, no tries initially)
 
-### 2. cronx/ package (fork from _tmp_trust/cronx)
+### 2. cron/internal/ package (fork from _tmp_trust/cronx)
 
 **Files to create:**
 | File | Purpose | Source |
 |------|---------|--------|
-| `cronx/cron.go` | `Cron` scheduler, `Entry`, `Schedule` | `_tmp_trust/cronx/cron.go` |
-| `cronx/chain.go` | `JobWrapper`, `Recover`, `SkipIfStillRunning` | `_tmp_trust/cronx/chain.go` |
-| `cronx/parser.go` | Cron expression parsing | `_tmp_trust/cronx/parser.go` |
-| `cronx/spec.go` | Schedule spec types | `_tmp_trust/cronx/spec.go` |
-| `cronx/option.go` | Functional options | `_tmp_trust/cronx/option.go` |
-| `cronx/constantdelay.go` | `ConstantDelaySchedule` | `_tmp_trust/cronx/constantdelay.go` |
+| `cron/internal/cron.go` | `Cron` scheduler, `Entry`, `Schedule` | `_tmp_trust/cron/internal/cron.go` |
+| `cron/internal/chain.go` | `JobWrapper`, `Recover`, `SkipIfStillRunning` | `_tmp_trust/cron/internal/chain.go` |
+| `cron/internal/parser.go` | Cron expression parsing | `_tmp_trust/cron/internal/parser.go` |
+| `cron/internal/spec.go` | Schedule spec types | `_tmp_trust/cron/internal/spec.go` |
+| `cron/internal/option.go` | Functional options | `_tmp_trust/cron/internal/option.go` |
+| `cron/internal/constantdelay.go` | `ConstantDelaySchedule` | `_tmp_trust/cron/internal/constantdelay.go` |
 
 **Modifications from source:**
 - Replace `logx.Logger` with local slog-compatible interface:
@@ -347,14 +347,14 @@ func (rw *IETFResultWriter) Write(
 - Remove Azure DevOps import paths
 - Keep full robfig/cron API compatibility
 
-### 3. tintx/ package (new implementation)
+### 3. logger/tint/ package (new implementation)
 
 **Files to create:**
 | File | Purpose |
 |------|---------|
-| `tintx/handler.go` | `Handler` implementing `slog.Handler` |
-| `tintx/color.go` | ANSI color constants and helpers |
-| `tintx/options.go` | `Options` struct with `Level`, `AddSource`, `TimeFormat` |
+| `logger/tint/handler.go` | `Handler` implementing `slog.Handler` |
+| `logger/tint/color.go` | ANSI color constants and helpers |
+| `logger/tint/options.go` | `Options` struct with `Level`, `AddSource`, `TimeFormat` |
 
 **Implementation scope:**
 - Unix terminal support (ANSI escape codes)
@@ -368,16 +368,16 @@ func (rw *IETFResultWriter) Write(
 - Custom color schemes
 - ReplaceAttr hooks
 
-### 4. healthx/ package (new implementation)
+### 4. health/internal/ package (new implementation)
 
 **Files to create:**
 | File | Purpose |
 |------|---------|
-| `healthx/check.go` | `Check` struct, `CheckFunc` type |
-| `healthx/checker.go` | `Checker` interface, `NewChecker()` |
-| `healthx/result.go` | `CheckerResult`, `CheckResult`, `AvailabilityStatus` |
-| `healthx/options.go` | `CheckerOption`, `WithCheck`, `WithTimeout`, etc. |
-| `healthx/handler.go` | `NewHandler()`, `ResultWriter` interface |
+| `health/internal/check.go` | `Check` struct, `CheckFunc` type |
+| `health/internal/checker.go` | `Checker` interface, `NewChecker()` |
+| `health/internal/result.go` | `CheckerResult`, `CheckResult`, `AvailabilityStatus` |
+| `health/internal/options.go` | `CheckerOption`, `WithCheck`, `WithTimeout`, etc. |
+| `health/internal/handler.go` | `NewHandler()`, `ResultWriter` interface |
 
 **API surface (must match alexliesenfeld/health):**
 ```go
@@ -464,18 +464,18 @@ app.go
                     |-> backoff.ExponentialBackOff <- INTERNAL
 
   |-> cron.NewScheduler()
-        |-> cronx.New() <- INTERNAL
-              |-> cronx.WithLogger()
-              |-> cronx.WithChain()
+        |-> internal.New() <- INTERNAL
+              |-> internal.WithLogger()
+              |-> internal.WithChain()
 
   |-> logger.NewLogger()
-        |-> tintx.NewHandler() <- INTERNAL
+        |-> tint.NewHandler() <- INTERNAL
 
 health.Module()
   |-> Manager.LivenessChecker()
-        |-> healthx.NewChecker() <- INTERNAL
+        |-> internal.NewChecker() <- INTERNAL
   |-> Manager.NewLivenessHandler()
-        |-> healthx.NewHandler() <- INTERNAL
+        |-> internal.NewHandler() <- INTERNAL
 ```
 
 ## Suggested Build Order
@@ -498,7 +498,7 @@ Based on dependency analysis and risk assessment:
 4. Update `worker/supervisor.go` to use `backoff.BackOff` interface
 5. Remove `jpillora/backoff` from `go.mod`
 
-### Phase 2: tintx (Low Risk, No Dependencies)
+### Phase 2: logger/tint (Low Risk, No Dependencies)
 
 **Rationale:**
 - Completely standalone package
@@ -507,12 +507,12 @@ Based on dependency analysis and risk assessment:
 - Limited feature scope needed
 
 **Steps:**
-1. Create `tintx/` package
+1. Create `logger/tint/` package
 2. Implement `slog.Handler` with color support
-3. Update `logger/provider.go` to use `tintx.NewHandler`
+3. Update `logger/provider.go` to use `tint.NewHandler`
 4. Remove `lmittmann/tint` from `go.mod`
 
-### Phase 3: cronx (Medium Risk, Logger Interface)
+### Phase 3: cron/internal (Medium Risk, Logger Interface)
 
 **Rationale:**
 - Fork is mostly complete in `_tmp_trust/cronx`
@@ -520,15 +520,15 @@ Based on dependency analysis and risk assessment:
 - Scheduler wrapper hides implementation details
 
 **Steps:**
-1. Create `cronx/` package (fork from `_tmp_trust/cronx`)
+1. Create `cron/internal/` package (fork from `_tmp_trust/cronx`)
 2. Define local `Logger` interface (matching cron.Logger)
 3. Update all `logx.Logger` references
 4. Remove Azure DevOps imports
-5. Update `cron/scheduler.go` to use internal cronx
+5. Update `cron/scheduler.go` to use cron/internal
 6. Update `cron/logger.go` adapter if needed
 7. Remove `robfig/cron/v3` from `go.mod`
 
-### Phase 4: healthx (Highest Risk, Full API Surface)
+### Phase 4: health/internal (Highest Risk, Full API Surface)
 
 **Rationale:**
 - Must replicate full alexliesenfeld/health API
@@ -537,7 +537,7 @@ Based on dependency analysis and risk assessment:
 - Requires careful testing
 
 **Steps:**
-1. Create `healthx/` package
+1. Create `health/internal/` package
 2. Implement `Check`, `Checker`, `CheckerResult` types
 3. Implement `NewChecker()` with options
 4. Implement `NewHandler()` with options
@@ -568,9 +568,9 @@ All new packages are **leaf packages** with no gaz dependencies:
 
 ```
 backoff/    <- imports only stdlib
-tintx/      <- imports only stdlib (log/slog)
-cronx/      <- imports only stdlib
-healthx/    <- imports only stdlib (net/http)
+logger/tint/      <- imports only stdlib (log/slog)
+cron/internal/      <- imports only stdlib
+health/internal/    <- imports only stdlib (net/http)
 ```
 
 This placement is **safe** because:
@@ -589,7 +589,7 @@ This placement is **safe** because:
       worker          cron           health
          |               |               |
          v               v               v
-      backoff         cronx          healthx
+      backoff         cron/internal          health/internal
          |               |               |
          v               v               v
        stdlib         stdlib         stdlib
@@ -597,7 +597,7 @@ This placement is **safe** because:
        logger
          |
          v
-       tintx
+       logger/tint
          |
          v
        stdlib
@@ -610,9 +610,9 @@ This placement is **safe** because:
 | Package | Test Focus |
 |---------|------------|
 | `backoff/` | Exponential calculation, jitter, reset |
-| `tintx/` | Color output, level formatting, time formatting |
-| `cronx/` | Schedule parsing, job execution, chain wrappers |
-| `healthx/` | Check execution, timeout handling, result aggregation |
+| `logger/tint/` | Color output, level formatting, time formatting |
+| `cron/internal/` | Schedule parsing, job execution, chain wrappers |
+| `health/internal/` | Check execution, timeout handling, result aggregation |
 
 ### Integration Tests (Consumer Packages)
 
@@ -636,9 +636,9 @@ For each phase, verify:
 | Component | Risk | Mitigation |
 |-----------|------|------------|
 | backoff | LOW | Well-isolated, single consumer |
-| tintx | LOW | Simple slog.Handler, feature parity easy |
-| cronx | MEDIUM | Larger codebase, logger interface change |
-| healthx | HIGH | Full API replication, multiple consumers, public types |
+| logger/tint | LOW | Simple slog.Handler, feature parity easy |
+| cron/internal | MEDIUM | Larger codebase, logger interface change |
+| health/internal | HIGH | Full API replication, multiple consumers, public types |
 
 ## Sources
 
@@ -648,7 +648,7 @@ For each phase, verify:
   - `logger/provider.go`
   - `health/manager.go`, `health/handlers.go`, `health/writer.go`
   - `_tmp_trust/srex/backoff/*`
-  - `_tmp_trust/cronx/*`
+  - `_tmp_trust/cron/internal/*`
 
 - **HIGH confidence:** Context7 documentation for:
   - robfig/cron Logger interface

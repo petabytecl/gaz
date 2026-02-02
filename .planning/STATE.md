@@ -82,7 +82,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 See: .planning/research/v4.0-SUMMARY.md
 
 - Build order follows risk escalation: backoff → tint → cron → health
-- Reference implementations exist for backoff and cronx in `_tmp_trust/`
+- Reference implementations exist for backoff and cron in `_tmp_trust/`
 - Total estimate: 10-15 hours (actual: ~6 hours)
 
 ### Blockers/Concerns

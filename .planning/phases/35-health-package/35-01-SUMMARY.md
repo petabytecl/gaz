@@ -2,14 +2,14 @@
 phase: 35-health-package
 plan: 01
 subsystem: health
-tags: [healthx, health-checks, parallel-execution, timeout, panic-recovery]
+tags: [health-internal, health-checks, parallel-execution, timeout, panic-recovery]
 
 # Dependency graph
 requires:
   - phase: 34
-    provides: cronx internal cron implementation pattern
+    provides: cron/internal internal cron implementation pattern
 provides:
-  - healthx package with Check, Checker, and CheckerResult types
+  - health/internal package with Check, Checker, and CheckerResult types
   - Parallel check execution with per-check timeouts
   - Panic recovery for individual check failures
   - Critical vs warning check distinction
@@ -22,12 +22,12 @@ tech-stack:
 
 key-files:
   created:
-    - healthx/doc.go
-    - healthx/status.go
-    - healthx/status_test.go
-    - healthx/check.go
-    - healthx/checker.go
-    - healthx/checker_test.go
+    - health/internal/doc.go
+    - health/internal/status.go
+    - health/internal/status_test.go
+    - health/internal/check.go
+    - health/internal/checker.go
+    - health/internal/checker_test.go
   modified: []
 
 key-decisions:
@@ -45,9 +45,9 @@ duration: 11min
 completed: 2026-02-02
 ---
 
-# Phase 35 Plan 01: Core healthx Package Summary
+# Phase 35 Plan 01: Core health/internal Package Summary
 
-**Created core healthx package with Check types, status enum, and parallel Checker implementation with timeout and panic recovery**
+**Created core health/internal package with Check types, status enum, and parallel Checker implementation with timeout and panic recovery**
 
 ## Performance
 
@@ -59,7 +59,7 @@ completed: 2026-02-02
 
 ## Accomplishments
 
-- Created healthx package with comprehensive documentation
+- Created health/internal package with comprehensive documentation
 - Implemented AvailabilityStatus enum (StatusUnknown, StatusUp, StatusDown)
 - Created Check struct with Name, Check func, Timeout, and Critical fields
 - Implemented parallel Checker with goroutine-based concurrent execution
@@ -71,17 +71,17 @@ completed: 2026-02-02
 
 Each task was committed atomically:
 
-1. **Task 1: Create healthx package with status enum and check types** - `8c64a96` (feat)
+1. **Task 1: Create health/internal package with status enum and check types** - `8c64a96` (feat)
 2. **Task 2: Create parallel checker with timeout and panic recovery** - `ebf662b` (feat)
 
 ## Files Created/Modified
 
-- `healthx/doc.go` - Package documentation explaining purpose and usage
-- `healthx/status.go` - AvailabilityStatus enum with StatusUnknown, StatusUp, StatusDown
-- `healthx/status_test.go` - Tests for status constants and string representation
-- `healthx/check.go` - Check struct and CheckResult struct definitions
-- `healthx/checker.go` - Checker interface, NewChecker, WithCheck, WithTimeout options
-- `healthx/checker_test.go` - Comprehensive tests (98.4% coverage)
+- `health/internal/doc.go` - Package documentation explaining purpose and usage
+- `health/internal/status.go` - AvailabilityStatus enum with StatusUnknown, StatusUp, StatusDown
+- `health/internal/status_test.go` - Tests for status constants and string representation
+- `health/internal/check.go` - Check struct and CheckResult struct definitions
+- `health/internal/checker.go` - Checker interface, NewChecker, WithCheck, WithTimeout options
+- `health/internal/checker_test.go` - Comprehensive tests (98.4% coverage)
 
 ## Decisions Made
 

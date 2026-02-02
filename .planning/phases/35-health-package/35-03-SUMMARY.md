@@ -2,7 +2,7 @@
 phase: 35-health-package
 plan: 03
 subsystem: health
-tags: [healthx, health-package, dependency-removal, integration]
+tags: [health-internal, health-package, dependency-removal, integration]
 
 # Dependency graph
 requires:
@@ -11,7 +11,7 @@ requires:
   - phase: 35-02
     provides: ResultWriter, IETFResultWriter, NewHandler
 provides:
-  - health package using internal healthx (no external deps)
+  - health package using internal health/internal (no external deps)
   - alexliesenfeld/health removed from go.mod
   - Full v4.0 dependency reduction complete
 affects: []
@@ -33,9 +33,9 @@ key-files:
     - health/writer_test.go
     - health/testing.go
     - health/testing_test.go
-    - healthx/checker.go
-    - healthx/checker_test.go
-    - healthx/handler_test.go
+    - health/internal/checker.go
+    - health/internal/checker_test.go
+    - health/internal/handler_test.go
     - go.mod
     - go.sum
 
@@ -45,7 +45,7 @@ key-decisions:
   - "IETFResultWriter kept as type alias for backward compatibility"
 
 patterns-established:
-  - "Type alias for backward compatibility (IETFResultWriter = healthx.IETFResultWriter)"
+  - "Type alias for backward compatibility (IETFResultWriter = health/internal.IETFResultWriter)"
   - "Internal package replacement pattern (import swap with API compatibility)"
 
 # Metrics
@@ -55,7 +55,7 @@ completed: 2026-02-02
 
 # Phase 35 Plan 03: Integration and Dependency Removal Summary
 
-**Migrated health package to use internal healthx and removed alexliesenfeld/health dependency, completing v4.0 dependency reduction**
+**Migrated health package to use internal health/internal and removed alexliesenfeld/health dependency, completing v4.0 dependency reduction**
 
 ## Performance
 
@@ -67,35 +67,35 @@ completed: 2026-02-02
 
 ## Accomplishments
 
-- Migrated health/manager.go to use healthx types (Check, Checker, CheckerOption)
-- Updated health/handlers.go to use healthx.NewHandler with healthx options
-- Replaced health/writer.go with thin wrapper (type alias to healthx.IETFResultWriter)
-- Updated all health package tests to use healthx types
+- Migrated health/manager.go to use health/internal types (Check, Checker, CheckerOption)
+- Updated health/handlers.go to use health/internal.NewHandler with health/internal options
+- Replaced health/writer.go with thin wrapper (type alias to health/internal.IETFResultWriter)
+- Updated all health package tests to use health/internal types
 - Removed alexliesenfeld/health from go.mod via go mod tidy
 - All tests pass with 91.7% overall coverage
-- No import cycles - healthx/ is independent (stdlib only)
+- No import cycles - health/internal/ is independent (stdlib only)
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Migrate health/manager.go to use healthx** - `1d24db1` (feat)
-2. **Task 2: Migrate health handlers and writer to use healthx** - `8526d23` (feat)
+1. **Task 1: Migrate health/manager.go to use health/internal** - `1d24db1` (feat)
+2. **Task 2: Migrate health handlers and writer to use health/internal** - `8526d23` (feat)
 3. **Task 3: Remove alexliesenfeld/health dependency** - `5dc1993` (feat)
 
 ## Files Created/Modified
 
-- `health/manager.go` - Uses healthx.Check and healthx.NewChecker
-- `health/handlers.go` - Uses healthx.NewHandler with healthx options
-- `health/writer.go` - Type alias to healthx.IETFResultWriter
-- `health/manager_test.go` - Uses healthx.StatusUp for status checks
+- `health/manager.go` - Uses health/internal.Check and health/internal.NewChecker
+- `health/handlers.go` - Uses health/internal.NewHandler with health/internal options
+- `health/writer.go` - Type alias to health/internal.IETFResultWriter
+- `health/manager_test.go` - Uses health/internal.StatusUp for status checks
 - `health/handlers_test.go` - No changes needed
-- `health/writer_test.go` - Uses healthx types with WithShowDetails/WithShowErrors
-- `health/testing.go` - Uses healthx.StatusUp for RequireHealthy
+- `health/writer_test.go` - Uses health/internal types with WithShowDetails/WithShowErrors
+- `health/testing.go` - Uses health/internal.StatusUp for RequireHealthy
 - `health/testing_test.go` - Updated expectations for empty checker behavior
-- `healthx/checker.go` - Empty checker returns StatusUp (compatibility)
-- `healthx/checker_test.go` - Updated tests for StatusUp behavior
-- `healthx/handler_test.go` - Updated test for empty checker returning 200
+- `health/internal/checker.go` - Empty checker returns StatusUp (compatibility)
+- `health/internal/checker_test.go` - Updated tests for StatusUp behavior
+- `health/internal/handler_test.go` - Updated test for empty checker returning 200
 - `go.mod` - alexliesenfeld/health removed
 - `go.sum` - Updated checksums
 
@@ -103,7 +103,7 @@ Each task was committed atomically:
 
 1. **Empty checker returns StatusUp** - Changed from StatusUnknown to StatusUp for backward compatibility with alexliesenfeld/health behavior. Empty checker = healthy (no checks = no failures).
 2. **Non-critical-only checks return StatusUp** - Graceful degradation: if only non-critical/warning checks exist, overall status is still Up.
-3. **Type alias for IETFResultWriter** - Used `type IETFResultWriter = healthx.IETFResultWriter` for backward compatibility.
+3. **Type alias for IETFResultWriter** - Used `type IETFResultWriter = health/internal.IETFResultWriter` for backward compatibility.
 
 ## Deviations from Plan
 
@@ -112,8 +112,8 @@ Each task was committed atomically:
 **1. [Rule 1 - Bug] Fixed empty checker behavior to match original library**
 - **Found during:** Task 3 (Integration test failure)
 - **Issue:** Empty checker returned StatusUnknown (503) but original alexliesenfeld/health returned StatusUp (200)
-- **Fix:** Updated healthx/checker.go to return StatusUp for empty checker
-- **Files modified:** healthx/checker.go, healthx/checker_test.go, healthx/handler_test.go, health/testing_test.go
+- **Fix:** Updated health/internal/checker.go to return StatusUp for empty checker
+- **Files modified:** health/internal/checker.go, health/internal/checker_test.go, health/internal/handler_test.go, health/testing_test.go
 - **Verification:** Integration tests pass
 - **Commit:** 5dc1993
 
@@ -135,9 +135,9 @@ None - no external service configuration required.
 - v4.0 Dependency Reduction milestone complete
 - All 4 external dependencies replaced with internal implementations:
   - jpillora/backoff → internal backoff/
-  - lmittmann/tint → internal tintx/
-  - robfig/cron/v3 → internal cronx/
-  - alexliesenfeld/health → internal healthx/
+  - lmittmann/tint → logger/tint/
+  - robfig/cron/v3 → cron/internal/
+  - alexliesenfeld/health → internal health/internal/
 - Ready for milestone completion and v4.0 tagging
 
 ---

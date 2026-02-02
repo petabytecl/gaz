@@ -2,7 +2,7 @@
 phase: 33-tint-package
 plan: 02
 subsystem: logging
-tags: [slog, tintx, colors, Handle, tests, race]
+tags: [slog, logger-tint, colors, Handle, tests, race]
 
 # Dependency graph
 requires:
@@ -22,8 +22,8 @@ tech-stack:
   patterns: [strconv.AppendX for zero-allocation formatting, runtime.CallersFrames for source location]
 
 key-files:
-  created: [tintx/handler_test.go]
-  modified: [tintx/handler.go]
+  created: [logger/tint/handler_test.go]
+  modified: [logger/tint/handler.go]
 
 key-decisions:
   - "Use strconv.AppendX for zero-allocation value formatting"
@@ -70,8 +70,8 @@ Each task was committed atomically:
 2. **Task 2: Add comprehensive tests** - `1cbacab` (test)
 
 ## Files Created/Modified
-- `tintx/handler.go` - Complete Handle method with appendLevel, appendTime, appendSource, appendAttr, appendValue
-- `tintx/handler_test.go` - 18 tests covering defaults, levels, colors, groups, source, time format, concurrency, LogValuer
+- `logger/tint/handler.go` - Complete Handle method with appendLevel, appendTime, appendSource, appendAttr, appendValue
+- `logger/tint/handler_test.go` - 18 tests covering defaults, levels, colors, groups, source, time format, concurrency, LogValuer
 
 ## Decisions Made
 - **strconv.AppendX for values:** Zero-allocation formatting for int, uint, float, bool values
@@ -91,7 +91,7 @@ None
 None - no external service configuration required.
 
 ## Next Phase Readiness
-- tintx Handler fully functional with complete Handle implementation
+- logger/tint Handler fully functional with complete Handle implementation
 - Ready for Plan 03: Logger integration and lmittmann/tint dependency removal
 - All slog.Handler interface methods implemented and tested
 

@@ -168,26 +168,26 @@ Error(err error, msg string, keysAndValues ...any)
 
 | Feature | Reason | Reference Implementation |
 |---------|--------|-------------------------|
-| `New()` constructor with options | Standard pattern | `_tmp_trust/cronx/cron.go:100` |
-| Standard cron parser (5-field) | Parse `"*/5 * * * *"` | `_tmp_trust/cronx/parser.go` |
-| Descriptor support | Parse `@daily`, `@hourly`, etc | `_tmp_trust/cronx/parser.go:362-430` |
-| `Start()` method | Begin scheduling | cronx has `Start()` |
-| `Stop()` returning wait context | Graceful shutdown | cronx returns `context.Context` |
-| `AddJob(spec, Job)` | Register jobs with schedule | cronx has `AddJob()` |
-| `Job` interface (`Run()`) | Job abstraction | cronx `Job` interface |
-| `Logger` interface (Info/Error) | Structured logging | cronx uses `logx.Logger` |
-| `WithLogger()` option | Inject logger | cronx `WithLogger()` |
-| `WithChain()` option | Apply job wrappers | cronx `WithChain()` |
-| `SkipIfStillRunning()` wrapper | Prevent overlapping | cronx `SkipIfStillRunning()` |
+| `New()` constructor with options | Standard pattern | `_tmp_trust/cron/internal/cron.go:100` |
+| Standard cron parser (5-field) | Parse `"*/5 * * * *"` | `_tmp_trust/cron/internal/parser.go` |
+| Descriptor support | Parse `@daily`, `@hourly`, etc | `_tmp_trust/cron/internal/parser.go:362-430` |
+| `Start()` method | Begin scheduling | cron/internal has `Start()` |
+| `Stop()` returning wait context | Graceful shutdown | cron/internal returns `context.Context` |
+| `AddJob(spec, Job)` | Register jobs with schedule | cron/internal has `AddJob()` |
+| `Job` interface (`Run()`) | Job abstraction | cron/internal `Job` interface |
+| `Logger` interface (Info/Error) | Structured logging | cron/internal uses `logx.Logger` |
+| `WithLogger()` option | Inject logger | cron/internal `WithLogger()` |
+| `WithChain()` option | Apply job wrappers | cron/internal `WithChain()` |
+| `SkipIfStillRunning()` wrapper | Prevent overlapping | cron/internal `SkipIfStillRunning()` |
 
 ### Differentiators (Improvements over robfig/cron)
 
 | Feature | Value | Notes |
 |---------|-------|-------|
 | slog.Logger native support | Use `slog.Logger` directly, not adapter | Simpler integration |
-| Timezone in spec (`CRON_TZ=`) | Already in cronx parser | More flexible scheduling |
-| `@every` descriptor | Interval scheduling | Already in cronx |
-| Clean interface boundaries | cronx has cleaner `ScheduleParser` interface | Better testability |
+| Timezone in spec (`CRON_TZ=`) | Already in cron/internal parser | More flexible scheduling |
+| `@every` descriptor | Interval scheduling | Already in cron/internal |
+| Clean interface boundaries | cron/internal has cleaner `ScheduleParser` interface | Better testability |
 
 ### Anti-Features (Do NOT Implement)
 
@@ -530,6 +530,6 @@ Based on complexity and value:
 ### Key Takeaways
 
 1. **backoff**: Reference implementation in `_tmp_trust/srex/backoff/` covers table stakes; strip retry/ticker complexity
-2. **cron**: Reference implementation in `_tmp_trust/cronx/` is comprehensive; adapt logger interface to slog
+2. **cron**: Reference implementation in `_tmp_trust/cron/internal/` is comprehensive; adapt logger interface to slog
 3. **color (tint)**: Simple implementation, focus on ANSI color output with slog.Handler interface
 4. **health**: Most API surface used; simplify by removing periodic checks and caching

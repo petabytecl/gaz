@@ -2,16 +2,16 @@
 phase: 34-cron-package
 plan: 03
 subsystem: infra
-tags: [cron, scheduler, cronx, dependency-removal]
+tags: [cron, scheduler, cron-internal, dependency-removal]
 
 # Dependency graph
 requires:
   - phase: 34-01
-    provides: cronx Schedule, ScheduleParser, SpecSchedule, Parser
+    provides: cron/internal Schedule, ScheduleParser, SpecSchedule, Parser
   - phase: 34-02
-    provides: cronx Cron, Chain, JobWrapper, SkipIfStillRunning, Options
+    provides: cron/internal Cron, Chain, JobWrapper, SkipIfStillRunning, Options
 provides:
-  - cron/scheduler.go using internal cronx package
+  - cron/scheduler.go using internal cron/internal package
   - robfig/cron/v3 dependency removed
 affects: [35]
 
@@ -28,7 +28,7 @@ key-files:
     - cron/wrapper.go
     - cron/doc.go
     - cron/example_test.go
-    - cronx/option_test.go
+    - cron/internal/option_test.go
     - go.mod
     - go.sum
   deleted:
@@ -36,8 +36,8 @@ key-files:
     - cron/logger_test.go
 
 key-decisions:
-  - "cronx uses *slog.Logger directly - no adapter needed"
-  - "Fixed race condition in cronx test using atomic.Bool"
+  - "cron/internal uses *slog.Logger directly - no adapter needed"
+  - "Fixed race condition in cron/internal test using atomic.Bool"
 
 patterns-established:
   - "Internal cron implementation replaces external dependency"
@@ -50,7 +50,7 @@ completed: 2026-02-01
 
 # Phase 34 Plan 03: Integration and dependency removal Summary
 
-**Migrated cron/scheduler to use internal cronx package, removed robfig/cron/v3 dependency from go.mod**
+**Migrated cron/scheduler to use internal cron/internal package, removed robfig/cron/v3 dependency from go.mod**
 
 ## Performance
 
@@ -62,51 +62,51 @@ completed: 2026-02-01
 
 ## Accomplishments
 
-- Migrated cron/scheduler.go to use internal cronx package instead of robfig/cron/v3
-- Removed cron/logger.go (slogAdapter no longer needed - cronx uses *slog.Logger directly)
+- Migrated cron/scheduler.go to use internal cron/internal package instead of robfig/cron/v3
+- Removed cron/logger.go (slogAdapter no longer needed - cron/internal uses *slog.Logger directly)
 - Removed robfig/cron/v3 from go.mod (CRN-12 complete)
-- Fixed race condition in cronx/option_test.go using atomic.Bool
+- Fixed race condition in cron/internal/option_test.go using atomic.Bool
 - Scheduler maintains exact same public API (zero breaking changes)
 - All tests pass with race detection enabled
-- Phase 34 complete: internal cronx replaces robfig/cron/v3
+- Phase 34 complete: internal cron/internal replaces robfig/cron/v3
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Update cron/scheduler.go to use internal cronx package** - `ce8496d` (feat)
+1. **Task 1: Update cron/scheduler.go to use internal cron/internal package** - `ce8496d` (feat)
 2. **Task 2: Remove cron/logger.go and robfig/cron/v3 dependency** - `4c81d02` (chore)
 
 ## Files Created/Modified
 
 **Modified:**
-- `cron/scheduler.go` - Import and use cronx instead of robfig/cron/v3
-- `cron/wrapper.go` - Update documentation to reference cronx.Job interface
+- `cron/scheduler.go` - Import and use cron/internal instead of robfig/cron/v3
+- `cron/wrapper.go` - Update documentation to reference internal.Job interface
 - `cron/doc.go` - Update package documentation
 - `cron/example_test.go` - Update example documentation
-- `cronx/option_test.go` - Fix race condition using atomic.Bool
+- `cron/internal/option_test.go` - Fix race condition using atomic.Bool
 - `go.mod` - Remove robfig/cron/v3 dependency
 - `go.sum` - Updated after go mod tidy
 
 **Deleted:**
-- `cron/logger.go` - No longer needed (cronx uses *slog.Logger directly)
+- `cron/logger.go` - No longer needed (cron/internal uses *slog.Logger directly)
 - `cron/logger_test.go` - Associated test file
 
 ## Decisions Made
 
-- cronx uses *slog.Logger directly, eliminating need for slogAdapter (simpler integration)
+- cron/internal uses *slog.Logger directly, eliminating need for slogAdapter (simpler integration)
 - Fixed race condition in TestWithChain by using sync/atomic.Bool instead of plain bool
 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
 
-**1. [Rule 1 - Bug] Fixed race condition in cronx/option_test.go**
+**1. [Rule 1 - Bug] Fixed race condition in cron/internal/option_test.go**
 - **Found during:** Task 2 (race detection verification)
 - **Issue:** TestWithChain wrote `called = true` in goroutine and read in main without synchronization
 - **Fix:** Changed to `atomic.Bool` with `Store(true)` and `Load()` calls
-- **Files modified:** cronx/option_test.go
-- **Verification:** `go test ./cronx/... -race` passes
+- **Files modified:** cron/internal/option_test.go
+- **Verification:** `go test ./cron/internal/... -race` passes
 - **Committed in:** `4c81d02` (part of Task 2 commit)
 
 ---
@@ -126,7 +126,7 @@ None - no external service configuration required.
 
 - Phase 34 (Cron Package) complete with 3/3 plans finished
 - Ready for Phase 35 (Health Package + Integration)
-- robfig/cron/v3 successfully replaced with internal cronx package
+- robfig/cron/v3 successfully replaced with internal cron/internal package
 - All 12 CRN requirements verified
 
 ---

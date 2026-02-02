@@ -20,7 +20,7 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 
 ### Cron Package
 
-- [x] **CRN-01**: `cronx/` package exists with `Cron` scheduler type
+- [x] **CRN-01**: `cron/internal/` package exists with `Cron` scheduler type
 - [x] **CRN-02**: Standard 5-field cron expression parser (minute, hour, dom, month, dow)
 - [x] **CRN-03**: Descriptor support (@daily, @hourly, @weekly, @monthly, @yearly, @annually, @every)
 - [x] **CRN-04**: `Start()` method begins scheduling, `Stop()` returns context for graceful wait
@@ -30,12 +30,12 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 - [x] **CRN-08**: `WithLogger()` and `WithChain()` functional options
 - [x] **CRN-09**: CRON_TZ prefix support for timezone-specific schedules
 - [x] **CRN-10**: DST transitions handled correctly (spring forward skips, fall back runs once)
-- [x] **CRN-11**: `cron/scheduler.go` uses internal `cronx/` package instead of robfig/cron/v3
+- [x] **CRN-11**: `cron/scheduler.go` uses internal `cron/internal/` package instead of robfig/cron/v3
 - [x] **CRN-12**: `robfig/cron/v3` removed from go.mod
 
 ### Tint Package
 
-- [x] **TNT-01**: `tintx/` package exists with `Handler` implementing `slog.Handler`
+- [x] **TNT-01**: `logger/tint/` package exists with `Handler` implementing `slog.Handler`
 - [x] **TNT-02**: ANSI color output for log levels (DEBUG=blue, INFO=green, WARN=yellow, ERROR=red)
 - [x] **TNT-03**: `Options.Level` filters logs by level (uses `slog.Leveler`)
 - [x] **TNT-04**: `Options.AddSource` includes file:line in output
@@ -44,12 +44,12 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 - [x] **TNT-07**: `WithGroup()` returns new handler instance with group prefix
 - [x] **TNT-08**: TTY detection auto-disables colors for non-terminal output
 - [x] **TNT-09**: `Options.NoColor` explicitly disables color output
-- [x] **TNT-10**: `logger/provider.go` uses internal `tintx/` package instead of lmittmann/tint
+- [x] **TNT-10**: `logger/provider.go` uses internal `logger/tint/` package instead of lmittmann/tint
 - [x] **TNT-11**: `lmittmann/tint` removed from go.mod
 
 ### Health Package
 
-- [x] **HLT-01**: `healthx/` package exists with `Check` struct (Name, Check func)
+- [x] **HLT-01**: `health/internal/` package exists with `Check` struct (Name, Check func)
 - [x] **HLT-02**: `NewChecker(opts...)` creates checker instance
 - [x] **HLT-03**: `WithCheck(check)` option adds synchronous health check
 - [x] **HLT-04**: `NewHandler(checker, opts...)` creates HTTP handler
@@ -60,7 +60,7 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 - [x] **HLT-09**: `ResultWriter` interface for custom response formatting
 - [x] **HLT-10**: Liveness handler returns 200 even on check failure (matches current behavior)
 - [x] **HLT-11**: IETF health+json response format (built-in writer)
-- [x] **HLT-12**: `health/manager.go` uses internal `healthx/` package instead of alexliesenfeld/health
+- [x] **HLT-12**: `health/manager.go` uses internal `health/internal/` package instead of alexliesenfeld/health
 - [x] **HLT-13**: `alexliesenfeld/health` removed from go.mod
 
 ### Integration

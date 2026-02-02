@@ -7,12 +7,12 @@ tags: [cron, scheduler, time, parsing]
 # Dependency graph
 requires:
   - phase: 33
-    provides: tintx logging package
+    provides: logger/tint logging package
 provides:
-  - cronx/doc.go - Package documentation
-  - cronx/spec.go - SpecSchedule with Next() and DST handling
-  - cronx/constantdelay.go - ConstantDelaySchedule for @every
-  - cronx/parser.go - Parser with 5-field parsing and descriptors
+  - cron/internal/doc.go - Package documentation
+  - cron/internal/spec.go - SpecSchedule with Next() and DST handling
+  - cron/internal/constantdelay.go - ConstantDelaySchedule for @every
+  - cron/internal/parser.go - Parser with 5-field parsing and descriptors
 affects: [34-02, 34-03, cron]
 
 # Tech tracking
@@ -22,13 +22,13 @@ tech-stack:
 
 key-files:
   created:
-    - cronx/doc.go
-    - cronx/spec.go
-    - cronx/spec_test.go
-    - cronx/constantdelay.go
-    - cronx/constantdelay_test.go
-    - cronx/parser.go
-    - cronx/parser_test.go
+    - cron/internal/doc.go
+    - cron/internal/spec.go
+    - cron/internal/spec_test.go
+    - cron/internal/constantdelay.go
+    - cron/internal/constantdelay_test.go
+    - cron/internal/parser.go
+    - cron/internal/parser_test.go
   modified: []
 
 key-decisions:
@@ -45,9 +45,9 @@ duration: 6min
 completed: 2026-02-01
 ---
 
-# Phase 34 Plan 01: Core cronx package Summary
+# Phase 34 Plan 01: Core cron/internal package Summary
 
-**Created internal cronx package with schedule types, cron expression parser, and comprehensive test coverage (97%)**
+**Created internal cron/internal package with schedule types, cron expression parser, and comprehensive test coverage (97%)**
 
 ## Performance
 
@@ -69,18 +69,18 @@ completed: 2026-02-01
 
 Each task was committed atomically:
 
-1. **Task 1: Create cronx package with spec and constantdelay types** - `4ffdd4f` (feat)
+1. **Task 1: Create cron/internal package with spec and constantdelay types** - `4ffdd4f` (feat)
 2. **Task 2: Create cron expression parser with descriptor support** - `6d23cc0` (feat)
 
 ## Files Created/Modified
 
-- `cronx/doc.go` - Package documentation
-- `cronx/spec.go` - SpecSchedule with Next() method and DST handling
-- `cronx/spec_test.go` - Tests for SpecSchedule and dayMatches
-- `cronx/constantdelay.go` - ConstantDelaySchedule for @every expressions
-- `cronx/constantdelay_test.go` - Tests for Every() and ConstantDelaySchedule
-- `cronx/parser.go` - Parser with 5-field parsing, descriptors, TZ support
-- `cronx/parser_test.go` - Comprehensive parser tests
+- `cron/internal/doc.go` - Package documentation
+- `cron/internal/spec.go` - SpecSchedule with Next() method and DST handling
+- `cron/internal/spec_test.go` - Tests for SpecSchedule and dayMatches
+- `cron/internal/constantdelay.go` - ConstantDelaySchedule for @every expressions
+- `cron/internal/constantdelay_test.go` - Tests for Every() and ConstantDelaySchedule
+- `cron/internal/parser.go` - Parser with 5-field parsing, descriptors, TZ support
+- `cron/internal/parser_test.go` - Comprehensive parser tests
 
 ## Decisions Made
 
@@ -102,7 +102,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- Core cronx types ready for Phase 34-02 (Cron scheduler and chain wrappers)
+- Core cron/internal types ready for Phase 34-02 (Cron scheduler and chain wrappers)
 - Schedule interface enables job scheduling implementation
 - Parser ready for integration with cron/scheduler
 

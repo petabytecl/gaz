@@ -2,7 +2,7 @@
 phase: 35-health-package
 plan: 02
 subsystem: health
-tags: [healthx, http-handler, ietf-health-json, result-writer]
+tags: [health-internal, http-handler, ietf-health-json, result-writer]
 
 # Dependency graph
 requires:
@@ -22,10 +22,10 @@ tech-stack:
 
 key-files:
   created:
-    - healthx/writer.go
-    - healthx/writer_test.go
-    - healthx/handler.go
-    - healthx/handler_test.go
+    - health/internal/writer.go
+    - health/internal/writer_test.go
+    - health/internal/handler.go
+    - health/internal/handler_test.go
   modified: []
 
 key-decisions:
@@ -74,10 +74,10 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- `healthx/writer.go` - ResultWriter interface and IETFResultWriter implementation
-- `healthx/writer_test.go` - Comprehensive writer tests
-- `healthx/handler.go` - NewHandler with HandlerOption functional options
-- `healthx/handler_test.go` - Comprehensive handler tests including liveness pattern
+- `health/internal/writer.go` - ResultWriter interface and IETFResultWriter implementation
+- `health/internal/writer_test.go` - Comprehensive writer tests
+- `health/internal/handler.go` - NewHandler with HandlerOption functional options
+- `health/internal/handler_test.go` - Comprehensive handler tests including liveness pattern
 
 ## Decisions Made
 

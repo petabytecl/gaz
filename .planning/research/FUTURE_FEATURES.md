@@ -869,7 +869,7 @@ To:
 | Config | **Yes** | Yes | Yes | configx |
 | Health | **Yes** | Yes | No | gazx |
 | Workers | **Yes** | No | No | queuex |
-| Cron | **Yes** | Yes | No | cronx |
+| Cron | **Yes** | Yes | No | cron/internal |
 | Middleware | No | Yes | **Yes** | **httpx/middleware** |
 | HTTP Server | No | **Yes** | Yes | **httpx** |
 | Circuit Breaker | No | **Yes** | Yes | **srex/circuitbreaker** |

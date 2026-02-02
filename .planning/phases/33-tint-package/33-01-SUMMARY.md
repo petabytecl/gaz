@@ -2,14 +2,14 @@
 phase: 33-tint-package
 plan: 01
 subsystem: logging
-tags: [slog, tintx, colors, tty, sync.Pool]
+tags: [slog, logger-tint, colors, tty, sync.Pool]
 
 # Dependency graph
 requires:
   - phase: 32
     provides: backoff package foundation patterns
 provides:
-  - tintx Handler skeleton implementing slog.Handler
+  - logger/tint Handler skeleton implementing slog.Handler
   - Options struct with Level, AddSource, TimeFormat, NoColor
   - Buffer pool for efficient allocation
   - TTY detection via golang.org/x/term
@@ -21,7 +21,7 @@ tech-stack:
   patterns: [slog.Handler implementation, shared mutex for handler clones, sync.Pool buffer pooling]
 
 key-files:
-  created: [tintx/doc.go, tintx/options.go, tintx/buffer.go, tintx/handler.go]
+  created: [logger/tint/doc.go, logger/tint/options.go, logger/tint/buffer.go, logger/tint/handler.go]
   modified: [go.mod, go.sum]
 
 key-decisions:
@@ -39,7 +39,7 @@ duration: 2min
 completed: 2026-02-01
 ---
 
-# Phase 33 Plan 01: Core tintx Package Structure Summary
+# Phase 33 Plan 01: Core logger/tint Package Structure Summary
 
 **Handler skeleton implementing slog.Handler with TTY detection, Options config, and buffer pool for colored console logging**
 
@@ -52,7 +52,7 @@ completed: 2026-02-01
 - **Files modified:** 6
 
 ## Accomplishments
-- Created tintx/ package with 4 source files
+- Created logger/tint/ package with 4 source files
 - Handler struct implements slog.Handler interface (compile-time verified)
 - NewHandler performs TTY detection via golang.org/x/term
 - WithAttrs/WithGroup correctly return new handler instances
@@ -62,14 +62,14 @@ completed: 2026-02-01
 
 Each task was committed atomically:
 
-1. **Task 1: Create tintx package structure** - `2c1ac63` (feat)
+1. **Task 1: Create logger/tint package structure** - `2c1ac63` (feat)
 2. **Task 2: Implement Handler skeleton** - `62216aa` (feat)
 
 ## Files Created/Modified
-- `tintx/doc.go` - Package documentation
-- `tintx/options.go` - Options struct with Level, AddSource, TimeFormat, NoColor + ANSI constants
-- `tintx/buffer.go` - Buffer pool with sync.Pool for efficient allocation
-- `tintx/handler.go` - Handler struct with NewHandler, Enabled, clone, WithAttrs, WithGroup
+- `logger/tint/doc.go` - Package documentation
+- `logger/tint/options.go` - Options struct with Level, AddSource, TimeFormat, NoColor + ANSI constants
+- `logger/tint/buffer.go` - Buffer pool with sync.Pool for efficient allocation
+- `logger/tint/handler.go` - Handler struct with NewHandler, Enabled, clone, WithAttrs, WithGroup
 - `go.mod` - Added golang.org/x/term dependency
 - `go.sum` - Updated checksums
 

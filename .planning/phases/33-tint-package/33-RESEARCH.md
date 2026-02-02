@@ -6,11 +6,11 @@
 
 ## Summary
 
-This phase replaces the `lmittmann/tint` external dependency with an internal `tintx/` package that implements Go's `slog.Handler` interface for colored console output. The slog.Handler interface is well-defined in Go's standard library (4 methods: `Enabled`, `Handle`, `WithAttrs`, `WithGroup`), and the complete lmittmann/tint source code (MIT licensed) provides an authoritative reference implementation.
+This phase replaces the `lmittmann/tint` external dependency with an internal `logger/tint/` package that implements Go's `slog.Handler` interface for colored console output. The slog.Handler interface is well-defined in Go's standard library (4 methods: `Enabled`, `Handle`, `WithAttrs`, `WithGroup`), and the complete lmittmann/tint source code (MIT licensed) provides an authoritative reference implementation.
 
 The key technical challenges are: (1) correctly implementing `WithAttrs()` and `WithGroup()` to return NEW handler instances (not self), preserving contextual attributes, and (2) TTY detection for auto-disabling ANSI colors in non-terminal output. For TTY detection, `golang.org/x/term.IsTerminal(fd)` is the standard Go approach and avoids adding another external dependency like `mattn/go-isatty`.
 
-**Primary recommendation:** Implement `tintx/Handler` by adapting lmittmann/tint's proven patterns, using `golang.org/x/term.IsTerminal()` for TTY detection, with Options matching current usage (Level, AddSource, TimeFormat, NoColor).
+**Primary recommendation:** Implement `logger/tint/Handler` by adapting lmittmann/tint's proven patterns, using `golang.org/x/term.IsTerminal()` for TTY detection, with Options matching current usage (Level, AddSource, TimeFormat, NoColor).
 
 ## Standard Stack
 
@@ -46,7 +46,7 @@ go get golang.org/x/term
 
 ### Recommended Project Structure
 ```
-tintx/
+logger/tint/
 ├── handler.go          # Handler struct and core methods
 ├── handler_test.go     # Comprehensive tests including slogtest
 ├── options.go          # Options struct and defaults
@@ -342,7 +342,7 @@ import "testing/slogtest"
 
 func TestHandler(t *testing.T) {
     var buf bytes.Buffer
-    h := tintx.NewHandler(&buf, &tintx.Options{NoColor: true})
+    h := tint.NewHandler(&buf, &tint.Options{NoColor: true})
     
     results := func() []map[string]any {
         // Parse buf into []map[string]any

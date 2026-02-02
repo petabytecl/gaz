@@ -6,9 +6,9 @@
 <domain>
 ## Phase Boundary
 
-Replace `alexliesenfeld/health` with internal `healthx/` implementation. Maintain API compatibility with existing health checks. The package provides HTTP handlers for health/liveness endpoints with configurable check execution.
+Replace `alexliesenfeld/health` with internal `health/internal/` implementation. Maintain API compatibility with existing health checks. The package provides HTTP handlers for health/liveness endpoints with configurable check execution.
 
-Requirements: HLT-01 through HLT-13 (healthx package), INT-01 through INT-03 (integration and cleanup).
+Requirements: HLT-01 through HLT-13 (health/internal package), INT-01 through INT-03 (integration and cleanup).
 
 </domain>
 

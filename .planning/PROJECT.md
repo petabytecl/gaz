@@ -14,8 +14,8 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 
 **Target features:**
 - Replace `jpillora/backoff` with internal `srex/backoff` package
-- Replace `robfig/cron/v3` with internal `cronx` package  
-- Replace `lmittmann/tint` with internal `tintx` colored logger
+- Replace `robfig/cron/v3` with internal `cron/internal` package  
+- Replace `lmittmann/tint` with internal `logger/tint` colored logger
 - Replace `alexliesenfeld/health` with internal health check implementation
 - Update all consumers to use internal implementations
 - Remove external dependencies from go.mod

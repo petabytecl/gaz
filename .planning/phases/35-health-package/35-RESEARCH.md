@@ -1,16 +1,16 @@
 # Phase 35: Health Package + Integration - Research
 
 **Researched:** 2026-02-01
-**Domain:** Health check library replacement (alexliesenfeld/health -> internal healthx/)
+**Domain:** Health check library replacement (alexliesenfeld/health -> internal health/internal/)
 **Confidence:** HIGH
 
 ## Summary
 
-This phase replaces the external `alexliesenfeld/health` library with an internal `healthx/` package. The current codebase uses alexliesenfeld/health v0.8.1 for HTTP health endpoints with a custom IETFResultWriter already implemented. The replacement must provide identical functionality while adding features specified in CONTEXT.md (parallel execution, per-check timeouts, panic recovery, configurable visibility).
+This phase replaces the external `alexliesenfeld/health` library with an internal `health/internal/` package. The current codebase uses alexliesenfeld/health v0.8.1 for HTTP health endpoints with a custom IETFResultWriter already implemented. The replacement must provide identical functionality while adding features specified in CONTEXT.md (parallel execution, per-check timeouts, panic recovery, configurable visibility).
 
-The migration follows the established pattern from prior phases (backoff, tintx, cronx): create internal package with equivalent API, update consumers, remove external dependency. The current usage is well-encapsulated in `health/manager.go` and `health/handlers.go`, making migration straightforward.
+The migration follows the established pattern from prior phases (backoff, logger/tint, cron/internal): create internal package with equivalent API, update consumers, remove external dependency. The current usage is well-encapsulated in `health/manager.go` and `health/handlers.go`, making migration straightforward.
 
-**Primary recommendation:** Create `healthx/` package mirroring alexliesenfeld/health's core types and functional options pattern, then update `health/manager.go` to use internal package instead.
+**Primary recommendation:** Create `health/internal/` package mirroring alexliesenfeld/health's core types and functional options pattern, then update `health/manager.go` to use internal package instead.
 
 ## Standard Stack
 
@@ -18,20 +18,20 @@ The migration follows the established pattern from prior phases (backoff, tintx,
 
 | Component | Purpose | Why Required |
 |-----------|---------|--------------|
-| `healthx/check.go` | Check struct, CheckFunc type | Per HLT-01 |
-| `healthx/checker.go` | NewChecker, Checker interface, CheckerResult | Per HLT-02, HLT-07 |
-| `healthx/status.go` | AvailabilityStatus enum (StatusUnknown, StatusUp, StatusDown) | Per HLT-08 |
-| `healthx/handler.go` | NewHandler, HTTP handler creation | Per HLT-04 |
-| `healthx/options.go` | WithCheck, WithResultWriter, WithStatusCode options | Per HLT-03, HLT-05, HLT-06 |
-| `healthx/writer.go` | ResultWriter interface, IETFResultWriter | Per HLT-09, HLT-11 |
+| `health/internal/check.go` | Check struct, CheckFunc type | Per HLT-01 |
+| `health/internal/checker.go` | NewChecker, Checker interface, CheckerResult | Per HLT-02, HLT-07 |
+| `health/internal/status.go` | AvailabilityStatus enum (StatusUnknown, StatusUp, StatusDown) | Per HLT-08 |
+| `health/internal/handler.go` | NewHandler, HTTP handler creation | Per HLT-04 |
+| `health/internal/options.go` | WithCheck, WithResultWriter, WithStatusCode options | Per HLT-03, HLT-05, HLT-06 |
+| `health/internal/writer.go` | ResultWriter interface, IETFResultWriter | Per HLT-09, HLT-11 |
 
 ### From Existing Codebase
 
 | File | Purpose | Changes |
 |------|---------|---------|
 | `health/manager.go` | Manager struct, check registration | HLT-12: Replace imports |
-| `health/handlers.go` | HTTP handler creation | Update to use healthx/ |
-| `health/writer.go` | IETFResultWriter (move to healthx/) | Relocate or adapt |
+| `health/handlers.go` | HTTP handler creation | Update to use health/internal/ |
+| `health/writer.go` | IETFResultWriter (move to health/internal/) | Relocate or adapt |
 | `health/types.go` | CheckFunc, Registrar interface | Keep as consumer interface |
 
 ## Architecture Patterns
@@ -39,7 +39,7 @@ The migration follows the established pattern from prior phases (backoff, tintx,
 ### Recommended Package Structure
 
 ```
-healthx/
+health/internal/
 ├── check.go        # Check struct, CheckerOption type
 ├── checker.go      # NewChecker, Checker interface, check execution
 ├── handler.go      # NewHandler, HTTP handler, HandlerOption type
@@ -230,9 +230,9 @@ type IETFResultWriter struct {
 
 ### Pitfall 6: Import Cycle with health/ Package
 
-**What goes wrong:** `healthx/` imports `health/` types, creating cycle
+**What goes wrong:** `health/internal/` imports `health/` types, creating cycle
 **Why it happens:** Trying to use existing types from consumer package
-**How to avoid:** healthx/ must be completely independent; health/ imports healthx/
+**How to avoid:** health/internal/ must be completely independent; health/ imports health/internal/
 **Warning signs:** Go build errors about import cycles (INT-03)
 
 ## Code Examples
