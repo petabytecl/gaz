@@ -3,10 +3,17 @@ package dns
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 )
+
+// DefaultTimeout is the default timeout for DNS resolution.
+const DefaultTimeout = 2 * time.Second
+
+// ErrEmptyHost is returned when the hostname is empty.
+var ErrEmptyHost = errors.New("dns: hostname is empty")
 
 // Config configures the DNS resolution health check.
 type Config struct {
@@ -23,14 +30,14 @@ type Config struct {
 // Returns nil if resolution succeeds with at least one address, error otherwise.
 func New(cfg Config) func(context.Context) error {
 	if cfg.Timeout == 0 {
-		cfg.Timeout = 2 * time.Second
+		cfg.Timeout = DefaultTimeout
 	}
 
 	resolver := &net.Resolver{}
 
 	return func(ctx context.Context) error {
 		if cfg.Host == "" {
-			return fmt.Errorf("dns: hostname is empty")
+			return ErrEmptyHost
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)

@@ -1,4 +1,4 @@
-package http
+package httpcheck_test
 
 import (
 	"context"
@@ -6,10 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	httpcheck "github.com/petabytecl/gaz/health/checks/http"
 )
 
 func TestNew_EmptyURL(t *testing.T) {
-	check := New(Config{})
+	check := httpcheck.New(httpcheck.Config{})
 	err := check(context.Background())
 	if err == nil {
 		t.Fatal("expected error for empty URL")
@@ -20,12 +22,12 @@ func TestNew_EmptyURL(t *testing.T) {
 }
 
 func TestNew_Success(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
-	check := New(Config{URL: server.URL})
+	check := httpcheck.New(httpcheck.Config{URL: server.URL})
 	err := check(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -33,12 +35,12 @@ func TestNew_Success(t *testing.T) {
 }
 
 func TestNew_CustomExpectedStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer server.Close()
 
-	check := New(Config{
+	check := httpcheck.New(httpcheck.Config{
 		URL:                server.URL,
 		ExpectedStatusCode: http.StatusNoContent,
 	})
@@ -49,12 +51,12 @@ func TestNew_CustomExpectedStatus(t *testing.T) {
 }
 
 func TestNew_UnexpectedStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}))
 	defer server.Close()
 
-	check := New(Config{URL: server.URL})
+	check := httpcheck.New(httpcheck.Config{URL: server.URL})
 	err := check(context.Background())
 	if err == nil {
 		t.Fatal("expected error for unexpected status code")
@@ -67,7 +69,7 @@ func TestNew_UnexpectedStatus(t *testing.T) {
 
 func TestNew_ConnectionFailure(t *testing.T) {
 	// Use a port that should not have anything listening
-	check := New(Config{
+	check := httpcheck.New(httpcheck.Config{
 		URL:     "http://127.0.0.1:1", // Port 1 is privileged and unlikely to be used
 		Timeout: 100 * time.Millisecond,
 	})
@@ -78,13 +80,13 @@ func TestNew_ConnectionFailure(t *testing.T) {
 }
 
 func TestNew_ContextCancellation(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(5 * time.Second) // Slow response
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
-	check := New(Config{URL: server.URL})
+	check := httpcheck.New(httpcheck.Config{URL: server.URL})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
@@ -97,7 +99,7 @@ func TestNew_ContextCancellation(t *testing.T) {
 
 func TestNew_CustomClient(t *testing.T) {
 	requestReceived := false
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		requestReceived = true
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -107,7 +109,7 @@ func TestNew_CustomClient(t *testing.T) {
 		Timeout: 10 * time.Second,
 	}
 
-	check := New(Config{
+	check := httpcheck.New(httpcheck.Config{
 		URL:    server.URL,
 		Client: customClient,
 	})
@@ -121,7 +123,7 @@ func TestNew_CustomClient(t *testing.T) {
 }
 
 func TestNew_DoesNotFollowRedirects(t *testing.T) {
-	redirectTarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	redirectTarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer redirectTarget.Close()
@@ -132,7 +134,7 @@ func TestNew_DoesNotFollowRedirects(t *testing.T) {
 	defer server.Close()
 
 	// With default behavior (don't follow redirects), we expect 301
-	check := New(Config{
+	check := httpcheck.New(httpcheck.Config{
 		URL:                server.URL,
 		ExpectedStatusCode: http.StatusMovedPermanently,
 	})
@@ -150,7 +152,7 @@ func TestNew_ConnectionCloseHeader(t *testing.T) {
 	}))
 	defer server.Close()
 
-	check := New(Config{URL: server.URL})
+	check := httpcheck.New(httpcheck.Config{URL: server.URL})
 	err := check(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

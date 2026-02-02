@@ -161,7 +161,7 @@ func TestContextNotBlocking(t *testing.T) {
 	})
 }
 
-// contains checks if substr is in s
+// contains checks if substr is in s.
 func contains(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {

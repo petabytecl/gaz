@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"testing"
@@ -37,10 +38,10 @@ func (d *testDriver) setPingDelay(delay time.Duration) {
 	d.pingDelay = delay
 }
 
-func (d *testDriver) getPingBehavior() (error, time.Duration) {
+func (d *testDriver) getPingBehavior() (time.Duration, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return d.pingErr, d.pingDelay
+	return d.pingDelay, d.pingErr
 }
 
 // testConn implements driver.Conn and driver.Pinger.
@@ -62,12 +63,12 @@ func (c *testConn) Begin() (driver.Tx, error) {
 
 // Ping implements driver.Pinger for context-aware ping testing.
 func (c *testConn) Ping(ctx context.Context) error {
-	pingErr, delay := c.driver.getPingBehavior()
+	delay, pingErr := c.driver.getPingBehavior()
 
 	if delay > 0 {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return fmt.Errorf("context error: %w", ctx.Err())
 		case <-time.After(delay):
 		}
 	}

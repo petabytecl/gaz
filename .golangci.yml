@@ -308,6 +308,11 @@ linters:
           - errcheck
         path: _test\.go
         text: "(os\\.Unsetenv|Body\\.Close|mgr\\.Stop)"
+      # errcheck for db.Close, ln.Close, conn.Close in health check tests
+      - linters:
+          - errcheck
+        path: health/checks/.*_test\.go
+        text: "(db\\.Close|ln\\.Close|conn\\.Close)"
       # errcheck for Provider registration in tests (return value intentionally ignored)
       - linters:
           - errcheck
@@ -417,9 +422,8 @@ linters:
             - go.uber.org/atomic
             - github.com/petermattis/goid
             - golang.org/x/term
-          # List of packages that are not allowed.
-          # Entries can be a variable (starting with $), a string prefix, or an exact match (if ending with $).
-          # Default: []
+            - github.com/redis/go-redis/v9
+            - github.com/shirou/gopsutil/v4
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -444,6 +448,8 @@ linters:
             - go.uber.org/atomic
             - github.com/petermattis/goid
             - golang.org/x/term
+            - github.com/redis/go-redis/v9
+            - github.com/shirou/gopsutil/v4
           deny:
             - pkg: math/rand$
               desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
@@ -465,6 +471,8 @@ linters:
             - go.uber.org/atomic
             - github.com/petermattis/goid
             - golang.org/x/term
+            - github.com/redis/go-redis/v9
+            - github.com/shirou/gopsutil/v4
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog

@@ -3,10 +3,14 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
+
+// ErrNilClient is returned when the Redis client is nil.
+var ErrNilClient = errors.New("redis: client is nil")
 
 // Config configures the Redis health check.
 type Config struct {
@@ -23,7 +27,7 @@ type Config struct {
 func New(cfg Config) func(context.Context) error {
 	return func(ctx context.Context) error {
 		if cfg.Client == nil {
-			return fmt.Errorf("redis: client is nil")
+			return ErrNilClient
 		}
 		pong, err := cfg.Client.Ping(ctx).Result()
 		if err != nil {

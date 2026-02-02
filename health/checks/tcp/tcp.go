@@ -3,10 +3,17 @@ package tcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 )
+
+// DefaultTimeout is the default timeout for TCP dial operations.
+const DefaultTimeout = 2 * time.Second
+
+// ErrEmptyAddr is returned when the address is empty.
+var ErrEmptyAddr = errors.New("tcp: address is empty")
 
 // Config configures the TCP dial health check.
 type Config struct {
@@ -23,12 +30,12 @@ type Config struct {
 // Returns nil if connection succeeds, error if dial fails.
 func New(cfg Config) func(context.Context) error {
 	if cfg.Timeout == 0 {
-		cfg.Timeout = 2 * time.Second
+		cfg.Timeout = DefaultTimeout
 	}
 
 	return func(ctx context.Context) error {
 		if cfg.Addr == "" {
-			return fmt.Errorf("tcp: address is empty")
+			return ErrEmptyAddr
 		}
 
 		var d net.Dialer

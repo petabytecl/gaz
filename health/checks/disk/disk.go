@@ -3,10 +3,14 @@ package disk
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/shirou/gopsutil/v4/disk"
 )
+
+// ErrEmptyPath is returned when the path is empty.
+var ErrEmptyPath = errors.New("disk: path is empty")
 
 // Config configures the disk space health check.
 type Config struct {
@@ -25,7 +29,7 @@ type Config struct {
 func New(cfg Config) func(context.Context) error {
 	return func(ctx context.Context) error {
 		if cfg.Path == "" {
-			return fmt.Errorf("disk: path is empty")
+			return ErrEmptyPath
 		}
 		if cfg.ThresholdPercent <= 0 || cfg.ThresholdPercent > 100 {
 			return fmt.Errorf("disk: threshold must be between 0 and 100, got %.1f", cfg.ThresholdPercent)

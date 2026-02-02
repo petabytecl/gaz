@@ -1,12 +1,20 @@
-// Package http provides a health check for HTTP upstream services.
-package http
+// Package httpcheck provides a health check for HTTP upstream services.
+package httpcheck
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
+
+// DefaultTimeout is the default timeout for HTTP requests.
+const DefaultTimeout = 5 * time.Second
+
+// ErrEmptyURL is returned when the URL is empty.
+var ErrEmptyURL = errors.New("http: URL is empty")
 
 // Config configures the HTTP upstream health check.
 type Config struct {
@@ -28,7 +36,7 @@ type Config struct {
 // Returns nil if response matches expected status, error otherwise.
 func New(cfg Config) func(context.Context) error {
 	if cfg.Timeout == 0 {
-		cfg.Timeout = 5 * time.Second
+		cfg.Timeout = DefaultTimeout
 	}
 	if cfg.ExpectedStatusCode == 0 {
 		cfg.ExpectedStatusCode = http.StatusOK
@@ -46,7 +54,7 @@ func New(cfg Config) func(context.Context) error {
 
 	return func(ctx context.Context) error {
 		if cfg.URL == "" {
-			return fmt.Errorf("http: URL is empty")
+			return ErrEmptyURL
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, cfg.URL, nil)
@@ -59,7 +67,11 @@ func New(cfg Config) func(context.Context) error {
 		if err != nil {
 			return fmt.Errorf("http: request failed: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			// Drain and close body to allow connection reuse
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
+		}()
 
 		if resp.StatusCode != cfg.ExpectedStatusCode {
 			return fmt.Errorf("http: unexpected status %d (expected %d)",
