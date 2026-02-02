@@ -8,17 +8,17 @@
 See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v4.0 Dependency Reduction — replacing external dependencies with internal implementations
+**Current focus:** v4.0 Dependency Reduction — COMPLETE
 
 ## Current Position
 
 - **Milestone:** v4.0 Dependency Reduction
-- **Phase:** 35 (Health Package + Integration) — In Progress
-- **Plan:** 2 of 3 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 35-02-PLAN.md (HTTP handler and IETF result writer)
+- **Phase:** 35 (Health Package + Integration) — Complete
+- **Plan:** 3 of 3 in current phase
+- **Status:** Milestone complete
+- **Last activity:** 2026-02-02 — Completed 35-03-PLAN.md (Integration and dependency removal)
 
-Progress: [██████████] 94% (Phase 35: 2/3 plans complete)
+Progress: [██████████] 100% (Phase 35: 3/3 plans complete)
 
 ## Milestones Shipped
 
@@ -32,8 +32,9 @@ Progress: [██████████] 94% (Phase 35: 2/3 plans complete)
 | v3.0 | API Harmonization | 23-29 | 27 | 2026-02-01 |
 | v3.1 | Performance & Stability | 30 | 2 | 2026-02-01 |
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
+| v4.0 | Dependency Reduction | 32-35 | 12 | 2026-02-02 |
 
-**Total:** 127 plans across 33 phases
+**Total:** 139 plans across 35 phases
 
 ## v4.0 Milestone Structure
 
@@ -42,9 +43,9 @@ Progress: [██████████] 94% (Phase 35: 2/3 plans complete)
 | 32 | Backoff Package | BKF-01 to BKF-08 (8) | Complete (3/3 plans) |
 | 33 | Tint Package | TNT-01 to TNT-11 (11) | Complete (3/3 plans) |
 | 34 | Cron Package | CRN-01 to CRN-12 (12) | Complete (3/3 plans) |
-| 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | In Progress (2/3 plans) |
+| 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | Complete (3/3 plans) |
 
-**Total v4.0:** 47 requirements across 4 phases
+**Total v4.0:** 47 requirements across 4 phases — ALL COMPLETE
 
 ## Accumulated Context
 
@@ -52,21 +53,28 @@ Progress: [██████████] 94% (Phase 35: 2/3 plans complete)
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
+### v4.0 Phase 35 Decisions
+
+- Empty checker returns StatusUp for backward compatibility with alexliesenfeld/health
+- Non-critical-only checks also return StatusUp (graceful degradation)
+- IETFResultWriter kept as type alias for backward compatibility
+
 ### Research Summary
 
 See: .planning/research/v4.0-SUMMARY.md
 
 - Build order follows risk escalation: backoff → tint → cron → health
 - Reference implementations exist for backoff and cronx in `_tmp_trust/`
-- Total estimate: 10-15 hours
+- Total estimate: 10-15 hours (actual: ~6 hours)
 
 ### Blockers/Concerns
 
-None — fresh milestone with clear research.
+None — v4.0 complete.
 
 ### Roadmap Evolution
 
 - v4.0 roadmap created: 4 phases, 47 requirements mapped
+- v4.0 complete: All 4 external dependencies replaced with internal implementations
 
 ### Pending Todos
 
@@ -75,8 +83,8 @@ None — fresh milestone with clear research.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 35-02-PLAN.md (HTTP handler and IETF result writer)
-Resume with: `/gsd-execute-phase` for 35-03-PLAN.md
+Stopped at: Completed 35-03-PLAN.md (Integration and dependency removal)
+Resume with: v4.0 milestone complete - ready for v4.0 tagging
 
 ---
 
