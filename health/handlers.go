@@ -3,7 +3,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/petabytecl/gaz/health/internal/healthx"
+	"github.com/petabytecl/gaz/health/internal"
 )
 
 // HandlerHandler produces http.Handler for health checks.
@@ -13,10 +13,10 @@ import (
 // unless the server is completely unresponsive.
 func (m *Manager) NewLivenessHandler() http.Handler {
 	checker := m.LivenessChecker()
-	return healthx.NewHandler(checker,
-		healthx.WithResultWriter(healthx.NewIETFResultWriter()),
-		healthx.WithStatusCodeUp(http.StatusOK),
-		healthx.WithStatusCodeDown(http.StatusOK), // 200 on failure per requirement
+	return internal.NewHandler(checker,
+		internal.WithResultWriter(internal.NewIETFResultWriter()),
+		internal.WithStatusCodeUp(http.StatusOK),
+		internal.WithStatusCodeDown(http.StatusOK), // 200 on failure per requirement
 	)
 }
 
@@ -24,10 +24,10 @@ func (m *Manager) NewLivenessHandler() http.Handler {
 // It returns 503 Service Unavailable on failure to stop traffic routing.
 func (m *Manager) NewReadinessHandler() http.Handler {
 	checker := m.ReadinessChecker()
-	return healthx.NewHandler(checker,
-		healthx.WithResultWriter(healthx.NewIETFResultWriter()),
-		healthx.WithStatusCodeUp(http.StatusOK),
-		healthx.WithStatusCodeDown(http.StatusServiceUnavailable),
+	return internal.NewHandler(checker,
+		internal.WithResultWriter(internal.NewIETFResultWriter()),
+		internal.WithStatusCodeUp(http.StatusOK),
+		internal.WithStatusCodeDown(http.StatusServiceUnavailable),
 	)
 }
 
@@ -35,9 +35,9 @@ func (m *Manager) NewReadinessHandler() http.Handler {
 // It returns 503 Service Unavailable on failure to hold off other probes.
 func (m *Manager) NewStartupHandler() http.Handler {
 	checker := m.StartupChecker()
-	return healthx.NewHandler(checker,
-		healthx.WithResultWriter(healthx.NewIETFResultWriter()),
-		healthx.WithStatusCodeUp(http.StatusOK),
-		healthx.WithStatusCodeDown(http.StatusServiceUnavailable),
+	return internal.NewHandler(checker,
+		internal.WithResultWriter(internal.NewIETFResultWriter()),
+		internal.WithStatusCodeUp(http.StatusOK),
+		internal.WithStatusCodeDown(http.StatusServiceUnavailable),
 	)
 }

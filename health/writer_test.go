@@ -8,21 +8,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petabytecl/gaz/health/internal/healthx"
+	"github.com/petabytecl/gaz/health/internal"
 )
 
 func TestIETFResultWriter(t *testing.T) {
 	// Setup a sample result
 	timestamp := time.Date(2023, 10, 26, 12, 0, 0, 0, time.UTC)
-	result := &healthx.CheckerResult{
-		Status: healthx.StatusDown,
-		Details: map[string]healthx.CheckResult{
+	result := &internal.CheckerResult{
+		Status: internal.StatusDown,
+		Details: map[string]internal.CheckResult{
 			"db": {
-				Status:    healthx.StatusUp,
+				Status:    internal.StatusUp,
 				Timestamp: timestamp,
 			},
 			"redis": {
-				Status:    healthx.StatusDown,
+				Status:    internal.StatusDown,
 				Timestamp: timestamp,
 				Error:     errors.New("connection refused"),
 			},
@@ -35,8 +35,8 @@ func TestIETFResultWriter(t *testing.T) {
 
 	// Call the writer with options to show details and errors
 	writer := NewIETFResultWriter(
-		healthx.WithShowDetails(true),
-		healthx.WithShowErrors(true),
+		internal.WithShowDetails(true),
+		internal.WithShowErrors(true),
 	)
 	err := writer.Write(result, http.StatusServiceUnavailable, w, r)
 	if err != nil {

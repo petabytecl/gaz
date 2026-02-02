@@ -3,16 +3,16 @@ package health
 import (
 	"sync"
 
-	"github.com/petabytecl/gaz/health/internal/healthx"
+	"github.com/petabytecl/gaz/health/internal"
 )
 
 // Manager implements Registrar and manages health checkers.
 type Manager struct {
 	mu sync.Mutex
 
-	livenessChecks  []healthx.Check
-	readinessChecks []healthx.Check
-	startupChecks   []healthx.Check
+	livenessChecks  []internal.Check
+	readinessChecks []internal.Check
+	startupChecks   []internal.Check
 }
 
 // NewManager creates a new Health Manager.
@@ -24,7 +24,7 @@ func NewManager() *Manager {
 func (m *Manager) AddLivenessCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.livenessChecks = append(m.livenessChecks, healthx.Check{
+	m.livenessChecks = append(m.livenessChecks, internal.Check{
 		Name:     name,
 		Check:    check,
 		Critical: true, // Default to critical per existing behavior
@@ -35,7 +35,7 @@ func (m *Manager) AddLivenessCheck(name string, check CheckFunc) {
 func (m *Manager) AddReadinessCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.readinessChecks = append(m.readinessChecks, healthx.Check{
+	m.readinessChecks = append(m.readinessChecks, internal.Check{
 		Name:     name,
 		Check:    check,
 		Critical: true, // Default to critical per existing behavior
@@ -46,60 +46,60 @@ func (m *Manager) AddReadinessCheck(name string, check CheckFunc) {
 func (m *Manager) AddStartupCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.startupChecks = append(m.startupChecks, healthx.Check{
+	m.startupChecks = append(m.startupChecks, internal.Check{
 		Name:     name,
 		Check:    check,
 		Critical: true, // Default to critical per existing behavior
 	})
 }
 
-// LivenessChecker builds the healthx.Checker for liveness checks.
+// LivenessChecker builds the Checker for liveness checks.
 //
 //nolint:ireturn // Checker interface is the intended return type for flexibility
-func (m *Manager) LivenessChecker(opts ...healthx.CheckerOption) healthx.Checker {
+func (m *Manager) LivenessChecker(opts ...CheckerOption) Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]healthx.CheckerOption, 0, len(m.livenessChecks)+len(opts))
+	finalOpts := make([]CheckerOption, 0, len(m.livenessChecks)+len(opts))
 	for _, c := range m.livenessChecks {
-		finalOpts = append(finalOpts, healthx.WithCheck(c))
+		finalOpts = append(finalOpts, internal.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return healthx.NewChecker(finalOpts...)
+	return internal.NewChecker(finalOpts...)
 }
 
-// ReadinessChecker builds the healthx.Checker for readiness checks.
+// ReadinessChecker builds the Checker for readiness checks.
 //
 //nolint:ireturn // Checker interface is the intended return type for flexibility
-func (m *Manager) ReadinessChecker(opts ...healthx.CheckerOption) healthx.Checker {
+func (m *Manager) ReadinessChecker(opts ...CheckerOption) Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]healthx.CheckerOption, 0, len(m.readinessChecks)+len(opts))
+	finalOpts := make([]CheckerOption, 0, len(m.readinessChecks)+len(opts))
 	for _, c := range m.readinessChecks {
-		finalOpts = append(finalOpts, healthx.WithCheck(c))
+		finalOpts = append(finalOpts, internal.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return healthx.NewChecker(finalOpts...)
+	return internal.NewChecker(finalOpts...)
 }
 
-// StartupChecker builds the healthx.Checker for startup checks.
+// StartupChecker builds the Checker for startup checks.
 //
 //nolint:ireturn // Checker interface is the intended return type for flexibility
-func (m *Manager) StartupChecker(opts ...healthx.CheckerOption) healthx.Checker {
+func (m *Manager) StartupChecker(opts ...CheckerOption) Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]healthx.CheckerOption, 0, len(m.startupChecks)+len(opts))
+	finalOpts := make([]CheckerOption, 0, len(m.startupChecks)+len(opts))
 	for _, c := range m.startupChecks {
-		finalOpts = append(finalOpts, healthx.WithCheck(c))
+		finalOpts = append(finalOpts, internal.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return healthx.NewChecker(finalOpts...)
+	return internal.NewChecker(finalOpts...)
 }

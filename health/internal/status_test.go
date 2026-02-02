@@ -1,4 +1,4 @@
-package healthx
+package internal
 
 import "testing"
 

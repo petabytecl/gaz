@@ -1,4 +1,4 @@
-package healthx
+package internal
 
 import (
 	"net/http"
@@ -28,9 +28,9 @@ type handlerConfig struct {
 // For liveness-style handlers that should return 200 even on failure,
 // set both status codes to 200:
 //
-//	handler := healthx.NewHandler(checker,
-//	    healthx.WithStatusCodeUp(200),
-//	    healthx.WithStatusCodeDown(200),
+//	handler := internal.NewHandler(checker,
+//	    internal.WithStatusCodeUp(200),
+//	    internal.WithStatusCodeDown(200),
 //	)
 func NewHandler(checker Checker, opts ...HandlerOption) http.Handler {
 	cfg := &handlerConfig{

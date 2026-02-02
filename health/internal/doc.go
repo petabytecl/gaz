@@ -1,4 +1,4 @@
-// Package healthx provides internal health check execution with parallel processing.
+// Package internal provides internal health check execution with parallel processing.
 //
 // This package replaces alexliesenfeld/health with a minimal API surface tailored
 // to the gaz framework's needs. It provides:
@@ -11,14 +11,14 @@
 //
 // # Basic Usage
 //
-//	checker := healthx.NewChecker(
-//		healthx.WithCheck(healthx.Check{
+//	checker := internal.NewChecker(
+//		internal.WithCheck(internal.Check{
 //			Name:  "database",
 //			Check: func(ctx context.Context) error {
 //				return db.PingContext(ctx)
 //			},
 //		}),
-//		healthx.WithCheck(healthx.Check{
+//		internal.WithCheck(internal.Check{
 //			Name:     "cache",
 //			Check:    checkRedis,
 //			Timeout:  2 * time.Second, // Custom timeout
@@ -36,4 +36,4 @@
 // are included in the result details but don't affect the aggregated status.
 // This allows non-essential dependencies to degrade gracefully without marking
 // the entire service as unavailable.
-package healthx
+package internal

@@ -1,4 +1,4 @@
-package healthx
+package internal
 
 // AvailabilityStatus represents system/component availability.
 type AvailabilityStatus string

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/petabytecl/gaz/health/internal/healthx"
+	"github.com/petabytecl/gaz/health/internal"
 )
 
 func TestTestConfig(t *testing.T) {
@@ -55,7 +55,7 @@ func TestTestManager(t *testing.T) {
 	result := checker.Check(context.Background())
 
 	// Empty checker returns StatusUp (matches alexliesenfeld/health behavior)
-	assert.Equal(t, healthx.StatusUp, result.Status)
+	assert.Equal(t, internal.StatusUp, result.Status)
 }
 
 func TestRequireHealthy(t *testing.T) {

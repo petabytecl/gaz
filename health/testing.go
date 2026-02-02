@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/petabytecl/gaz/health/internal/healthx"
+	"github.com/petabytecl/gaz/health/internal"
 )
 
 // TestConfig returns a health.Config with safe defaults for testing.
@@ -79,7 +79,7 @@ func RequireHealthy(tb testing.TB, m *Manager) {
 	tb.Helper()
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
-	if result.Status != healthx.StatusUp {
+	if result.Status != internal.StatusUp {
 		tb.Fatalf("RequireHealthy: expected status 'up', got '%s'", result.Status)
 	}
 }
@@ -89,7 +89,7 @@ func RequireUnhealthy(tb testing.TB, m *Manager) {
 	tb.Helper()
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
-	if result.Status == healthx.StatusUp {
+	if result.Status == internal.StatusUp {
 		tb.Fatalf("RequireUnhealthy: expected status not 'up', got '%s'", result.Status)
 	}
 }
