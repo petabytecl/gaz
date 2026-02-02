@@ -78,8 +78,7 @@ None — v4.0 complete.
 
 ### Pending Todos
 
-1 todo(s) in `.planning/todos/pending/`
-- merge-healthx-into-health — Merge healthx into health package
+0 todo(s) in `.planning/todos/pending/`
 
 ## Session Continuity
 
