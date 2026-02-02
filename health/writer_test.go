@@ -8,21 +8,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alexliesenfeld/health"
+	"github.com/petabytecl/gaz/healthx"
 )
 
 func TestIETFResultWriter(t *testing.T) {
 	// Setup a sample result
 	timestamp := time.Date(2023, 10, 26, 12, 0, 0, 0, time.UTC)
-	result := &health.CheckerResult{
-		Status: health.StatusDown,
-		Details: map[string]health.CheckResult{
+	result := &healthx.CheckerResult{
+		Status: healthx.StatusDown,
+		Details: map[string]healthx.CheckResult{
 			"db": {
-				Status:    health.StatusUp,
+				Status:    healthx.StatusUp,
 				Timestamp: timestamp,
 			},
 			"redis": {
-				Status:    health.StatusDown,
+				Status:    healthx.StatusDown,
 				Timestamp: timestamp,
 				Error:     errors.New("connection refused"),
 			},
@@ -33,8 +33,11 @@ func TestIETFResultWriter(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/health", nil)
 
-	// Call the writer
-	writer := NewIETFResultWriter()
+	// Call the writer with options to show details and errors
+	writer := NewIETFResultWriter(
+		healthx.WithShowDetails(true),
+		healthx.WithShowErrors(true),
+	)
 	err := writer.Write(result, http.StatusServiceUnavailable, w, r)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

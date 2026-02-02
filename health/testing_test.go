@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/petabytecl/gaz/healthx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -52,17 +53,14 @@ func TestTestManager(t *testing.T) {
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
 
-	// Empty checker should be healthy
-	assert.Equal(t, "up", string(result.Status))
+	// Empty checker returns StatusUnknown (no critical checks to evaluate)
+	assert.Equal(t, healthx.StatusUnknown, result.Status)
 }
 
 func TestRequireHealthy(t *testing.T) {
 	m := TestManager()
 
-	// No checks = healthy
-	RequireHealthy(t, m)
-
-	// Add a passing check
+	// Add a passing check first (empty checker returns StatusUnknown)
 	m.AddReadinessCheck("ok", func(ctx context.Context) error { return nil })
 	RequireHealthy(t, m)
 }

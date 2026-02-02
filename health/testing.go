@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/petabytecl/gaz/healthx"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -71,11 +72,13 @@ func TestManager() *Manager {
 
 // RequireHealthy checks that all readiness checks pass.
 // Uses testing.TB for compatibility with both tests and benchmarks.
+// Note: An empty checker returns StatusUnknown, not StatusUp. Use this only
+// when you have registered at least one passing check.
 func RequireHealthy(tb testing.TB, m *Manager) {
 	tb.Helper()
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
-	if result.Status != "up" {
+	if result.Status != healthx.StatusUp {
 		tb.Fatalf("RequireHealthy: expected status 'up', got '%s'", result.Status)
 	}
 }
@@ -85,7 +88,7 @@ func RequireUnhealthy(tb testing.TB, m *Manager) {
 	tb.Helper()
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
-	if result.Status == "up" {
+	if result.Status == healthx.StatusUp {
 		tb.Fatalf("RequireUnhealthy: expected status not 'up', got '%s'", result.Status)
 	}
 }
