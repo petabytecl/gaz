@@ -13,12 +13,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 - **Milestone:** v4.0 Dependency Reduction
-- **Phase:** 36 (Add builtin checks on `health/checks`) — In Progress
-- **Plan:** 5 of 6 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 36-05-PLAN.md
+- **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
+- **Plan:** 6 of 6 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-02 — Completed 36-06-PLAN.md
 
-Progress: [██████████] 97% (Phase 36: 5/6 plans complete)
+Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
 
 ## Milestones Shipped
 
@@ -72,6 +72,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - HTTP check sets Connection: close header to avoid holding connections
 - Redis check uses redis.UniversalClient interface for broad compatibility
 - Redis check uses PING command (expects "PONG" response)
+- Disk check uses gopsutil/v4 for cross-platform disk usage metrics
+- Disk check uses percentage threshold (0-100) for portability
 
 ### Research Summary
 
@@ -97,9 +99,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02T21:28:10Z
-Stopped at: Completed 36-05-PLAN.md
-Resume with: `/gsd-execute-phase 36` to continue with 36-06
+Last session: 2026-02-02T21:30:05Z
+Stopped at: Completed 36-06-PLAN.md
+Resume with: Phase 36 complete, ready for next milestone
 
 ---
 
