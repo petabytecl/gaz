@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/petabytecl/gaz/cronx"
+	"github.com/petabytecl/gaz/cron/internal/cronx"
 )
 
 // Scheduler wraps cronx with DI-aware job execution and lifecycle management.

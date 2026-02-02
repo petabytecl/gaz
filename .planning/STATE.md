@@ -70,7 +70,8 @@ None — fresh milestone with clear research.
 
 ### Pending Todos
 
-0 todo(s) in `.planning/todos/pending/`
+1 todo(s) in `.planning/todos/pending/`
+- Merge cron and cronx into a single package
 
 ## Session Continuity
 
