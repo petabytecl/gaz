@@ -54,6 +54,8 @@ func (m *Manager) AddStartupCheck(name string, check CheckFunc) {
 }
 
 // LivenessChecker builds the healthx.Checker for liveness checks.
+//
+//nolint:ireturn // Checker interface is the intended return type for flexibility
 func (m *Manager) LivenessChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 
@@ -69,6 +71,8 @@ func (m *Manager) LivenessChecker(opts ...healthx.CheckerOption) healthx.Checker
 }
 
 // ReadinessChecker builds the healthx.Checker for readiness checks.
+//
+//nolint:ireturn // Checker interface is the intended return type for flexibility
 func (m *Manager) ReadinessChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 
@@ -84,6 +88,8 @@ func (m *Manager) ReadinessChecker(opts ...healthx.CheckerOption) healthx.Checke
 }
 
 // StartupChecker builds the healthx.Checker for startup checks.
+//
+//nolint:ireturn // Checker interface is the intended return type for flexibility
 func (m *Manager) StartupChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 

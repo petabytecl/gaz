@@ -5,10 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/petabytecl/gaz/healthx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/petabytecl/gaz/healthx"
 )
 
 func TestTestConfig(t *testing.T) {

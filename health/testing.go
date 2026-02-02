@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/petabytecl/gaz/healthx"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/petabytecl/gaz/healthx"
 )
 
 // TestConfig returns a health.Config with safe defaults for testing.

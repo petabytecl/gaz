@@ -49,6 +49,8 @@ type checker struct {
 }
 
 // NewChecker creates a new Checker with the given options.
+//
+//nolint:ireturn // Checker interface is the intended return type for flexibility
 func NewChecker(opts ...CheckerOption) Checker {
 	cfg := &checkerConfig{
 		checks:         make(map[string]*internalCheck),
@@ -127,12 +129,13 @@ func (c *checker) Check(ctx context.Context) CheckerResult {
 	}
 
 	// Determine overall status
-	if !hasCritical {
+	switch {
+	case !hasCritical:
 		// No critical checks, but we have checks - status is up (graceful degradation)
 		result.Status = StatusUp
-	} else if criticalFailed {
+	case criticalFailed:
 		result.Status = StatusDown
-	} else {
+	default:
 		result.Status = StatusUp
 	}
 
@@ -184,7 +187,6 @@ func (c *checker) executeCheck(ctx context.Context, check *internalCheck) CheckR
 		}()
 		return check.check(ctx)
 	}()
-
 	if err != nil {
 		result.Status = StatusDown
 		result.Error = err

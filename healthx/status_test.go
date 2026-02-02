@@ -42,7 +42,8 @@ func TestAvailabilityStatus_String(t *testing.T) {
 
 func TestAvailabilityStatus_IsComparable(t *testing.T) {
 	// Verify status can be compared with == operator
-	if StatusUp != StatusUp {
+	upStatus := StatusUp
+	if upStatus != StatusUp {
 		t.Error("StatusUp should equal itself")
 	}
 	if StatusUp == StatusDown {

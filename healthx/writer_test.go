@@ -34,6 +34,7 @@ func TestNewIETFResultWriter(t *testing.T) {
 	})
 }
 
+//nolint:gocognit,funlen // Test function with comprehensive table-driven tests
 func TestIETFResultWriter_Write(t *testing.T) {
 	fixedTime := time.Date(2026, 2, 2, 12, 0, 0, 0, time.UTC)
 
@@ -171,6 +172,7 @@ func TestIETFResultWriter_Write(t *testing.T) {
 	}
 }
 
+//nolint:gocognit // Test function with comprehensive assertions
 func TestIETFResultWriter_CheckDetails(t *testing.T) {
 	fixedTime := time.Date(2026, 2, 2, 12, 0, 0, 0, time.UTC)
 

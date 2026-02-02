@@ -81,6 +81,7 @@ func TestNewChecker_SingleCheckFailing(t *testing.T) {
 	}
 }
 
+//nolint:gocognit // Test function with concurrent check verification
 func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 	// Use atomic counter to verify concurrent execution
 	var counter int32
@@ -93,8 +94,8 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 				current := atomic.AddInt32(&counter, 1)
 				// Track max concurrency
 				for {
-					max := atomic.LoadInt32(&maxConcurrent)
-					if current <= max || atomic.CompareAndSwapInt32(&maxConcurrent, max, current) {
+					currentMax := atomic.LoadInt32(&maxConcurrent)
+					if current <= currentMax || atomic.CompareAndSwapInt32(&maxConcurrent, currentMax, current) {
 						break
 					}
 				}
@@ -108,8 +109,8 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 			Check: func(ctx context.Context) error {
 				current := atomic.AddInt32(&counter, 1)
 				for {
-					max := atomic.LoadInt32(&maxConcurrent)
-					if current <= max || atomic.CompareAndSwapInt32(&maxConcurrent, max, current) {
+					currentMax := atomic.LoadInt32(&maxConcurrent)
+					if current <= currentMax || atomic.CompareAndSwapInt32(&maxConcurrent, currentMax, current) {
 						break
 					}
 				}
@@ -123,8 +124,8 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 			Check: func(ctx context.Context) error {
 				current := atomic.AddInt32(&counter, 1)
 				for {
-					max := atomic.LoadInt32(&maxConcurrent)
-					if current <= max || atomic.CompareAndSwapInt32(&maxConcurrent, max, current) {
+					currentMax := atomic.LoadInt32(&maxConcurrent)
+					if current <= currentMax || atomic.CompareAndSwapInt32(&maxConcurrent, currentMax, current) {
 						break
 					}
 				}
