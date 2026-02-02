@@ -3,16 +3,16 @@ package health
 import (
 	"sync"
 
-	"github.com/alexliesenfeld/health"
+	"github.com/petabytecl/gaz/healthx"
 )
 
 // Manager implements Registrar and manages health checkers.
 type Manager struct {
 	mu sync.Mutex
 
-	livenessChecks  []health.Check
-	readinessChecks []health.Check
-	startupChecks   []health.Check
+	livenessChecks  []healthx.Check
+	readinessChecks []healthx.Check
+	startupChecks   []healthx.Check
 }
 
 // NewManager creates a new Health Manager.
@@ -24,9 +24,10 @@ func NewManager() *Manager {
 func (m *Manager) AddLivenessCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.livenessChecks = append(m.livenessChecks, health.Check{
-		Name:  name,
-		Check: check,
+	m.livenessChecks = append(m.livenessChecks, healthx.Check{
+		Name:     name,
+		Check:    check,
+		Critical: true, // Default to critical per existing behavior
 	})
 }
 
@@ -34,9 +35,10 @@ func (m *Manager) AddLivenessCheck(name string, check CheckFunc) {
 func (m *Manager) AddReadinessCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.readinessChecks = append(m.readinessChecks, health.Check{
-		Name:  name,
-		Check: check,
+	m.readinessChecks = append(m.readinessChecks, healthx.Check{
+		Name:     name,
+		Check:    check,
+		Critical: true, // Default to critical per existing behavior
 	})
 }
 
@@ -44,53 +46,54 @@ func (m *Manager) AddReadinessCheck(name string, check CheckFunc) {
 func (m *Manager) AddStartupCheck(name string, check CheckFunc) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.startupChecks = append(m.startupChecks, health.Check{
-		Name:  name,
-		Check: check,
+	m.startupChecks = append(m.startupChecks, healthx.Check{
+		Name:     name,
+		Check:    check,
+		Critical: true, // Default to critical per existing behavior
 	})
 }
 
-// LivenessChecker builds the health.Checker for liveness checks.
-func (m *Manager) LivenessChecker(opts ...health.CheckerOption) health.Checker {
+// LivenessChecker builds the healthx.Checker for liveness checks.
+func (m *Manager) LivenessChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]health.CheckerOption, 0, len(m.livenessChecks)+len(opts))
+	finalOpts := make([]healthx.CheckerOption, 0, len(m.livenessChecks)+len(opts))
 	for _, c := range m.livenessChecks {
-		finalOpts = append(finalOpts, health.WithCheck(c))
+		finalOpts = append(finalOpts, healthx.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return health.NewChecker(finalOpts...)
+	return healthx.NewChecker(finalOpts...)
 }
 
-// ReadinessChecker builds the health.Checker for readiness checks.
-func (m *Manager) ReadinessChecker(opts ...health.CheckerOption) health.Checker {
+// ReadinessChecker builds the healthx.Checker for readiness checks.
+func (m *Manager) ReadinessChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]health.CheckerOption, 0, len(m.readinessChecks)+len(opts))
+	finalOpts := make([]healthx.CheckerOption, 0, len(m.readinessChecks)+len(opts))
 	for _, c := range m.readinessChecks {
-		finalOpts = append(finalOpts, health.WithCheck(c))
+		finalOpts = append(finalOpts, healthx.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return health.NewChecker(finalOpts...)
+	return healthx.NewChecker(finalOpts...)
 }
 
-// StartupChecker builds the health.Checker for startup checks.
-func (m *Manager) StartupChecker(opts ...health.CheckerOption) health.Checker {
+// StartupChecker builds the healthx.Checker for startup checks.
+func (m *Manager) StartupChecker(opts ...healthx.CheckerOption) healthx.Checker {
 	m.mu.Lock()
 
 	defer m.mu.Unlock()
 
-	finalOpts := make([]health.CheckerOption, 0, len(m.startupChecks)+len(opts))
+	finalOpts := make([]healthx.CheckerOption, 0, len(m.startupChecks)+len(opts))
 	for _, c := range m.startupChecks {
-		finalOpts = append(finalOpts, health.WithCheck(c))
+		finalOpts = append(finalOpts, healthx.WithCheck(c))
 	}
 	finalOpts = append(finalOpts, opts...)
 
-	return health.NewChecker(finalOpts...)
+	return healthx.NewChecker(finalOpts...)
 }

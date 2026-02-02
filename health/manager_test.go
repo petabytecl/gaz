@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/petabytecl/gaz/healthx"
 )
 
 func TestManager_LivenessChecker(t *testing.T) {
@@ -18,7 +20,7 @@ func TestManager_LivenessChecker(t *testing.T) {
 	checker := m.LivenessChecker()
 	res := checker.Check(context.Background())
 
-	if res.Status != "up" {
+	if res.Status != healthx.StatusUp {
 		t.Errorf("expected up status, got %s", res.Status)
 	}
 	if !called {
@@ -36,8 +38,8 @@ func TestManager_ReadinessChecker(t *testing.T) {
 	checker := m.ReadinessChecker()
 	res := checker.Check(context.Background())
 
-	if res.Status == "OK" {
-		t.Error("expected failure status, got OK")
+	if res.Status == healthx.StatusUp {
+		t.Error("expected failure status, got up")
 	}
 }
 
@@ -51,7 +53,7 @@ func TestManager_StartupChecker(t *testing.T) {
 	checker := m.StartupChecker()
 	res := checker.Check(context.Background())
 
-	if res.Status != "up" {
+	if res.Status != healthx.StatusUp {
 		t.Errorf("expected up status, got %s", res.Status)
 	}
 }
