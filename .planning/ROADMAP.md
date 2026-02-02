@@ -287,7 +287,12 @@ Plans:
 6. All existing tests pass (`go test ./...` succeeds)
 7. Test coverage maintained at 90%+ overall
 
-**Plans:** TBD
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 35-01-PLAN.md — Core healthx package (Check, Checker, parallel execution)
+- [ ] 35-02-PLAN.md — HTTP handler and IETF result writer
+- [ ] 35-03-PLAN.md — Integration and dependency removal
 
 ## Progress
 
@@ -307,7 +312,7 @@ Plans:
 | 32. Backoff Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 33. Tint Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 34. Cron Package | v4.0 | 3/3 | Complete | 2026-02-01 |
-| 35. Health Package + Integration | v4.0 | 0/? | Pending | - |
+| 35. Health Package + Integration | v4.0 | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-01-29*
