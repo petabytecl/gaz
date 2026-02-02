@@ -98,12 +98,12 @@ func WithTimeout(timeout time.Duration) CheckerOption {
 // Check runs all configured health checks and returns the result.
 func (c *checker) Check(ctx context.Context) CheckerResult {
 	result := CheckerResult{
-		Status:  StatusUnknown,
+		Status:  StatusUp, // Default to up - no checks = healthy
 		Details: make(map[string]CheckResult),
 	}
 
 	if len(c.checks) == 0 {
-		// No checks configured
+		// No checks configured - healthy by default (matches alexliesenfeld/health behavior)
 		return result
 	}
 
@@ -128,8 +128,8 @@ func (c *checker) Check(ctx context.Context) CheckerResult {
 
 	// Determine overall status
 	if !hasCritical {
-		// No critical checks, status is unknown
-		result.Status = StatusUnknown
+		// No critical checks, but we have checks - status is up (graceful degradation)
+		result.Status = StatusUp
 	} else if criticalFailed {
 		result.Status = StatusDown
 	} else {

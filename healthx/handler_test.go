@@ -65,8 +65,8 @@ func TestNewHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("returns 503 for unknown status", func(t *testing.T) {
-		// Checker with no checks returns StatusUnknown
+	t.Run("returns 200 for empty checker", func(t *testing.T) {
+		// Checker with no checks returns StatusUp (healthy by default)
 		checker := NewChecker()
 
 		handler := NewHandler(checker)
@@ -75,8 +75,9 @@ func TestNewHandler(t *testing.T) {
 
 		handler.ServeHTTP(rec, req)
 
-		if rec.Code != http.StatusServiceUnavailable {
-			t.Errorf("status = %d, want %d", rec.Code, http.StatusServiceUnavailable)
+		// Empty checker = healthy = 200
+		if rec.Code != http.StatusOK {
+			t.Errorf("status = %d, want %d", rec.Code, http.StatusOK)
 		}
 	})
 }

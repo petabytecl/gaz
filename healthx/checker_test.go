@@ -12,8 +12,8 @@ func TestNewChecker_EmptyChecker(t *testing.T) {
 	checker := NewChecker()
 	result := checker.Check(context.Background())
 
-	if result.Status != StatusUnknown {
-		t.Errorf("expected StatusUnknown for empty checker, got %v", result.Status)
+	if result.Status != StatusUp {
+		t.Errorf("expected StatusUp for empty checker (matches alexliesenfeld/health), got %v", result.Status)
 	}
 	if len(result.Details) != 0 {
 		t.Errorf("expected empty details, got %d entries", len(result.Details))
@@ -325,7 +325,7 @@ func TestNewChecker_CriticalFailing(t *testing.T) {
 }
 
 func TestNewChecker_OnlyNonCriticalChecks(t *testing.T) {
-	// Test that with only non-critical checks, status is Unknown
+	// Test that with only non-critical checks, status is Up (graceful degradation)
 	checker := NewChecker(
 		WithCheck(Check{
 			Name: "warning1",
@@ -347,9 +347,9 @@ func TestNewChecker_OnlyNonCriticalChecks(t *testing.T) {
 
 	result := checker.Check(context.Background())
 
-	// No critical checks means status is Unknown
-	if result.Status != StatusUnknown {
-		t.Errorf("expected StatusUnknown (no critical checks), got %v", result.Status)
+	// No critical checks means status is Up (graceful degradation, non-critical don't affect overall status)
+	if result.Status != StatusUp {
+		t.Errorf("expected StatusUp (no critical checks, graceful degradation), got %v", result.Status)
 	}
 }
 
