@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 - **Milestone:** v4.0 Dependency Reduction
 - **Phase:** 36 (Add builtin checks on `health/checks`) — In Progress
-- **Plan:** 1 of 6 in current phase
+- **Plan:** 2 of 6 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 36-01-PLAN.md
+- **Last activity:** 2026-02-02 — Completed 36-02-PLAN.md
 
-Progress: [██████████] 93% (Phase 36: 1/6 plans complete)
+Progress: [██████████] 94% (Phase 36: 2/6 plans complete)
 
 ## Milestones Shipped
 
@@ -63,6 +63,9 @@ All key decisions documented in PROJECT.md Key Decisions table.
 
 - checksql import alias used in examples to avoid collision with database/sql
 - Config + New factory pattern established for all health checks
+- TCP check dials and immediately closes connection to verify connectivity
+- DNS check requires at least one address in resolution result
+- Both TCP/DNS checks default to 2s timeout, context deadline takes precedence
 
 ### Research Summary
 
@@ -88,9 +91,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02T21:21:34Z
-Stopped at: Completed 36-01-PLAN.md
-Resume with: `/gsd-execute-phase 36` to continue with 36-02
+Last session: 2026-02-02T21:22:21Z
+Stopped at: Completed 36-02-PLAN.md
+Resume with: `/gsd-execute-phase 36` to continue with 36-03
 
 ---
 
