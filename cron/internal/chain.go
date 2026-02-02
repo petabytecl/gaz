@@ -1,4 +1,3 @@
-//nolint:ireturn // wrappers return interfaces
 package internal
 
 import (
