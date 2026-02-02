@@ -198,7 +198,7 @@ Plans:
 - [x] 31-01-PLAN.md — Strict config validation (WithStrictConfig option)
 - [x] 31-02-PLAN.md — Worker dead letter handling (DeadLetterHandler callback)
 
-## Current Milestone: v4.0 Dependency Reduction
+### ✅ v4.0 Dependency Reduction (Complete)
 
 **Milestone Goal:** Replace external dependencies with internal implementations to reduce dependency footprint and gain full control over critical infrastructure.
 

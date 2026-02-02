@@ -32,9 +32,9 @@ Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
 | v3.0 | API Harmonization | 23-29 | 27 | 2026-02-01 |
 | v3.1 | Performance & Stability | 30 | 2 | 2026-02-01 |
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
-| v4.0 | Dependency Reduction | 32-35 | 12 | 2026-02-02 |
+| v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 
-**Total:** 139 plans across 35 phases
+**Total:** 145 plans across 36 phases
 
 ## v4.0 Milestone Structure
 
@@ -45,7 +45,9 @@ Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
 | 34 | Cron Package | CRN-01 to CRN-12 (12) | Complete (3/3 plans) |
 | 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | Complete (3/3 plans) |
 
-**Total v4.0:** 47 requirements across 4 phases — ALL COMPLETE
+| 36 | Add builtin checks | SQL, Redis, HTTP, TCP, DNS, Runtime, Disk (7) | Complete (6/6 plans) |
+
+**Total v4.0:** 54 requirements across 5 phases — ALL COMPLETE
 
 ## Accumulated Context
 
@@ -101,7 +103,7 @@ None — v4.0 complete.
 
 Last session: 2026-02-02T21:30:05Z
 Stopped at: Completed 36-06-PLAN.md
-Resume with: Phase 36 complete, ready for next milestone
+Resume with: v4.0 milestone complete with Phase 36. Ready for /gsd-complete-milestone
 
 ---
 
