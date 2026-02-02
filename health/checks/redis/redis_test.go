@@ -5,39 +5,30 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/valkey-io/valkey-go/mock"
+	"go.uber.org/mock/gomock"
 )
-
-// mockPinger is a mock implementation of Pinger for testing.
-type mockPinger struct {
-	result string
-	err    error
-}
-
-func (m *mockPinger) Ping(ctx context.Context) *redis.StatusCmd {
-	cmd := redis.NewStatusCmd(ctx)
-	if m.err != nil {
-		cmd.SetErr(m.err)
-	} else {
-		cmd.SetVal(m.result)
-	}
-	return cmd
-}
 
 func TestNew_NilClient(t *testing.T) {
 	check := New(Config{Client: nil})
 	err := check(context.Background())
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "client is nil")
+	assert.ErrorIs(t, err, ErrNilClient)
 }
 
 func TestNew_SuccessfulPing(t *testing.T) {
-	client := &mockPinger{result: "PONG"}
-	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
+	client := mock.NewClient(ctrl)
+	client.EXPECT().
+		Do(gomock.Any(), mock.Match("PING")).
+		Return(mock.Result(mock.ValkeyString("PONG")))
+
+	ctx := context.Background()
 	check := New(Config{Client: client})
 	err := check(ctx)
 
@@ -45,9 +36,15 @@ func TestNew_SuccessfulPing(t *testing.T) {
 }
 
 func TestNew_PingFailure(t *testing.T) {
-	client := &mockPinger{err: errors.New("connection refused")}
-	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
+	client := mock.NewClient(ctrl)
+	client.EXPECT().
+		Do(gomock.Any(), mock.Match("PING")).
+		Return(mock.ErrorResult(errors.New("connection refused")))
+
+	ctx := context.Background()
 	check := New(Config{Client: client})
 	err := check(ctx)
 
@@ -57,9 +54,15 @@ func TestNew_PingFailure(t *testing.T) {
 }
 
 func TestNew_UnexpectedResponse(t *testing.T) {
-	client := &mockPinger{result: "UNEXPECTED"}
-	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
+	client := mock.NewClient(ctrl)
+	client.EXPECT().
+		Do(gomock.Any(), mock.Match("PING")).
+		Return(mock.Result(mock.ValkeyString("UNEXPECTED")))
+
+	ctx := context.Background()
 	check := New(Config{Client: client})
 	err := check(ctx)
 
@@ -69,10 +72,16 @@ func TestNew_UnexpectedResponse(t *testing.T) {
 }
 
 func TestNew_ContextCancellation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	client := &mockPinger{err: ctx.Err()}
+	client := mock.NewClient(ctrl)
+	client.EXPECT().
+		Do(gomock.Any(), mock.Match("PING")).
+		Return(mock.ErrorResult(ctx.Err()))
 
 	check := New(Config{Client: client})
 	err := check(ctx)

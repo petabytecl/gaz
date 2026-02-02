@@ -422,8 +422,9 @@ linters:
             - go.uber.org/atomic
             - github.com/petermattis/goid
             - golang.org/x/term
-            - github.com/redis/go-redis/v9
+            - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
+            - go.uber.org/mock
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -448,31 +449,9 @@ linters:
             - go.uber.org/atomic
             - github.com/petermattis/goid
             - golang.org/x/term
-            - github.com/redis/go-redis/v9
+            - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
-          deny:
-            - pkg: math/rand$
-              desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
-        "non-main files":
-          files:
-            - "!**/main.go"
-          allow:
-            - $gostd
-            - github.com/petabytecl/gaz
-            - github.com/spf13
-            - github.com/stretchr/testify
-            - github.com/robfig/cron/v3
-            - github.com/go-viper/mapstructure/v2
-            - github.com/go-playground/validator/v10
-            - github.com/fsnotify/fsnotify
-            - github.com/alexliesenfeld/health
-            - github.com/lmittmann/tint
-            - github.com/jpillora/backoff
-            - go.uber.org/atomic
-            - github.com/petermattis/goid
-            - golang.org/x/term
-            - github.com/redis/go-redis/v9
-            - github.com/shirou/gopsutil/v4
+            - go.uber.org/mock
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog

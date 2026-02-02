@@ -1,4 +1,4 @@
-// Package redis provides a health check for Redis using go-redis/v9.
+// Package redis provides a health check for Redis/Valkey using valkey-go.
 package redis
 
 import (
@@ -6,25 +6,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/valkey-io/valkey-go"
 )
 
-// ErrNilClient is returned when the Redis client is nil.
+// ErrNilClient is returned when the Valkey client is nil.
 var ErrNilClient = errors.New("redis: client is nil")
 
-// Pinger is an interface for Redis clients that can ping.
-type Pinger interface {
-	Ping(ctx context.Context) *redis.StatusCmd
-}
-
-// Config configures the Redis health check.
+// Config configures the Redis/Valkey health check.
 type Config struct {
-	// Client is the Redis client to check. Required.
-	// Use redis.NewClient() to create one.
-	Client Pinger
+	// Client is the Valkey client to check. Required.
+	// Use valkey.NewClient() to create one.
+	Client valkey.Client
 }
 
-// New creates a new Redis health check.
+// New creates a new Redis/Valkey health check.
 // Uses PING command to verify connectivity and response.
 //
 // Returns nil if PING returns "PONG", error otherwise.
@@ -33,12 +28,12 @@ func New(cfg Config) func(context.Context) error {
 		if cfg.Client == nil {
 			return ErrNilClient
 		}
-		pong, err := cfg.Client.Ping(ctx).Result()
+		resp, err := cfg.Client.Do(ctx, cfg.Client.B().Ping().Build()).ToString()
 		if err != nil {
 			return fmt.Errorf("redis: ping failed: %w", err)
 		}
-		if pong != "PONG" {
-			return fmt.Errorf("redis: unexpected ping response: %q", pong)
+		if resp != "PONG" {
+			return fmt.Errorf("redis: unexpected ping response: %q", resp)
 		}
 		return nil
 	}
