@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 - **Milestone:** v4.0 Dependency Reduction
 - **Phase:** 36 (Add builtin checks on `health/checks`) — In Progress
-- **Plan:** 4 of 6 in current phase
+- **Plan:** 5 of 6 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 36-04-PLAN.md
+- **Last activity:** 2026-02-02 — Completed 36-05-PLAN.md
 
-Progress: [██████████] 96% (Phase 36: 4/6 plans complete)
+Progress: [██████████] 97% (Phase 36: 5/6 plans complete)
 
 ## Milestones Shipped
 
@@ -70,6 +70,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - HTTP check defaults to 5s timeout (longer than TCP/DNS due to full HTTP round-trip)
 - HTTP check doesn't follow redirects by default (health endpoints shouldn't redirect)
 - HTTP check sets Connection: close header to avoid holding connections
+- Redis check uses redis.UniversalClient interface for broad compatibility
+- Redis check uses PING command (expects "PONG" response)
 
 ### Research Summary
 
@@ -95,9 +97,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02T21:22:28Z
-Stopped at: Completed 36-04-PLAN.md
-Resume with: `/gsd-execute-phase 36` to continue with 36-05
+Last session: 2026-02-02T21:28:10Z
+Stopped at: Completed 36-05-PLAN.md
+Resume with: `/gsd-execute-phase 36` to continue with 36-06
 
 ---
 
