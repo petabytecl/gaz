@@ -67,6 +67,9 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - DNS check requires at least one address in resolution result
 - Both TCP/DNS checks default to 2s timeout, context deadline takes precedence
 - Runtime checks use simple factory functions with threshold parameter (no Config struct)
+- HTTP check defaults to 5s timeout (longer than TCP/DNS due to full HTTP round-trip)
+- HTTP check doesn't follow redirects by default (health endpoints shouldn't redirect)
+- HTTP check sets Connection: close header to avoid holding connections
 
 ### Research Summary
 
