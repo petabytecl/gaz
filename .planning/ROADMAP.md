@@ -294,9 +294,36 @@ Plans:
 - [x] 35-02-PLAN.md — HTTP handler and IETF result writer
 - [x] 35-03-PLAN.md — Integration and dependency removal
 
+### Phase 36: Add builtin checks on `health/checks`
+
+**Goal:** Reusable, production-ready health checks for common infrastructure dependencies
+**Depends on:** Phase 35
+**Requirements:** SQL, Redis, HTTP, TCP, DNS, Runtime, Disk checks
+**Estimate:** 2-3 hours
+
+**Success Criteria** (what must be TRUE):
+1. `health/checks/` package exists with subpackages for each check type
+2. Each check has Config struct + New() factory returning `func(context.Context) error`
+3. SQL check uses db.PingContext for optimal connection testing
+4. Redis check uses client.Ping with UniversalClient interface
+5. HTTP check validates response status with configurable expected code
+6. TCP/DNS checks use stdlib net package with timeout support
+7. Runtime checks (goroutine, memory, GC) use stdlib runtime package
+8. Disk check uses gopsutil/v4 for cross-platform support
+
+**Plans:** 6 plans in 2 waves
+
+Plans:
+- [ ] 36-01-PLAN.md — Package foundation + SQL database check
+- [ ] 36-02-PLAN.md — TCP dial + DNS resolution checks
+- [ ] 36-03-PLAN.md — HTTP upstream check
+- [ ] 36-04-PLAN.md — Runtime metrics checks (goroutine, memory, GC)
+- [ ] 36-05-PLAN.md — Redis check (go-redis/v9)
+- [ ] 36-06-PLAN.md — Disk space check (gopsutil/v4)
+
 ## Progress
 
-**Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 31 → 32 → 33 → 34 → 35
+**Execution Order:** Phases 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 31 → 32 → 33 → 34 → 35 → 36
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -313,10 +340,11 @@ Plans:
 | 33. Tint Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 34. Cron Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 35. Health Package + Integration | v4.0 | 3/3 | Complete | 2026-02-02 |
+| 36. Add builtin checks on `health/checks` | v4.0 | 0/6 | In Progress | - |
 
 ---
 *Roadmap created: 2026-01-29*
 *Milestone: v3.0 API Harmonization - COMPLETE*
 *Milestone: v3.1 Performance & Stability - COMPLETE*
 *Milestone: v3.2 Feature Maturity - COMPLETE*
-*Milestone: v4.0 Dependency Reduction - COMPLETE (2026-02-02)*
+*Milestone: v4.0 Dependency Reduction - IN PROGRESS*
