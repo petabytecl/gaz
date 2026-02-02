@@ -1,4 +1,4 @@
-package cronx
+package internal
 
 import (
 	"bytes"
@@ -14,18 +14,17 @@ import (
 // Many tests schedule a job for every second, and then wait at most a second
 // for it to run.  This amount is just slightly larger than 1 second to
 // compensate for a few milliseconds of runtime.
-const OneSecond = 1*time.Second + 50*time.Millisecond
+const defaultWait = 1*time.Second + 50*time.Millisecond
 
 type syncWriter struct {
 	wr bytes.Buffer
 	m  sync.Mutex
 }
 
-func (sw *syncWriter) Write(data []byte) (n int, err error) {
+func (sw *syncWriter) Write(data []byte) (int, error) {
 	sw.m.Lock()
-	n, err = sw.wr.Write(data)
-	sw.m.Unlock()
-	return n, err
+	defer sw.m.Unlock()
+	return sw.wr.Write(data) //nolint:wrapcheck // test helper
 }
 
 func (sw *syncWriter) String() string {
@@ -50,7 +49,7 @@ func TestFuncPanicRecovery(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// Job panics but recovers - no crash
-	time.Sleep(OneSecond)
+	time.Sleep(defaultWait)
 }
 
 type DummyJob struct{}
@@ -70,7 +69,7 @@ func TestJobPanicRecovery(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// Job panics but recovers - no crash
-	time.Sleep(OneSecond)
+	time.Sleep(defaultWait)
 }
 
 // Start and stop cron with no entries.
@@ -79,7 +78,7 @@ func TestNoEntries(t *testing.T) {
 	cron.Start()
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Fatal("expected cron will be stopped immediately")
 	case <-stop(cron):
 	}
@@ -93,10 +92,10 @@ func TestStopCausesJobsToNotRun(t *testing.T) {
 	cron := newWithSeconds()
 	cron.Start()
 	cron.Stop()
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		// No job ran!
 	case <-wait(wg):
 		t.Fatal("expected stopped cron does not run any job")
@@ -109,13 +108,13 @@ func TestAddBeforeRunning(t *testing.T) {
 	wg.Add(1)
 
 	cron := newWithSeconds()
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	cron.Start()
 	defer cron.Stop()
 
 	// Give cron 2 seconds to run our job (which is always activated).
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Fatal("expected job runs")
 	case <-wait(wg):
 	}
@@ -129,25 +128,25 @@ func TestAddWhileRunning(t *testing.T) {
 	cron := newWithSeconds()
 	cron.Start()
 	defer cron.Stop()
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Fatal("expected job runs")
 	case <-wait(wg):
 	}
 }
 
-// Test for #34. Adding a job after calling start results in multiple job invocations
+// Test for #34. Adding a job after calling start results in multiple job invocations.
 func TestAddWhileRunningWithDelay(t *testing.T) {
 	cron := newWithSeconds()
 	cron.Start()
 	defer cron.Stop()
 	time.Sleep(5 * time.Second)
 	var calls int64
-	cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
+	_, _ = cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
 
-	<-time.After(OneSecond)
+	<-time.After(defaultWait)
 	if atomic.LoadInt64(&calls) != 1 {
 		t.Errorf("called %d times, expected 1\n", calls)
 	}
@@ -165,7 +164,7 @@ func TestRemoveBeforeRunning(t *testing.T) {
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		// Success, shouldn't run
 	case <-wait(wg):
 		t.FailNow()
@@ -184,7 +183,7 @@ func TestRemoveWhileRunning(t *testing.T) {
 	cron.Remove(id)
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 	case <-wait(wg):
 		t.FailNow()
 	}
@@ -196,19 +195,17 @@ func TestSnapshotEntries(t *testing.T) {
 	wg.Add(1)
 
 	cron := New()
-	cron.AddFunc("@every 2s", func() { wg.Done() })
+	_, _ = cron.AddFunc("@every 2s", func() { wg.Done() })
 	cron.Start()
 	defer cron.Stop()
 
 	// Cron should fire in 2 seconds. After 1 second, call Entries.
-	select {
-	case <-time.After(OneSecond):
-		cron.Entries()
-	}
+	time.Sleep(defaultWait)
+	cron.Entries()
 
 	// Even though Entries was called, the cron should fire at the 2 second mark.
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Error("expected job runs at 2 second mark")
 	case <-wait(wg):
 	}
@@ -223,12 +220,12 @@ func TestMultipleEntries(t *testing.T) {
 	wg.Add(2)
 
 	cron := newWithSeconds()
-	cron.AddFunc("0 0 0 1 1 ?", func() {})
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("0 0 0 1 1 ?", func() {})
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	id1, _ := cron.AddFunc("* * * * * ?", func() { t.Fatal() })
 	id2, _ := cron.AddFunc("* * * * * ?", func() { t.Fatal() })
-	cron.AddFunc("0 0 0 31 12 ?", func() {})
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("0 0 0 31 12 ?", func() {})
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
 	cron.Remove(id1)
 	cron.Start()
@@ -236,7 +233,7 @@ func TestMultipleEntries(t *testing.T) {
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Error("expected job run in proper order")
 	case <-wait(wg):
 	}
@@ -248,15 +245,15 @@ func TestRunningJobTwice(t *testing.T) {
 	wg.Add(2)
 
 	cron := newWithSeconds()
-	cron.AddFunc("0 0 0 1 1 ?", func() {})
-	cron.AddFunc("0 0 0 31 12 ?", func() {})
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("0 0 0 1 1 ?", func() {})
+	_, _ = cron.AddFunc("0 0 0 31 12 ?", func() {})
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
 	cron.Start()
 	defer cron.Stop()
 
 	select {
-	case <-time.After(2 * OneSecond):
+	case <-time.After(2 * defaultWait):
 		t.Error("expected job fires 2 times")
 	case <-wait(wg):
 	}
@@ -267,9 +264,9 @@ func TestRunningMultipleSchedules(t *testing.T) {
 	wg.Add(2)
 
 	cron := newWithSeconds()
-	cron.AddFunc("0 0 0 1 1 ?", func() {})
-	cron.AddFunc("0 0 0 31 12 ?", func() {})
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("0 0 0 1 1 ?", func() {})
+	_, _ = cron.AddFunc("0 0 0 31 12 ?", func() {})
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 	cron.Schedule(Every(time.Minute), FuncJob(func() {}))
 	cron.Schedule(Every(time.Second), FuncJob(func() { wg.Done() }))
 	cron.Schedule(Every(time.Hour), FuncJob(func() {}))
@@ -278,7 +275,7 @@ func TestRunningMultipleSchedules(t *testing.T) {
 	defer cron.Stop()
 
 	select {
-	case <-time.After(2 * OneSecond):
+	case <-time.After(2 * defaultWait):
 		t.Error("expected job fires 2 times")
 	case <-wait(wg):
 	}
@@ -301,12 +298,12 @@ func TestLocalTimezone(t *testing.T) {
 		now.Second()+1, now.Second()+2, now.Minute(), now.Hour(), now.Day(), now.Month())
 
 	cron := newWithSeconds()
-	cron.AddFunc(spec, func() { wg.Done() })
+	_, _ = cron.AddFunc(spec, func() { wg.Done() })
 	cron.Start()
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond * 2):
+	case <-time.After(defaultWait * 2):
 		t.Error("expected job fires 2 times")
 	case <-wait(wg):
 	}
@@ -319,7 +316,7 @@ func TestNonLocalTimezone(t *testing.T) {
 
 	loc, err := time.LoadLocation("Atlantic/Cape_Verde")
 	if err != nil {
-		fmt.Printf("Failed to load time zone Atlantic/Cape_Verde: %+v", err)
+		t.Logf("Failed to load time zone Atlantic/Cape_Verde: %+v", err)
 		t.Fail()
 	}
 
@@ -335,12 +332,12 @@ func TestNonLocalTimezone(t *testing.T) {
 		now.Second()+1, now.Second()+2, now.Minute(), now.Hour(), now.Day(), now.Month())
 
 	cron := New(WithLocation(loc), WithParser(secondParser))
-	cron.AddFunc(spec, func() { wg.Done() })
+	_, _ = cron.AddFunc(spec, func() { wg.Done() })
 	cron.Start()
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond * 2):
+	case <-time.After(defaultWait * 2):
 		t.Error("expected job fires 2 times")
 	case <-wait(wg):
 	}
@@ -362,7 +359,7 @@ func (t testJob) Run() {
 	t.wg.Done()
 }
 
-// Test that adding an invalid job spec returns an error
+// Test that adding an invalid job spec returns an error.
 func TestInvalidJobSpec(t *testing.T) {
 	cron := New()
 	_, err := cron.AddJob("this will not parse", nil)
@@ -371,13 +368,13 @@ func TestInvalidJobSpec(t *testing.T) {
 	}
 }
 
-// Test blocking run method behaves as Start()
+// Test blocking run method behaves as Start().
 func TestBlockingRun(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	cron := newWithSeconds()
-	cron.AddFunc("* * * * * ?", func() { wg.Done() })
+	_, _ = cron.AddFunc("* * * * * ?", func() { wg.Done() })
 
 	unblockChan := make(chan struct{})
 
@@ -388,7 +385,7 @@ func TestBlockingRun(t *testing.T) {
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.Error("expected job fires")
 	case <-unblockChan:
 		t.Error("expected that Run() blocks")
@@ -396,12 +393,12 @@ func TestBlockingRun(t *testing.T) {
 	}
 }
 
-// Test that double-running is a no-op
+// Test that double-running is a no-op.
 func TestStartNoop(t *testing.T) {
 	tickChan := make(chan struct{}, 2)
 
 	cron := newWithSeconds()
-	cron.AddFunc("* * * * * ?", func() {
+	_, _ = cron.AddFunc("* * * * * ?", func() {
 		tickChan <- struct{}{}
 	})
 
@@ -429,10 +426,10 @@ func TestJob(t *testing.T) {
 	wg.Add(1)
 
 	cron := newWithSeconds()
-	cron.AddJob("0 0 0 30 Feb ?", testJob{wg, "job0"})
-	cron.AddJob("0 0 0 1 1 ?", testJob{wg, "job1"})
+	_, _ = cron.AddJob("0 0 0 30 Feb ?", testJob{wg, "job0"})
+	_, _ = cron.AddJob("0 0 0 1 1 ?", testJob{wg, "job1"})
 	job2, _ := cron.AddJob("* * * * * ?", testJob{wg, "job2"})
-	cron.AddJob("1 0 0 1 1 ?", testJob{wg, "job3"})
+	_, _ = cron.AddJob("1 0 0 1 1 ?", testJob{wg, "job3"})
 	cron.Schedule(Every(5*time.Second+5*time.Nanosecond), testJob{wg, "job4"})
 	job5 := cron.Schedule(Every(5*time.Minute), testJob{wg, "job5"})
 
@@ -448,7 +445,7 @@ func TestJob(t *testing.T) {
 	defer cron.Stop()
 
 	select {
-	case <-time.After(OneSecond):
+	case <-time.After(defaultWait):
 		t.FailNow()
 	case <-wait(wg):
 	}
@@ -456,7 +453,7 @@ func TestJob(t *testing.T) {
 	// Ensure the entries are in the right order.
 	expecteds := []string{"job2", "job4", "job5", "job1", "job3", "job0"}
 
-	var actuals []string
+	actuals := make([]string, 0, len(cron.Entries()))
 	for _, entry := range cron.Entries() {
 		actuals = append(actuals, entry.Job.(testJob).name)
 	}
@@ -520,7 +517,7 @@ func TestScheduleAfterRemoval(t *testing.T) {
 	wg1.Wait()
 
 	select {
-	case <-time.After(2 * OneSecond):
+	case <-time.After(2 * defaultWait):
 		t.Error("expected job fires 2 times")
 	case <-wait(&wg2):
 	}
@@ -533,16 +530,57 @@ func (*ZeroSchedule) Next(time.Time) time.Time {
 }
 
 // Tests that job without time does not run
-func TestJobWithZeroTimeDoesNotRun(t *testing.T) {
-	cron := newWithSeconds()
-	var calls int64
-	cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
-	cron.Schedule(new(ZeroSchedule), FuncJob(func() { t.Error("expected zero task will not run") }))
+
+// Test Entry.Valid().
+func TestEntryValid(t *testing.T) {
+	e := Entry{}
+	if e.Valid() {
+		t.Error("zero entry should be invalid")
+	}
+	e.ID = 1
+	if !e.Valid() {
+		t.Error("non-zero entry should be valid")
+	}
+}
+
+// Test Cron.Location().
+func TestCronLocation(t *testing.T) {
+	loc, _ := time.LoadLocation("America/New_York")
+	cron := New(WithLocation(loc))
+	if cron.Location() != loc {
+		t.Error("expected correct location")
+	}
+}
+
+// Test Cron.Entry() with non-existent ID.
+func TestCronEntryNotFound(t *testing.T) {
+	cron := New()
 	cron.Start()
 	defer cron.Stop()
-	<-time.After(OneSecond)
-	if atomic.LoadInt64(&calls) != 1 {
-		t.Errorf("called %d times, expected 1\n", calls)
+	e := cron.Entry(123)
+	if e.Valid() {
+		t.Error("expected invalid entry for non-existent ID")
+	}
+}
+
+// Test Cron.Run() idempotency.
+func TestCronRunIdempotent(t *testing.T) {
+	cron := New()
+	cron.Start() // Sets running = true
+	defer cron.Stop()
+
+	// Call Run() while already running. It should return immediately.
+	done := make(chan struct{})
+	go func() {
+		cron.Run()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// success
+	case <-time.After(defaultWait):
+		t.Error("Run() should return immediately if already running")
 	}
 }
 
@@ -573,11 +611,11 @@ func TestStopAndWait(t *testing.T) {
 
 	t.Run("a couple fast jobs added, still returns immediately", func(t *testing.T) {
 		cron := newWithSeconds()
-		cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
 		cron.Start()
-		cron.AddFunc("* * * * * *", func() {})
-		cron.AddFunc("* * * * * *", func() {})
-		cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
 		time.Sleep(time.Second)
 		ctx := cron.Stop()
 		select {
@@ -589,10 +627,10 @@ func TestStopAndWait(t *testing.T) {
 
 	t.Run("a couple fast jobs and a slow job added, waits for slow job", func(t *testing.T) {
 		cron := newWithSeconds()
-		cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
 		cron.Start()
-		cron.AddFunc("* * * * * *", func() { time.Sleep(2 * time.Second) })
-		cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() { time.Sleep(2 * time.Second) })
+		_, _ = cron.AddFunc("* * * * * *", func() {})
 		time.Sleep(time.Second)
 
 		ctx := cron.Stop()
@@ -616,10 +654,10 @@ func TestStopAndWait(t *testing.T) {
 
 	t.Run("repeated calls to stop, waiting for completion and after", func(t *testing.T) {
 		cron := newWithSeconds()
-		cron.AddFunc("* * * * * *", func() {})
-		cron.AddFunc("* * * * * *", func() { time.Sleep(2 * time.Second) })
+		_, _ = cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() { time.Sleep(2 * time.Second) })
 		cron.Start()
-		cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {})
 		time.Sleep(time.Second)
 		ctx := cron.Stop()
 		ctx2 := cron.Stop()

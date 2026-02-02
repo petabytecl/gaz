@@ -1,4 +1,4 @@
-package cronx
+package internal
 
 import (
 	"io"
@@ -32,7 +32,7 @@ func TestWithLogger(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	c.Start()
-	time.Sleep(OneSecond)
+	time.Sleep(defaultWait)
 	ctx := c.Stop()
 	if ctx == nil {
 		t.Error("expected non-nil context")
@@ -49,9 +49,9 @@ func TestWithChain(t *testing.T) {
 	}
 
 	c := New(WithParser(secondParser), WithChain(wrapper))
-	c.AddFunc("* * * * * ?", func() {})
+	_, _ = c.AddFunc("* * * * * ?", func() {})
 	c.Start()
-	time.Sleep(OneSecond)
+	time.Sleep(defaultWait)
 	c.Stop()
 
 	if !called.Load() {

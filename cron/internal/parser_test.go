@@ -1,4 +1,4 @@
-package cronx
+package internal
 
 import (
 	"reflect"
@@ -7,7 +7,17 @@ import (
 	"time"
 )
 
+//nolint:gochecknoglobals // test singleton
 var secondParser = NewParser(Second | Minute | Hour | Dom | Month | DowOptional | Descriptor)
+
+func TestNewParserPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic with multiple optionals")
+		}
+	}()
+	NewParser(DowOptional | SecondOptional)
+}
 
 func TestRange(t *testing.T) {
 	zero := uint64(0)
@@ -416,7 +426,7 @@ func TestActivation(t *testing.T) {
 		}
 		actual := sched.Next(getTime(test.time).Add(-1 * time.Second))
 		expected := getTime(test.time)
-		if test.expected && expected != actual || !test.expected && expected == actual {
+		if test.expected != expected.Equal(actual) {
 			t.Errorf("Fail evaluating %s on %s: (expected) %s != %s (actual)",
 				test.spec, test.time, expected, actual)
 		}
@@ -474,6 +484,33 @@ func TestDescriptors(t *testing.T) {
 			t.Errorf("%s => expected %v, got %v", d.desc, d.expected, actual)
 		}
 	}
+}
+
+func TestParseBadLocation(t *testing.T) {
+	_, err := ParseStandard("CRON_TZ=Bad/Location * * * * *")
+	if err == nil || !strings.Contains(err.Error(), "provided bad location") {
+		t.Errorf("expected bad location error, got %v", err)
+	}
+}
+
+func TestNormalizeFieldsErrorMessages(t *testing.T) {
+	t.Run("Exact fields", func(t *testing.T) {
+		// No optionals, so min==max=5
+		parser := NewParser(Minute | Hour | Dom | Month | Dow)
+		_, err := parser.Parse("1 2 3")
+		if err == nil || !strings.Contains(err.Error(), "expected exactly 5 fields") {
+			t.Errorf("expected exactly 5 fields error, got %v", err)
+		}
+	})
+
+	t.Run("Range fields", func(t *testing.T) {
+		// Optional second, so min=5, max=6
+		parser := NewParser(SecondOptional | Minute | Hour | Dom | Month | Dow)
+		_, err := parser.Parse("1 2 3")
+		if err == nil || !strings.Contains(err.Error(), "expected 5 to 6 fields") {
+			t.Errorf("expected 5 to 6 fields error, got %v", err)
+		}
+	})
 }
 
 func TestCRON_TZ(t *testing.T) {

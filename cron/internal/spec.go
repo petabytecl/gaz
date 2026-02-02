@@ -1,4 +1,4 @@
-package cronx
+package internal
 
 import "time"
 
@@ -22,33 +22,35 @@ type bounds struct {
 }
 
 // The bounds for each field.
+//
+//nolint:gochecknoglobals // bounds table
 var (
-	seconds = bounds{min: 0, max: 59, names: nil}
-	minutes = bounds{min: 0, max: 59, names: nil}
-	hours   = bounds{min: 0, max: 23, names: nil}
-	dom     = bounds{min: 1, max: 31, names: nil}
-	months  = bounds{min: 1, max: 12, names: map[string]uint{
+	seconds = bounds{min: 0, max: 59, names: nil}             //nolint:mnd // bounds
+	minutes = bounds{min: 0, max: 59, names: nil}             //nolint:mnd // bounds
+	hours   = bounds{min: 0, max: 23, names: nil}             //nolint:mnd // bounds
+	dom     = bounds{min: 1, max: 31, names: nil}             //nolint:mnd // bounds
+	months  = bounds{min: 1, max: 12, names: map[string]uint{ //nolint:mnd // bounds
 		"jan": 1,
-		"feb": 2,
-		"mar": 3,
-		"apr": 4,
-		"may": 5,
-		"jun": 6,
-		"jul": 7,
-		"aug": 8,
-		"sep": 9,
-		"oct": 10,
-		"nov": 11,
-		"dec": 12,
+		"feb": 2,  //nolint:mnd // month
+		"mar": 3,  //nolint:mnd // month
+		"apr": 4,  //nolint:mnd // month
+		"may": 5,  //nolint:mnd // month
+		"jun": 6,  //nolint:mnd // month
+		"jul": 7,  //nolint:mnd // month
+		"aug": 8,  //nolint:mnd // month
+		"sep": 9,  //nolint:mnd // month
+		"oct": 10, //nolint:mnd // month
+		"nov": 11, //nolint:mnd // month
+		"dec": 12, //nolint:mnd // month
 	}}
-	dow = bounds{min: 0, max: 6, names: map[string]uint{
+	dow = bounds{min: 0, max: 6, names: map[string]uint{ //nolint:mnd // bounds
 		"sun": 0,
 		"mon": 1,
-		"tue": 2,
-		"wed": 3,
-		"thu": 4,
-		"fri": 5,
-		"sat": 6,
+		"tue": 2, //nolint:mnd // day
+		"wed": 3, //nolint:mnd // day
+		"thu": 4, //nolint:mnd // day
+		"fri": 5, //nolint:mnd // day
+		"sat": 6, //nolint:mnd // day
 	}}
 )
 
@@ -59,6 +61,8 @@ const (
 
 // Next returns the next time this schedule is activated, greater than the given
 // time.  If no time can be found to satisfy the schedule, return the zero time.
+//
+//nolint:gocognit // complex schedule logic
 func (s *SpecSchedule) Next(t time.Time) time.Time {
 	// General approach
 	//
@@ -89,7 +93,7 @@ func (s *SpecSchedule) Next(t time.Time) time.Time {
 	added := false
 
 	// If no time is found within five years, return zero.
-	yearLimit := t.Year() + 5
+	yearLimit := t.Year() + 5 //nolint:mnd // 5 years limit
 
 WRAP:
 	if t.Year() > yearLimit {
@@ -98,7 +102,7 @@ WRAP:
 
 	// Find the first applicable month.
 	// If it's this month, then do nothing.
-	for 1<<uint(t.Month())&s.Month == 0 {
+	for 1<<uint(t.Month())&s.Month == 0 { //nolint:gosec // range checked
 		// If we have to add a month, reset the other parts to 0.
 		if !added {
 			added = true
@@ -127,8 +131,8 @@ WRAP:
 		// Notice if the hour is no longer midnight due to DST.
 		// Add an hour if it's 23, subtract an hour if it's 1.
 		if t.Hour() != 0 {
-			if t.Hour() > 12 {
-				t = t.Add(time.Duration(24-t.Hour()) * time.Hour)
+			if t.Hour() > 12 { //nolint:mnd // pm
+				t = t.Add(time.Duration(24-t.Hour()) * time.Hour) //nolint:mnd // 24h
 			} else {
 				t = t.Add(time.Duration(-t.Hour()) * time.Hour)
 			}
@@ -139,7 +143,7 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Hour())&s.Hour == 0 {
+	for 1<<uint(t.Hour())&s.Hour == 0 { //nolint:gosec // range checked
 		if !added {
 			added = true
 			t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, loc)
@@ -151,7 +155,7 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Minute())&s.Minute == 0 {
+	for 1<<uint(t.Minute())&s.Minute == 0 { //nolint:gosec // range checked
 		if !added {
 			added = true
 			t = t.Truncate(time.Minute)
@@ -163,7 +167,7 @@ WRAP:
 		}
 	}
 
-	for 1<<uint(t.Second())&s.Second == 0 {
+	for 1<<uint(t.Second())&s.Second == 0 { //nolint:gosec // range checked
 		if !added {
 			added = true
 			t = t.Truncate(time.Second)
@@ -182,8 +186,8 @@ WRAP:
 // restrictions are satisfied by the given time.
 func dayMatches(s *SpecSchedule, t time.Time) bool {
 	var (
-		domMatch bool = 1<<uint(t.Day())&s.Dom > 0
-		dowMatch bool = 1<<uint(t.Weekday())&s.Dow > 0
+		domMatch = 1<<uint(t.Day())&s.Dom > 0     //nolint:gosec // range checked
+		dowMatch = 1<<uint(t.Weekday())&s.Dow > 0 //nolint:gosec // range checked
 	)
 	if s.Dom&starBit > 0 || s.Dow&starBit > 0 {
 		return domMatch && dowMatch

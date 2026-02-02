@@ -1,6 +1,8 @@
-package cronx
+//nolint:ireturn,nolintlint // factory
+package internal
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -24,17 +26,27 @@ type ScheduleParser interface {
 type ParseOption int
 
 const (
-	Second         ParseOption = 1 << iota // Seconds field, default 0
-	SecondOptional                         // Optional seconds field, default 0
-	Minute                                 // Minutes field, default 0
-	Hour                                   // Hours field, default 0
-	Dom                                    // Day of month field, default *
-	Month                                  // Month field, default *
-	Dow                                    // Day of week field, default *
-	DowOptional                            // Optional day of week field, default *
-	Descriptor                             // Allow descriptors such as @monthly, @weekly, etc.
+	// Second is the seconds field, default 0.
+	Second ParseOption = 1 << iota
+	// SecondOptional is the optional seconds field, default 0.
+	SecondOptional
+	// Minute is the minutes field, default 0.
+	Minute
+	// Hour is the hours field, default 0.
+	Hour
+	// Dom is the day of month field, default *.
+	Dom
+	// Month is the month field, default *.
+	Month
+	// Dow is the day of week field, default *.
+	Dow
+	// DowOptional is the optional day of week field, default *.
+	DowOptional
+	// Descriptor allows descriptors such as @monthly, @weekly, etc.
+	Descriptor
 )
 
+//nolint:gochecknoglobals // table driven parser
 var places = []ParseOption{
 	Second,
 	Minute,
@@ -44,6 +56,7 @@ var places = []ParseOption{
 	Dow,
 }
 
+//nolint:gochecknoglobals // table driven parser
 var defaults = []string{
 	"0",
 	"0",
@@ -93,9 +106,11 @@ func NewParser(options ParseOption) Parser {
 // Parse returns a new crontab schedule representing the given spec.
 // It returns a descriptive error if the spec is not valid.
 // It accepts crontab specs and features configured by NewParser.
+//
+//nolint:ireturn // factory
 func (p Parser) Parse(spec string) (Schedule, error) {
 	if len(spec) == 0 {
-		return nil, fmt.Errorf("empty spec string")
+		return nil, errors.New("empty spec string")
 	}
 
 	// Extract timezone if present
@@ -105,7 +120,7 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 		i := strings.Index(spec, " ")
 		eq := strings.Index(spec, "=")
 		if loc, err = time.LoadLocation(spec[eq+1 : i]); err != nil {
-			return nil, fmt.Errorf("provided bad location %s: %v", spec[eq+1:i], err)
+			return nil, fmt.Errorf("provided bad location %s: %w", spec[eq+1:i], err)
 		}
 		spec = strings.TrimSpace(spec[i:])
 	}
@@ -177,35 +192,35 @@ func normalizeFields(fields []string, options ParseOption) ([]string, error) {
 		optionals++
 	}
 	if optionals > 1 {
-		return nil, fmt.Errorf("multiple optionals may not be configured")
+		return nil, errors.New("multiple optionals may not be configured")
 	}
 
-	// Figure out how many fields we need
-	max := 0
+	// Figure out how many fields we need.
+	maxCount := 0
 	for _, place := range places {
 		if options&place > 0 {
-			max++
+			maxCount++
 		}
 	}
-	min := max - optionals
+	minCount := maxCount - optionals
 
-	// Validate number of fields
-	if count := len(fields); count < min || count > max {
-		if min == max {
-			return nil, fmt.Errorf("expected exactly %d fields, found %d: %s", min, count, fields)
+	// Validate number of fields.
+	if count := len(fields); count < minCount || count > maxCount {
+		if minCount == maxCount {
+			return nil, fmt.Errorf("expected exactly %d fields, found %d: %s", minCount, count, fields)
 		}
-		return nil, fmt.Errorf("expected %d to %d fields, found %d: %s", min, max, count, fields)
+		return nil, fmt.Errorf("expected %d to %d fields, found %d: %s", minCount, maxCount, count, fields)
 	}
 
-	// Populate the optional field if not provided
-	if min < max && len(fields) == min {
+	// Populate the optional field if not provided.
+	if minCount < maxCount && len(fields) == minCount {
 		switch {
 		case options&DowOptional > 0:
 			fields = append(fields, defaults[5])
 		case options&SecondOptional > 0:
 			fields = append([]string{defaults[0]}, fields...)
 		default:
-			return nil, fmt.Errorf("unknown optional field")
+			return nil, errors.New("unknown optional field")
 		}
 	}
 
@@ -223,6 +238,8 @@ func normalizeFields(fields []string, options ParseOption) ([]string, error) {
 }
 
 // standardParser is the default parser for standard 5-field cron expressions.
+//
+//nolint:gochecknoglobals // singleton
 var standardParser = NewParser(
 	Minute | Hour | Dom | Month | Dow | Descriptor,
 )
@@ -235,6 +252,8 @@ var standardParser = NewParser(
 // It accepts:
 //   - Standard crontab specs, e.g. "* * * * ?"
 //   - Descriptors, e.g. "@midnight", "@every 1h30m"
+//
+//nolint:ireturn // factory
 func ParseStandard(standardSpec string) (Schedule, error) {
 	return standardParser.Parse(standardSpec)
 }
@@ -282,7 +301,7 @@ func getRange(expr string, r bounds) (uint64, error) {
 		switch len(lowAndHigh) {
 		case 1:
 			end = start
-		case 2:
+		case 2: //nolint:mnd // pair
 			end, err = parseIntOrName(lowAndHigh[1], r.names)
 			if err != nil {
 				return 0, err
@@ -295,7 +314,7 @@ func getRange(expr string, r bounds) (uint64, error) {
 	switch len(rangeAndStep) {
 	case 1:
 		step = 1
-	case 2:
+	case 2: //nolint:mnd // pair
 		step, err = mustParseInt(rangeAndStep[1])
 		if err != nil {
 			return 0, err
@@ -342,7 +361,7 @@ func parseIntOrName(expr string, names map[string]uint) (uint, error) {
 func mustParseInt(expr string) (uint, error) {
 	num, err := strconv.Atoi(expr)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse int from %s: %s", expr, err)
+		return 0, fmt.Errorf("failed to parse int from %s: %w", expr, err)
 	}
 	if num < 0 {
 		return 0, fmt.Errorf("negative number (%d) not allowed: %s", num, expr)
@@ -352,27 +371,29 @@ func mustParseInt(expr string) (uint, error) {
 }
 
 // getBits sets all bits in the range [min, max], modulo the given step size.
-func getBits(min, max, step uint) uint64 {
+func getBits(minVal, maxVal, step uint) uint64 {
 	var bits uint64
 
 	// If step is 1, use shifts.
 	if step == 1 {
-		return ^(math.MaxUint64 << (max + 1)) & (math.MaxUint64 << min)
+		return ^(math.MaxUint64 << (maxVal + 1)) & (math.MaxUint64 << minVal)
 	}
 
 	// Else, use a simple loop.
-	for i := min; i <= max; i += step {
+	for i := minVal; i <= maxVal; i += step {
 		bits |= 1 << i
 	}
 	return bits
 }
 
-// all returns all bits within the given bounds.  (plus the star bit)
+// all returns all bits within the given bounds.  (plus the star bit).
 func all(r bounds) uint64 {
 	return getBits(r.min, r.max, 1) | starBit
 }
 
 // parseDescriptor returns a predefined schedule for the expression, or error if none matches.
+//
+//nolint:ireturn // factory
 func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 	switch descriptor {
 	case "@yearly", "@annually":
@@ -435,7 +456,7 @@ func parseDescriptor(descriptor string, loc *time.Location) (Schedule, error) {
 	if strings.HasPrefix(descriptor, every) {
 		duration, err := time.ParseDuration(descriptor[len(every):])
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse duration %s: %s", descriptor, err)
+			return nil, fmt.Errorf("failed to parse duration %s: %w", descriptor, err)
 		}
 		return Every(duration), nil
 	}

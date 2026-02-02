@@ -1,7 +1,8 @@
-package cronx
+package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"sort"
@@ -33,7 +34,7 @@ type Job interface {
 	Run()
 }
 
-// EntryID identifies an entry within a Cron instance
+// EntryID identifies an entry within a Cron instance.
 type EntryID int
 
 // Entry consists of a schedule and the func to execute on that schedule.
@@ -105,7 +106,7 @@ func New(opts ...Option) *Cron {
 	return c
 }
 
-// FuncJob is a wrapper that turns a func() into a cron.Job
+// FuncJob is a wrapper that turns a func() into a cron.Job.
 type FuncJob func()
 
 // Run executes the function.
@@ -124,7 +125,7 @@ func (c *Cron) AddFunc(spec string, cmd func()) (EntryID, error) {
 func (c *Cron) AddJob(spec string, cmd Job) (EntryID, error) {
 	schedule, err := c.parser.Parse(spec)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to parse spec: %w", err)
 	}
 	return c.Schedule(schedule, cmd), nil
 }
@@ -161,7 +162,7 @@ func (c *Cron) Entries() []Entry {
 	return c.entrySnapshot()
 }
 
-// Location gets the time zone location
+// Location gets the time zone location.
 func (c *Cron) Location() *time.Location {
 	return c.location
 }
@@ -212,6 +213,8 @@ func (c *Cron) Run() {
 
 // run the scheduler. This is private just due to the need to synchronize
 // access to the 'running' state variable.
+//
+//nolint:gocognit // core logic
 func (c *Cron) run() {
 	c.logger.Info("start")
 
@@ -230,7 +233,7 @@ func (c *Cron) run() {
 		if len(c.entries) == 0 || c.entries[0].Next.IsZero() {
 			// If there are no entries yet, just sleep - it still handles new entries
 			// and stop requests.
-			timer = time.NewTimer(100000 * time.Hour)
+			timer = time.NewTimer(100000 * time.Hour) //nolint:mnd // forever
 		} else {
 			timer = time.NewTimer(c.entries[0].Next.Sub(now))
 		}
@@ -289,7 +292,7 @@ func (c *Cron) startJob(j Job) {
 	}()
 }
 
-// now returns current time in c location
+// now returns current time in c location.
 func (c *Cron) now() time.Time {
 	return time.Now().In(c.location)
 }

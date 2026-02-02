@@ -1,4 +1,4 @@
-// Package cronx provides internal cron expression parsing and schedule calculation.
+// Package internal provides internal cron expression parsing and schedule calculation.
 //
 // This package replaces robfig/cron/v3 with a minimal API surface focused on
 // the functionality needed by the gaz framework. It provides:
@@ -15,16 +15,16 @@
 // Example usage:
 //
 //	// Parse a standard 5-field expression
-//	sched, err := cronx.ParseStandard("0 9 * * mon-fri")
+//	sched, err := internal.ParseStandard("0 9 * * mon-fri")
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
 //	next := sched.Next(time.Now())
 //
 //	// Parse with timezone
-//	sched, err = cronx.ParseStandard("CRON_TZ=America/New_York 0 9 * * *")
+//	sched, err = internal.ParseStandard("CRON_TZ=America/New_York 0 9 * * *")
 //
 //	// Use descriptors
-//	sched, err = cronx.ParseStandard("@daily")
-//	sched, err = cronx.ParseStandard("@every 5m")
-package cronx
+//	sched, err = internal.ParseStandard("@daily")
+//	sched, err = internal.ParseStandard("@every 5m")
+package internal

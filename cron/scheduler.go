@@ -7,20 +7,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/petabytecl/gaz/cron/internal/cronx"
+	"github.com/petabytecl/gaz/cron/internal"
 )
 
-// Scheduler wraps cronx with DI-aware job execution and lifecycle management.
+// Scheduler wraps internal with DI-aware job execution and lifecycle management.
 // It implements worker.Worker interface for automatic discovery and lifecycle integration.
 //
 // Key features:
-//   - Uses internal cronx package (replaced robfig/cron/v3)
+//   - Uses internal internal package (replaced robfig/cron/v3)
 //   - SkipIfStillRunning by default (CRN-08)
 //   - Custom panic recovery for stack trace logging
 //   - Graceful shutdown waits for running jobs (CRN-05)
 //   - Health check support (CRN-09)
 type Scheduler struct {
-	cron     *cronx.Cron
+	cron     *internal.Cron
 	logger   *slog.Logger
 	resolver Resolver
 	appCtx   context.Context
@@ -30,24 +30,24 @@ type Scheduler struct {
 	running bool
 }
 
-// NewScheduler creates a new Scheduler using the internal cronx package.
+// NewScheduler creates a new Scheduler using the internal internal package.
 //
 // The scheduler is configured with:
-//   - slog logger passed directly to cronx (no adapter needed)
+//   - slog logger passed directly to internal (no adapter needed)
 //   - SkipIfStillRunning to prevent overlapping job executions
-//   - Custom panic recovery (not cronx.Recover) for stack traces via slog
+//   - Custom panic recovery (not internal.Recover) for stack traces via slog
 //
 // Parameters:
 //   - resolver: Container interface for resolving job instances
 //   - appCtx: Application context (cancelled on shutdown)
 //   - logger: Logger for structured logging
 func NewScheduler(resolver Resolver, appCtx context.Context, logger *slog.Logger) *Scheduler {
-	// Create cronx instance with options
-	// Note: We use custom panic recovery in diJobWrapper, not cronx.Recover()
+	// Create internal instance with options
+	// Note: We use custom panic recovery in diJobWrapper, not internal.Recover()
 	// This gives us stack traces via slog
-	c := cronx.New(
-		cronx.WithLogger(logger),
-		cronx.WithChain(cronx.SkipIfStillRunning(logger)),
+	c := internal.New(
+		internal.WithLogger(logger),
+		internal.WithChain(internal.SkipIfStillRunning(logger)),
 	)
 
 	return &Scheduler{
@@ -137,7 +137,7 @@ func (s *Scheduler) RegisterJob(serviceName, jobName, schedule string, timeout t
 		s.logger,
 	)
 
-	// Register with cronx (same API as robfig/cron)
+	// Register with internal (same API as robfig/cron)
 	// AddJob validates the schedule expression and returns error if invalid
 	_, err := s.cron.AddJob(schedule, wrapper)
 	if err != nil {

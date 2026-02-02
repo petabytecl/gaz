@@ -1,4 +1,5 @@
-package cronx
+//nolint:ireturn // wrappers return interfaces
+package internal
 
 import (
 	"fmt"
@@ -31,7 +32,7 @@ func NewChain(c ...JobWrapper) Chain {
 // is equivalent to:
 //
 //	m1(m2(m3(job)))
-func (c Chain) Then(j Job) Job {
+func (c Chain) Then(j Job) Job { //nolint:ireturn // wrapper
 	for i := range c.wrappers {
 		j = c.wrappers[len(c.wrappers)-i-1](j)
 	}
@@ -63,13 +64,17 @@ func Recover(logger *slog.Logger) JobWrapper {
 // previous one is complete. Jobs running after a delay of more than a minute
 // have the delay logged at Info.
 func DelayIfStillRunning(logger *slog.Logger) JobWrapper {
+	return delayIfStillRunning(logger, time.Minute)
+}
+
+func delayIfStillRunning(logger *slog.Logger, logThreshold time.Duration) JobWrapper {
 	return func(j Job) Job {
 		var mu sync.Mutex
 		return FuncJob(func() {
 			start := time.Now()
 			mu.Lock()
 			defer mu.Unlock()
-			if dur := time.Since(start); dur > time.Minute {
+			if dur := time.Since(start); dur > logThreshold {
 				logger.Info("delay", slog.Duration("duration", dur))
 			}
 			j.Run()

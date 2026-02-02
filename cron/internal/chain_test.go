@@ -1,19 +1,38 @@
-package cronx
+package internal
 
 import (
+	"bytes"
 	"io"
 	"log/slog"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 )
 
+type syncBuffer struct {
+	b bytes.Buffer
+	m sync.Mutex
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	return b.b.Write(p) //nolint:wrapcheck
+}
+
+func (b *syncBuffer) String() string {
+	b.m.Lock()
+	defer b.m.Unlock()
+	return b.b.String()
+}
+
 func newDiscardLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
-func appendingJob(slice *[]int, value int) Job {
+func appendingJob(slice *[]int, value int) Job { //nolint:ireturn // test helper
 	var m sync.Mutex
 	return FuncJob(func() {
 		m.Lock()
@@ -28,6 +47,36 @@ func appendingWrapper(slice *[]int, value int) JobWrapper {
 			appendingJob(slice, value).Run()
 			j.Run()
 		})
+	}
+}
+
+func TestDelayIfStillRunningLogs(t *testing.T) {
+	var buf syncBuffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+
+	var j countJob
+	// First job blocks for 50ms
+	j.delay = 50 * time.Millisecond
+
+	// Threshold 10ms
+	wrappedJob := NewChain(delayIfStillRunning(logger, 10*time.Millisecond)).Then(&j)
+
+	// Start first run
+	go wrappedJob.Run()
+	time.Sleep(10 * time.Millisecond)
+
+	// Start second run. It should wait for ~40ms.
+	// 40ms > 10ms, so it should log.
+	done := make(chan struct{})
+	go func() {
+		wrappedJob.Run()
+		close(done)
+	}()
+
+	<-done
+
+	if !strings.Contains(buf.String(), "delay") {
+		t.Errorf("expected log message about delay, got: %s", buf.String())
 	}
 }
 
@@ -209,7 +258,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob.Run()
 		}
 		time.Sleep(200 * time.Millisecond)
@@ -226,7 +275,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		chain := NewChain(SkipIfStillRunning(newDiscardLogger()))
 		wrappedJob1 := chain.Then(&j1)
 		wrappedJob2 := chain.Then(&j2)
-		for i := 0; i < 11; i++ {
+		for range 11 {
 			go wrappedJob1.Run()
 			go wrappedJob2.Run()
 		}

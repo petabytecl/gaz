@@ -1,4 +1,4 @@
-package cronx
+package internal
 
 import (
 	"log/slog"
