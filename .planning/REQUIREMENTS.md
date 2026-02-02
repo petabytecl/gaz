@@ -49,25 +49,25 @@ Requirements for v4.0 milestone. Each maps to roadmap phases.
 
 ### Health Package
 
-- [ ] **HLT-01**: `healthx/` package exists with `Check` struct (Name, Check func)
-- [ ] **HLT-02**: `NewChecker(opts...)` creates checker instance
-- [ ] **HLT-03**: `WithCheck(check)` option adds synchronous health check
-- [ ] **HLT-04**: `NewHandler(checker, opts...)` creates HTTP handler
-- [ ] **HLT-05**: `WithResultWriter(writer)` option for custom response format
-- [ ] **HLT-06**: `WithStatusCodeUp(code)` and `WithStatusCodeDown(code)` options
-- [ ] **HLT-07**: `CheckerResult` struct with Status and Details map
-- [ ] **HLT-08**: `AvailabilityStatus` enum (StatusUnknown, StatusUp, StatusDown)
-- [ ] **HLT-09**: `ResultWriter` interface for custom response formatting
-- [ ] **HLT-10**: Liveness handler returns 200 even on check failure (matches current behavior)
-- [ ] **HLT-11**: IETF health+json response format (built-in writer)
-- [ ] **HLT-12**: `health/manager.go` uses internal `healthx/` package instead of alexliesenfeld/health
-- [ ] **HLT-13**: `alexliesenfeld/health` removed from go.mod
+- [x] **HLT-01**: `healthx/` package exists with `Check` struct (Name, Check func)
+- [x] **HLT-02**: `NewChecker(opts...)` creates checker instance
+- [x] **HLT-03**: `WithCheck(check)` option adds synchronous health check
+- [x] **HLT-04**: `NewHandler(checker, opts...)` creates HTTP handler
+- [x] **HLT-05**: `WithResultWriter(writer)` option for custom response format
+- [x] **HLT-06**: `WithStatusCodeUp(code)` and `WithStatusCodeDown(code)` options
+- [x] **HLT-07**: `CheckerResult` struct with Status and Details map
+- [x] **HLT-08**: `AvailabilityStatus` enum (StatusUnknown, StatusUp, StatusDown)
+- [x] **HLT-09**: `ResultWriter` interface for custom response formatting
+- [x] **HLT-10**: Liveness handler returns 200 even on check failure (matches current behavior)
+- [x] **HLT-11**: IETF health+json response format (built-in writer)
+- [x] **HLT-12**: `health/manager.go` uses internal `healthx/` package instead of alexliesenfeld/health
+- [x] **HLT-13**: `alexliesenfeld/health` removed from go.mod
 
 ### Integration
 
-- [ ] **INT-01**: All existing tests pass after migration
-- [ ] **INT-02**: Test coverage maintained at 90%+ after migration
-- [ ] **INT-03**: No import cycles introduced by new packages
+- [x] **INT-01**: All existing tests pass after migration
+- [x] **INT-02**: Test coverage maintained at 90%+ after migration
+- [x] **INT-03**: No import cycles introduced by new packages
 
 ## Future Requirements
 
@@ -163,28 +163,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HLT-01 | 35 | Pending |
-| HLT-02 | 35 | Pending |
-| HLT-03 | 35 | Pending |
-| HLT-04 | 35 | Pending |
-| HLT-05 | 35 | Pending |
-| HLT-06 | 35 | Pending |
-| HLT-07 | 35 | Pending |
-| HLT-08 | 35 | Pending |
-| HLT-09 | 35 | Pending |
-| HLT-10 | 35 | Pending |
-| HLT-11 | 35 | Pending |
-| HLT-12 | 35 | Pending |
-| HLT-13 | 35 | Pending |
-| INT-01 | 35 | Pending |
-| INT-02 | 35 | Pending |
-| INT-03 | 35 | Pending |
+| HLT-01 | 35 | Complete |
+| HLT-02 | 35 | Complete |
+| HLT-03 | 35 | Complete |
+| HLT-04 | 35 | Complete |
+| HLT-05 | 35 | Complete |
+| HLT-06 | 35 | Complete |
+| HLT-07 | 35 | Complete |
+| HLT-08 | 35 | Complete |
+| HLT-09 | 35 | Complete |
+| HLT-10 | 35 | Complete |
+| HLT-11 | 35 | Complete |
+| HLT-12 | 35 | Complete |
+| HLT-13 | 35 | Complete |
+| INT-01 | 35 | Complete |
+| INT-02 | 35 | Complete |
+| INT-03 | 35 | Complete |
 
 **Coverage:**
 - v4.0 requirements: 47 total
 - Mapped to phases: 47 ✓
+- Complete: 47 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after roadmap creation*
+*Last updated: 2026-02-02 — v4.0 milestone complete*
