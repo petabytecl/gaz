@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 // TestConfig returns a health.Config with safe defaults for testing.

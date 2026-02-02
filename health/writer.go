@@ -1,7 +1,7 @@
 package health
 
 import (
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 // IETFResultWriter delegates to healthx.IETFResultWriter.

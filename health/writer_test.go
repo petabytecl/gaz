@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 func TestIETFResultWriter(t *testing.T) {

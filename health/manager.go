@@ -3,7 +3,7 @@ package health
 import (
 	"sync"
 
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 // Manager implements Registrar and manages health checkers.

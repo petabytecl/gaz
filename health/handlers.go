@@ -3,7 +3,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 // HandlerHandler produces http.Handler for health checks.

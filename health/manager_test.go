@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/petabytecl/gaz/healthx"
+	"github.com/petabytecl/gaz/health/internal/healthx"
 )
 
 func TestManager_LivenessChecker(t *testing.T) {
