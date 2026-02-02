@@ -1,4 +1,4 @@
-// Package cron provides scheduled task support for Go applications using internal cronx.
+// Package cron provides scheduled task support for Go applications using cron/internal.
 //
 // This package defines the [CronJob] interface and supporting types for managing
 // scheduled tasks. Jobs integrate with gaz's lifecycle system for automatic

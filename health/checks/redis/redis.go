@@ -12,12 +12,16 @@ import (
 // ErrNilClient is returned when the Redis client is nil.
 var ErrNilClient = errors.New("redis: client is nil")
 
+// Pinger is an interface for Redis clients that can ping.
+type Pinger interface {
+	Ping(ctx context.Context) *redis.StatusCmd
+}
+
 // Config configures the Redis health check.
 type Config struct {
 	// Client is the Redis client to check. Required.
-	// Accepts any client implementing redis.UniversalClient
-	// (redis.Client, redis.ClusterClient, redis.Ring).
-	Client redis.UniversalClient
+	// Use redis.NewClient() to create one.
+	Client Pinger
 }
 
 // New creates a new Redis health check.
