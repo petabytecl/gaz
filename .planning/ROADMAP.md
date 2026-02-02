@@ -314,7 +314,7 @@ Plans:
 **Plans:** 6 plans in 2 waves
 
 Plans:
-- [ ] 36-01-PLAN.md — Package foundation + SQL database check
+- [x] 36-01-PLAN.md — Package foundation + SQL database check
 - [ ] 36-02-PLAN.md — TCP dial + DNS resolution checks
 - [ ] 36-03-PLAN.md — HTTP upstream check
 - [ ] 36-04-PLAN.md — Runtime metrics checks (goroutine, memory, GC)
@@ -340,7 +340,7 @@ Plans:
 | 33. Tint Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 34. Cron Package | v4.0 | 3/3 | Complete | 2026-02-01 |
 | 35. Health Package + Integration | v4.0 | 3/3 | Complete | 2026-02-02 |
-| 36. Add builtin checks on `health/checks` | v4.0 | 0/6 | In Progress | - |
+| 36. Add builtin checks on `health/checks` | v4.0 | 1/6 | In Progress | - |
 
 ---
 *Roadmap created: 2026-01-29*

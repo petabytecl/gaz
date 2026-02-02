@@ -13,12 +13,12 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 - **Milestone:** v4.0 Dependency Reduction
-- **Phase:** 35 (Health Package + Integration) — Complete
-- **Plan:** 3 of 3 in current phase
-- **Status:** Milestone complete
-- **Last activity:** 2026-02-02 — Completed 35-03-PLAN.md (Integration and dependency removal)
+- **Phase:** 36 (Add builtin checks on `health/checks`) — In Progress
+- **Plan:** 1 of 6 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-02 — Completed 36-01-PLAN.md
 
-Progress: [██████████] 100% (Phase 35: 3/3 plans complete)
+Progress: [██████████] 93% (Phase 36: 1/6 plans complete)
 
 ## Milestones Shipped
 
@@ -59,6 +59,11 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Non-critical-only checks also return StatusUp (graceful degradation)
 - IETFResultWriter kept as type alias for backward compatibility
 
+### Phase 36 Decisions
+
+- checksql import alias used in examples to avoid collision with database/sql
+- Config + New factory pattern established for all health checks
+
 ### Research Summary
 
 See: .planning/research/v4.0-SUMMARY.md
@@ -75,6 +80,7 @@ None — v4.0 complete.
 
 - v4.0 roadmap created: 4 phases, 47 requirements mapped
 - v4.0 complete: All 4 external dependencies replaced with internal implementations
+- Phase 36 added: Add builtin checks on `health/checks`
 
 ### Pending Todos
 
@@ -82,9 +88,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 35-03-PLAN.md (Integration and dependency removal)
-Resume with: v4.0 milestone complete - ready for v4.0 tagging
+Last session: 2026-02-02T21:21:34Z
+Stopped at: Completed 36-01-PLAN.md
+Resume with: `/gsd-execute-phase 36` to continue with 36-02
 
 ---
 
