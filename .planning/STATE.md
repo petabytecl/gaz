@@ -14,11 +14,11 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 - **Milestone:** v4.0 Dependency Reduction
 - **Phase:** 36 (Add builtin checks on `health/checks`) — In Progress
-- **Plan:** 2 of 6 in current phase
+- **Plan:** 4 of 6 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 36-02-PLAN.md
+- **Last activity:** 2026-02-02 — Completed 36-04-PLAN.md
 
-Progress: [██████████] 94% (Phase 36: 2/6 plans complete)
+Progress: [██████████] 96% (Phase 36: 4/6 plans complete)
 
 ## Milestones Shipped
 
@@ -66,6 +66,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - TCP check dials and immediately closes connection to verify connectivity
 - DNS check requires at least one address in resolution result
 - Both TCP/DNS checks default to 2s timeout, context deadline takes precedence
+- Runtime checks use simple factory functions with threshold parameter (no Config struct)
 
 ### Research Summary
 
@@ -91,9 +92,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02T21:22:21Z
-Stopped at: Completed 36-02-PLAN.md
-Resume with: `/gsd-execute-phase 36` to continue with 36-03
+Last session: 2026-02-02T21:22:28Z
+Stopped at: Completed 36-04-PLAN.md
+Resume with: `/gsd-execute-phase 36` to continue with 36-05
 
 ---
 
