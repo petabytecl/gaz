@@ -5,20 +5,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-01)
+See: .planning/PROJECT.md (updated 2026-02-02)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** v4.0 Dependency Reduction — COMPLETE
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-- **Milestone:** v4.0 Dependency Reduction
+- **Milestone:** v4.0 Dependency Reduction — COMPLETE
 - **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
 - **Plan:** 6 of 6 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-02 — Completed 36-06-PLAN.md
+- **Status:** Milestone complete, ready for next milestone
+- **Last activity:** 2026-02-02 — v4.0 milestone archived
 
-Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
+Progress: [██████████] 100% (v4.0 complete)
 
 ## Milestones Shipped
 
@@ -34,20 +34,7 @@ Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 
-**Total:** 145 plans across 36 phases
-
-## v4.0 Milestone Structure
-
-| Phase | Name | Requirements | Status |
-|-------|------|--------------|--------|
-| 32 | Backoff Package | BKF-01 to BKF-08 (8) | Complete (3/3 plans) |
-| 33 | Tint Package | TNT-01 to TNT-11 (11) | Complete (3/3 plans) |
-| 34 | Cron Package | CRN-01 to CRN-12 (12) | Complete (3/3 plans) |
-| 35 | Health Package + Integration | HLT-01 to HLT-13, INT-01 to INT-03 (16) | Complete (3/3 plans) |
-
-| 36 | Add builtin checks | SQL, Redis, HTTP, TCP, DNS, Runtime, Disk (7) | Complete (6/6 plans) |
-
-**Total v4.0:** 54 requirements across 5 phases — ALL COMPLETE
+**Total:** 142 plans across 36 phases
 
 ## Accumulated Context
 
@@ -55,45 +42,27 @@ Progress: [██████████] 100% (Phase 36: 6/6 plans complete)
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
-### v4.0 Phase 35 Decisions
+### v4.0 Decisions
 
-- Empty checker returns StatusUp for backward compatibility with alexliesenfeld/health
-- Non-critical-only checks also return StatusUp (graceful degradation)
-- IETFResultWriter kept as type alias for backward compatibility
-
-### Phase 36 Decisions
-
-- checksql import alias used in examples to avoid collision with database/sql
-- Config + New factory pattern established for all health checks
-- TCP check dials and immediately closes connection to verify connectivity
-- DNS check requires at least one address in resolution result
-- Both TCP/DNS checks default to 2s timeout, context deadline takes precedence
-- Runtime checks use simple factory functions with threshold parameter (no Config struct)
-- HTTP check defaults to 5s timeout (longer than TCP/DNS due to full HTTP round-trip)
-- HTTP check doesn't follow redirects by default (health endpoints shouldn't redirect)
-- HTTP check sets Connection: close header to avoid holding connections
-- Redis check uses redis.UniversalClient interface for broad compatibility
-- Redis check uses PING command (expects "PONG" response)
-- Disk check uses gopsutil/v4 for cross-platform disk usage metrics
+- Keep BackoffConfig for API compatibility — users may configure via options
+- Drop-in API compatibility for tint preserves existing behavior
+- cron/internal uses *slog.Logger directly — no adapter needed
+- Empty health checker returns StatusUp for backward compatibility
+- Config + New factory pattern for all health checks
 - Disk check uses percentage threshold (0-100) for portability
 
 ### Research Summary
 
 See: .planning/research/v4.0-SUMMARY.md
 
-- Build order follows risk escalation: backoff → tint → cron → health
-- Reference implementations exist for backoff and cron in `_tmp_trust/`
-- Total estimate: 10-15 hours (actual: ~6 hours)
-
 ### Blockers/Concerns
 
-None — v4.0 complete.
+None — ready for next milestone.
 
 ### Roadmap Evolution
 
-- v4.0 roadmap created: 4 phases, 47 requirements mapped
 - v4.0 complete: All 4 external dependencies replaced with internal implementations
-- Phase 36 added: Add builtin checks on `health/checks`
+- Phase 36 added builtin health checks for common infrastructure
 
 ### Pending Todos
 
@@ -101,9 +70,9 @@ None — v4.0 complete.
 
 ## Session Continuity
 
-Last session: 2026-02-02T21:30:05Z
-Stopped at: Completed 36-06-PLAN.md
-Resume with: v4.0 milestone complete with Phase 36. Ready for /gsd-complete-milestone
+Last session: 2026-02-02
+Stopped at: v4.0 milestone complete
+Resume with: `/gsd-new-milestone` to start next milestone
 
 ---
 

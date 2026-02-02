@@ -8,27 +8,15 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v4.0 Dependency Reduction
-
-**Goal:** Replace external dependencies with internal implementations to reduce dependency footprint and gain full control over critical infrastructure.
-
-**Target features:**
-- Replace `jpillora/backoff` with internal `srex/backoff` package
-- Replace `robfig/cron/v3` with internal `cron/internal` package  
-- Replace `lmittmann/tint` with internal `logger/tint` colored logger
-- Replace `alexliesenfeld/health` with internal health check implementation
-- Update all consumers to use internal implementations
-- Remove external dependencies from go.mod
-
 ## Current State
 
-**Shipped:** v3.2 Feature Maturity (2026-02-01)
+**Shipped:** v4.0 Dependency Reduction (2026-02-02)
 
 The framework now provides:
 - **DI Package** (`gaz/di`) — Standalone dependency injection with For[T](), Resolve[T]()
 - **Config Package** (`gaz/config`) — Configuration management with Backend interface
 - **Workers** — Background workers with lifecycle integration, panic recovery, circuit breaker
-- **Cron** — Scheduled tasks wrapping robfig/cron with DI-aware jobs
+- **Cron** — Scheduled tasks using internal cron engine with DI-aware jobs
 - **EventBus** — Type-safe pub/sub with Publish[T]/Subscribe[T] generics
 - **CLI Integration** — RegisterCobraFlags() exposes ConfigProvider flags to CLI
 - **Lifecycle Auto-Detection** — Services implementing Starter/Stopper auto-detected
@@ -36,10 +24,15 @@ The framework now provides:
 - **gaztest Package** — Test utilities with Builder API and auto-cleanup
 - **Service Builder** — `service.New()` for pre-configured production services
 - **Module System** — `NewModule(name).Provide().Flags().Build()` for bundled registrations
+- **Internal Backoff** — Exponential backoff with jitter and context support (no external deps)
+- **Internal Tint** — Colored slog handler with TTY detection (no external deps)
+- **Internal Cron Engine** — 5-field parser, @descriptors, timezone support (no external deps)
+- **Internal Health** — Parallel checks, IETF format (no external deps)
+- **Builtin Health Checks** — SQL, Redis, HTTP, TCP, DNS, Runtime, Disk checks
 
-**Test Coverage:** 92.9% overall (exceeds 90% target)
+**Test Coverage:** 91.7% overall (exceeds 90% target)
 
-**Codebase:** ~96,000 lines of Go (including examples)
+**Codebase:** ~87,000 lines of Go (including examples)
 
 ## Requirements
 
@@ -75,14 +68,15 @@ The framework now provides:
 - ✓ ModuleBuilder for bundled registrations — v2.1
 - ✓ 90%+ test coverage — v2.2
 
+- ✓ Internal backoff package with exponential backoff, jitter, context — v4.0
+- ✓ Internal tint slog handler with TTY detection — v4.0
+- ✓ Internal cron engine with 5-field parser, @descriptors, timezone support — v4.0
+- ✓ Internal health package with parallel checks, IETF format — v4.0
+- ✓ Builtin health checks (SQL, Redis, HTTP, TCP, DNS, Runtime, Disk) — v4.0
+
 ### Active
 
-- [ ] Configuration system harmonization (ProviderValues.Unmarshal, config struct standard)
-- [ ] Lifecycle interface alignment (remove fluent hooks, align worker interface)
-- [ ] Module system consolidation (merge service package, NewModule() pattern)
-- [ ] Error standardization (sentinel errors, wrapping pattern)
-- [ ] Testing infrastructure (enhanced gaztest, per-package helpers)
-- [ ] Documentation & polish (style guide, user docs, examples)
+(No active requirements — start next milestone with `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -94,10 +88,10 @@ The framework now provides:
 
 ## Context
 
-Shipped v2.2 on 2026-01-29.
-Framework provides unified DI, Lifecycle, Config, Health, Logging, Workers, Cron, and EventBus.
-All requirements verified across 5 milestones (v1.0 through v2.2).
-Test coverage at 92.9% overall.
+Shipped v4.0 on 2026-02-02.
+Framework now has minimal external dependencies (Cobra, Viper, gopsutil, valkey-go).
+All critical infrastructure (backoff, logging, cron, health) uses internal implementations.
+Test coverage at 91.7% overall.
 
 This is an extraction and redesign of two internal libraries:
 
@@ -123,10 +117,10 @@ Target: Internal use first, open source viability later.
 
 ## Constraints
 
-- **Language**: Go 1.21+ (generics, slog in stdlib)
-- **Dependencies**: Minimize external deps; Cobra, Viper, robfig/cron, jpillora/backoff
+- **Language**: Go 1.25+ (generics, slog in stdlib)
+- **Dependencies**: Minimal external deps; Cobra and Viper only
 - **API Surface**: Convention over configuration — sensible defaults, escape hatches when needed
-- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service)
+- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service, backoff, logger/tint)
 
 ## Key Decisions
 
@@ -157,5 +151,11 @@ Target: Internal use first, open source viability later.
 | Module flags to PersistentFlags | Available to all subcommands | ✓ Good (v2.1) |
 | Health auto-registration via interface | Config implements HealthConfigProvider for opt-in | ✓ Good (v2.1) |
 
+| Internal backoff package | Full control, no external dep for retry logic | ✓ Good (v4.0) |
+| Internal tint slog handler | Full control, no external dep for logging | ✓ Good (v4.0) |
+| Internal cron engine | Full control, no external dep for scheduling | ✓ Good (v4.0) |
+| Internal health package | Full control, IETF format built-in | ✓ Good (v4.0) |
+| Builtin health checks | Production-ready checks for common infra | ✓ Good (v4.0) |
+
 ---
-*Last updated: 2026-02-01 after v4.0 milestone started*
+*Last updated: 2026-02-02 after v4.0 milestone*

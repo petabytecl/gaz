@@ -1,5 +1,105 @@
 # Project Milestones: gaz
 
+## v4.0 Dependency Reduction (Shipped: 2026-02-02)
+
+**Delivered:** Replaced 4 external dependencies with internal implementations (backoff, tint, cron, health) and added builtin health checks for production infrastructure monitoring.
+
+**Phases completed:** 32-36 (18 plans total)
+
+**Key accomplishments:**
+
+- Internal `backoff/` package with exponential backoff, jitter, and context support
+- Internal `logger/tint/` colored slog handler with TTY detection
+- Internal `cron/internal/` scheduler with 5-field parser, @descriptors, timezone support
+- Internal `health/internal/` with parallel checks and IETF format
+- Builtin health checks for SQL, Redis, HTTP, TCP, DNS, Runtime, and Disk
+- Zero regressions (91.7% coverage maintained)
+
+**Stats:**
+
+- 133 files created/modified
+- 18,032 lines added
+- 5 phases, 18 plans
+- 2 days from milestone start to ship
+
+**Git range:** `dafd87d` → `6b97551`
+
+**What's next:** TBD — start with `/gsd-new-milestone`
+
+---
+
+## v3.2 Feature Maturity (Shipped: 2026-02-01)
+
+**Delivered:** Added strict config validation and worker dead letter handling for production robustness.
+
+**Phases completed:** 31 (2 plans total)
+
+**Key accomplishments:**
+
+- WithStrictConfig() option fails startup if config contains unregistered keys
+- DeadLetterHandler callback when worker circuit breaker trips
+
+**Stats:**
+
+- 1 phase, 2 plans
+- Same day as v3.1
+
+**Git range:** `feat(31-01)` → `feat(31-02)`
+
+**What's next:** v4.0 Dependency Reduction
+
+---
+
+## v3.1 Performance & Stability (Shipped: 2026-02-01)
+
+**Delivered:** Removed runtime.Stack() hack for cycle detection, fixed config discovery side-effects.
+
+**Phases completed:** 30 (2 plans total)
+
+**Key accomplishments:**
+
+- Removed getGoroutineID() hack — uses explicit chain parameter for cycle detection
+- collectProviderConfigs no longer fully instantiates services (checks type first)
+
+**Stats:**
+
+- 1 phase, 2 plans
+- Same day as v3.0
+
+**Git range:** `feat(30-01)` → `feat(30-02)`
+
+**What's next:** v3.2 Feature Maturity
+
+---
+
+## v3.0 API Harmonization (Shipped: 2026-02-01)
+
+**Delivered:** Harmonized gaz API with industry-standard patterns (uber-go/fx, google/wire, samber/do) for lifecycle, modules, config, and errors.
+
+**Phases completed:** 23-29 (27 plans total)
+
+**Key accomplishments:**
+
+- STYLE.md with API naming conventions and patterns
+- Interface-based lifecycle (removed fluent OnStart/OnStop hooks)
+- ProviderValues.Unmarshal() for struct-based config resolution
+- Merged service package into gaz.App
+- NewModule() pattern for subsystem packages
+- Consolidated sentinel errors in gaz/errors.go
+- Enhanced gaztest and per-package testing.go helpers
+- Complete godoc examples and tutorial apps
+
+**Stats:**
+
+- 7 phases, 27 plans
+- 3 days (2026-01-30 → 2026-02-01)
+
+**Git range:** `feat(23-01)` → `feat(29-05)`
+
+**What's next:** v3.1 Performance & Stability
+
+---
+
 ## v2.2 Test Coverage (Shipped: 2026-01-29)
 
 **Delivered:** Pushed overall test coverage to 92.9%, exceeding 90% threshold with comprehensive tests across all packages.
