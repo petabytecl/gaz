@@ -31,6 +31,12 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 **Goal:** Establish independent, production-ready gRPC and HTTP listeners on configurable ports.
 **Dependencies:** Phase 37
 **Requirements:** TRN-01, TRN-02, TRN-03, GW-01
+**Plans:** 3 plans
+
+Plans:
+- [ ] 38-01-PLAN.md — gRPC Server with interceptors, reflection, service discovery
+- [ ] 38-02-PLAN.md — HTTP Server with configurable timeouts
+- [ ] 38-03-PLAN.md — Unified module and tests
 
 **Success Criteria:**
 1. Application starts both a gRPC server and an HTTP server on configured ports.
