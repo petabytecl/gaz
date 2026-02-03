@@ -100,6 +100,7 @@ func TestNewModule(t *testing.T) {
 	})
 }
 
+//nolint:funlen // Test function with multiple subtests is naturally long.
 func TestNewModuleWithFlags(t *testing.T) {
 	t.Run("flags registration", func(t *testing.T) {
 		m := NewModuleWithFlags()
@@ -256,7 +257,7 @@ func TestNewModuleWithFlags(t *testing.T) {
 		// gaz.App.Use() binds flags to the cmd's FlagSet.
 
 		// Verify the servers were registered.
-		require.True(t, di.Has[*grpc.Server]((*di.Container)(app.Container())))
-		require.True(t, di.Has[*shttp.Server]((*di.Container)(app.Container())))
+		require.True(t, di.Has[*grpc.Server](app.Container()))
+		require.True(t, di.Has[*shttp.Server](app.Container()))
 	})
 }

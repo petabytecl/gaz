@@ -158,7 +158,7 @@ func NewModuleWithFlags(opts ...ModuleOption) gaz.Module {
 			// 3. cobra parses args -> writes "9090" to cfg.grpcPort via pointer
 			// 4. app.Run() -> container resolves eager services -> this Provide() runs
 			// 5. cfg.grpcPort is now 9090, not 50051
-			return registerServerComponents(cfg, (*di.Container)(c))
+			return registerServerComponents(cfg, c)
 		}).
 		Build()
 }
