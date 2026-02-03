@@ -33,4 +33,8 @@ var (
 	// ErrInvalidProvider is returned when a provider function has invalid signature.
 	// Check with: errors.Is(err, di.ErrInvalidProvider) or errors.Is(err, gaz.ErrDIInvalidProvider).
 	ErrInvalidProvider = errors.New("di: invalid provider")
+
+	// ErrAmbiguous is returned when multiple services are registered for the same key.
+	// Check with: errors.Is(err, di.ErrAmbiguous).
+	ErrAmbiguous = errors.New("di: ambiguous resolution: multiple services registered")
 )

@@ -66,7 +66,7 @@ func (s *RegistrationSuite) TestFor_Instance_RegistersValue() {
 	s.NoError(err)
 }
 
-func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Duplicate_AllowsMultiple() {
 	c := New()
 
 	// First registration should succeed
@@ -75,23 +75,31 @@ func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Second registration of same type should return ErrDuplicate
+	// Second registration of same type should succeed (append)
 	err = For[*testRegService](c).Provider(func(_ *Container) (*testRegService, error) {
 		return &testRegService{id: 2}, nil
 	})
-	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution should be ambiguous
+	_, err = Resolve[*testRegService](c)
+	s.Require().ErrorIs(err, ErrAmbiguous)
 }
 
-func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Duplicate_Instance_AllowsMultiple() {
 	c := New()
 
 	// First registration should succeed
 	err := For[*testRegConfig](c).Instance(&testRegConfig{value: "first"})
 	s.Require().NoError(err, "first registration failed")
 
-	// Second registration of same type should return ErrDuplicate
+	// Second registration of same type should succeed (append)
 	err = For[*testRegConfig](c).Instance(&testRegConfig{value: "second"})
-	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution should be ambiguous
+	_, err = Resolve[*testRegConfig](c)
+	s.Require().ErrorIs(err, ErrAmbiguous)
 }
 
 // =============================================================================
@@ -114,7 +122,7 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 	s.NoError(err, "expected no error for differently named services")
 }
 
-func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
 	c := New()
 
 	// Register "primary" named DB
@@ -123,11 +131,15 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Register another "primary" - should return ErrDuplicate
+	// Register another "primary" - should succeed
 	err = For[*testRegDB](c).Named("primary").Provider(func(_ *Container) (*testRegDB, error) {
 		return &testRegDB{name: "primary-2"}, nil
 	})
-	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution by name should be ambiguous
+	_, err = Resolve[*testRegDB](c, Named("primary"))
+	s.Require().ErrorIs(err, ErrAmbiguous)
 }
 
 // =============================================================================
