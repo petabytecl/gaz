@@ -37,18 +37,22 @@ type AppConfig struct {
 // Server represents the application server.
 type Server struct {
 	config AppConfig
+	out    io.Writer
 }
 
 // NewServer creates a new server with the given configuration.
-func NewServer(config AppConfig) *Server {
-	return &Server{config: config}
+func NewServer(config AppConfig, out io.Writer) *Server {
+	if out == nil {
+		out = os.Stdout
+	}
+	return &Server{config: config, out: out}
 }
 
 // Start begins the server operation.
 func (s *Server) Start(ctx context.Context) error {
-	fmt.Printf("Server starting on %s:%d\n", s.config.Host, s.config.Port)
-	fmt.Printf("Debug mode: %v\n", s.config.Debug)
-	fmt.Printf("Request timeout: %ds\n", s.config.Timeout)
+	fmt.Fprintf(s.out, "Server starting on %s:%d\n", s.config.Host, s.config.Port)
+	fmt.Fprintf(s.out, "Debug mode: %v\n", s.config.Debug)
+	fmt.Fprintf(s.out, "Request timeout: %ds\n", s.config.Timeout)
 
 	// Simulate server running
 	ticker := time.NewTicker(2 * time.Second)
@@ -57,33 +61,33 @@ func (s *Server) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("Server shutting down...")
+			fmt.Fprintln(s.out, "Server shutting down...")
 			return nil
 		case <-ticker.C:
-			fmt.Println("Server is running... (Ctrl+C to stop)")
+			fmt.Fprintln(s.out, "Server is running... (Ctrl+C to stop)")
 		}
 	}
 }
 
 // OnStart is called when the application starts.
 func (s *Server) OnStart(_ context.Context) error {
-	fmt.Printf("Initializing server on %s:%d...\n", s.config.Host, s.config.Port)
+	fmt.Fprintf(s.out, "Initializing server on %s:%d...\n", s.config.Host, s.config.Port)
 	return nil
 }
 
 // OnStop is called when the application stops.
 func (s *Server) OnStop(_ context.Context) error {
-	fmt.Println("Cleaning up server resources...")
+	fmt.Fprintln(s.out, "Cleaning up server resources...")
 	return nil
 }
 
 func main() {
-	if err := execute(os.Args[1:], os.Stdout); err != nil {
+	if err := execute(context.Background(), os.Args[1:], os.Stdout); err != nil {
 		os.Exit(1)
 	}
 }
 
-func execute(args []string, out io.Writer) error {
+func execute(ctx context.Context, args []string, out io.Writer) error {
 	// Root command
 	rootCmd := &cobra.Command{
 		Use:   "myapp",
@@ -126,7 +130,7 @@ with Cobra CLI. It shows:
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(versionCmd)
 
-	return rootCmd.Execute()
+	return rootCmd.ExecuteContext(ctx)
 }
 
 // runServe is the handler for the "serve" subcommand.
@@ -163,7 +167,7 @@ func runServe(cmd *cobra.Command, _ []string) error {
 			if err != nil {
 				return nil, err
 			}
-			return NewServer(cfg), nil
+			return NewServer(cfg, cmd.OutOrStdout()), nil
 		}); err != nil {
 		return fmt.Errorf("failed to register server: %w", err)
 	}
