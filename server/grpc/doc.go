@@ -4,7 +4,7 @@
 // # Overview
 //
 // This package implements a gRPC server that integrates with gaz's DI container
-// and lifecycle management. Services implementing the ServiceRegistrar interface
+// and lifecycle management. Services implementing the Registrar interface
 // are automatically discovered and registered on startup.
 //
 // # Quick Start
@@ -19,7 +19,7 @@
 //
 // # Service Registration
 //
-// Services implement the ServiceRegistrar interface to be auto-discovered:
+// Services implement the Registrar interface to be auto-discovered:
 //
 //	type GreeterService struct {
 //	    pb.UnimplementedGreeterServer
@@ -33,7 +33,7 @@
 //
 //	di.For[*GreeterService](c).Provider(NewGreeterService)
 //
-// The gRPC server will discover and register all ServiceRegistrar implementations
+// The gRPC server will discover and register all Registrar implementations
 // automatically on startup.
 //
 // # Interceptors

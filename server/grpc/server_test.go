@@ -132,9 +132,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerServiceDiscovery() {
 	container := di.New()
 
 	// Register a mock service registrar by its concrete type.
-	// ResolveAll[ServiceRegistrar] finds it because *mockServiceRegistrar implements ServiceRegistrar.
-	mockRegistrar := &mockServiceRegistrar{registered: false}
-	err := di.For[*mockServiceRegistrar](container).Instance(mockRegistrar)
+	// ResolveAll[Registrar] finds it because *mockRegistrar implements Registrar.
+	mockReg := &mockRegistrar{registered: false}
+	err := di.For[*mockRegistrar](container).Instance(mockReg)
 	s.Require().NoError(err)
 
 	server := NewServer(cfg, logger, container, false, nil)
@@ -151,7 +151,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerServiceDiscovery() {
 	}()
 
 	// Verify service was discovered and registered.
-	s.True(mockRegistrar.registered, "Service registrar should have been called")
+	s.True(mockReg.registered, "Service registrar should have been called")
 }
 
 func (s *GRPCServerTestSuite) TestGRPCServerPortBindingError() {
@@ -275,12 +275,12 @@ func (s *GRPCServerTestSuite) TestGRPCServerGetGRPCServer() {
 	s.Require().NotNil(grpcServer)
 }
 
-// mockServiceRegistrar is a test double for ServiceRegistrar.
-type mockServiceRegistrar struct {
+// mockRegistrar is a test double for Registrar.
+type mockRegistrar struct {
 	registered bool
 }
 
-func (m *mockServiceRegistrar) RegisterService(_ grpc.ServiceRegistrar) {
+func (m *mockRegistrar) RegisterService(_ grpc.ServiceRegistrar) {
 	m.registered = true
 }
 

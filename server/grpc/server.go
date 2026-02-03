@@ -17,7 +17,7 @@ import (
 	"github.com/petabytecl/gaz/health"
 )
 
-// ServiceRegistrar is implemented by gRPC services that want to be
+// Registrar is implemented by gRPC services that want to be
 // auto-discovered and registered with the gRPC server.
 //
 // Implementations should register themselves with the provided server:
@@ -29,7 +29,7 @@ import (
 //	func (s *GreeterService) RegisterService(server grpc.ServiceRegistrar) {
 //	    pb.RegisterGreeterServer(server, s)
 //	}
-type ServiceRegistrar interface {
+type Registrar interface {
 	RegisterService(server grpc.ServiceRegistrar)
 }
 
@@ -110,7 +110,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 	s.listener = lis
 
 	// Auto-discover and register services.
-	registrars, err := di.ResolveAll[ServiceRegistrar](s.container)
+	registrars, err := di.ResolveAll[Registrar](s.container)
 	if err != nil {
 		// Close listener on error.
 		_ = lis.Close()
