@@ -104,15 +104,17 @@ Plans:
 
 ### Phase 41: Refactor server module architecture and consistency
 
-**Goal:** [To be planned]
-**Depends on:** Phase 40
-**Plans:** 0 plans
+**Goal:** Ensure architectural consistency, robust lifecycle management, and standard patterns across server modules.
+**Dependencies:** Phase 40
+**Plans:** 1/4 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 41 to break down)
+- [x] 41-01-PLAN.md — Standardize Logger Usage
+- [ ] 41-02-PLAN.md — Gateway atomic handler and naming consistency
+- [ ] 41-03-PLAN.md — Simplify server module and config consistency
+- [ ] 41-04-PLAN.md — Integrate health check into gRPC server
 
-**Details:**
-[To be added during planning]
+**Status:** In Progress (Started 2026-02-03)
 
 ## Progress
 
@@ -123,3 +125,4 @@ Plans:
 | 38.1 | gRPC/HTTP CLI Flags | **Complete** | TRN-01, TRN-02 |
 | 39 | Gateway Integration | **Complete** | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | **Complete** | INF-01, INF-02, INF-03 |
+| 41 | Refactor Server Arch | **In Progress** | - |

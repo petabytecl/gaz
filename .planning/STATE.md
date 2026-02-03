@@ -14,12 +14,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 - **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 40 - Observability & Health
-- **Plan:** 3 of 3 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-03 — Completed quick task 006: Refactor server/module.go remove gaz import
+- **Phase:** 41 - Refactor Server Module Architecture & Consistency
+- **Plan:** 1 of 4 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-03 — Completed 41-01-PLAN.md (Standardize Logger Usage)
 
-Progress: [██████████] 100% (Phase 40 complete, v4.1 milestone complete)
+Progress: [██████████] 98% (Phase 41 started)
 
 ## Milestones Shipped
 
@@ -62,6 +62,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **ParentBased sampling:** Respect incoming trace context, sample 10% of root spans.
 - **Health endpoint filtering:** Exclude health endpoints from tracing.
 - **Logger fallback:** Use slog.Default() fallback making logger module optional across all server packages.
+- **Health Server Signature:** Updated NewManagementServer to accept injected logger.
+- **Health Logging:** Replaced direct stderr printing with structured logging in health server.
 
 ### Research Summary
 
@@ -116,8 +118,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed quick task 006 (refactor server/module.go)
-Resume with: v4.1 milestone complete - ready for next milestone
+Stopped at: Completed 41-01-PLAN.md (Standardize Logger Usage)
+Resume with: 41-02-PLAN.md
 
 ---
 
