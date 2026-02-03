@@ -9,11 +9,13 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\\n", $$1, $$2}'
 
+TEST_PKG := ./...
+
 test: ## Run tests
-	go test -race ./...
+	go test -race $(TEST_PKG)
 
 cover: ## Run tests with coverage (excludes examples)
-	go test -race -coverprofile=coverage.out -covermode=atomic $$(go list ./... | grep -v /examples/)
+	go test -race -coverprofile=coverage.out -covermode=atomic $(TEST_PKG)
 	@go tool cover -func=coverage.out
 	@coverage=$$(go tool cover -func=coverage.out | grep total | grep -oE '[0-9]+\.[0-9]+'); \
 	echo "Coverage: $${coverage}%"; \
