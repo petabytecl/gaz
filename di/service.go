@@ -38,6 +38,9 @@ type ServiceWrapper interface {
 	// ServiceType returns the reflect.Type of the service.
 	// Used for type-checking without instantiation (e.g., interface implementation checks).
 	ServiceType() reflect.Type
+
+	// Groups returns the list of groups this service belongs to.
+	Groups() []string
 }
 
 // baseService implements common functionality for all service wrappers.
@@ -45,6 +48,7 @@ type ServiceWrapper interface {
 type baseService struct {
 	serviceName     string
 	serviceTypeName string
+	groups          []string
 }
 
 func (s *baseService) Name() string {
@@ -53,6 +57,10 @@ func (s *baseService) Name() string {
 
 func (s *baseService) TypeName() string {
 	return s.serviceTypeName
+}
+
+func (s *baseService) Groups() []string {
+	return s.groups
 }
 
 func (s *baseService) runStartLifecycle(ctx context.Context, instance any) error {
@@ -112,11 +120,13 @@ type lazySingleton[T any] struct {
 func newLazySingleton[T any](
 	name, typeName string,
 	provider func(*Container) (T, error),
+	groups ...string,
 ) *lazySingleton[T] {
 	return &lazySingleton[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
+			groups:          groups,
 		},
 		provider: provider,
 	}
@@ -181,6 +191,7 @@ func (s *lazySingleton[T]) Stop(ctx context.Context) error {
 type transientService[T any] struct {
 	serviceName     string
 	serviceTypeName string
+	groups          []string
 	provider        func(*Container) (T, error)
 }
 
@@ -188,10 +199,12 @@ type transientService[T any] struct {
 func newTransient[T any](
 	name, typeName string,
 	provider func(*Container) (T, error),
+	groups ...string,
 ) *transientService[T] {
 	return &transientService[T]{
 		serviceName:     name,
 		serviceTypeName: typeName,
+		groups:          groups,
 		provider:        provider,
 	}
 }
@@ -202,6 +215,10 @@ func (s *transientService[T]) Name() string {
 
 func (s *transientService[T]) TypeName() string {
 	return s.serviceTypeName
+}
+
+func (s *transientService[T]) Groups() []string {
+	return s.groups
 }
 
 func (s *transientService[T]) IsEager() bool {
@@ -251,11 +268,13 @@ type eagerSingleton[T any] struct {
 func newEagerSingleton[T any](
 	name, typeName string,
 	provider func(*Container) (T, error),
+	groups ...string,
 ) *eagerSingleton[T] {
 	return &eagerSingleton[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
+			groups:          groups,
 		},
 		provider: provider,
 	}
@@ -335,11 +354,13 @@ type instanceService[T any] struct {
 func newInstanceService[T any](
 	name, typeName string,
 	value T,
+	groups ...string,
 ) *instanceService[T] {
 	return &instanceService[T]{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
+			groups:          groups,
 		},
 		value: value,
 	}
@@ -390,11 +411,13 @@ type instanceServiceAny struct {
 func NewInstanceServiceAny(
 	name, typeName string,
 	value any,
+	groups ...string,
 ) *instanceServiceAny {
 	return &instanceServiceAny{
 		baseService: baseService{
 			serviceName:     name,
 			serviceTypeName: typeName,
+			groups:          groups,
 		},
 		value: value,
 	}

@@ -23,6 +23,7 @@ type RegistrationBuilder[T any] struct {
 	scope        serviceScope // singleton or transient
 	lazy         bool         // lazy (default) or eager
 	allowReplace bool         // allow overwriting existing
+	groups       []string     // service groups
 }
 
 // For returns a registration builder for type T.
@@ -81,6 +82,17 @@ func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 	return b
 }
 
+// InGroup adds the service to a named group for collective resolution.
+// Multiple calls append to the list of groups.
+//
+// Example:
+//
+//	di.For[*Handler](c).InGroup("api").Provider(...)
+func (b *RegistrationBuilder[T]) InGroup(group string) *RegistrationBuilder[T] {
+	b.groups = append(b.groups, group)
+	return b
+}
+
 // Provider registers a provider function that creates the service instance.
 // The provider receives the container for resolving dependencies.
 // Returns an error if a service with the same name already exists (unless Replace() was called).
@@ -95,23 +107,22 @@ func (b *RegistrationBuilder[T]) Replace() *RegistrationBuilder[T] {
 //	    return &MyService{dep: dep}, nil
 //	})
 func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error {
-	// Check for duplicate registration
-	if !b.allowReplace && b.container.HasService(b.name) {
-		return ErrDuplicate
-	}
-
 	// Create appropriate service wrapper based on scope and lazy settings
 	var svc ServiceWrapper
 	switch {
 	case b.scope == scopeTransient:
-		svc = newTransient(b.name, b.typeName, fn)
+		svc = newTransient(b.name, b.typeName, fn, b.groups...)
 	case !b.lazy:
-		svc = newEagerSingleton(b.name, b.typeName, fn)
+		svc = newEagerSingleton(b.name, b.typeName, fn, b.groups...)
 	default:
-		svc = newLazySingleton(b.name, b.typeName, fn)
+		svc = newLazySingleton(b.name, b.typeName, fn, b.groups...)
 	}
 
-	b.container.Register(b.name, svc)
+	if b.allowReplace {
+		b.container.ReplaceService(b.name, svc)
+	} else {
+		b.container.Register(b.name, svc)
+	}
 	return nil
 }
 
@@ -139,12 +150,11 @@ func (b *RegistrationBuilder[T]) ProviderFunc(fn func(*Container) T) error {
 //	cfg := &Config{Debug: true}
 //	err := di.For[*Config](c).Instance(cfg)
 func (b *RegistrationBuilder[T]) Instance(val T) error {
-	// Check for duplicate registration
-	if !b.allowReplace && b.container.HasService(b.name) {
-		return ErrDuplicate
+	svc := newInstanceService(b.name, b.typeName, val, b.groups...)
+	if b.allowReplace {
+		b.container.ReplaceService(b.name, svc)
+	} else {
+		b.container.Register(b.name, svc)
 	}
-
-	svc := newInstanceService(b.name, b.typeName, val)
-	b.container.Register(b.name, svc)
 	return nil
 }
