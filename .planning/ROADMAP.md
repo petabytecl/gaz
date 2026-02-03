@@ -50,9 +50,11 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 **Goal:** Enable gRPC and HTTP servers to register CLI flags for configuring ports and core settings.
 **Dependencies:** Phase 38
 **Requirements:** Derived from TRN-01, TRN-02
-**Plans:** 1 plan
+**Plans:** 1/1 plan complete
 
-- [ ] 38.1-01-PLAN.md — Add NewModuleWithFlags returning gaz.Module with CLI flags
+- [x] 38.1-01-PLAN.md — Add NewModuleWithFlags returning gaz.Module with CLI flags
+
+**Status:** Complete (2026-02-03)
 
 **Success Criteria:**
 1. gRPC server port configurable via `--grpc-port` flag.
@@ -90,6 +92,6 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 |-------|------|--------|--------------|
 | 37 | Core Discovery | **Complete** | CORE-01 |
 | 38 | Transport Foundations | **Complete** | TRN-01, TRN-02, TRN-03, GW-01 |
-| 38.1 | gRPC/HTTP CLI Flags | Pending (INSERTED) | TRN-01, TRN-02 |
+| 38.1 | gRPC/HTTP CLI Flags | **Complete** | TRN-01, TRN-02 |
 | 39 | Gateway Integration | Pending | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | Pending | INF-01, INF-02, INF-03 |

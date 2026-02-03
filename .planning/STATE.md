@@ -14,12 +14,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 - **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 38 - Transport Foundations
-- **Plan:** 3 of 3 in current phase
+- **Phase:** 38.1 - gRPC/HTTP CLI Flags
+- **Plan:** 1 of 1 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-02-03 — Completed 38-03-PLAN.md
+- **Last activity:** 2026-02-03 — Completed 38.1-01-PLAN.md
 
-Progress: [█████░░░░░] 50% (Phase 38 complete, ready for Phase 39)
+Progress: [██████░░░░] 55% (Phase 38.1 complete, ready for Phase 39)
 
 ## Milestones Shipped
 
@@ -85,6 +85,8 @@ None.
 - Plan 38-01 added gRPC server with interceptors.
 - Plan 38-02 added HTTP server with timeout protection.
 - Plan 38-03 added unified server module and comprehensive tests.
+- Phase 38.1 inserted after Phase 38: gRPC and HTTP servers should register flags to pass the port and other settings via CLI flags (URGENT)
+- Phase 38.1 complete: NewModuleWithFlags() adds CLI flag support for server configuration
 
 ### Pending Todos
 
@@ -93,8 +95,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 38-03-PLAN.md (Phase 38 complete)
-Resume with: `/gsd-execute-phase 39` (Gateway Integration)
+Stopped at: Completed 38.1-01-PLAN.md (Phase 38.1 complete)
+Resume with: `/gsd-plan-phase 39` (Gateway Integration)
 
 ---
 
