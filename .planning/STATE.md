@@ -107,6 +107,7 @@ None.
 - Plan 40-02 added OpenTelemetry TracerProvider with OTLP export and server instrumentation
 - Plan 40-03 added PGX health check, auto gRPC health integration, and otel tests
 - Phase 40 complete: Observability & Health fully implemented
+- Phase 41 added: Refactor server module architecture and consistency
 
 ### Pending Todos
 
