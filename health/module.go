@@ -185,7 +185,13 @@ func Module(c *di.Container) error {
 				return nil, err
 			}
 
-			return NewManagementServer(cfg, manager, shutdownCheck), nil
+			// Logger is optional - use default if not registered
+			logger := slog.Default()
+			if l, resolveErr := di.Resolve[*slog.Logger](c); resolveErr == nil {
+				logger = l
+			}
+
+			return NewManagementServer(cfg, manager, shutdownCheck, logger), nil
 		}); err != nil {
 		return fmt.Errorf("register management server: %w", err)
 	}

@@ -19,7 +19,7 @@ func TestManagementServer_StartStop(t *testing.T) {
 	manager := NewManager() // Assuming default manager works
 	shutdownCheck := NewShutdownCheck()
 
-	server := NewManagementServer(config, manager, shutdownCheck)
+	server := NewManagementServer(config, manager, shutdownCheck, nil)
 
 	// Start
 	ctx := context.Background()

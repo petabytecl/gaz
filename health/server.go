@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
-	"os"
 )
 
 // ManagementServer serves health endpoints on a dedicated port.
@@ -13,6 +13,7 @@ type ManagementServer struct {
 	config        Config
 	server        *http.Server
 	shutdownCheck *ShutdownCheck
+	logger        *slog.Logger
 }
 
 // NewManagementServer creates a new ManagementServer.
@@ -20,7 +21,12 @@ func NewManagementServer(
 	config Config,
 	manager *Manager,
 	shutdownCheck *ShutdownCheck,
+	logger *slog.Logger,
 ) *ManagementServer {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle(config.LivenessPath, manager.NewLivenessHandler())
 	mux.Handle(config.ReadinessPath, manager.NewReadinessHandler())
@@ -34,17 +40,16 @@ func NewManagementServer(
 			ReadHeaderTimeout: DefaultReadHeaderTimeout,
 		},
 		shutdownCheck: shutdownCheck,
+		logger:        logger,
 	}
 }
 
 // OnStart starts the management server in a background goroutine.
 // It returns immediately. Implements di.Starter interface.
-func (s *ManagementServer) OnStart(_ context.Context) error {
+func (s *ManagementServer) OnStart(ctx context.Context) error {
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			// In a real application, we would want to log this error.
-			// Since we don't have a configured logger yet, we just print it.
-			_, _ = fmt.Fprintf(os.Stderr, "Management server error: %v\n", err)
+			s.logger.ErrorContext(ctx, "Management server error", "error", err)
 		}
 	}()
 

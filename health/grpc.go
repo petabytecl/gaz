@@ -42,6 +42,10 @@ type GRPCServer struct {
 //   - All checks pass -> SERVING
 //   - Any check fails -> NOT_SERVING
 func NewGRPCServer(manager *Manager, logger *slog.Logger, opts ...GRPCServerOption) *GRPCServer {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	s := &GRPCServer{
 		health:     health.NewServer(),
 		manager:    manager,

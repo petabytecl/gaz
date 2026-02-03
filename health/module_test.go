@@ -102,7 +102,7 @@ func TestModule_ManagementServerError(t *testing.T) {
 	}
 
 	// Pre-register ManagementServer to cause duplicate
-	server := NewManagementServer(DefaultConfig(), NewManager(), NewShutdownCheck())
+	server := NewManagementServer(DefaultConfig(), NewManager(), NewShutdownCheck(), nil)
 	if err := di.For[*ManagementServer](c).Instance(server); err != nil {
 		t.Fatalf("Pre-register ManagementServer failed: %v", err)
 	}
