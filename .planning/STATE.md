@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 40 - Observability & Health
-- **Plan:** 2 of 3 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 40-02-PLAN.md
+- **Plan:** 3 of 3 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-03 — Completed 40-03-PLAN.md
 
-Progress: [████████░░] 82% (Plan 40-02 complete, 1 plan remaining)
+Progress: [██████████] 100% (Phase 40 complete, v4.1 milestone complete)
 
 ## Milestones Shipped
 
@@ -102,6 +102,8 @@ None.
 - Phase 40 started: Observability & Health
 - Plan 40-01 added gRPC health server wrapper (GRPCServer) with polling-based status sync
 - Plan 40-02 added OpenTelemetry TracerProvider with OTLP export and server instrumentation
+- Plan 40-03 added PGX health check, auto gRPC health integration, and otel tests
+- Phase 40 complete: Observability & Health fully implemented
 
 ### Pending Todos
 
@@ -110,8 +112,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 40-02-PLAN.md
-Resume with: 40-03-PLAN.md (PGX health check and tests)
+Stopped at: Completed 40-03-PLAN.md
+Resume with: v4.1 milestone complete - all phases done
 
 ---
 
