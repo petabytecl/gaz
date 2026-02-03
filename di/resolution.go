@@ -1,6 +1,9 @@
 package di
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 // Resolve retrieves a service of type T from the container.
 // By default, it looks up the service by its type name.
@@ -66,4 +69,39 @@ func MustResolve[T any](c *Container, opts ...ResolveOption) T {
 		panic(fmt.Sprintf("di.MustResolve[%s]: %v", TypeName[T](), err))
 	}
 	return result
+}
+
+// ResolveAll retrieves all registered services of type T.
+// This matches services registered by type T, or services implementing interface T.
+func ResolveAll[T any](c *Container) ([]T, error) {
+	// Resolve by type
+	t := reflect.TypeOf((*T)(nil)).Elem()
+	instances, err := c.ResolveAllByType(t)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cast
+	results := make([]T, len(instances))
+	for i, inst := range instances {
+		results[i] = inst.(T)
+	}
+	return results, nil
+}
+
+// ResolveGroup retrieves all services belonging to the specified group.
+// It filters services that are assignable to T.
+func ResolveGroup[T any](c *Container, group string) ([]T, error) {
+	instances, err := c.ResolveGroup(group)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []T
+	for _, inst := range instances {
+		if typed, ok := inst.(T); ok {
+			results = append(results, typed)
+		}
+	}
+	return results, nil
 }
