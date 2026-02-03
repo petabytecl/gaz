@@ -1,8 +1,8 @@
 package di
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -15,8 +15,8 @@ import (
 // and resolve with Resolve[T]().
 type Container struct {
 	// services stores registered services by name.
-	// The value will hold ServiceWrapper instances.
-	services map[string]any
+	// The value holds a list of ServiceWrapper instances to support multi-binding.
+	services map[string][]ServiceWrapper
 
 	// mu protects concurrent access to the services map.
 	mu sync.RWMutex
@@ -50,7 +50,7 @@ type Container struct {
 //	db, _ := di.Resolve[*Database](c)
 func New() *Container {
 	return &Container{
-		services:         make(map[string]any),
+		services:         make(map[string][]ServiceWrapper),
 		resolutionChains: make(map[int64][]string),
 		dependencyGraph:  make(map[string][]string),
 	}
@@ -61,7 +61,15 @@ func New() *Container {
 func (c *Container) Register(name string, svc ServiceWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.services[name] = svc
+	c.services[name] = append(c.services[name], svc)
+}
+
+// ReplaceService replaces all services registered under the given name with the new service.
+// This is used when RegistrationBuilder.Replace() is called.
+func (c *Container) ReplaceService(name string, svc ServiceWrapper) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.services[name] = []ServiceWrapper{svc}
 }
 
 // HasService checks if a service is registered by name.
@@ -79,25 +87,24 @@ func (c *Container) HasService(name string) bool {
 func (c *Container) ForEachService(fn func(name string, svc ServiceWrapper)) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	for name, svc := range c.services {
-		if wrapper, ok := svc.(ServiceWrapper); ok {
+	for name, wrappers := range c.services {
+		for _, wrapper := range wrappers {
 			fn(name, wrapper)
 		}
 	}
 }
 
-// GetService returns a service wrapper by name.
+// GetService returns the first service wrapper by name.
 // Returns nil, false if the service is not found.
 // This is used by gaz.App for lifecycle management.
 func (c *Container) GetService(name string) (ServiceWrapper, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	svc, ok := c.services[name]
-	if !ok {
+	wrappers, ok := c.services[name]
+	if !ok || len(wrappers) == 0 {
 		return nil, false
 	}
-	wrapper, ok := svc.(ServiceWrapper)
-	return wrapper, ok
+	return wrappers[0], true
 }
 
 // getGoroutineID returns a unique identifier for the current goroutine.
@@ -159,24 +166,36 @@ func (c *Container) Build() error {
 	// Collect eager services
 	var eagerServices []ServiceWrapper
 	c.mu.RLock()
-	for _, svc := range c.services {
-		wrapper, ok := svc.(ServiceWrapper)
-		if !ok {
-			c.mu.RUnlock()
-			return errors.New("invalid service wrapper type for service")
-		}
-		if wrapper.IsEager() {
-			eagerServices = append(eagerServices, wrapper)
+	for _, wrappers := range c.services {
+		for _, wrapper := range wrappers {
+			if wrapper.IsEager() {
+				eagerServices = append(eagerServices, wrapper)
+			}
 		}
 	}
 	c.mu.RUnlock()
 
 	// Instantiate each eager service
 	for _, svc := range eagerServices {
-		// Use resolveByName to ensure dependency tracking works correctly.
-		// resolveByName manages the resolution chain, which is required for
-		// cycle detection and dependency graph building.
-		_, err := c.ResolveByName(svc.Name(), nil)
+		// We cannot use ResolveByName here because it might be ambiguous if there are multiple services with the same name.
+		// Instead, we resolve the specific instance directly.
+		// However, we still need to respect the resolution chain for cycle detection.
+		//
+		// For now, if we assume Eager services are usually singletons and uniquely named or we don't care about the name resolution conflict in ResolveByName (which now errors),
+		// we must call GetInstance directly on the wrapper.
+
+		// Manually manage chain for this specific service
+		name := svc.Name()
+		c.pushChain(name)
+
+		// Check for cycle (though eager init usually starts chain)
+		// But wait, ResolveByName managed the chain.
+		// If we skip ResolveByName, we must manage it.
+
+		// Actually, let's use a helper or just do it inline.
+		_, err := svc.GetInstance(c, nil)
+		c.popChain()
+
 		if err != nil {
 			return fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
 		}
@@ -205,22 +224,23 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 
 	// Look up service
 	c.mu.RLock()
-	svc, ok := c.services[name]
+	wrappers, ok := c.services[name]
 	c.mu.RUnlock()
 
-	if !ok {
+	if !ok || len(wrappers) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrNotFound, name)
 	}
+
+	if len(wrappers) > 1 {
+		return nil, fmt.Errorf("%w: %s (found %d)", ErrAmbiguous, name, len(wrappers))
+	}
+
+	wrapper := wrappers[0]
 
 	// Record dependency if we are being resolved by another service
 	if len(chain) > 0 {
 		parent := chain[len(chain)-1]
 		c.recordDependency(parent, name)
-	}
-
-	wrapper, ok := svc.(ServiceWrapper)
-	if !ok {
-		return nil, fmt.Errorf("di: invalid service wrapper type for %s", name)
 	}
 
 	// Add current service to chain before getting instance
@@ -295,4 +315,134 @@ func (c *Container) List() []string {
 //	}
 func Has[T any](c *Container) bool {
 	return c.HasService(TypeName[T]())
+}
+
+// ResolveAllByName resolves all services registered under the given name.
+// Returns an empty slice if no services are found.
+func (c *Container) ResolveAllByName(name string) ([]any, error) {
+	c.mu.RLock()
+	wrappers, ok := c.services[name]
+	c.mu.RUnlock()
+
+	if !ok || len(wrappers) == 0 {
+		return []any{}, nil
+	}
+
+	var results []any
+	chain := c.getChain()
+
+	// Check for cycle on the group name itself if relevant, but really we care about individual instances.
+	// However, if we are resolving "foo", and "foo" depends on "foo" list, that is a cycle.
+	for _, seen := range chain {
+		if seen == name {
+			cycle := append(append([]string{}, chain...), name)
+			return nil, fmt.Errorf("%w: %s (in ResolveAllByName)", ErrCycle, strings.Join(cycle, " -> "))
+		}
+	}
+
+	for _, wrapper := range wrappers {
+		// We use the wrapper's name (which matches 'name' here) for cycle tracking.
+		c.pushChain(name)
+		instance, err := wrapper.GetInstance(c, nil)
+		c.popChain()
+
+		if err != nil {
+			return nil, fmt.Errorf("di: resolving element of %s: %w", name, err)
+		}
+		results = append(results, instance)
+	}
+	return results, nil
+}
+
+// ResolveGroup resolves all services belonging to the specified group.
+// Returns an empty slice if no services are found.
+func (c *Container) ResolveGroup(group string) ([]any, error) {
+	c.mu.RLock()
+	var candidates []ServiceWrapper
+	for _, wrappers := range c.services {
+		for _, wrapper := range wrappers {
+			for _, g := range wrapper.Groups() {
+				if g == group {
+					candidates = append(candidates, wrapper)
+					break
+				}
+			}
+		}
+	}
+	c.mu.RUnlock()
+
+	if len(candidates) == 0 {
+		return []any{}, nil
+	}
+
+	var results []any
+	chain := c.getChain()
+
+	for _, wrapper := range candidates {
+		name := wrapper.Name()
+
+		// Cycle detection per item
+		for _, seen := range chain {
+			if seen == name {
+				cycle := append(append([]string{}, chain...), name)
+				return nil, fmt.Errorf("%w: %s (in ResolveGroup)", ErrCycle, strings.Join(cycle, " -> "))
+			}
+		}
+
+		c.pushChain(name)
+		instance, err := wrapper.GetInstance(c, nil)
+		c.popChain()
+
+		if err != nil {
+			return nil, fmt.Errorf("di: resolving group candidate %s: %w", name, err)
+		}
+		results = append(results, instance)
+	}
+	return results, nil
+}
+
+// ResolveAllByType resolves all services that are assignable to the given type.
+// This scans all registered services regardless of their registration name.
+func (c *Container) ResolveAllByType(t reflect.Type) ([]any, error) {
+	c.mu.RLock()
+	// Snapshot the services to avoid holding lock during resolution
+	var candidates []ServiceWrapper
+	for _, wrappers := range c.services {
+		for _, wrapper := range wrappers {
+			// Check if the service type implements/assigns to T
+			if wrapper.ServiceType().AssignableTo(t) {
+				candidates = append(candidates, wrapper)
+			}
+		}
+	}
+	c.mu.RUnlock()
+
+	if len(candidates) == 0 {
+		return []any{}, nil
+	}
+
+	var results []any
+	chain := c.getChain()
+
+	for _, wrapper := range candidates {
+		name := wrapper.Name()
+
+		// Cycle detection per item
+		for _, seen := range chain {
+			if seen == name {
+				cycle := append(append([]string{}, chain...), name)
+				return nil, fmt.Errorf("%w: %s (in ResolveAllByType)", ErrCycle, strings.Join(cycle, " -> "))
+			}
+		}
+
+		c.pushChain(name)
+		instance, err := wrapper.GetInstance(c, nil)
+		c.popChain()
+
+		if err != nil {
+			return nil, fmt.Errorf("di: resolving candidate %s for type %v: %w", name, t, err)
+		}
+		results = append(results, instance)
+	}
+	return results, nil
 }
