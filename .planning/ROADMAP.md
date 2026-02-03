@@ -102,6 +102,18 @@ Plans:
 2. App reports "Unhealthy" if the configured Postgres database is unreachable.
 3. OpenTelemetry traces are generated for requests spanning Gateway -> gRPC.
 
+### Phase 41: Refactor server module architecture and consistency
+
+**Goal:** [To be planned]
+**Depends on:** Phase 40
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 41 to break down)
+
+**Details:**
+[To be added during planning]
+
 ## Progress
 
 | Phase | Goal | Status | Requirements |
