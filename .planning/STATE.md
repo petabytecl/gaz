@@ -16,7 +16,7 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
 - **Plan:** 6 of 6 in current phase
 - **Status:** Milestone complete, ready for next milestone
-- **Last activity:** 2026-02-02 — v4.0 milestone archived
+- **Last activity:** 2026-02-02 — Completed quick task 001: Do a full review of all the package.
 
 Progress: [██████████] 100% (v4.0 complete)
 
@@ -58,6 +58,12 @@ See: .planning/research/v4.0-SUMMARY.md
 ### Blockers/Concerns
 
 None — ready for next milestone.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Do a full review of all the package. | 2026-02-02 | b215f5a | [001-full-review-code-quality-security-docs](./quick/001-full-review-code-quality-security-docs/) |
 
 ### Roadmap Evolution
 
