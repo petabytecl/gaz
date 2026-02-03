@@ -1,290 +1,93 @@
-# Stack Research: v2.0 Concurrency
+# Technology Stack: Server & Transport Layer
 
-**Researched:** 2026-01-27
-**Focus:** Workers, Worker Pools, Cron/Scheduled Tasks, EventBus
-**Confidence:** HIGH (verified via Context7 + official GitHub)
+**Project:** gaz (v4.1)
+**Researched:** Mon Feb 02 2026
 
-## Executive Summary
+## Recommended Stack
 
-gaz v2.0 adds concurrency primitives that integrate with the existing `Starter`/`Stopper` lifecycle. The recommendations prioritize:
-1. **Stdlib-first** for workers (goroutines + channels are sufficient)
-2. **Minimal dependencies** for specialized needs (cron, eventbus)
-3. **Lifecycle integration** as the unifying pattern
+### Transport Layer
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `net/http` | std (Go 1.25) | HTTP Server | Go 1.22+ `ServeMux` is powerful enough for most HTTP needs; avoid heavy frameworks (Gin/Echo) unless necessary. |
+| `google.golang.org/grpc` | v1.70+ | gRPC Server | Industry standard. Native Go implementation. |
+| `grpc-ecosystem/grpc-gateway` | v2.26+ | REST Gateway | Generates reverse proxy from proto definitions. Essential for backward compatibility and web clients. |
+| `connect-go` | (Alternative) | gRPC-compatible | *Consider* for simpler setups, but stick to `grpc-gateway` per requirements. |
 
----
+### Database
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `github.com/jackc/pgx/v5` | v5.7+ | PostgreSQL Driver | High performance, native types, robust `pgxpool`. Superior to `lib/pq` (maintenance mode). |
 
-## Recommendations
+### Middleware & Interceptors
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `github.com/grpc-ecosystem/go-grpc-middleware/v2` | v2.2+ | Interceptor Chains | Essential for chaining logging, recovery, auth, and validation interceptors. |
+| `github.com/bufbuild/protovalidate-go` | v0.5+ | Request Validation | Modern replacement for `protoc-gen-validate`. Defines validation rules in `.proto` files. |
+| `go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc` | v0.59+ | Tracing/Metrics | Standard OTel instrumentation for gRPC. |
+| `github.com/rs/cors` | v1.11+ | CORS Middleware | Required if Gateway is called from browser frontends. |
 
-### Workers / Worker Pools
+## Tooling (Dev Experience)
+| Tool | Purpose | Recommendation |
+|------|---------|----------------|
+| `buf` | Proto Management | Use `buf` instead of raw `protoc`. Handles dependency management, linting, and generation much cleaner. |
+| `protoc-gen-openapiv2` | API Docs | Generate Swagger/OpenAPI spec from gRPC definitions for the Gateway. |
 
-**RECOMMENDATION: Build custom + optional pond for advanced pools**
+## Integration Strategy
 
-| Component | Approach | Why |
-|-----------|----------|-----|
-| Simple workers | **Stdlib** (goroutine + context) | Sufficient for most cases, zero deps |
-| Worker pools | **alitto/pond v2.6.0** | Modern API, context-aware, graceful shutdown |
+### Architecture: Separate Ports (Recommended)
+While `cmux` or `h2c` allows single-port operation, **separate ports** are recommended for production Kubernetes environments:
+- **Port 9090 (gRPC):** Pure HTTP/2. Native performance.
+- **Port 8080 (HTTP):** HTTP/1.1 + HTTP/2. Serves Gateway + other HTTP routes (health, metrics).
+- **Reason:** Ingress controllers (ALB, Nginx) often handle protocols differently. `cmux` adds fragility and complexity (L7 matching).
 
-**Why NOT ants:**
-- ants v2.11.0 is excellent (14k stars, generics support), but:
-- `Release()`/`ReleaseTimeout()` pattern doesn't match gaz's `Stopper.OnStop(context.Context)`
-- No native `context.Context` support for pool lifecycle
-- Requires adapting API patterns
+### DI Integration (gaz)
+Register distinct providers for each component:
 
-**Why pond:**
-- `pond.WithContext(ctx)` - pool stops when context cancels (maps to gaz lifecycle)
-- `pool.StopAndWait()` - graceful shutdown compatible with `Stopper`
-- v2 API uses Go 1.18+ generics
-- Simpler API than ants
+1.  **gRPC Server Provider:**
+    -   Inputs: `*grpc.ServerOption` (interceptors), registered services.
+    -   Outputs: `*grpc.Server`.
+    -   Lifecycle: `OnStart` (Listen & Serve), `OnStop` (`GracefulStop`).
 
-**gaz Integration Pattern:**
-```go
-// Worker implements Starter + Stopper
-type Worker struct {
-    pool *pond.Pool
-    ctx  context.Context
-    cancel context.CancelFunc
-}
+2.  **Gateway Provider:**
+    -   Inputs: `*grpc.ClientConn` (loopback to gRPC server), `*runtime.ServeMuxOption`.
+    -   Outputs: `*runtime.ServeMux`.
+    -   Lifecycle: None (stateless handler).
 
-func (w *Worker) OnStart(ctx context.Context) error {
-    w.ctx, w.cancel = context.WithCancel(ctx)
-    w.pool = pond.NewPool(10, pond.WithContext(w.ctx))
-    return nil
-}
+3.  **HTTP Server Provider:**
+    -   Inputs: `*runtime.ServeMux` (as handler), Port config.
+    -   Outputs: `*http.Server`.
+    -   Lifecycle: `OnStart` (ListenAndServe), `OnStop` (`Shutdown`).
 
-func (w *Worker) OnStop(ctx context.Context) error {
-    w.cancel() // triggers pool shutdown via context
-    return nil
-}
+4.  **Database Provider:**
+    -   Inputs: Config struct.
+    -   Outputs: `*pgxpool.Pool`.
+    -   Lifecycle: `OnStart` (Ping), `OnStop` (`Close`).
+
+## Anti-Patterns to Avoid
+
+-   **`cmux` for everything:** Avoid unless single-port is a hard constraint (e.g., restrictive firewall). It complicates debugging.
+-   **`protoc-gen-validate` (legacy):** Deprecated in favor of `protovalidate`. Do not start new projects with legacy PGV.
+-   **Global State:** Do not rely on `http.DefaultServeMux` or global `grpc.Server`. Always inject instances.
+-   **Ignoring `MaxConnectionAge`:** In gRPC, this causes load balancer imbalances. Configure `KeepaliveParams`.
+
+## Version Compatibility Check
+-   `grpc-gateway/v2` requires `google.golang.org/grpc` v1.64+ (Verified: v1.70+ is safe).
+-   `protovalidate-go` requires `google.golang.org/protobuf` v1.34+ (Verified: v1.36+ is safe).
+
+## Installation
+
+```bash
+# Core
+go get google.golang.org/grpc@latest
+go get google.golang.org/protobuf@latest
+go get github.com/grpc-ecosystem/grpc-gateway/v2@latest
+go get github.com/jackc/pgx/v5@latest
+
+# Middleware & Validation
+go get github.com/grpc-ecosystem/go-grpc-middleware/v2@latest
+go get github.com/bufbuild/protovalidate-go@latest
+go get go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc@latest
+
+# CORS (if needed)
+go get github.com/rs/cors@latest
 ```
-
-**For simple workers (stdlib):**
-```go
-type SimpleWorker struct {
-    cancel context.CancelFunc
-    done   chan struct{}
-}
-
-func (w *SimpleWorker) OnStart(ctx context.Context) error {
-    ctx, w.cancel = context.WithCancel(ctx)
-    w.done = make(chan struct{})
-    go w.run(ctx)
-    return nil
-}
-
-func (w *SimpleWorker) OnStop(ctx context.Context) error {
-    w.cancel()
-    select {
-    case <-w.done:
-        return nil
-    case <-ctx.Done():
-        return ctx.Err()
-    }
-}
-```
-
----
-
-### Cron / Scheduled Tasks
-
-**RECOMMENDATION: robfig/cron v3.0.1**
-
-| Library | Stars | Decision |
-|---------|-------|----------|
-| **robfig/cron** | 14k | **USE** - Industry standard, graceful shutdown, Job interface |
-| go-co-op/gocron | 5k+ | Alternative - higher-level API, more deps |
-
-**Why robfig/cron:**
-- `c.Stop()` returns context that completes when jobs finish - perfect for `Stopper`
-- Job interface allows DI via constructors
-- v3 has job wrappers for panic recovery, concurrency control
-- Thread-safe add/remove of jobs at runtime
-- Standard 5-field + optional seconds cron expressions
-- Timezone support
-
-**gaz Integration Pattern:**
-```go
-type Scheduler struct {
-    cron *cron.Cron
-}
-
-func (s *Scheduler) OnStart(ctx context.Context) error {
-    s.cron = cron.New(cron.WithSeconds()) // optional seconds precision
-    // Jobs added via DI
-    s.cron.Start()
-    return nil
-}
-
-func (s *Scheduler) OnStop(ctx context.Context) error {
-    stopCtx := s.cron.Stop()
-    select {
-    case <-stopCtx.Done():
-        return nil
-    case <-ctx.Done():
-        return ctx.Err()
-    }
-}
-```
-
-**Version note:** robfig/cron uses tags not releases. Latest stable: `v3.0.1` (Jan 2020). Despite age, it's stable and widely used.
-
----
-
-### EventBus
-
-**RECOMMENDATION: Build custom OR jilio/ebu for type-safety**
-
-| Approach | When to Use |
-|----------|-------------|
-| **Custom (stdlib)** | Simple pub/sub, <5 event types, full control |
-| **jilio/ebu v0.10.1** | Type-safe generics, async handlers, persistence |
-
-**Why consider jilio/ebu:**
-- Type-safe with Go generics - compile-time event type checking
-- `eventbus.Subscribe[T](bus, handler)` - matches gaz's `For[T](c)` pattern
-- Context support (`PublishContext`, `SubscribeContext`)
-- `bus.Shutdown(ctx)` - graceful shutdown with timeout
-- Async handlers with sequential option
-- Zero core dependencies (optional otel, persistence packages)
-
-**Why consider custom stdlib:**
-- Simple pub/sub is ~50 lines of Go
-- No external dependency
-- Full control over behavior
-- Easier to integrate with existing gaz patterns
-
-**Recommended custom pattern:**
-```go
-type EventBus struct {
-    mu       sync.RWMutex
-    handlers map[reflect.Type][]any
-    wg       sync.WaitGroup
-}
-
-func Publish[E any](bus *EventBus, event E) {
-    // type-safe dispatch using generics
-}
-
-func Subscribe[E any](bus *EventBus, handler func(E)) {
-    // type-safe registration
-}
-```
-
-**ebu Integration Pattern (if using library):**
-```go
-type Bus struct {
-    eb *eventbus.EventBus
-}
-
-func (b *Bus) OnStart(ctx context.Context) error {
-    b.eb = eventbus.New()
-    return nil
-}
-
-func (b *Bus) OnStop(ctx context.Context) error {
-    return b.eb.Shutdown(ctx) // respects context timeout
-}
-```
-
----
-
-## Integration Points with Existing gaz
-
-| gaz Concept | New Component Integration |
-|-------------|---------------------------|
-| `Starter` interface | Workers/pools call `Start()` in `OnStart()` |
-| `Stopper` interface | Workers/pools call graceful shutdown in `OnStop()` |
-| `For[T](c).Provider()` | Register workers, scheduler, eventbus as singletons |
-| `context.Context` | All new components accept/respect context |
-| Per-hook timeout | Each component's shutdown respects `HookConfig.Timeout` |
-| Dependency ordering | Workers may depend on DB, config - automatic ordering |
-
-**Pattern: All concurrency primitives become lifecycle-aware services**
-
-```go
-// Example: Scheduler depends on DB connection
-For[*Scheduler](c).Provider(func(c *Container) (*Scheduler, error) {
-    db := Must[*DB](c) // ensures DB starts before scheduler
-    return &Scheduler{db: db}, nil
-})
-```
-
----
-
-## What NOT to Add
-
-### Rejected: External Job Queues
-
-| Library | Why NOT |
-|---------|---------|
-| machinery | Overkill - requires Redis/Mongo, for distributed systems |
-| faktory | External process, language-agnostic design overhead |
-| asynq | Redis-required, for distributed task queues |
-| temporal | Enterprise workflow engine, massive complexity |
-
-**Rationale:** gaz v2.0 targets in-process concurrency. Distributed job systems are a separate concern for users to add if needed.
-
-### Rejected: Over-engineered Worker Pools
-
-| Approach | Why NOT |
-|----------|---------|
-| Custom pool from scratch | stdlib goroutines often sufficient, pond covers edge cases |
-| Multiple pool libraries | Pick one (pond) or none (stdlib) |
-| Workstealing pools | Complexity not justified for typical use cases |
-
-### Rejected: Complex EventBus Libraries
-
-| Library | Why NOT |
-|---------|---------|
-| asaskevich/EventBus | No generics, string-based event names, less type-safe |
-| mustafaturan/bus | More complex, less active development |
-| olebedev/emitter | Node.js-style API, reflection heavy |
-
-**Rationale:** Either build a simple type-safe bus (50 LOC) or use ebu for advanced needs. Middle ground adds dependency without clear benefit.
-
----
-
-## Versions to Pin
-
-```go
-// go.mod additions for v2.0
-
-// Required for cron
-require github.com/robfig/cron/v3 v3.0.1
-
-// Optional: if using worker pools beyond stdlib
-require github.com/alitto/pond/v2 v2.6.0
-
-// Optional: if using advanced eventbus
-require github.com/jilio/ebu v0.10.1
-```
-
-**Go version:** Continue requiring Go 1.21+ (already required by gaz)
-
----
-
-## Sources
-
-| Source | URL | Confidence |
-|--------|-----|------------|
-| robfig/cron docs | Context7: /robfig/cron | HIGH |
-| robfig/cron tags | https://github.com/robfig/cron/tags | HIGH |
-| alitto/pond docs | Context7: /alitto/pond | HIGH |
-| alitto/pond releases | https://github.com/alitto/pond/releases | HIGH |
-| panjf2000/ants docs | Context7: /panjf2000/ants | HIGH |
-| panjf2000/ants releases | https://github.com/panjf2000/ants/releases | HIGH |
-| jilio/ebu docs | Context7: /jilio/ebu + GitHub README | HIGH |
-
----
-
-## Decision Summary
-
-| Capability | Recommendation | Dependency |
-|------------|---------------|------------|
-| Simple workers | **Stdlib** | None |
-| Worker pools (optional) | **pond v2.6.0** | `github.com/alitto/pond/v2` |
-| Cron/scheduling | **robfig/cron v3.0.1** | `github.com/robfig/cron/v3` |
-| EventBus (simple) | **Custom stdlib** | None |
-| EventBus (advanced) | **ebu v0.10.1** | `github.com/jilio/ebu` |
-
-**Total new required dependencies: 1** (robfig/cron)
-**Total new optional dependencies: 2** (pond, ebu)
