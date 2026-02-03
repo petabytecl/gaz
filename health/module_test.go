@@ -1,6 +1,7 @@
 package health
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -44,19 +45,24 @@ func TestModule_ShutdownCheckError(t *testing.T) {
 	// Create container with ShutdownCheck already registered
 	c := di.New()
 
-	// Pre-register ShutdownCheck to cause duplicate error
+	// Pre-register ShutdownCheck to cause duplicate
 	if err := di.For[*ShutdownCheck](c).Instance(NewShutdownCheck()); err != nil {
 		t.Fatalf("Pre-register ShutdownCheck failed: %v", err)
 	}
 
-	// Module should fail when trying to register ShutdownCheck
-	err := Module(c)
-	if err == nil {
-		t.Fatal("Expected error from Module, got nil")
+	// Module should succeed (multi-binding is now supported)
+	if err := Module(c); err != nil {
+		t.Fatalf("Module failed: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "register shutdown check") {
-		t.Errorf("Expected error to contain 'register shutdown check', got: %v", err)
+	// But resolution should be ambiguous
+	_, err := di.Resolve[*ShutdownCheck](c)
+	if err == nil {
+		t.Fatal("Expected error from Resolve, got nil")
+	}
+
+	if !errors.Is(err, di.ErrAmbiguous) {
+		t.Errorf("Expected ErrAmbiguous, got: %v", err)
 	}
 }
 
@@ -64,20 +70,24 @@ func TestModule_ManagerError(t *testing.T) {
 	// Create container with Manager already registered
 	c := di.New()
 
-	// Pre-register Manager to cause duplicate error
+	// Pre-register Manager to cause duplicate
 	if err := di.For[*Manager](c).Instance(NewManager()); err != nil {
 		t.Fatalf("Pre-register Manager failed: %v", err)
 	}
 
-	// Module should fail when trying to register Manager
-	// First ShutdownCheck succeeds, then Manager fails
-	err := Module(c)
-	if err == nil {
-		t.Fatal("Expected error from Module, got nil")
+	// Module should succeed
+	if err := Module(c); err != nil {
+		t.Fatalf("Module failed: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "register manager") {
-		t.Errorf("Expected error to contain 'register manager', got: %v", err)
+	// But resolution should be ambiguous
+	_, err := di.Resolve[*Manager](c)
+	if err == nil {
+		t.Fatal("Expected error from Resolve, got nil")
+	}
+
+	if !errors.Is(err, di.ErrAmbiguous) {
+		t.Errorf("Expected ErrAmbiguous, got: %v", err)
 	}
 }
 
@@ -90,20 +100,25 @@ func TestModule_ManagementServerError(t *testing.T) {
 		t.Fatalf("Register Config failed: %v", err)
 	}
 
-	// Pre-register ManagementServer to cause duplicate error
+	// Pre-register ManagementServer to cause duplicate
 	server := NewManagementServer(DefaultConfig(), NewManager(), NewShutdownCheck())
 	if err := di.For[*ManagementServer](c).Instance(server); err != nil {
 		t.Fatalf("Pre-register ManagementServer failed: %v", err)
 	}
 
-	// Module should fail when trying to register ManagementServer
-	err := Module(c)
-	if err == nil {
-		t.Fatal("Expected error from Module, got nil")
+	// Module should succeed
+	if err := Module(c); err != nil {
+		t.Fatalf("Module failed: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "register management server") {
-		t.Errorf("Expected error to contain 'register management server', got: %v", err)
+	// But resolution should be ambiguous
+	_, err := di.Resolve[*ManagementServer](c)
+	if err == nil {
+		t.Fatal("Expected error from Resolve, got nil")
+	}
+
+	if !errors.Is(err, di.ErrAmbiguous) {
+		t.Errorf("Expected ErrAmbiguous, got: %v", err)
 	}
 }
 
