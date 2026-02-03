@@ -1,6 +1,7 @@
 package otel
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -59,7 +60,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("otel: invalid sample_ratio %f: must be between 0.0 and 1.0", c.SampleRatio)
 	}
 	if c.Endpoint != "" && c.ServiceName == "" {
-		return fmt.Errorf("otel: service_name required when endpoint is set")
+		return errors.New("otel: service_name required when endpoint is set")
 	}
 	return nil
 }
