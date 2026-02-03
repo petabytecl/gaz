@@ -34,7 +34,7 @@ func (s *ErrorTestSuite) TestProblemDetails_JSONSerialization() {
 	data, err := json.Marshal(problem)
 	s.Require().NoError(err)
 
-	var decoded map[string]interface{}
+	var decoded map[string]any
 	err = json.Unmarshal(data, &decoded)
 	s.Require().NoError(err)
 
@@ -57,7 +57,7 @@ func (s *ErrorTestSuite) TestProblemDetails_OmitEmpty() {
 	data, err := json.Marshal(problem)
 	s.Require().NoError(err)
 
-	var decoded map[string]interface{}
+	var decoded map[string]any
 	err = json.Unmarshal(data, &decoded)
 	s.Require().NoError(err)
 
