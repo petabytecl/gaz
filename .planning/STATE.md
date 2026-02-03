@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 37 - Core Discovery
-- **Plan:** —
-- **Status:** Pending
-- **Last activity:** 2026-02-03 — Roadmap created
+- **Plan:** 1 of 2 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-02 — Completed 37-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (Phase 37 pending)
+Progress: [██░░░░░░░░] 20% (Phase 37 in progress)
 
 ## Milestones Shipped
 
@@ -35,7 +35,7 @@ Progress: [░░░░░░░░░░] 0% (Phase 37 pending)
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 
-**Total:** 142 plans across 36 phases
+**Total:** 144 plans across 36+ phases
 
 ## Accumulated Context
 
@@ -47,6 +47,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 
 - **Port Separation:** Running Gateway and gRPC on separate ports (e.g., 8080/9090) to avoid `cmux` complexity.
 - **Auto-Discovery:** Gateway will use `di.List[GatewayEndpoint]` to find services rather than manual registration.
+- **Implicit Collection:** Allowed Register to append duplicates instead of returning error.
+- **Ambiguity Handling:** Resolve returns ErrAmbiguous if multiple services registered.
 
 ### Research Summary
 
@@ -80,8 +82,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Roadmap created
+Last session: 2026-02-02
+Stopped at: Completed 37-01-PLAN.md
 Resume with: `/gsd-plan-phase 37`
 
 ---
