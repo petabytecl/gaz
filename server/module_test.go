@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
-	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/server/grpc"
 	shttp "github.com/petabytecl/gaz/server/http"
@@ -103,18 +102,8 @@ func TestNewModule(t *testing.T) {
 //nolint:funlen // Test function with multiple subtests is naturally long.
 func TestNewModuleWithFlags(t *testing.T) {
 	t.Run("flags registration", func(t *testing.T) {
-		m := NewModuleWithFlags()
-
-		// Check module implements FlagsFn interface.
-		flagsProvider, ok := m.(interface{ FlagsFn() func(*pflag.FlagSet) })
-		require.True(t, ok, "module should implement FlagsFn")
-
-		fn := flagsProvider.FlagsFn()
-		require.NotNil(t, fn, "FlagsFn should return non-nil function")
-
-		// Apply flags to a test FlagSet.
 		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		fn(fs)
+		_ = NewModuleWithFlags(fs)
 
 		// Verify flags are registered with correct defaults.
 		grpcPort := fs.Lookup("grpc-port")
@@ -135,15 +124,12 @@ func TestNewModuleWithFlags(t *testing.T) {
 	})
 
 	t.Run("options affect defaults", func(t *testing.T) {
-		m := NewModuleWithFlags(
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		_ = NewModuleWithFlags(fs,
 			WithGRPCPort(9090),
 			WithHTTPPort(3000),
 			WithGRPCReflection(false),
 		)
-
-		flagsProvider := m.(interface{ FlagsFn() func(*pflag.FlagSet) })
-		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		flagsProvider.FlagsFn()(fs)
 
 		// Options should have set the defaults.
 		require.Equal(t, "9090", fs.Lookup("grpc-port").DefValue)
@@ -154,13 +140,8 @@ func TestNewModuleWithFlags(t *testing.T) {
 	t.Run("flag values used at resolution", func(t *testing.T) {
 		// This test verifies the critical timing: flag values are read at resolution time,
 		// not at module creation time.
-
-		m := NewModuleWithFlags() // defaults: grpc=50051, http=8080
-
-		// Get the FlagsFn and bind flags.
-		flagsProvider := m.(interface{ FlagsFn() func(*pflag.FlagSet) })
 		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		flagsProvider.FlagsFn()(fs)
+		_ = NewModuleWithFlags(fs) // defaults: grpc=50051, http=8080
 
 		// Simulate flag parsing with custom values.
 		err := fs.Parse([]string{"--grpc-port=7777", "--http-port=9999"})
@@ -180,14 +161,7 @@ func TestNewModuleWithFlags(t *testing.T) {
 		// Create a cobra command to attach flags to.
 		cmd := &cobra.Command{Use: "test"}
 
-		m := NewModuleWithFlags(WithGRPCPort(5000)) // default 5000
-
-		// Get and apply flags to cmd.
-		if fp, ok := m.(interface{ FlagsFn() func(*pflag.FlagSet) }); ok {
-			if fn := fp.FlagsFn(); fn != nil {
-				fn(cmd.PersistentFlags())
-			}
-		}
+		_ = NewModuleWithFlags(cmd.PersistentFlags(), WithGRPCPort(5000)) // default 5000
 
 		// Parse args to override.
 		err := cmd.ParseFlags([]string{"--grpc-port=6000"})
@@ -200,64 +174,58 @@ func TestNewModuleWithFlags(t *testing.T) {
 	})
 
 	t.Run("module name", func(t *testing.T) {
-		m := NewModuleWithFlags()
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		m := NewModuleWithFlags(fs)
 		require.Equal(t, "server", m.Name())
 	})
 
 	t.Run("full module apply", func(t *testing.T) {
-		// Test that the module can be applied to an App.
-		// gaz.New() already registers a logger.
-		m := NewModuleWithFlags(
+		// Test that the module can be applied to a di.Container directly.
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		m := NewModuleWithFlags(fs,
 			WithGRPCPort(50052),
 			WithHTTPPort(8081),
 		)
 
-		// Create app and use the module.
-		app := gaz.New().Use(m)
+		c := di.New()
+		require.NoError(t, di.For[*slog.Logger](c).Instance(slog.Default()))
 
-		// Build should succeed.
-		err := app.Build()
+		// Registration should succeed.
+		err := m.Register(c)
 		require.NoError(t, err)
+
+		// Verify both servers were registered.
+		require.True(t, di.Has[*grpc.Server](c))
+		require.True(t, di.Has[*shttp.Server](c))
 	})
 
 	t.Run("resolved config uses flag values", func(t *testing.T) {
 		// This is the critical integration test: verify that when flags are parsed,
 		// the resolved configs have the flag values, not the option defaults.
-
-		m := NewModuleWithFlags(
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		m := NewModuleWithFlags(fs,
 			WithGRPCPort(50051), // option default
 			WithHTTPPort(8080),  // option default
 		)
 
-		// Simulate what happens in gaz.App.Use():
-		// 1. Flags are bound to the module's cfg struct
-		flagsProvider := m.(interface{ FlagsFn() func(*pflag.FlagSet) })
-		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-		flagsProvider.FlagsFn()(fs)
-
-		// 2. Flags are parsed (simulating cobra parsing)
+		// 1. Flags are parsed (simulating cobra parsing)
 		err := fs.Parse([]string{"--grpc-port=12345", "--http-port=54321"})
 		require.NoError(t, err)
 
-		// 3. Module's Provide() is called (which reads cfg values)
-		// We need to access the internal provider function.
-		// Since the module is built, we can test this via full App integration.
+		// 2. Module's Register() is called (which reads flag values)
+		c := di.New()
+		require.NoError(t, di.For[*slog.Logger](c).Instance(slog.Default()))
 
-		// Create an app and use the module.
-		// Note: gaz.New() already registers a logger.
-		app := gaz.New().Use(m)
-
-		err = app.Build()
+		err = m.Register(c)
 		require.NoError(t, err)
 
-		// The module was applied, but the flags were parsed on a DIFFERENT FlagSet.
-		// In a real app, the flags would be on cmd.PersistentFlags().
-		// Since we parsed on a separate fs, the module's cfg was NOT updated.
-		// This test demonstrates the mechanism works - in production,
-		// gaz.App.Use() binds flags to the cmd's FlagSet.
+		// 3. Verify configs have the parsed flag values, not defaults.
+		grpcCfg, err := di.Resolve[grpc.Config](c)
+		require.NoError(t, err)
+		require.Equal(t, 12345, grpcCfg.Port)
 
-		// Verify the servers were registered.
-		require.True(t, di.Has[*grpc.Server](app.Container()))
-		require.True(t, di.Has[*shttp.Server](app.Container()))
+		httpCfg, err := di.Resolve[shttp.Config](c)
+		require.NoError(t, err)
+		require.Equal(t, 54321, httpCfg.Port)
 	})
 }
