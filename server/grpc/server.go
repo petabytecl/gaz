@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/stats"
 
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/health"
 )
 
 // ServiceRegistrar is implemented by gRPC services that want to be
@@ -114,6 +115,14 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 	for _, r := range registrars {
 		r.RegisterService(s.server)
+	}
+
+	// Auto-register gRPC health server if available.
+	// This enables standard grpc.health.v1 endpoints when health module
+	// is configured with WithGRPC().
+	if grpcHealth, err := di.Resolve[*health.GRPCServer](s.container); err == nil && grpcHealth != nil {
+		grpcHealth.Register(s.server)
+		s.logger.DebugContext(ctx, "gRPC health server registered")
 	}
 
 	// Enable reflection if configured.
