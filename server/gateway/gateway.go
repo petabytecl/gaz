@@ -45,7 +45,7 @@ type Gateway struct {
 	devMode     bool
 	tp          *sdktrace.TracerProvider
 	otelEnabled bool
-	handler     http.Handler
+	handler     *DynamicHandler
 }
 
 // NewGateway creates a new Gateway with the given configuration.
@@ -68,6 +68,7 @@ func NewGateway(cfg Config, logger *slog.Logger, container *di.Container, devMod
 		devMode:     devMode,
 		tp:          tp,
 		otelEnabled: tp != nil,
+		handler:     NewDynamicHandler(nil),
 	}
 }
 
@@ -122,18 +123,23 @@ func (g *Gateway) OnStart(ctx context.Context) error {
 		MaxAge:           g.config.CORS.MaxAge,
 		Debug:            g.devMode,
 	})
-	g.handler = corsHandler.Handler(g.mux)
+
+	// Build the handler chain
+	var h http.Handler = corsHandler.Handler(g.mux)
 
 	// Wrap with OTEL instrumentation if TracerProvider is available.
 	// Order: mux -> CORS -> otelhttp (OTEL wraps the outermost layer).
 	if g.otelEnabled {
-		g.handler = otelhttp.NewHandler(g.handler, "gateway",
+		h = otelhttp.NewHandler(h, "gateway",
 			otelhttp.WithFilter(func(r *http.Request) bool {
 				// Skip health check endpoints to reduce noise.
 				return r.URL.Path != "/health" && r.URL.Path != "/healthz"
 			}),
 		)
 	}
+
+	// Update the dynamic handler atomically.
+	g.handler.SetHandler(h)
 
 	g.logger.InfoContext(ctx, "Gateway initialized",
 		slog.Int("services", len(registrars)),

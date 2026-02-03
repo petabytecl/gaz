@@ -163,10 +163,10 @@ func (s *GatewayTestSuite) TestGateway_Handler() {
 
 	gw := NewGateway(cfg, logger, container, false, nil)
 
-	// Before OnStart, handler is nil.
-	s.Require().Nil(gw.Handler())
+	// Before OnStart, handler is not nil (it's a DynamicHandler defaulting to 404).
+	s.Require().NotNil(gw.Handler())
 
-	// After OnStart, handler is not nil.
+	// After OnStart, handler is still not nil.
 	err := gw.OnStart(context.Background())
 	s.Require().NoError(err)
 	s.Require().NotNil(gw.Handler())
