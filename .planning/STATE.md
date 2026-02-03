@@ -16,7 +16,7 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
 - **Plan:** 6 of 6 in current phase
 - **Status:** Milestone complete, ready for next milestone
-- **Last activity:** 2026-02-03 — Completed quick task 003: Improve test coverage to 90%.
+- **Last activity:** 2026-02-03 — Completed quick task 004: Create v4.1 Milestone Requirements.
 
 Progress: [██████████] 100% (v4.0 complete)
 
@@ -66,6 +66,7 @@ None — ready for next milestone.
 | 001 | Do a full review of all the package. | 2026-02-02 | b215f5a | [001-full-review-code-quality-security-docs](./quick/001-full-review-code-quality-security-docs/) |
 | 002 | Add tests to examples and refactor for coverage. | 2026-02-02 | 26a4106 | [002-add-tests-to-examples-coverage](./quick/002-add-tests-to-examples-coverage/) |
 | 003 | Improve test coverage to >90%. | 2026-02-03 | 4f00dec | [003-improve-test-coverage-to-90](./quick/003-improve-test-coverage-to-90/) |
+| 004 | Create v4.1 Milestone Requirements. | 2026-02-03 | 5ff4e05 | [004-create-v4-1-milestone-requirements](./quick/004-create-v4-1-milestone-requirements/) |
 
 ### Roadmap Evolution
 
@@ -73,6 +74,7 @@ None — ready for next milestone.
 - Phase 36 added builtin health checks for common infrastructure
 - Quick Task 002 ensured examples are tested and fixed EventBus bugs.
 - Quick Task 003 improved total test coverage to >90%.
+- Quick Task 004 defined specs for v4.1 (HTTP/gRPC/Gateway).
 
 ### Pending Todos
 
@@ -81,7 +83,7 @@ None — ready for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 003-improve-test-coverage-to-90
+Stopped at: Completed 004-create-v4-1-milestone-requirements
 Resume with: `/gsd-new-milestone` to start next milestone
 
 ---
