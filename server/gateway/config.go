@@ -1,5 +1,3 @@
-// Package gateway provides an HTTP-to-gRPC gateway with auto-discovery and CORS support.
-// It uses grpc-gateway to translate RESTful HTTP/JSON requests into gRPC calls.
 package gateway
 
 import (
