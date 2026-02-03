@@ -69,15 +69,17 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 **Goal:** Unify HTTP and gRPC via a dynamic, auto-discovering Gateway layer.
 **Dependencies:** Phase 37 (Discovery), Phase 38 (Servers)
 **Requirements:** GW-02, GW-03, GW-04
-**Plans:** 3 plans
+**Plans:** 1/3 plans complete
 
 Plans:
-- [ ] 39-01-PLAN.md — Core Gateway package (config, headers, gateway, errors)
+- [x] 39-01-PLAN.md — Core Gateway package (config, headers, gateway, errors)
 - [ ] 39-02-PLAN.md — Gateway module with DI and CLI flags
 - [ ] 39-03-PLAN.md — Comprehensive tests (90%+ coverage)
 
+**Status:** In Progress (2026-02-03)
+
 **Success Criteria:**
-1. Gateway automatically detects services implementing `GatewayRegistrar`.
+1. Gateway automatically detects services implementing `Registrar`.
 2. HTTP requests to Gateway port are proxied to the gRPC server via loopback.
 3. CORS headers are correctly applied to Gateway responses.
 4. Adding a new service requires no manual Gateway wiring code.
@@ -99,5 +101,5 @@ Plans:
 | 37 | Core Discovery | **Complete** | CORE-01 |
 | 38 | Transport Foundations | **Complete** | TRN-01, TRN-02, TRN-03, GW-01 |
 | 38.1 | gRPC/HTTP CLI Flags | **Complete** | TRN-01, TRN-02 |
-| 39 | Gateway Integration | Pending | GW-02, GW-03, GW-04 |
+| 39 | Gateway Integration | **In Progress** (1/3) | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | Pending | INF-01, INF-02, INF-03 |

@@ -14,12 +14,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 - **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 38.1 - gRPC/HTTP CLI Flags
-- **Plan:** 1 of 1 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-03 — Completed 38.1-01-PLAN.md
+- **Phase:** 39 - Gateway Integration
+- **Plan:** 1 of 3 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-03 — Completed 39-01-PLAN.md
 
-Progress: [██████░░░░] 55% (Phase 38.1 complete, ready for Phase 39)
+Progress: [██████░░░░] 60% (Plan 39-01 complete, ready for 39-02)
 
 ## Milestones Shipped
 
@@ -54,6 +54,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Group Resolution:** Use `gaz.ResolveGroup` for categorized discovery (e.g., "system" vs "user" plugins).
 - **HTTP Default Port 8080:** Standard HTTP port for Gateway, separate from health (9090) and gRPC (50051).
 - **ReadHeaderTimeout 5s:** Prevents slow loris attacks per security research.
+- **Registrar interface:** Renamed from GatewayRegistrar to avoid stutter.
+- **grpc.NewClient:** Used instead of deprecated grpc.Dial for loopback connection.
 
 ### Research Summary
 
@@ -87,6 +89,8 @@ None.
 - Plan 38-03 added unified server module and comprehensive tests.
 - Phase 38.1 inserted after Phase 38: gRPC and HTTP servers should register flags to pass the port and other settings via CLI flags (URGENT)
 - Phase 38.1 complete: NewModuleWithFlags() adds CLI flag support for server configuration
+- Phase 39 started: Gateway Integration
+- Plan 39-01 added core gateway package (config, headers, gateway, errors)
 
 ### Pending Todos
 
@@ -95,8 +99,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 38.1-01-PLAN.md (Phase 38.1 complete)
-Resume with: `/gsd-plan-phase 39` (Gateway Integration)
+Stopped at: Completed 39-01-PLAN.md
+Resume with: 39-02-PLAN.md (Gateway module with DI and CLI flags)
 
 ---
 
