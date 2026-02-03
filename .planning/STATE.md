@@ -17,7 +17,7 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Phase:** 40 - Observability & Health
 - **Plan:** 3 of 3 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-02-03 — Completed 40-03-PLAN.md
+- **Last activity:** 2026-02-03 — Completed quick task 005: v4.1 Milestone Consistency Review
 
 Progress: [██████████] 100% (Phase 40 complete, v4.1 milestone complete)
 
@@ -114,8 +114,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 40-03-PLAN.md
-Resume with: v4.1 milestone complete - all phases done
+Stopped at: Completed quick task 005 (v4.1 consistency review)
+Resume with: v4.1 milestone complete - ready for next milestone
 
 ---
 
