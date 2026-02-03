@@ -10,17 +10,17 @@
 
 ### Core Framework
 
-- [ ] **CORE-01**: Container supports resolving all providers of type T (`di.List[T]`) for discovery
+- [x] **CORE-01**: Container supports resolving all providers of type T (`di.List[T]`) for discovery
 
 ### Transport Layer
 
-- [ ] **TRN-01**: HTTP Server with configurable timeouts (Read/Write/Idle/Header)
-- [ ] **TRN-02**: gRPC Server with Interceptors (logging, recovery, OTEL)
-- [ ] **TRN-03**: gRPC Reflection enabled by default
+- [x] **TRN-01**: HTTP Server with configurable timeouts (Read/Write/Idle/Header)
+- [x] **TRN-02**: gRPC Server with Interceptors (logging, recovery, OTEL)
+- [x] **TRN-03**: gRPC Reflection enabled by default
 
 ### Gateway Integration
 
-- [ ] **GW-01**: Gateway runs on separate HTTP port (no cmux)
+- [x] **GW-01**: Gateway runs on separate HTTP port (no cmux)
 - [ ] **GW-02**: Connects to gRPC via loopback client
 - [ ] **GW-03**: Dynamic registration of services via DI interface (`GatewayEndpoint`)
 - [ ] **GW-04**: CORS support (Origins, Methods, Headers)
@@ -43,11 +43,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 37 | Pending |
-| TRN-01 | Phase 38 | Pending |
-| TRN-02 | Phase 38 | Pending |
-| TRN-03 | Phase 38 | Pending |
-| GW-01 | Phase 38 | Pending |
+| CORE-01 | Phase 37 | Complete |
+| TRN-01 | Phase 38 | Complete |
+| TRN-02 | Phase 38 | Complete |
+| TRN-03 | Phase 38 | Complete |
+| GW-01 | Phase 38 | Complete |
 | GW-02 | Phase 39 | Pending |
 | GW-03 | Phase 39 | Pending |
 | GW-04 | Phase 39 | Pending |
