@@ -43,7 +43,7 @@ func (b *backOffContext) NextBackOff() time.Duration {
 //
 // Panics if ctx is nil.
 //
-//nolint:ireturn // returns Context interface by design for API consistency
+//nolint:ireturn,nolintlint // returns Context interface by design for API consistency
 func WithContext(ctx context.Context, backOff BackOff) Context {
 	if ctx == nil {
 		panic("nil context")

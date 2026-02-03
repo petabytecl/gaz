@@ -32,7 +32,7 @@ func newDiscardLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
-func appendingJob(slice *[]int, value int) Job { //nolint:ireturn // test helper
+func appendingJob(slice *[]int, value int) Job { //nolint:ireturn,nolintlint // test helper
 	var m sync.Mutex
 	return FuncJob(func() {
 		m.Lock()

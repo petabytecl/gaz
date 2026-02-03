@@ -84,7 +84,7 @@ func ResolveAll[T any](c *Container) ([]T, error) {
 	// Cast
 	results := make([]T, len(instances))
 	for i, inst := range instances {
-		results[i] = inst.(T)
+		results[i] = inst.(T) //nolint:errcheck // Type safety is guaranteed by ResolveAllByType using reflection
 	}
 	return results, nil
 }

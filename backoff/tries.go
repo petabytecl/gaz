@@ -15,7 +15,7 @@ type backOffTries struct {
 //
 // Note: Implementation is not thread-safe.
 //
-//nolint:ireturn // returns BackOff interface by design for composability
+//nolint:ireturn,nolintlint // returns BackOff interface by design for composability
 func WithMaxRetries(b BackOff, maxRetries uint64) BackOff {
 	return &backOffTries{delegate: b, maxTries: maxRetries}
 }

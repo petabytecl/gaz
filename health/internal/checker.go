@@ -50,7 +50,7 @@ type checker struct {
 
 // NewChecker creates a new Checker with the given options.
 //
-//nolint:ireturn // Checker interface is the intended return type for flexibility
+//nolint:ireturn,nolintlint // Checker interface is the intended return type for flexibility
 func NewChecker(opts ...CheckerOption) Checker {
 	cfg := &checkerConfig{
 		checks:         make(map[string]*internalCheck),

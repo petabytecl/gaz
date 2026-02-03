@@ -31,7 +31,7 @@ func NewChain(c ...JobWrapper) Chain {
 // is equivalent to:
 //
 //	m1(m2(m3(job)))
-func (c Chain) Then(j Job) Job { //nolint:ireturn // wrapper
+func (c Chain) Then(j Job) Job { //nolint:ireturn,nolintlint // wrapper
 	for i := range c.wrappers {
 		j = c.wrappers[len(c.wrappers)-i-1](j)
 	}
