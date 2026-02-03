@@ -246,6 +246,11 @@ func (b *EventBus) unsubscribe(eventType reflect.Type, topic string, id uint64) 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	// If bus is closed, all subscriptions are already being terminated/closed.
+	if b.closed {
+		return
+	}
+
 	key := subscriptionKey{eventType: eventType, topic: topic}
 	subs := b.handlers[key]
 
