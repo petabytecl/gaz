@@ -55,6 +55,10 @@ type Server struct {
 //   - devMode: If true, expose panic details in error responses
 //   - tp: Optional TracerProvider for OpenTelemetry instrumentation (may be nil)
 func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode bool, tp *sdktrace.TracerProvider) *Server {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	// Create interceptors.
 	loggingUnary, loggingStream := NewLoggingInterceptor(logger)
 	recoveryUnary, recoveryStream := NewRecoveryInterceptor(logger, devMode)
