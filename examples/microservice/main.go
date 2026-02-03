@@ -57,16 +57,17 @@ var (
 // OrderProcessor handles order events in the background.
 // It subscribes to OrderCreatedEvent and processes each order.
 type OrderProcessor struct {
-	bus  *eventbus.EventBus
-	sub  *eventbus.Subscription
-	done chan struct{}
-	wg   sync.WaitGroup
+	container *gaz.Container
+	bus       *eventbus.EventBus
+	sub       *eventbus.Subscription
+	done      chan struct{}
+	wg        sync.WaitGroup
 }
 
 // NewOrderProcessor creates a new order processor.
-func NewOrderProcessor(bus *eventbus.EventBus) *OrderProcessor {
+func NewOrderProcessor(c *gaz.Container) *OrderProcessor {
 	return &OrderProcessor{
-		bus: bus,
+		container: c,
 	}
 }
 
@@ -75,6 +76,15 @@ func (p *OrderProcessor) Name() string { return "order-processor" }
 
 // OnStart subscribes to order events and starts processing.
 func (p *OrderProcessor) OnStart(ctx context.Context) error {
+	// Lazy resolve EventBus to avoid circular dependencies during build
+	if p.bus == nil {
+		bus, err := gaz.Resolve[*eventbus.EventBus](p.container)
+		if err != nil {
+			return err
+		}
+		p.bus = bus
+	}
+
 	fmt.Printf("[%s] starting\n", p.Name())
 
 	p.done = make(chan struct{})
@@ -118,19 +128,31 @@ var _ worker.Worker = (*OrderProcessor)(nil)
 
 // OrderSimulator creates fake orders for demonstration.
 type OrderSimulator struct {
-	bus  *eventbus.EventBus
-	done chan struct{}
-	wg   sync.WaitGroup
+	container *gaz.Container
+	bus       *eventbus.EventBus
+	done      chan struct{}
+	wg        sync.WaitGroup
 }
 
 // NewOrderSimulator creates a new order simulator.
-func NewOrderSimulator(bus *eventbus.EventBus) *OrderSimulator {
-	return &OrderSimulator{bus: bus}
+func NewOrderSimulator(c *gaz.Container) *OrderSimulator {
+	return &OrderSimulator{
+		container: c,
+	}
 }
 
 func (s *OrderSimulator) Name() string { return "order-simulator" }
 
 func (s *OrderSimulator) OnStart(ctx context.Context) error {
+	// Lazy resolve EventBus
+	if s.bus == nil {
+		bus, err := gaz.Resolve[*eventbus.EventBus](s.container)
+		if err != nil {
+			return err
+		}
+		s.bus = bus
+	}
+
 	fmt.Printf("[%s] starting\n", s.Name())
 
 	s.done = make(chan struct{})
@@ -186,18 +208,30 @@ var _ worker.Worker = (*OrderSimulator)(nil)
 // NotificationSubscriber logs when orders are processed.
 // This demonstrates multiple subscribers to the same event type.
 type NotificationSubscriber struct {
-	bus *eventbus.EventBus
-	sub *eventbus.Subscription
+	container *gaz.Container
+	bus       *eventbus.EventBus
+	sub       *eventbus.Subscription
 }
 
 // NewNotificationSubscriber creates a new notification subscriber.
-func NewNotificationSubscriber(bus *eventbus.EventBus) *NotificationSubscriber {
-	return &NotificationSubscriber{bus: bus}
+func NewNotificationSubscriber(c *gaz.Container) *NotificationSubscriber {
+	return &NotificationSubscriber{
+		container: c,
+	}
 }
 
 func (n *NotificationSubscriber) Name() string { return "notification-subscriber" }
 
 func (n *NotificationSubscriber) OnStart(ctx context.Context) error {
+	// Lazy resolve EventBus
+	if n.bus == nil {
+		bus, err := gaz.Resolve[*eventbus.EventBus](n.container)
+		if err != nil {
+			return err
+		}
+		n.bus = bus
+	}
+
 	fmt.Printf("[%s] starting\n", n.Name())
 
 	// Subscribe to OrderProcessedEvent
@@ -220,12 +254,12 @@ func (n *NotificationSubscriber) OnStop(ctx context.Context) error {
 
 var _ worker.Worker = (*NotificationSubscriber)(nil)
 
-func main() {
+func run(ctx context.Context, healthPort int) error {
 	app := gaz.New()
 
 	// Register modules
-	// Health module: provides /live, /ready, /startup endpoints on port 9090
-	app.UseDI(health.NewModule(health.WithPort(9090)))
+	// Health module: provides /live, /ready, /startup endpoints
+	app.UseDI(health.NewModule(health.WithPort(healthPort)))
 
 	// Worker module: validates worker prerequisites
 	app.UseDI(worker.NewModule())
@@ -235,58 +269,56 @@ func main() {
 
 	// Register OrderProcessor (eager = auto-start)
 	if err := gaz.For[*OrderProcessor](app.Container()).
-		Eager().
+		Eager(). // implicit for workers due to discoverWorkers, but good for clarity
 		Provider(func(c *gaz.Container) (*OrderProcessor, error) {
-			bus, err := gaz.Resolve[*eventbus.EventBus](c)
-			if err != nil {
-				return nil, err
-			}
-			return NewOrderProcessor(bus), nil
+			// Pass container for lazy resolution
+			return NewOrderProcessor(c), nil
 		}); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register order processor: %w", err)
 	}
 
 	// Register OrderSimulator (eager = auto-start)
 	if err := gaz.For[*OrderSimulator](app.Container()).
 		Eager().
 		Provider(func(c *gaz.Container) (*OrderSimulator, error) {
-			bus, err := gaz.Resolve[*eventbus.EventBus](c)
-			if err != nil {
-				return nil, err
-			}
-			return NewOrderSimulator(bus), nil
+			return NewOrderSimulator(c), nil
 		}); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register order simulator: %w", err)
 	}
 
 	// Register NotificationSubscriber (eager = auto-start)
 	if err := gaz.For[*NotificationSubscriber](app.Container()).
 		Eager().
 		Provider(func(c *gaz.Container) (*NotificationSubscriber, error) {
-			bus, err := gaz.Resolve[*eventbus.EventBus](c)
-			if err != nil {
-				return nil, err
-			}
-			return NewNotificationSubscriber(bus), nil
+			return NewNotificationSubscriber(c), nil
 		}); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register notification subscriber: %w", err)
 	}
 
 	// Build the application
 	if err := app.Build(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to build app: %w", err)
 	}
 
 	fmt.Println("=================================================")
 	fmt.Println("Microservice starting...")
-	fmt.Println("Health check: http://localhost:9090/ready")
+	if healthPort != 0 {
+		fmt.Printf("Health check: http://localhost:%d/ready\n", healthPort)
+	}
 	fmt.Println("Press Ctrl+C to stop")
 	fmt.Println("=================================================")
 
-	// Run blocks until shutdown signal
-	if err := app.Run(context.Background()); err != nil {
-		log.Fatal(err)
+	// Run blocks until shutdown signal or context cancellation
+	if err := app.Run(ctx); err != nil {
+		return fmt.Errorf("application error: %w", err)
 	}
 
+	return nil
+}
+
+func main() {
+	if err := run(context.Background(), 9090); err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("Shutdown complete")
 }

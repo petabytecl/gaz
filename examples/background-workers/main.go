@@ -133,7 +133,7 @@ var (
 	_ worker.Worker = (*NotificationWorker)(nil)
 )
 
-func main() {
+func run(ctx context.Context) error {
 	app := gaz.New()
 
 	// Register worker module (validates prerequisites)
@@ -147,7 +147,7 @@ func main() {
 		Provider(func(c *gaz.Container) (*EmailWorker, error) {
 			return NewEmailWorker(), nil
 		}); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register email worker: %w", err)
 	}
 
 	// Register NotificationWorker similarly.
@@ -156,24 +156,31 @@ func main() {
 		Provider(func(c *gaz.Container) (*NotificationWorker, error) {
 			return NewNotificationWorker(), nil
 		}); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register notification worker: %w", err)
 	}
 
 	// Build the application (validates and prepares services)
 	if err := app.Build(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to build app: %w", err)
 	}
 
 	fmt.Println("Starting workers (Ctrl+C to stop)...")
 
-	// Run blocks until shutdown signal (SIGINT/SIGTERM).
+	// Run blocks until shutdown signal (SIGINT/SIGTERM) or context cancellation.
 	// During Run:
 	// 1. Eager services are instantiated and OnStart() is called
 	// 2. App waits for shutdown signal
 	// 3. OnStop() is called for all services (reverse order)
-	if err := app.Run(context.Background()); err != nil {
-		log.Fatal(err)
+	if err := app.Run(ctx); err != nil {
+		return fmt.Errorf("application error: %w", err)
 	}
 
+	return nil
+}
+
+func main() {
+	if err := run(context.Background()); err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("Shutdown complete")
 }

@@ -137,10 +137,12 @@ func (h *Handler) handleHello(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func main() {
+func run(ctx context.Context, cfg *AppConfig) error {
 	// Create config that implements HealthConfigProvider
 	// Health module will be auto-registered during Build()
-	cfg := DefaultAppConfig()
+	if cfg == nil {
+		cfg = DefaultAppConfig()
+	}
 
 	// Create app with config - health module auto-registers via HealthConfigProvider
 	app := gaz.New(gaz.WithShutdownTimeout(30 * time.Second))
@@ -150,7 +152,7 @@ func main() {
 	if err := gaz.For[*Handler](app.Container()).ProviderFunc(func(_ *gaz.Container) *Handler {
 		return NewHandler()
 	}); err != nil {
-		log.Fatalf("Failed to register handler: %v", err)
+		return fmt.Errorf("failed to register handler: %w", err)
 	}
 
 	// Register HTTP server (implements di.Starter and di.Stopper)
@@ -167,11 +169,18 @@ func main() {
 			}
 			return NewServer(appCfg.Server, handler), nil
 		}); err != nil {
-		log.Fatalf("Failed to register server: %v", err)
+		return fmt.Errorf("failed to register server: %w", err)
 	}
 
 	// Run the application
-	if err := app.Run(context.Background()); err != nil {
-		log.Fatalf("Application error: %v", err)
+	if err := app.Run(ctx); err != nil {
+		return fmt.Errorf("application error: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	if err := run(context.Background(), nil); err != nil {
+		log.Fatal(err)
 	}
 }

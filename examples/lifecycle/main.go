@@ -36,23 +36,36 @@ func (s *Server) OnStop(ctx context.Context) error {
 	return nil
 }
 
-func main() {
+func run(ctx context.Context, port int) error {
 	app := gaz.New()
 
 	// Register the server as a singleton using For[T]().
 	// gaz automatically detects that Server implements Starter and Stopper
 	// and will call OnStart during Run() and OnStop during shutdown.
 	err := gaz.For[*Server](app.Container()).Provider(func(c *gaz.Container) (*Server, error) {
-		return &Server{port: 8080}, nil
+		return &Server{port: port}, nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to register server: %w", err)
 	}
 
 	if err := app.Build(); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to build app: %w", err)
 	}
 
+	// Run blocks until context is cancelled or shutdown signal received.
+	// During Run():
+	// 1. OnStart is called for all services implementing Starter
+	// 2. App waits for shutdown signal
+	// 3. OnStop is called for all services implementing Stopper (reverse order)
+	if err := app.Run(ctx); err != nil {
+		return fmt.Errorf("application error: %w", err)
+	}
+
+	return nil
+}
+
+func main() {
 	// Create a context that we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -66,12 +79,7 @@ func main() {
 		cancel()
 	}()
 
-	// Run blocks until context is cancelled or shutdown signal received.
-	// During Run():
-	// 1. OnStart is called for all services implementing Starter
-	// 2. App waits for shutdown signal
-	// 3. OnStop is called for all services implementing Stopper (reverse order)
-	if err := app.Run(ctx); err != nil {
+	if err := run(ctx, 8080); err != nil {
 		log.Fatal(err)
 	}
 
