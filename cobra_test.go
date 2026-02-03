@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -157,17 +158,25 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 func (s *CobraSuite) TestWithCobraBuildError() {
 	app := New()
 
-	// Register duplicate to cause build error - second registration fails
-	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
-		return &cobraTestService{}, nil
+	buildErr := errors.New("build failed")
+
+	// Register eager service that fails to start - causes Build error
+	err := For[*cobraTestService](app.Container()).Eager().Provider(func(_ *Container) (*cobraTestService, error) {
+		return nil, buildErr
 	})
 	s.Require().NoError(err)
 
-	err = For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
-		return &cobraTestService{}, nil
-	})
-	s.Require().Error(err) // Duplicate error on registration
-	s.Require().ErrorIs(err, ErrDIDuplicate)
+	rootCmd := &cobra.Command{
+		Use:  "test",
+		RunE: func(_ *cobra.Command, _ []string) error { return nil },
+	}
+
+	app.WithCobra(rootCmd)
+
+	// Execute command should fail because Build failed
+	execErr := rootCmd.Execute()
+	s.Require().Error(execErr)
+	s.ErrorIs(execErr, buildErr)
 }
 
 func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {

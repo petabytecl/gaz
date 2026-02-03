@@ -2,6 +2,7 @@ package gaz_test
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -160,7 +161,7 @@ func (s *IntegrationSuite) TestCobraWithFullLifecycle() {
 func (s *IntegrationSuite) TestBuildAggregatesAllErrors() {
 	app := gaz.New()
 
-	// Register duplicate services using For[T] (which returns immediate error on duplicate)
+	// Register duplicate services - should now succeed
 	err := gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
 		return &testDatabase{}
 	})
@@ -169,10 +170,9 @@ func (s *IntegrationSuite) TestBuildAggregatesAllErrors() {
 	err = gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
 		return &testDatabase{}
 	})
-	s.Require().Error(err) // Duplicate error on registration
-	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
+	s.Require().NoError(err, "should allow duplicate service registration")
 
-	// Duplicate module name
+	// Duplicate module name - should error
 	app.Module("dup").Module("dup")
 
 	err = app.Build()
@@ -232,6 +232,8 @@ func (s *IntegrationSuite) TestCyclicDependencyDetected() {
 func (s *IntegrationSuite) TestModuleRegistrationError() {
 	app := gaz.New()
 
+	customErr := errors.New("custom registration error")
+
 	// Module with failing registration
 	app.Module("failing",
 		func(c *gaz.Container) error {
@@ -239,17 +241,15 @@ func (s *IntegrationSuite) TestModuleRegistrationError() {
 			_ = gaz.For[*testDatabase](c).ProviderFunc(func(_ *gaz.Container) *testDatabase {
 				return &testDatabase{}
 			})
-			// Register again - should fail
-			return gaz.For[*testDatabase](c).ProviderFunc(func(_ *gaz.Container) *testDatabase {
-				return &testDatabase{}
-			})
+			// Return explicit error
+			return customErr
 		},
 	)
 
 	err := app.Build()
 	s.Require().Error(err)
 	s.Contains(err.Error(), "failing") // Module name should be in error
-	s.ErrorIs(err, gaz.ErrDIDuplicate)
+	s.ErrorIs(err, customErr)
 }
 
 // =============================================================================

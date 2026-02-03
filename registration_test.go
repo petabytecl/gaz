@@ -61,7 +61,7 @@ func (s *RegistrationSuite) TestFor_Instance_RegistersValue() {
 	s.NoError(err)
 }
 
-func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Duplicate_AllowsMultiple() {
 	c := gaz.NewContainer()
 
 	// First registration should succeed
@@ -70,23 +70,31 @@ func (s *RegistrationSuite) TestFor_Duplicate_ReturnsError() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Second registration of same type should return ErrDuplicate
+	// Second registration of same type should succeed (append)
 	err = gaz.For[*testService](c).Provider(func(_ *gaz.Container) (*testService, error) {
 		return &testService{id: 2}, nil
 	})
-	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution should be ambiguous
+	_, err = gaz.Resolve[*testService](c)
+	s.Require().ErrorIs(err, gaz.ErrDIAmbiguous)
 }
 
-func (s *RegistrationSuite) TestFor_Duplicate_Instance_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Duplicate_Instance_AllowsMultiple() {
 	c := gaz.NewContainer()
 
 	// First registration should succeed
 	err := gaz.For[*testConfig](c).Instance(&testConfig{value: "first"})
 	s.Require().NoError(err, "first registration failed")
 
-	// Second registration of same type should return ErrDuplicate
+	// Second registration of same type should succeed (append)
 	err = gaz.For[*testConfig](c).Instance(&testConfig{value: "second"})
-	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution should be ambiguous
+	_, err = gaz.Resolve[*testConfig](c)
+	s.Require().ErrorIs(err, gaz.ErrDIAmbiguous)
 }
 
 func (s *RegistrationSuite) TestFor_Replace_AllowsOverwrite() {
@@ -133,7 +141,7 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 	s.NoError(err, "expected no error for differently named services")
 }
 
-func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
+func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
 	c := gaz.NewContainer()
 
 	// Register "primary" named DB
@@ -142,11 +150,15 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsError() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Register another "primary" - should return ErrDuplicate
+	// Register another "primary" - should succeed
 	err = gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary-2"}, nil
 	})
-	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
+	s.Require().NoError(err, "second registration failed")
+
+	// Resolution should be ambiguous
+	_, err = gaz.Resolve[*testDB](c, gaz.Named("primary"))
+	s.Require().ErrorIs(err, gaz.ErrDIAmbiguous)
 }
 
 func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {

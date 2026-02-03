@@ -1,6 +1,7 @@
 package gaz
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -212,19 +213,13 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_NestedChildModules() {
 func (s *ModuleBuilderSuite) TestModuleBuilder_ProviderError() {
 	m := NewModule("test").
 		Provide(func(c *Container) error {
-			// First registration succeeds
-			return For[*moduleBuilderTestService](c).ProviderFunc(func(_ *Container) *moduleBuilderTestService {
-				return &moduleBuilderTestService{name: "first"}
-			})
+			return errors.New("provider error 1")
 		}).
 		Build()
 
 	m2 := NewModule("test2").
 		Provide(func(c *Container) error {
-			// Second registration of same type should fail
-			return For[*moduleBuilderTestService](c).ProviderFunc(func(_ *Container) *moduleBuilderTestService {
-				return &moduleBuilderTestService{name: "second"}
-			})
+			return errors.New("provider error 2")
 		}).
 		Build()
 
@@ -233,7 +228,8 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_ProviderError() {
 
 	err := app.Build()
 	s.Require().Error(err)
-	s.ErrorIs(err, ErrDIDuplicate)
+	s.Contains(err.Error(), "provider error 1")
+	s.Contains(err.Error(), "provider error 2")
 }
 
 func TestNewModule_ReturnsBuilder(t *testing.T) {

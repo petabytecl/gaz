@@ -33,3 +33,8 @@ examples/config-loading/config-loading
 examples/http-server/http-server
 examples/modules/modules
 examples/cobra-cli/cobra-cli
+
+# Temporary files
+_tmp/
+_tmp_trust/
+.in-memoria/

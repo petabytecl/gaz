@@ -66,24 +66,20 @@ func (s *ModuleSuite) TestModuleAfterBuildPanics() {
 func (s *ModuleSuite) TestModuleErrorsAggregated() {
 	app := New()
 
-	// Module with a registration that will fail (duplicate type)
+	// Modules returning explicit errors
 	app.Module("first",
 		func(c *Container) error {
-			return For[*moduleTestDB](c).Provider(func(_ *Container) (*moduleTestDB, error) {
-				return &moduleTestDB{name: "first"}, nil
-			})
+			return errors.New("error in first")
 		},
 	).Module("second",
 		func(c *Container) error {
-			// This will fail - duplicate registration
-			return For[*moduleTestDB](c).Provider(func(_ *Container) (*moduleTestDB, error) {
-				return &moduleTestDB{name: "second"}, nil
-			})
+			return errors.New("error in second")
 		},
 	)
 
 	err := app.Build()
 	s.Require().Error(err)
+	s.Contains(err.Error(), "first")  // Module name in error
 	s.Contains(err.Error(), "second") // Module name in error
 }
 

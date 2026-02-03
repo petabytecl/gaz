@@ -1,6 +1,7 @@
 package gaz
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -122,19 +123,12 @@ func (s *AppUseSuite) TestApp_Use_ModuleWithChildModules() {
 }
 
 func (s *AppUseSuite) TestApp_Use_ModuleErrorCollected() {
-	// Register something first to cause a duplicate error
 	app := New()
-	err := For[*appUseTestService](app.container).ProviderFunc(func(_ *Container) *appUseTestService {
-		return &appUseTestService{name: "existing"}
-	})
-	s.Require().NoError(err)
 
-	// Module tries to register same type
-	m := NewModule("conflict").
+	// Module returns explicit error
+	m := NewModule("error-module").
 		Provide(func(c *Container) error {
-			return For[*appUseTestService](c).ProviderFunc(func(_ *Container) *appUseTestService {
-				return &appUseTestService{name: "conflict"}
-			})
+			return errors.New("registration failed")
 		}).
 		Build()
 
@@ -142,5 +136,6 @@ func (s *AppUseSuite) TestApp_Use_ModuleErrorCollected() {
 
 	buildErr := app.Build()
 	s.Require().Error(buildErr)
-	s.Contains(buildErr.Error(), "conflict")
+	s.Contains(buildErr.Error(), "error-module")
+	s.Contains(buildErr.Error(), "registration failed")
 }

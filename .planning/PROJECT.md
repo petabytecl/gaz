@@ -8,31 +8,15 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current State
+## Current Milestone: v4.1 Server & Transport Layer
 
-**Shipped:** v4.0 Dependency Reduction (2026-02-02)
+**Goal:** Implement production-ready HTTP and gRPC server capabilities with a unified Gateway pattern.
 
-The framework now provides:
-- **DI Package** (`gaz/di`) — Standalone dependency injection with For[T](), Resolve[T]()
-- **Config Package** (`gaz/config`) — Configuration management with Backend interface
-- **Workers** — Background workers with lifecycle integration, panic recovery, circuit breaker
-- **Cron** — Scheduled tasks using internal cron engine with DI-aware jobs
-- **EventBus** — Type-safe pub/sub with Publish[T]/Subscribe[T] generics
-- **CLI Integration** — RegisterCobraFlags() exposes ConfigProvider flags to CLI
-- **Lifecycle Auto-Detection** — Services implementing Starter/Stopper auto-detected
-- **CLI Args Injection** — `gaz.GetArgs(container)` for positional args access
-- **gaztest Package** — Test utilities with Builder API and auto-cleanup
-- **Service Builder** — `service.New()` for pre-configured production services
-- **Module System** — `NewModule(name).Provide().Flags().Build()` for bundled registrations
-- **Internal Backoff** — Exponential backoff with jitter and context support (no external deps)
-- **Internal Tint** — Colored slog handler with TTY detection (no external deps)
-- **Internal Cron Engine** — 5-field parser, @descriptors, timezone support (no external deps)
-- **Internal Health** — Parallel checks, IETF format (no external deps)
-- **Builtin Health Checks** — SQL, Redis, HTTP, TCP, DNS, Runtime, Disk checks
-
-**Test Coverage:** 91.7% overall (exceeds 90% target)
-
-**Codebase:** ~87,000 lines of Go (including examples)
+**Target features:**
+- HTTP Server (`net/http`, `http.ServeMux`, `Starter`/`Stopper`)
+- gRPC Server (`google.golang.org/grpc`, Interceptors, Reflection)
+- gRPC-Gateway (HTTP proxy to gRPC, dynamic registration)
+- Infrastructure (PGX support in health checks, gRPC health checks)
 
 ## Requirements
 
@@ -67,22 +51,25 @@ The framework now provides:
 - ✓ Service builder for production apps — v2.1
 - ✓ ModuleBuilder for bundled registrations — v2.1
 - ✓ 90%+ test coverage — v2.2
-
 - ✓ Internal backoff package with exponential backoff, jitter, context — v4.0
 - ✓ Internal tint slog handler with TTY detection — v4.0
 - ✓ Internal cron engine with 5-field parser, @descriptors, timezone support — v4.0
 - ✓ Internal health package with parallel checks, IETF format — v4.0
 - ✓ Builtin health checks (SQL, Redis, HTTP, TCP, DNS, Runtime, Disk) — v4.0
+- ✓ Core Discovery (multi-binding, ResolveAll, ResolveGroup) — v4.1
 
 ### Active
 
-(No active requirements — start next milestone with `/gsd-new-milestone`)
+- [ ] HTTP Server (Standard Library)
+- [ ] gRPC Server (google.golang.org/grpc)
+- [ ] gRPC-Gateway (Unified proxy)
+- [ ] Database Health Checks (pgx)
+- [ ] gRPC Health Checks
 
 ### Out of Scope
 
 - Hierarchical scopes — complexity not worth it for current use cases
 - Backward compatibility with dibx/gazx — clean break, fresh API
-- HTTP server integration — keep framework transport-agnostic
 - External message queues (Kafka, RabbitMQ) — EventBus is in-process only
 - Distributed workers/cron — use asynq for distributed jobs
 
@@ -118,9 +105,9 @@ Target: Internal use first, open source viability later.
 ## Constraints
 
 - **Language**: Go 1.25+ (generics, slog in stdlib)
-- **Dependencies**: Minimal external deps; Cobra and Viper only
+- **Dependencies**: Minimal external deps; Cobra and Viper only. For v4.1: net/http, grpc, pgx.
 - **API Surface**: Convention over configuration — sensible defaults, escape hatches when needed
-- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service, backoff, logger/tint)
+- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service, backoff, logger/tint, transport/http, transport/grpc, transport/gateway)
 
 ## Key Decisions
 
@@ -150,12 +137,13 @@ Target: Internal use first, open source viability later.
 | gaztest uses t.Cleanup() | Automatic cleanup, no manual Stop() required | ✓ Good (v2.1) |
 | Module flags to PersistentFlags | Available to all subcommands | ✓ Good (v2.1) |
 | Health auto-registration via interface | Config implements HealthConfigProvider for opt-in | ✓ Good (v2.1) |
-
 | Internal backoff package | Full control, no external dep for retry logic | ✓ Good (v4.0) |
 | Internal tint slog handler | Full control, no external dep for logging | ✓ Good (v4.0) |
 | Internal cron engine | Full control, no external dep for scheduling | ✓ Good (v4.0) |
 | Internal health package | Full control, IETF format built-in | ✓ Good (v4.0) |
 | Builtin health checks | Production-ready checks for common infra | ✓ Good (v4.0) |
+| Implicit Collection for DI | Multiple `For` calls append, `Replace` overwrites | ✓ Good (v4.1) |
+| Discovery via Groups | `InGroup` tagging and `ResolveGroup` | ✓ Good (v4.1) |
 
 ---
-*Last updated: 2026-02-02 after v4.0 milestone*
+*Last updated: 2026-02-02 after Phase 37 completion*

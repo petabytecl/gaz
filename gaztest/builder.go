@@ -176,7 +176,7 @@ func (b *Builder) Build() (*App, error) {
 		}
 		// Create replacement service and register it
 		svc := di.NewInstanceServiceAny(r.typeName, r.typeName, r.instance)
-		gazApp.Container().Register(r.typeName, svc)
+		gazApp.Container().ReplaceService(r.typeName, svc)
 	}
 
 	// Build and validate if not already built

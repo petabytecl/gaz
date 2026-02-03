@@ -421,10 +421,10 @@ func (s *AppTestSuite) TestDependencyResolution() {
 	s.True(cache.db.connected)
 }
 
-func (s *AppTestSuite) TestBuildAggregatesErrors() {
+func (s *AppTestSuite) TestBuildAllowsDuplicateRegistration() {
 	app := New()
 
-	// Register same type twice - should error on second registration
+	// Register same type twice - should NOT error
 	err := For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{}, nil
 	})
@@ -433,8 +433,7 @@ func (s *AppTestSuite) TestBuildAggregatesErrors() {
 	err = For[*FluentTestDB](app.Container()).Provider(func(_ *Container) (*FluentTestDB, error) {
 		return &FluentTestDB{}, nil
 	})
-	s.Require().Error(err, "should have error for duplicate registration")
-	s.Require().ErrorIs(err, ErrDIDuplicate)
+	s.Require().NoError(err, "should allow duplicate registration")
 }
 
 func (s *AppTestSuite) TestBuildIsIdempotent() {
