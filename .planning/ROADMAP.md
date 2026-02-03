@@ -45,6 +45,21 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 3. Servers shut down gracefully when the application stops.
 4. Basic interceptors (logging/recovery) are active on the gRPC server.
 
+### Phase 38.1: gRPC and HTTP Server CLI Flags (INSERTED)
+
+**Goal:** Enable gRPC and HTTP servers to register CLI flags for configuring ports and other settings.
+**Dependencies:** Phase 38
+**Requirements:** Derived from TRN-01, TRN-02
+**Plans:** 1 plan
+
+- [ ] 38.1-01-PLAN.md — Convert server.NewModule to gaz.Module with CLI flags
+
+**Success Criteria:**
+1. gRPC server port configurable via `--grpc-port` flag.
+2. HTTP server port configurable via `--http-port` flag.
+3. Additional server settings (timeouts, TLS) configurable via flags.
+4. Flags integrate with existing config system and environment variables.
+
 ### Phase 39: Gateway Integration
 **Goal:** Unify HTTP and gRPC via a dynamic, auto-discovering Gateway layer.
 **Dependencies:** Phase 37 (Discovery), Phase 38 (Servers)
@@ -72,5 +87,6 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 |-------|------|--------|--------------|
 | 37 | Core Discovery | **Complete** | CORE-01 |
 | 38 | Transport Foundations | **Complete** | TRN-01, TRN-02, TRN-03, GW-01 |
+| 38.1 | gRPC/HTTP CLI Flags | Pending (INSERTED) | TRN-01, TRN-02 |
 | 39 | Gateway Integration | Pending | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | Pending | INF-01, INF-02, INF-03 |
