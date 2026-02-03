@@ -61,6 +61,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **OTEL graceful degradation:** Return nil TracerProvider when collector unreachable.
 - **ParentBased sampling:** Respect incoming trace context, sample 10% of root spans.
 - **Health endpoint filtering:** Exclude health endpoints from tracing.
+- **Logger fallback:** Use slog.Default() fallback making logger module optional across all server packages.
 
 ### Research Summary
 
@@ -78,6 +79,7 @@ None.
 | 002 | Add tests to examples and refactor for coverage. | 2026-02-02 | 26a4106 | [002-add-tests-to-examples-coverage](./quick/002-add-tests-to-examples-coverage/) |
 | 003 | Improve test coverage to >90%. | 2026-02-03 | 4f00dec | [003-improve-test-coverage-to-90](./quick/003-improve-test-coverage-to-90/) |
 | 004 | Create v4.1 Milestone Requirements. | 2026-02-03 | 13ce1bb | [004-create-v4-1-milestone-requirements](./quick/004-create-v4-1-milestone-requirements/) |
+| 005 | v4.1 Milestone Consistency Review. | 2026-02-03 | 588ea59 | [005-v4-1-milestone-consistency-review](./quick/005-v4-1-milestone-consistency-review/) |
 
 ### Roadmap Evolution
 
