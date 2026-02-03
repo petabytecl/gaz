@@ -16,7 +16,7 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
 - **Plan:** 6 of 6 in current phase
 - **Status:** Milestone complete, ready for next milestone
-- **Last activity:** 2026-02-02 — Completed quick task 002: Add tests to examples.
+- **Last activity:** 2026-02-03 — Completed quick task 003: Improve test coverage to 90%.
 
 Progress: [██████████] 100% (v4.0 complete)
 
@@ -65,12 +65,14 @@ None — ready for next milestone.
 |---|-------------|------|--------|-----------|
 | 001 | Do a full review of all the package. | 2026-02-02 | b215f5a | [001-full-review-code-quality-security-docs](./quick/001-full-review-code-quality-security-docs/) |
 | 002 | Add tests to examples and refactor for coverage. | 2026-02-02 | 26a4106 | [002-add-tests-to-examples-coverage](./quick/002-add-tests-to-examples-coverage/) |
+| 003 | Improve test coverage to >90%. | 2026-02-03 | 4f00dec | [003-improve-test-coverage-to-90](./quick/003-improve-test-coverage-to-90/) |
 
 ### Roadmap Evolution
 
 - v4.0 complete: All 4 external dependencies replaced with internal implementations
 - Phase 36 added builtin health checks for common infrastructure
 - Quick Task 002 ensured examples are tested and fixed EventBus bugs.
+- Quick Task 003 improved total test coverage to >90%.
 
 ### Pending Todos
 
@@ -78,8 +80,8 @@ None — ready for next milestone.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 002-add-tests-to-examples-coverage
+Last session: 2026-02-03
+Stopped at: Completed 003-improve-test-coverage-to-90
 Resume with: `/gsd-new-milestone` to start next milestone
 
 ---
