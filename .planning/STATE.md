@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 41 - Refactor Server Module Architecture & Consistency
-- **Plan:** 1 of 4 in current phase
+- **Plan:** 2 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 41-01-PLAN.md (Standardize Logger Usage)
+- **Last activity:** 2026-02-03 — Completed 41-02-PLAN.md (Gateway atomic handler and naming consistency)
 
-Progress: [██████████] 98% (Phase 41 started)
+Progress: [██████████] 98% (Phase 41 in progress)
 
 ## Milestones Shipped
 
@@ -64,6 +64,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Logger fallback:** Use slog.Default() fallback making logger module optional across all server packages.
 - **Health Server Signature:** Updated NewManagementServer to accept injected logger.
 - **Health Logging:** Replaced direct stderr printing with structured logging in health server.
+- **Atomic Handler:** Used atomic.Value for DynamicHandler to ensure zero-lock reads.
+- **Naming Consistency:** Renamed ServiceRegistrar to Registrar in gRPC for consistency.
 
 ### Research Summary
 
@@ -119,7 +121,7 @@ None.
 
 Last session: 2026-02-03
 Stopped at: Completed 41-01-PLAN.md (Standardize Logger Usage)
-Resume with: 41-02-PLAN.md
+Resume with: 41-03-PLAN.md
 
 ---
 
