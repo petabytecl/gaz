@@ -10,6 +10,9 @@ const (
 	// DefaultPort is the default HTTP port.
 	DefaultPort = 8080
 
+	// MaxPort is the maximum valid port number.
+	MaxPort = 65535
+
 	// DefaultReadTimeout is the default timeout for reading the entire request.
 	DefaultReadTimeout = 10 * time.Second
 
@@ -87,7 +90,7 @@ func (c *Config) Validate() error {
 	if c.Port <= 0 {
 		return errors.New("http: port must be greater than 0")
 	}
-	if c.Port > 65535 {
+	if c.Port > MaxPort {
 		return errors.New("http: port must be less than or equal to 65535")
 	}
 	if c.ReadTimeout <= 0 {

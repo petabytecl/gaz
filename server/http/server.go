@@ -60,9 +60,9 @@ func (s *Server) SetHandler(h http.Handler) {
 // OnStart starts the HTTP server in a background goroutine.
 // It returns immediately after starting the server.
 // Implements di.Starter interface.
-func (s *Server) OnStart(_ context.Context) error {
+func (s *Server) OnStart(ctx context.Context) error {
 	s.started.Store(true)
-	s.logger.Info("HTTP server starting", "port", s.config.Port)
+	s.logger.InfoContext(ctx, "HTTP server starting", "port", s.config.Port)
 
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -77,13 +77,13 @@ func (s *Server) OnStart(_ context.Context) error {
 // It waits for active connections to complete within the context deadline.
 // Implements di.Stopper interface.
 func (s *Server) OnStop(ctx context.Context) error {
-	s.logger.Info("HTTP server stopping")
+	s.logger.InfoContext(ctx, "HTTP server stopping")
 
 	if err := s.server.Shutdown(ctx); err != nil {
 		return fmt.Errorf("shutdown http server: %w", err)
 	}
 
-	s.logger.Info("HTTP server stopped")
+	s.logger.InfoContext(ctx, "HTTP server stopped")
 	return nil
 }
 

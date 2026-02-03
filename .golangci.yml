@@ -193,8 +193,13 @@ linters:
       # NewModule returning di.Module interface is intentional design
       - linters:
           - ireturn
-        path: (config|cron|eventbus|health|worker)/module\.go
+        path: (config|cron|eventbus|health|worker|server/grpc|server/http)/module\.go
         text: "NewModule returns interface"
+      # InterceptorLogger returns external interface adapter (intentional design)
+      - linters:
+          - ireturn
+        path: server/grpc/interceptors\.go
+        text: "InterceptorLogger returns interface"
       # NewModuleFunc returning Module interface is intentional design
       - linters:
           - ireturn
@@ -250,6 +255,11 @@ linters:
           - revive
         path: cron/
         text: "context-as-argument"
+      # Package name http shadows stdlib but is intentional for cleaner imports
+      - linters:
+          - revive
+        path: server/http/
+        text: "var-naming"
       # Unexported return in scheduler is internal API
       - linters:
           - revive
@@ -425,6 +435,9 @@ linters:
             - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
             - go.uber.org/mock
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+            - github.com/grpc-ecosystem/go-grpc-middleware/v2
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -452,6 +465,9 @@ linters:
             - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
             - go.uber.org/mock
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+            - github.com/grpc-ecosystem/go-grpc-middleware/v2
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog
