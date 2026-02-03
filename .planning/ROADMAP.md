@@ -14,10 +14,12 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 **Goal:** Enable the container to resolve all registered providers of a type to support auto-discovery patterns.
 **Dependencies:** None
 **Requirements:** CORE-01
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
-- [ ] 37-01-PLAN.md — Refactor Core DI engine & Implement Discovery API
-- [ ] 37-02-PLAN.md — Verify Discovery with Plugin Example
+- [x] 37-01-PLAN.md — Refactor Core DI engine & Implement Discovery API
+- [x] 37-02-PLAN.md — Verify Discovery with Plugin Example
+
+**Status:** Complete (2026-02-02)
 
 **Success Criteria:**
 1. User can register multiple providers for the same interface/type.
@@ -61,7 +63,7 @@ Milestone v4.1 transforms `gaz` into a production-ready application server by im
 
 | Phase | Goal | Status | Requirements |
 |-------|------|--------|--------------|
-| 37 | Core Discovery | **Pending** | CORE-01 |
+| 37 | Core Discovery | **Complete** | CORE-01 |
 | 38 | Transport Foundations | Pending | TRN-01, TRN-02, TRN-03, GW-01 |
 | 39 | Gateway Integration | Pending | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | Pending | INF-01, INF-02, INF-03 |

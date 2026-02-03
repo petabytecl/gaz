@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 37 - Core Discovery
-- **Plan:** 1 of 2 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-02 — Completed 37-01-PLAN.md
+- **Plan:** 2 of 2 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-02 — Completed 37-02-PLAN.md
 
-Progress: [██░░░░░░░░] 20% (Phase 37 in progress)
+Progress: [███░░░░░░░] 30% (Phase 37 complete)
 
 ## Milestones Shipped
 
@@ -34,8 +34,9 @@ Progress: [██░░░░░░░░] 20% (Phase 37 in progress)
 | v3.1 | Performance & Stability | 30 | 2 | 2026-02-01 |
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
+| v4.1 (Partial) | Core Discovery | 37 | 2 | 2026-02-02 |
 
-**Total:** 144 plans across 36+ phases
+**Total:** 146 plans across 37+ phases
 
 ## Accumulated Context
 
@@ -49,6 +50,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Auto-Discovery:** Gateway will use `di.List[GatewayEndpoint]` to find services rather than manual registration.
 - **Implicit Collection:** Allowed Register to append duplicates instead of returning error.
 - **Ambiguity Handling:** Resolve returns ErrAmbiguous if multiple services registered.
+- **Plugin Pattern:** Use `gaz.ResolveAll` to discover services implementing an interface.
+- **Group Resolution:** Use `gaz.ResolveGroup` for categorized discovery (e.g., "system" vs "user" plugins).
 
 ### Research Summary
 
@@ -75,6 +78,7 @@ None.
 - Quick Task 003 improved total test coverage to >90%.
 - Quick Task 004 defined specs for v4.1 (HTTP/gRPC/Gateway).
 - Roadmap v4.1 created with 4 phases (37-40).
+- Phase 37 complete (Discovery).
 
 ### Pending Todos
 
@@ -83,8 +87,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 37-01-PLAN.md
-Resume with: `/gsd-plan-phase 37`
+Stopped at: Completed 37-02-PLAN.md
+Resume with: `/gsd-plan-phase 38`
 
 ---
 
