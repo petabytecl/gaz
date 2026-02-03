@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/server/grpc"
 	shttp "github.com/petabytecl/gaz/server/http"
@@ -108,59 +107,58 @@ func NewModule(opts ...ModuleOption) di.Module {
 }
 
 // NewModuleWithFlags creates a unified server module with CLI flag support.
-// Returns a gaz.Module that registers CLI flags for port configuration.
-// Use this when building CLI applications with gaz.WithCobra().
+// The flags are registered with the provided FlagSet and their values
+// are read when the module registers components.
 //
-// Flags:
-//   - --grpc-port        gRPC server port (default: 50051)
-//   - --http-port        HTTP server port (default: 8080)
-//   - --grpc-reflection  Enable gRPC reflection (default: true)
-//   - --grpc-dev-mode    Enable gRPC development mode (default: false)
+// Flags registered:
+//   - --grpc-port        gRPC server port (default from options or 50051)
+//   - --http-port        HTTP server port (default from options or 8080)
+//   - --grpc-reflection  Enable gRPC reflection (default from options or true)
+//   - --grpc-dev-mode    Enable gRPC development mode (default from options or false)
 //
 // Module options can set initial defaults, which flags can then override at runtime.
 //
 // Example:
 //
-//	app := gaz.New(gaz.WithCobra(cmd)).
-//	    Use(server.NewModuleWithFlags()).
-//	    Build()
+//	rootCmd := &cobra.Command{}
+//	app := gaz.New()
+//	app.Use(server.NewModuleWithFlags(rootCmd.Flags()))
+//	// Now --grpc-port, --http-port, --grpc-reflection, --grpc-dev-mode are available.
 //
 // Example with option defaults:
 //
-//	app := gaz.New(gaz.WithCobra(cmd)).
-//	    Use(server.NewModuleWithFlags(server.WithGRPCPort(9090))). // default 9090
-//	    Build()
+//	app.Use(server.NewModuleWithFlags(rootCmd.Flags(), server.WithGRPCPort(9090)))
 //	// --grpc-port flag defaults to 9090, user can override with --grpc-port=8888
-func NewModuleWithFlags(opts ...ModuleOption) gaz.Module {
+func NewModuleWithFlags(fs *pflag.FlagSet, opts ...ModuleOption) di.Module {
 	cfg := defaultModuleConfig()
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	return gaz.NewModule("server").
-		Flags(func(fs *pflag.FlagSet) {
-			// IntVar/BoolVar bind flag values directly to cfg fields.
-			// Default values come FROM cfg (which may have been set by opts).
-			// When flags are parsed, values are written TO cfg via these pointers.
-			fs.IntVar(&cfg.grpcPort, "grpc-port", cfg.grpcPort, "gRPC server port")
-			fs.IntVar(&cfg.httpPort, "http-port", cfg.httpPort, "HTTP server port")
-			fs.BoolVar(&cfg.grpcReflection, "grpc-reflection", cfg.grpcReflection, "Enable gRPC reflection")
-			fs.BoolVar(&cfg.grpcDevMode, "grpc-dev-mode", cfg.grpcDevMode, "Enable gRPC development mode")
-		}).
-		Provide(func(c *gaz.Container) error {
-			// CRITICAL: This closure captures cfg by pointer reference.
-			// When this provider EXECUTES (during app.Run(), after flag parsing),
-			// cfg.grpcPort etc. contain the PARSED flag values, not the defaults.
-			//
-			// Flow:
-			// 1. NewModuleWithFlags() called -> cfg created with defaults (or opts)
-			// 2. app.Use() called -> Flags() binds &cfg.grpcPort to --grpc-port
-			// 3. cobra parses args -> writes "9090" to cfg.grpcPort via pointer
-			// 4. app.Run() -> container resolves eager services -> this Provide() runs
-			// 5. cfg.grpcPort is now 9090, not 50051
-			return registerServerComponents(cfg, c)
-		}).
-		Build()
+	// Define flags with initial values from options.
+	// Flag values are bound to pointers, allowing deferred evaluation.
+	grpcPortFlag := fs.Int("grpc-port", cfg.grpcPort, "gRPC server port")
+	httpPortFlag := fs.Int("http-port", cfg.httpPort, "HTTP server port")
+	grpcReflectionFlag := fs.Bool("grpc-reflection", cfg.grpcReflection, "Enable gRPC reflection")
+	grpcDevModeFlag := fs.Bool("grpc-dev-mode", cfg.grpcDevMode, "Enable gRPC development mode")
+
+	return di.NewModuleFunc("server", func(c *di.Container) error {
+		// CRITICAL: Read flag values HERE (deferred evaluation).
+		// When this function EXECUTES (during app.Run(), after flag parsing),
+		// the flag pointers contain the PARSED flag values, not the defaults.
+		//
+		// Flow:
+		// 1. NewModuleWithFlags(fs) called -> flags registered on fs
+		// 2. cobra parses args -> writes "9090" to *grpcPortFlag
+		// 3. app.Run() -> container resolves eager services -> this function runs
+		// 4. *grpcPortFlag is now 9090, not 50051
+		cfg.grpcPort = *grpcPortFlag
+		cfg.httpPort = *httpPortFlag
+		cfg.grpcReflection = *grpcReflectionFlag
+		cfg.grpcDevMode = *grpcDevModeFlag
+
+		return registerServerComponents(cfg, c)
+	})
 }
 
 // registerServerComponents is shared by both NewModule and NewModuleWithFlags.
