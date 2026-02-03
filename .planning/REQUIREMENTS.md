@@ -21,9 +21,9 @@
 ### Gateway Integration
 
 - [x] **GW-01**: Gateway runs on separate HTTP port (no cmux)
-- [ ] **GW-02**: Connects to gRPC via loopback client
-- [ ] **GW-03**: Dynamic registration of services via DI interface (`GatewayEndpoint`)
-- [ ] **GW-04**: CORS support (Origins, Methods, Headers)
+- [x] **GW-02**: Connects to gRPC via loopback client
+- [x] **GW-03**: Dynamic registration of services via DI interface (`Registrar`)
+- [x] **GW-04**: CORS support (Origins, Methods, Headers)
 
 ### Infrastructure
 
@@ -48,9 +48,9 @@
 | TRN-02 | Phase 38 | Complete |
 | TRN-03 | Phase 38 | Complete |
 | GW-01 | Phase 38 | Complete |
-| GW-02 | Phase 39 | Pending |
-| GW-03 | Phase 39 | Pending |
-| GW-04 | Phase 39 | Pending |
+| GW-02 | Phase 39 | Complete |
+| GW-03 | Phase 39 | Complete |
+| GW-04 | Phase 39 | Complete |
 | INF-01 | Phase 40 | Pending |
 | INF-02 | Phase 40 | Pending |
 | INF-03 | Phase 40 | Pending |
