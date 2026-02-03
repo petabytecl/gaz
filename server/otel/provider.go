@@ -14,12 +14,28 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+const (
+	// exporterTimeout is the timeout for creating the OTLP exporter.
+	exporterTimeout = 10 * time.Second
+
+	// shutdownTimeout is the timeout for flushing spans during shutdown.
+	shutdownTimeout = 5 * time.Second
+
+	// defaultSampleRatio is used when SampleRatio is not set or invalid.
+	defaultSampleRatio = 0.1 // 10%.
+
+	// maxSampleRatio is the maximum allowed sampling ratio.
+	maxSampleRatio = 1.0 // 100%.
+)
+
 // InitTracer initializes the OpenTelemetry TracerProvider.
 //
 // If cfg.Endpoint is empty, returns nil (OTEL disabled).
 // If the exporter fails to connect, logs a warning and returns nil (graceful degradation).
 //
 // The function sets the global TracerProvider and TextMapPropagator.
+//
+//nolint:nilnil // nil,nil is intentional for disabled/degraded states
 func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace.TracerProvider, error) {
 	if cfg.Endpoint == "" {
 		if logger != nil {
@@ -37,7 +53,7 @@ func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace
 	}
 
 	// Create exporter (with timeout to avoid blocking startup).
-	exportCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	exportCtx, cancel := context.WithTimeout(ctx, exporterTimeout)
 	defer cancel()
 
 	exporter, err := otlptracegrpc.New(exportCtx, exporterOpts...)
@@ -67,9 +83,9 @@ func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace
 	// TraceIDRatioBased: Sample root spans probabilistically.
 	sampleRatio := cfg.SampleRatio
 	if sampleRatio <= 0 {
-		sampleRatio = 0.1 // Default 10%.
-	} else if sampleRatio > 1 {
-		sampleRatio = 1.0 // Cap at 100%.
+		sampleRatio = defaultSampleRatio
+	} else if sampleRatio > maxSampleRatio {
+		sampleRatio = maxSampleRatio
 	}
 	sampler := sdktrace.ParentBased(sdktrace.TraceIDRatioBased(sampleRatio))
 
@@ -106,8 +122,8 @@ func ShutdownTracer(ctx context.Context, tp *sdktrace.TracerProvider) error {
 		return nil
 	}
 
-	// Use a 5-second timeout for flush.
-	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// Use a timeout for flush.
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	if err := tp.Shutdown(shutdownCtx); err != nil {

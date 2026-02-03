@@ -94,60 +94,77 @@ func NewModule(opts ...ModuleOption) di.Module {
 	}
 
 	return di.NewModuleFunc("otel", func(c *di.Container) error {
-		// Check environment variable fallback.
-		endpoint := cfg.endpoint
-		if endpoint == "" {
-			endpoint = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-		}
-
-		// Build OTEL config.
-		otelCfg := Config{
-			Endpoint:    endpoint,
-			ServiceName: cfg.serviceName,
-			SampleRatio: cfg.sampleRatio,
-			Insecure:    cfg.insecure,
-		}
-
-		// Register Config.
-		if err := di.For[Config](c).Instance(otelCfg); err != nil {
-			return fmt.Errorf("register otel config: %w", err)
-		}
-
-		// Register TracerProvider.
-		if err := di.For[*sdktrace.TracerProvider](c).
-			Eager().
-			Provider(func(c *di.Container) (*sdktrace.TracerProvider, error) {
-				cfg, err := di.Resolve[Config](c)
-				if err != nil {
-					return nil, fmt.Errorf("resolve otel config: %w", err)
-				}
-
-				logger, err := di.Resolve[*slog.Logger](c)
-				if err != nil {
-					return nil, fmt.Errorf("resolve logger: %w", err)
-				}
-
-				return InitTracer(context.Background(), cfg, logger)
-			}); err != nil {
-			return fmt.Errorf("register tracer provider: %w", err)
-		}
-
-		// Register stopper for TracerProvider lifecycle management.
-		// This ensures TracerProvider is shut down when the app stops.
-		if err := di.For[*tracerProviderStopper](c).
-			Provider(func(c *di.Container) (*tracerProviderStopper, error) {
-				tp, err := di.Resolve[*sdktrace.TracerProvider](c)
-				if err != nil {
-					return nil, fmt.Errorf("resolve tracer provider: %w", err)
-				}
-				if tp == nil {
-					return nil, nil // No stopper needed if tracing disabled.
-				}
-				return &tracerProviderStopper{tp: tp}, nil
-			}); err != nil {
-			return fmt.Errorf("register tracer stopper: %w", err)
-		}
-
-		return nil
+		return registerOTELComponents(c, cfg)
 	})
+}
+
+// registerOTELComponents registers all OTEL components with the container.
+func registerOTELComponents(c *di.Container, cfg *moduleConfig) error {
+	// Check environment variable fallback.
+	endpoint := cfg.endpoint
+	if endpoint == "" {
+		endpoint = os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	}
+
+	// Build OTEL config.
+	otelCfg := Config{
+		Endpoint:    endpoint,
+		ServiceName: cfg.serviceName,
+		SampleRatio: cfg.sampleRatio,
+		Insecure:    cfg.insecure,
+	}
+
+	// Register Config.
+	if err := di.For[Config](c).Instance(otelCfg); err != nil {
+		return fmt.Errorf("register otel config: %w", err)
+	}
+
+	// Register TracerProvider.
+	if err := registerTracerProvider(c); err != nil {
+		return err
+	}
+
+	// Register stopper for TracerProvider lifecycle management.
+	return registerTracerStopper(c)
+}
+
+// registerTracerProvider registers the TracerProvider with the container.
+func registerTracerProvider(c *di.Container) error {
+	if err := di.For[*sdktrace.TracerProvider](c).
+		Eager().
+		Provider(func(c *di.Container) (*sdktrace.TracerProvider, error) {
+			cfg, err := di.Resolve[Config](c)
+			if err != nil {
+				return nil, fmt.Errorf("resolve otel config: %w", err)
+			}
+
+			logger, err := di.Resolve[*slog.Logger](c)
+			if err != nil {
+				return nil, fmt.Errorf("resolve logger: %w", err)
+			}
+
+			return InitTracer(context.Background(), cfg, logger)
+		}); err != nil {
+		return fmt.Errorf("register tracer provider: %w", err)
+	}
+	return nil
+}
+
+// registerTracerStopper registers the TracerProvider stopper.
+// This ensures TracerProvider is shut down when the app stops.
+func registerTracerStopper(c *di.Container) error {
+	if err := di.For[*tracerProviderStopper](c).
+		Provider(func(c *di.Container) (*tracerProviderStopper, error) {
+			tp, err := di.Resolve[*sdktrace.TracerProvider](c)
+			if err != nil {
+				return nil, fmt.Errorf("resolve tracer provider: %w", err)
+			}
+			if tp == nil {
+				return nil, nil //nolint:nilnil // No stopper needed if tracing disabled.
+			}
+			return &tracerProviderStopper{tp: tp}, nil
+		}); err != nil {
+		return fmt.Errorf("register tracer stopper: %w", err)
+	}
+	return nil
 }

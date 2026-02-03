@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/spf13/pflag"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz/di"
 )
@@ -177,6 +178,9 @@ func NewModuleWithFlags(fs *pflag.FlagSet, opts ...ModuleOption) di.Module {
 //
 // The devMode parameter controls whether detailed error messages are exposed
 // and whether CORS debugging is enabled.
+//
+// If a *sdktrace.TracerProvider is registered in the container, the gateway
+// will be instrumented with OpenTelemetry tracing.
 func Module(c *di.Container, devMode bool) error {
 	// Register Gateway (implements di.Starter and di.Stopper).
 	if err := di.For[*Gateway](c).
@@ -192,7 +196,14 @@ func Module(c *di.Container, devMode bool) error {
 				return nil, fmt.Errorf("resolve logger: %w", err)
 			}
 
-			return NewGateway(cfg, logger, c, devMode), nil
+			// Try to resolve TracerProvider (optional).
+			// If not found or nil, OTEL tracing is disabled.
+			var tp *sdktrace.TracerProvider
+			if resolved, resolveErr := di.Resolve[*sdktrace.TracerProvider](c); resolveErr == nil {
+				tp = resolved
+			}
+
+			return NewGateway(cfg, logger, c, devMode, tp), nil
 		}); err != nil {
 		return fmt.Errorf("register gateway: %w", err)
 	}

@@ -1,5 +1,10 @@
 package otel
 
+const (
+	// DefaultSampleRatio is the default sampling ratio for root spans (10%).
+	DefaultSampleRatio = 0.1
+)
+
 // Config holds OpenTelemetry configuration.
 type Config struct {
 	// Endpoint is the OTLP endpoint (e.g., "localhost:4317").
@@ -23,9 +28,9 @@ type Config struct {
 // DefaultConfig returns the default OTEL configuration.
 func DefaultConfig() Config {
 	return Config{
-		Endpoint:    "",    // Disabled by default.
-		ServiceName: "gaz", // Default service name.
-		SampleRatio: 0.1,   // Sample 10% of root spans.
-		Insecure:    true,  // Insecure for dev.
+		Endpoint:    "",                 // Disabled by default.
+		ServiceName: "gaz",              // Default service name.
+		SampleRatio: DefaultSampleRatio, // Sample 10% of root spans.
+		Insecure:    true,               // Insecure for dev.
 	}
 }

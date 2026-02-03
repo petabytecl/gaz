@@ -26,7 +26,7 @@ func (s *GatewayTestSuite) TestNewGateway() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	s.Require().NotNil(gw)
 	s.Require().Equal(cfg.Port, gw.config.Port)
@@ -40,7 +40,7 @@ func (s *GatewayTestSuite) TestNewGateway_NilLogger() {
 	cfg := DefaultConfig()
 	container := di.New()
 
-	gw := NewGateway(cfg, nil, container, false)
+	gw := NewGateway(cfg, nil, container, false, nil)
 
 	s.Require().NotNil(gw)
 	s.Require().NotNil(gw.logger, "Nil logger should default to slog.Default()")
@@ -51,7 +51,7 @@ func (s *GatewayTestSuite) TestNewGateway_DevMode() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, true)
+	gw := NewGateway(cfg, logger, container, true, nil)
 
 	s.Require().True(gw.devMode)
 }
@@ -61,7 +61,7 @@ func (s *GatewayTestSuite) TestGateway_OnStart_CreatesConnection() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	// OnStart creates gRPC connection (note: connection creation succeeds
 	// even if server is not running - it's lazy).
@@ -80,7 +80,7 @@ func (s *GatewayTestSuite) TestGateway_OnStart_DiscoveryNoServices() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	// Works with zero registrars.
 	err := gw.OnStart(context.Background())
@@ -100,7 +100,7 @@ func (s *GatewayTestSuite) TestGateway_OnStart_DiscoveryWithServices() {
 	err := di.For[*mockRegistrar](container).Instance(mockReg)
 	s.Require().NoError(err)
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	err = gw.OnStart(context.Background())
 	s.Require().NoError(err)
@@ -118,7 +118,7 @@ func (s *GatewayTestSuite) TestGateway_OnStart_EmptyGRPCTarget() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	err := gw.OnStart(context.Background())
 	s.Require().NoError(err)
@@ -132,7 +132,7 @@ func (s *GatewayTestSuite) TestGateway_OnStop() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	// Start first.
 	err := gw.OnStart(context.Background())
@@ -148,7 +148,7 @@ func (s *GatewayTestSuite) TestGateway_OnStop_NilConnection() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 	// Do NOT call OnStart.
 
 	// OnStop should handle nil connection gracefully.
@@ -161,7 +161,7 @@ func (s *GatewayTestSuite) TestGateway_Handler() {
 	logger := slog.Default()
 	container := di.New()
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	// Before OnStart, handler is nil.
 	s.Require().Nil(gw.Handler())
@@ -185,7 +185,7 @@ func (s *GatewayTestSuite) TestGateway_OnStart_RegistrarError() {
 	err := di.For[*mockRegistrar](container).Instance(mockReg)
 	s.Require().NoError(err)
 
-	gw := NewGateway(cfg, logger, container, false)
+	gw := NewGateway(cfg, logger, container, false, nil)
 
 	err = gw.OnStart(context.Background())
 	s.Require().Error(err)

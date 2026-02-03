@@ -8,6 +8,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -35,13 +37,15 @@ type Registrar interface {
 // It translates RESTful HTTP/JSON requests into gRPC calls via grpc-gateway.
 // Implements di.Starter and di.Stopper for lifecycle integration.
 type Gateway struct {
-	config    Config
-	mux       *runtime.ServeMux
-	conn      *grpc.ClientConn
-	container *di.Container
-	logger    *slog.Logger
-	devMode   bool
-	handler   http.Handler
+	config      Config
+	mux         *runtime.ServeMux
+	conn        *grpc.ClientConn
+	container   *di.Container
+	logger      *slog.Logger
+	devMode     bool
+	tp          *sdktrace.TracerProvider
+	otelEnabled bool
+	handler     http.Handler
 }
 
 // NewGateway creates a new Gateway with the given configuration.
@@ -52,15 +56,18 @@ type Gateway struct {
 //   - logger: Logger for request logging and error reporting
 //   - container: DI container for service discovery
 //   - devMode: If true, expose detailed error messages
-func NewGateway(cfg Config, logger *slog.Logger, container *di.Container, devMode bool) *Gateway {
+//   - tp: Optional TracerProvider for OpenTelemetry instrumentation (may be nil)
+func NewGateway(cfg Config, logger *slog.Logger, container *di.Container, devMode bool, tp *sdktrace.TracerProvider) *Gateway {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &Gateway{
-		config:    cfg,
-		container: container,
-		logger:    logger,
-		devMode:   devMode,
+		config:      cfg,
+		container:   container,
+		logger:      logger,
+		devMode:     devMode,
+		tp:          tp,
+		otelEnabled: tp != nil,
 	}
 }
 
@@ -117,9 +124,21 @@ func (g *Gateway) OnStart(ctx context.Context) error {
 	})
 	g.handler = corsHandler.Handler(g.mux)
 
+	// Wrap with OTEL instrumentation if TracerProvider is available.
+	// Order: mux -> CORS -> otelhttp (OTEL wraps the outermost layer).
+	if g.otelEnabled {
+		g.handler = otelhttp.NewHandler(g.handler, "gateway",
+			otelhttp.WithFilter(func(r *http.Request) bool {
+				// Skip health check endpoints to reduce noise.
+				return r.URL.Path != "/health" && r.URL.Path != "/healthz"
+			}),
+		)
+	}
+
 	g.logger.InfoContext(ctx, "Gateway initialized",
 		slog.Int("services", len(registrars)),
 		slog.String("grpc_target", target),
+		slog.Bool("otel", g.otelEnabled),
 	)
 
 	return nil

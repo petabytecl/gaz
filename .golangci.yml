@@ -193,7 +193,7 @@ linters:
       # NewModule returning di.Module interface is intentional design
       - linters:
           - ireturn
-        path: (config|cron|eventbus|health|worker|server|server/grpc|server/http|server/gateway)/module\.go
+        path: (config|cron|eventbus|health|worker|server|server/grpc|server/http|server/gateway|server/otel)/module\.go
         text: "NewModule returns interface"
       # NewModuleWithFlags returning gaz.Module interface is intentional design
       - linters:
@@ -445,6 +445,8 @@ linters:
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
             - github.com/grpc-ecosystem/grpc-gateway/v2
             - github.com/rs/cors
+            - go.opentelemetry.io/otel
+            - go.opentelemetry.io/contrib
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -477,6 +479,8 @@ linters:
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
             - github.com/grpc-ecosystem/grpc-gateway/v2
             - github.com/rs/cors
+            - go.opentelemetry.io/otel
+            - go.opentelemetry.io/contrib
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog
