@@ -32,7 +32,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerStartStop() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -66,7 +66,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflection() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -137,7 +137,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerServiceDiscovery() {
 	err := di.For[*mockServiceRegistrar](container).Instance(mockRegistrar)
 	s.Require().NoError(err)
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -168,7 +168,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerPortBindingError() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start should fail.
 	ctx := context.Background()
@@ -184,7 +184,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerGracefulShutdown() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -219,7 +219,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -268,7 +268,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerGetGRPCServer() {
 	logger := slog.Default()
 	container := di.New()
 
-	server := NewServer(cfg, logger, container, false)
+	server := NewServer(cfg, logger, container, false, nil)
 
 	// GRPCServer should return the underlying grpc.Server.
 	grpcServer := server.GRPCServer()

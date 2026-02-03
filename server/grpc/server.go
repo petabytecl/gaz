@@ -7,8 +7,11 @@ import (
 	"log/slog"
 	"net"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/stats"
 
 	"github.com/petabytecl/gaz/di"
 )
@@ -32,12 +35,13 @@ type ServiceRegistrar interface {
 // Server is a gRPC server with lifecycle management and auto-discovery.
 // It implements di.Starter and di.Stopper for integration with gaz's lifecycle.
 type Server struct {
-	config    Config
-	server    *grpc.Server
-	listener  net.Listener
-	container *di.Container
-	logger    *slog.Logger
-	devMode   bool
+	config      Config
+	server      *grpc.Server
+	listener    net.Listener
+	container   *di.Container
+	logger      *slog.Logger
+	devMode     bool
+	otelEnabled bool
 }
 
 // NewServer creates a new gRPC server with the given configuration.
@@ -48,7 +52,8 @@ type Server struct {
 //   - logger: Logger for request logging and error reporting
 //   - container: DI container for service discovery
 //   - devMode: If true, expose panic details in error responses
-func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode bool) *Server {
+//   - tp: Optional TracerProvider for OpenTelemetry instrumentation (may be nil)
+func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode bool, tp *sdktrace.TracerProvider) *Server {
 	// Create interceptors.
 	loggingUnary, loggingStream := NewLoggingInterceptor(logger)
 	recoveryUnary, recoveryStream := NewRecoveryInterceptor(logger, devMode)
@@ -62,12 +67,26 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode
 		grpc.MaxSendMsgSize(cfg.MaxSendMsgSize),
 	}
 
+	// Add OTEL stats handler if TracerProvider is available.
+	otelEnabled := false
+	if tp != nil {
+		opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(
+			otelgrpc.WithFilter(func(info *stats.RPCTagInfo) bool {
+				// Skip tracing health checks to reduce noise.
+				return info.FullMethodName != "/grpc.health.v1.Health/Check" &&
+					info.FullMethodName != "/grpc.health.v1.Health/Watch"
+			}),
+		)))
+		otelEnabled = true
+	}
+
 	return &Server{
-		config:    cfg,
-		server:    grpc.NewServer(opts...),
-		container: container,
-		logger:    logger,
-		devMode:   devMode,
+		config:      cfg,
+		server:      grpc.NewServer(opts...),
+		container:   container,
+		logger:      logger,
+		devMode:     devMode,
+		otelEnabled: otelEnabled,
 	}
 }
 
@@ -106,6 +125,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 		slog.Int("port", s.config.Port),
 		slog.Bool("reflection", s.config.Reflection),
 		slog.Int("services", len(registrars)),
+		slog.Bool("otel", s.otelEnabled),
 	)
 
 	// Spawn serve goroutine (non-blocking).

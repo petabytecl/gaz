@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -92,6 +94,9 @@ func NewModule(opts ...ModuleOption) di.Module {
 // (e.g., via NewModule or manual registration).
 //
 // The devMode parameter controls whether panic details are exposed in error responses.
+//
+// If a *sdktrace.TracerProvider is registered in the container, the server
+// will be instrumented with OpenTelemetry tracing.
 func Module(c *di.Container, devMode bool) error {
 	// Register Server (implements di.Starter and di.Stopper).
 	if err := di.For[*Server](c).
@@ -107,7 +112,14 @@ func Module(c *di.Container, devMode bool) error {
 				return nil, fmt.Errorf("resolve logger: %w", err)
 			}
 
-			return NewServer(cfg, logger, c, devMode), nil
+			// Try to resolve TracerProvider (optional).
+			// If not found or nil, OTEL tracing is disabled.
+			var tp *sdktrace.TracerProvider
+			if resolved, resolveErr := di.Resolve[*sdktrace.TracerProvider](c); resolveErr == nil {
+				tp = resolved
+			}
+
+			return NewServer(cfg, logger, c, devMode, tp), nil
 		}); err != nil {
 		return fmt.Errorf("register grpc server: %w", err)
 	}
