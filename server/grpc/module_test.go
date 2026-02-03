@@ -104,21 +104,22 @@ func TestModule(t *testing.T) {
 		require.Contains(t, err.Error(), "grpc config")
 	})
 
-	t.Run("resolve fails without logger", func(t *testing.T) {
+	t.Run("resolve succeeds with slog.Default fallback", func(t *testing.T) {
 		c := di.New()
-		// NO logger registered.
+		// NO logger registered - should fallback to slog.Default()
 
 		// Pre-register config.
 		cfg := DefaultConfig()
+		cfg.Port = 0 // Use any available port
 		require.NoError(t, di.For[Config](c).Instance(cfg))
 
 		err := Module(c, false)
 		require.NoError(t, err) // Registration succeeds
 
-		// Resolution fails because Logger is missing.
-		_, err = di.Resolve[*Server](c)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "logger")
+		// Resolution should succeed with slog.Default() fallback
+		server, err := di.Resolve[*Server](c)
+		require.NoError(t, err)
+		require.NotNil(t, server)
 	})
 }
 

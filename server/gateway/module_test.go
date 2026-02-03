@@ -136,9 +136,9 @@ func (s *ModuleTestSuite) TestModule_GatewayIsEager() {
 	s.Require().True(di.Has[*Gateway](c))
 }
 
-func (s *ModuleTestSuite) TestModule_ResolveFails_NoLogger() {
+func (s *ModuleTestSuite) TestModule_ResolvesWithSlogDefault() {
 	c := di.New()
-	// Do NOT register logger.
+	// Do NOT register logger - should fallback to slog.Default()
 
 	cfg := DefaultConfig()
 	s.Require().NoError(di.For[Config](c).Instance(cfg))
@@ -146,10 +146,10 @@ func (s *ModuleTestSuite) TestModule_ResolveFails_NoLogger() {
 	err := Module(c, false)
 	s.Require().NoError(err, "Registration should succeed")
 
-	// Resolution should fail because logger is missing.
-	_, err = di.Resolve[*Gateway](c)
-	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "logger")
+	// Resolution should succeed with slog.Default() fallback
+	gw, err := di.Resolve[*Gateway](c)
+	s.Require().NoError(err, "Resolution should succeed with slog.Default fallback")
+	s.Require().NotNil(gw)
 }
 
 func (s *ModuleTestSuite) TestModule_ResolveFails_NoConfig() {

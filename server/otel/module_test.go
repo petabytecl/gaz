@@ -205,18 +205,19 @@ func TestDefaultModuleConfig(t *testing.T) {
 	assert.True(t, cfg.insecure)
 }
 
-func TestNewModule_MissingLogger(t *testing.T) {
+func TestNewModule_SlogDefaultFallback(t *testing.T) {
 	c := di.New()
 
-	// Register module without logger
+	// Register module without logger - should fallback to slog.Default()
 	module := NewModule()
 	err := module.Register(c)
 	require.NoError(t, err)
 
-	// Resolving TracerProvider should fail because logger is missing
-	_, err = di.Resolve[*sdktrace.TracerProvider](c)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "logger")
+	// Resolving TracerProvider should succeed with slog.Default() fallback
+	tp, err := di.Resolve[*sdktrace.TracerProvider](c)
+	require.NoError(t, err)
+	// Note: tp is nil when no endpoint configured (default behavior)
+	assert.Nil(t, tp, "should be nil when no endpoint configured")
 }
 
 func TestNewModule_ModuleName(t *testing.T) {

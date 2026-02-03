@@ -138,9 +138,9 @@ func registerTracerProvider(c *di.Container) error {
 				return nil, fmt.Errorf("resolve otel config: %w", err)
 			}
 
-			logger, err := di.Resolve[*slog.Logger](c)
-			if err != nil {
-				return nil, fmt.Errorf("resolve logger: %w", err)
+			logger := slog.Default()
+			if resolved, resolveErr := di.Resolve[*slog.Logger](c); resolveErr == nil {
+				logger = resolved
 			}
 
 			return InitTracer(context.Background(), cfg, logger)
