@@ -1,6 +1,7 @@
 # Project State
 
 **Project:** gaz
+**Version:** v4.1
 **Core Value:** Simple, type-safe dependency injection with sane defaults
 
 ## Project Reference
@@ -8,17 +9,17 @@
 See: .planning/PROJECT.md (updated 2026-02-02)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Planning next milestone
+**Current focus:** v4.1 Server & Transport Layer
 
 ## Current Position
 
-- **Milestone:** v4.0 Dependency Reduction — COMPLETE
-- **Phase:** 36 (Add builtin checks on `health/checks`) — Complete
-- **Plan:** 6 of 6 in current phase
-- **Status:** Milestone complete, ready for next milestone
-- **Last activity:** 2026-02-03 — Completed quick task 004: Create v4.1 Milestone Requirements.
+- **Milestone:** v4.1 Server & Transport Layer
+- **Phase:** 37 - Core Discovery
+- **Plan:** —
+- **Status:** Pending
+- **Last activity:** 2026-02-03 — Roadmap created
 
-Progress: [██████████] 100% (v4.0 complete)
+Progress: [░░░░░░░░░░] 0% (Phase 37 pending)
 
 ## Milestones Shipped
 
@@ -42,22 +43,18 @@ Progress: [██████████] 100% (v4.0 complete)
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
-### v4.0 Decisions
+### v4.1 Decisions
 
-- Keep BackoffConfig for API compatibility — users may configure via options
-- Drop-in API compatibility for tint preserves existing behavior
-- cron/internal uses *slog.Logger directly — no adapter needed
-- Empty health checker returns StatusUp for backward compatibility
-- Config + New factory pattern for all health checks
-- Disk check uses percentage threshold (0-100) for portability
+- **Port Separation:** Running Gateway and gRPC on separate ports (e.g., 8080/9090) to avoid `cmux` complexity.
+- **Auto-Discovery:** Gateway will use `di.List[GatewayEndpoint]` to find services rather than manual registration.
 
 ### Research Summary
 
-See: .planning/research/v4.0-SUMMARY.md
+See: .planning/research/SUMMARY.md
 
 ### Blockers/Concerns
 
-None — ready for next milestone.
+None.
 
 ### Quick Tasks Completed
 
@@ -75,6 +72,7 @@ None — ready for next milestone.
 - Quick Task 002 ensured examples are tested and fixed EventBus bugs.
 - Quick Task 003 improved total test coverage to >90%.
 - Quick Task 004 defined specs for v4.1 (HTTP/gRPC/Gateway).
+- Roadmap v4.1 created with 4 phases (37-40).
 
 ### Pending Todos
 
@@ -83,8 +81,8 @@ None — ready for next milestone.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 004-create-v4-1-milestone-requirements
-Resume with: `/gsd-new-milestone` to start next milestone
+Stopped at: Roadmap created
+Resume with: `/gsd-plan-phase 37`
 
 ---
 

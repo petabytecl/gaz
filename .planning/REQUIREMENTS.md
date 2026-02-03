@@ -43,22 +43,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | — | Pending |
-| TRN-01 | — | Pending |
-| TRN-02 | — | Pending |
-| TRN-03 | — | Pending |
-| GW-01 | — | Pending |
-| GW-02 | — | Pending |
-| GW-03 | — | Pending |
-| GW-04 | — | Pending |
-| INF-01 | — | Pending |
-| INF-02 | — | Pending |
-| INF-03 | — | Pending |
+| CORE-01 | Phase 37 | Pending |
+| TRN-01 | Phase 38 | Pending |
+| TRN-02 | Phase 38 | Pending |
+| TRN-03 | Phase 38 | Pending |
+| GW-01 | Phase 38 | Pending |
+| GW-02 | Phase 39 | Pending |
+| GW-03 | Phase 39 | Pending |
+| GW-04 | Phase 39 | Pending |
+| INF-01 | Phase 40 | Pending |
+| INF-02 | Phase 40 | Pending |
+| INF-03 | Phase 40 | Pending |
 
 **Coverage:**
 - v4.1 requirements: 11 total
-- Mapped to phases: 0
-- Unmapped: 11 ⚠️
+- Mapped to phases: 11
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-03*
