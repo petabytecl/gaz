@@ -146,7 +146,7 @@ func (a *Application) Run() error {
 	return nil
 }
 
-func main() {
+func run() error {
 	app := gaz.New()
 
 	// Register database module
@@ -210,20 +210,26 @@ func main() {
 
 	// Build the container
 	if err := app.Build(); err != nil {
-		log.Fatalf("Failed to build: %v", err)
+		return fmt.Errorf("failed to build: %w", err)
 	}
 
 	// Resolve and run the application
 	application, err := gaz.Resolve[*Application](app.Container())
 	if err != nil {
-		log.Fatalf("Failed to resolve Application: %v", err)
+		return fmt.Errorf("failed to resolve Application: %w", err)
 	}
 
 	if err := application.Run(); err != nil {
-		log.Fatalf("Application error: %v", err)
+		return fmt.Errorf("application error: %w", err)
 	}
 
 	// Note: In this example we don't call app.Run() because there's no
 	// long-running service. For servers/workers, use app.Run(ctx) instead.
-	_ = app.Stop(context.Background())
+	return app.Stop(context.Background())
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

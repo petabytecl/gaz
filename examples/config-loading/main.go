@@ -79,7 +79,7 @@ func NewServerConfig(c *gaz.Container) (*ServerConfig, error) {
 	return &ServerConfig{pv: pv}, nil
 }
 
-func main() {
+func run() error {
 	// Create the application.
 	// ConfigManager is auto-initialized with convention defaults:
 	// - Looks for config.yaml in current directory
@@ -93,14 +93,14 @@ func main() {
 	// 4. Register defaults and bind environment variables
 	// 5. Validate required flags are set
 	if err := gaz.For[*ServerConfig](app.Container()).Provider(NewServerConfig); err != nil {
-		log.Fatalf("Failed to register config provider: %v", err)
+		return fmt.Errorf("failed to register config provider: %w", err)
 	}
 
 	// Build triggers config loading and provider instantiation.
 	// ProviderValues is registered BEFORE providers run, so NewServerConfig
 	// can inject it as a dependency.
 	if err := app.Build(); err != nil {
-		log.Fatalf("Failed to build app: %v", err)
+		return fmt.Errorf("failed to build app: %w", err)
 	}
 
 	// Get the ServerConfig - it already has ProviderValues injected
@@ -120,4 +120,12 @@ func main() {
 	fmt.Println("  1. Environment variables (e.g., SERVER_HOST, SERVER_PORT)")
 	fmt.Println("  2. Config file (config.yaml)")
 	fmt.Println("  3. Defaults from ConfigFlags()")
+
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }

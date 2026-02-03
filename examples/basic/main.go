@@ -13,7 +13,7 @@ type Greeter struct {
 	Name string
 }
 
-func main() {
+func run() error {
 	// Create a new application
 	app := gaz.New()
 
@@ -22,19 +22,26 @@ func main() {
 		return &Greeter{Name: "World"}, nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Build the application (validates and prepares services)
 	if err := app.Build(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Resolve the Greeter service from the container
 	greeter, err := gaz.Resolve[*Greeter](app.Container())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Printf("Hello, %s!\n", greeter.Name)
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
 }
