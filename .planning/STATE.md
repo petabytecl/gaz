@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 40 - Observability & Health
-- **Plan:** 1 of 3 in current phase
+- **Plan:** 2 of 3 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 40-01-PLAN.md
+- **Last activity:** 2026-02-03 — Completed 40-02-PLAN.md
 
-Progress: [████████░░] 78% (Plan 40-01 complete, 2 plans remaining)
+Progress: [████████░░] 82% (Plan 40-02 complete, 1 plan remaining)
 
 ## Milestones Shipped
 
@@ -58,6 +58,9 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **grpc.NewClient:** Used instead of deprecated grpc.Dial for loopback connection.
 - **gRPC health polling:** Use polling-based status sync (default 5s) for GRPCServer.
 - **Empty service name:** Use "" for overall gRPC server health per protocol convention.
+- **OTEL graceful degradation:** Return nil TracerProvider when collector unreachable.
+- **ParentBased sampling:** Respect incoming trace context, sample 10% of root spans.
+- **Health endpoint filtering:** Exclude health endpoints from tracing.
 
 ### Research Summary
 
@@ -98,6 +101,7 @@ None.
 - Phase 39 complete: Gateway package fully implemented and tested
 - Phase 40 started: Observability & Health
 - Plan 40-01 added gRPC health server wrapper (GRPCServer) with polling-based status sync
+- Plan 40-02 added OpenTelemetry TracerProvider with OTLP export and server instrumentation
 
 ### Pending Todos
 
@@ -106,8 +110,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 40-01-PLAN.md
-Resume with: 40-02-PLAN.md (OpenTelemetry TracerProvider)
+Stopped at: Completed 40-02-PLAN.md
+Resume with: 40-03-PLAN.md (PGX health check and tests)
 
 ---
 
