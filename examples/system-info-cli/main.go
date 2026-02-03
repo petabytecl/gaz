@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -27,12 +28,12 @@ import (
 )
 
 func main() {
-	if err := execute(); err != nil {
+	if err := execute(os.Args[1:], os.Stdout); err != nil {
 		os.Exit(1)
 	}
 }
 
-func execute() error {
+func execute(args []string, out io.Writer) error {
 	// Root command
 	rootCmd := &cobra.Command{
 		Use:   "sysinfo",
@@ -51,6 +52,9 @@ Examples:
   sysinfo run --sysinfo-refresh 10s   # Custom refresh interval
   sysinfo version                     # Print version`,
 	}
+
+	rootCmd.SetOut(out)
+	rootCmd.SetArgs(args)
 
 	// Create gaz application with shutdown timeout
 	app := gaz.New(gaz.WithShutdownTimeout(5 * time.Second))
@@ -87,8 +91,8 @@ Examples:
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("sysinfo v1.0.0")
-			fmt.Println("gaz framework system info example")
+			fmt.Fprintln(out, "sysinfo v1.0.0")
+			fmt.Fprintln(out, "gaz framework system info example")
 		},
 	}
 	rootCmd.AddCommand(versionCmd)

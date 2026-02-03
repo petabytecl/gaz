@@ -16,6 +16,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -77,12 +78,12 @@ func (s *Server) OnStop(_ context.Context) error {
 }
 
 func main() {
-	if err := execute(); err != nil {
+	if err := execute(os.Args[1:], os.Stdout); err != nil {
 		os.Exit(1)
 	}
 }
 
-func execute() error {
+func execute(args []string, out io.Writer) error {
 	// Root command
 	rootCmd := &cobra.Command{
 		Use:   "myapp",
@@ -93,6 +94,9 @@ with Cobra CLI. It shows:
 - Subcommands that access injected services
 - Automatic lifecycle management via WithCobra()`,
 	}
+
+	rootCmd.SetOut(out)
+	rootCmd.SetArgs(args)
 
 	// Persistent flags (available to all subcommands)
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
@@ -113,8 +117,8 @@ with Cobra CLI. It shows:
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Println("myapp v1.0.0")
-			fmt.Println("Built with gaz dependency injection")
+			fmt.Fprintln(out, "myapp v1.0.0")
+			fmt.Fprintln(out, "Built with gaz dependency injection")
 		},
 	}
 
