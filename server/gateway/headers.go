@@ -9,6 +9,8 @@ import (
 // AllowedHeaders is the list of HTTP headers that will be forwarded
 // to gRPC as metadata. These headers are commonly used for authentication,
 // request tracing, and client identification.
+//
+//nolint:gochecknoglobals // Package-level configuration for header allowlist.
 var AllowedHeaders = []string{
 	"authorization",
 	"x-request-id",
@@ -19,6 +21,8 @@ var AllowedHeaders = []string{
 }
 
 // allowedHeadersSet is a pre-computed set for O(1) lookup.
+//
+//nolint:gochecknoglobals // Computed once at init for performance.
 var allowedHeadersSet = func() map[string]struct{} {
 	set := make(map[string]struct{}, len(AllowedHeaders))
 	for _, h := range AllowedHeaders {

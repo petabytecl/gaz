@@ -443,6 +443,8 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
+            - github.com/grpc-ecosystem/grpc-gateway/v2
+            - github.com/rs/cors
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -473,6 +475,8 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
+            - github.com/grpc-ecosystem/grpc-gateway/v2
+            - github.com/rs/cors
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog

@@ -41,7 +41,7 @@ type ProblemDetails struct {
 // included. In production mode, generic messages are used to prevent
 // information disclosure.
 func ErrorHandler(devMode bool) runtime.ErrorHandlerFunc {
-	return func(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+	return func(_ context.Context, _ *runtime.ServeMux, _ runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
 		s := status.Convert(err)
 		httpStatus := runtime.HTTPStatusFromCode(s.Code())
 

@@ -1,3 +1,5 @@
+// Package gateway provides an HTTP-to-gRPC gateway with auto-discovery and CORS support.
+// It uses grpc-gateway to translate RESTful HTTP/JSON requests into gRPC calls.
 package gateway
 
 import (
@@ -10,6 +12,9 @@ const DefaultPort = 8080
 
 // DefaultGRPCTarget is the default gRPC server target for loopback connections.
 const DefaultGRPCTarget = "localhost:50051"
+
+// DefaultCORSMaxAge is the default max age for preflight request caching (24 hours in seconds).
+const DefaultCORSMaxAge = 86400
 
 // Config holds configuration for the Gateway.
 type Config struct {
@@ -69,7 +74,7 @@ func DefaultCORSConfig(devMode bool) CORSConfig {
 			AllowedHeaders:   []string{"*"},
 			ExposedHeaders:   []string{},
 			AllowCredentials: false, // Cannot use * with credentials.
-			MaxAge:           86400,
+			MaxAge:           DefaultCORSMaxAge,
 		}
 	}
 	return CORSConfig{
@@ -78,7 +83,7 @@ func DefaultCORSConfig(devMode bool) CORSConfig {
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Request-ID"},
 		ExposedHeaders:   []string{"X-Request-ID"},
 		AllowCredentials: true,
-		MaxAge:           86400,
+		MaxAge:           DefaultCORSMaxAge,
 	}
 }
 

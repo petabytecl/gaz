@@ -14,7 +14,7 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-// GatewayRegistrar is implemented by gRPC services that want to expose
+// Registrar is implemented by gRPC services that want to expose
 // HTTP endpoints via the Gateway. Services call their generated
 // RegisterXXXHandler function in this method.
 //
@@ -27,7 +27,7 @@ import (
 //	func (s *GreeterService) RegisterGateway(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 //	    return pb.RegisterGreeterHandler(ctx, mux, conn)
 //	}
-type GatewayRegistrar interface {
+type Registrar interface {
 	RegisterGateway(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error
 }
 
@@ -92,16 +92,16 @@ func (g *Gateway) OnStart(ctx context.Context) error {
 	)
 
 	// Auto-discover and register services.
-	registrars, err := di.ResolveAll[GatewayRegistrar](g.container)
+	registrars, err := di.ResolveAll[Registrar](g.container)
 	if err != nil {
 		_ = conn.Close()
 		return fmt.Errorf("gateway: discover registrars: %w", err)
 	}
 
 	for _, r := range registrars {
-		if err := r.RegisterGateway(ctx, g.mux, conn); err != nil {
+		if regErr := r.RegisterGateway(ctx, g.mux, conn); regErr != nil {
 			_ = conn.Close()
-			return fmt.Errorf("gateway: register service: %w", err)
+			return fmt.Errorf("gateway: register service: %w", regErr)
 		}
 	}
 
