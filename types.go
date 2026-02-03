@@ -68,6 +68,17 @@ func typeName(t any) string {
 	return di.TypeNameReflect(t)
 }
 
+// ResolveAll retrieves all registered services of type T.
+func ResolveAll[T any](c *Container) ([]T, error) {
+	return di.ResolveAll[T](c)
+}
+
+// ResolveGroup retrieves all services belonging to the specified group.
+// It filters services that are assignable to T.
+func ResolveGroup[T any](c *Container, group string) ([]T, error) {
+	return di.ResolveGroup[T](c, group)
+}
+
 // Named resolves a service by its registered name instead of type.
 func Named(name string) di.ResolveOption {
 	return di.Named(name)
