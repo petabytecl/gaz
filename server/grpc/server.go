@@ -7,9 +7,10 @@ import (
 	"log/slog"
 	"net"
 
-	"github.com/petabytecl/gaz/di"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // ServiceRegistrar is implemented by gRPC services that want to be
@@ -77,7 +78,8 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode
 func (s *Server) OnStart(ctx context.Context) error {
 	// Bind port first (fail fast if already in use).
 	addr := fmt.Sprintf(":%d", s.config.Port)
-	lis, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	lis, err := lc.Listen(ctx, "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("grpc: bind port %d: %w", s.config.Port, err)
 	}
@@ -100,7 +102,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 		reflection.Register(s.server)
 	}
 
-	s.logger.Info("gRPC server starting",
+	s.logger.InfoContext(ctx, "gRPC server starting",
 		slog.Int("port", s.config.Port),
 		slog.Bool("reflection", s.config.Reflection),
 		slog.Int("services", len(registrars)),
@@ -108,8 +110,8 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 	// Spawn serve goroutine (non-blocking).
 	go func() {
-		if err := s.server.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			s.logger.Error("gRPC server error", slog.Any("error", err))
+		if serveErr := s.server.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
+			s.logger.Error("gRPC server error", slog.Any("error", serveErr))
 		}
 	}()
 
@@ -120,7 +122,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 // It waits for active connections to complete or forces shutdown on context timeout.
 // Implements di.Stopper.
 func (s *Server) OnStop(ctx context.Context) error {
-	s.logger.Info("gRPC server stopping")
+	s.logger.InfoContext(ctx, "gRPC server stopping")
 
 	done := make(chan struct{})
 	go func() {
@@ -130,12 +132,12 @@ func (s *Server) OnStop(ctx context.Context) error {
 
 	select {
 	case <-done:
-		s.logger.Info("gRPC server stopped gracefully")
+		s.logger.InfoContext(ctx, "gRPC server stopped gracefully")
 		return nil
 	case <-ctx.Done():
 		s.server.Stop()
-		s.logger.Warn("gRPC server force stopped")
-		return ctx.Err()
+		s.logger.WarnContext(ctx, "gRPC server force stopped")
+		return fmt.Errorf("grpc: shutdown: %w", ctx.Err())
 	}
 }
 
