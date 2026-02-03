@@ -4,10 +4,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/petabytecl/gaz"
 )
@@ -17,12 +16,13 @@ import (
 // OnStop is called when the application shuts down.
 type Server struct {
 	port int
+	out  io.Writer
 }
 
 // OnStart is called when the application starts.
 // Use this for initialization: opening connections, starting listeners, etc.
 func (s *Server) OnStart(ctx context.Context) error {
-	fmt.Printf("Server starting on port %d\n", s.port)
+	fmt.Fprintf(s.out, "Server starting on port %d\n", s.port)
 	// In a real app, you would start listening here:
 	// listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	return nil
@@ -31,19 +31,23 @@ func (s *Server) OnStart(ctx context.Context) error {
 // OnStop is called when the application shuts down.
 // Use this for cleanup: closing connections, flushing buffers, etc.
 func (s *Server) OnStop(ctx context.Context) error {
-	fmt.Println("Server stopping...")
+	fmt.Fprintln(s.out, "Server stopping...")
 	// In a real app, you would close listeners and connections here
 	return nil
 }
 
-func run(ctx context.Context, port int) error {
+func run(ctx context.Context, port int, out io.Writer) error {
 	app := gaz.New()
+
+	if out == nil {
+		out = os.Stdout
+	}
 
 	// Register the server as a singleton using For[T]().
 	// gaz automatically detects that Server implements Starter and Stopper
 	// and will call OnStart during Run() and OnStop during shutdown.
 	err := gaz.For[*Server](app.Container()).Provider(func(c *gaz.Container) (*Server, error) {
-		return &Server{port: port}, nil
+		return &Server{port: port, out: out}, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to register server: %w", err)
@@ -66,20 +70,8 @@ func run(ctx context.Context, port int) error {
 }
 
 func main() {
-	// Create a context that we can cancel
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle interrupt signal for graceful shutdown
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println("\nReceived shutdown signal")
-		cancel()
-	}()
-
-	if err := run(ctx, 8080); err != nil {
+	// gaz handles signals (SIGINT, SIGTERM) automatically during Run()
+	if err := run(context.Background(), 8080, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 
