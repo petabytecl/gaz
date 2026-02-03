@@ -91,7 +91,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 40-01-PLAN.md — Health check interface, aggregator, gRPC health server
+- [x] 40-01-PLAN.md — Health check interface, aggregator, gRPC health server
 - [ ] 40-02-PLAN.md — OpenTelemetry TracerProvider and server instrumentation
 - [ ] 40-03-PLAN.md — PGX health check and comprehensive tests
 

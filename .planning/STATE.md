@@ -14,12 +14,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 - **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 39 - Gateway Integration
-- **Plan:** 3 of 3 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-03 — Completed 39-03-PLAN.md
+- **Phase:** 40 - Observability & Health
+- **Plan:** 1 of 3 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-03 — Completed 40-01-PLAN.md
 
-Progress: [████████░░] 75% (Phase 39 complete, ready for Phase 40)
+Progress: [████████░░] 78% (Plan 40-01 complete, 2 plans remaining)
 
 ## Milestones Shipped
 
@@ -56,6 +56,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **ReadHeaderTimeout 5s:** Prevents slow loris attacks per security research.
 - **Registrar interface:** Renamed from GatewayRegistrar to avoid stutter.
 - **grpc.NewClient:** Used instead of deprecated grpc.Dial for loopback connection.
+- **gRPC health polling:** Use polling-based status sync (default 5s) for GRPCServer.
+- **Empty service name:** Use "" for overall gRPC server health per protocol convention.
 
 ### Research Summary
 
@@ -94,6 +96,8 @@ None.
 - Plan 39-02 added Gateway DI module with options and CLI flags
 - Plan 39-03 added comprehensive tests achieving 92% coverage
 - Phase 39 complete: Gateway package fully implemented and tested
+- Phase 40 started: Observability & Health
+- Plan 40-01 added gRPC health server wrapper (GRPCServer) with polling-based status sync
 
 ### Pending Todos
 
@@ -102,8 +106,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 39-03-PLAN.md (Phase 39 complete)
-Resume with: Phase 40 (Observability & Health)
+Stopped at: Completed 40-01-PLAN.md
+Resume with: 40-02-PLAN.md (OpenTelemetry TracerProvider)
 
 ---
 
