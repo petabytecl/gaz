@@ -27,9 +27,9 @@
 
 ### Infrastructure
 
-- [ ] **INF-01**: PGX health check (`jackc/pgx`)
-- [ ] **INF-02**: gRPC health check
-- [ ] **INF-03**: OpenTelemetry instrumentation
+- [x] **INF-01**: PGX health check (`jackc/pgx`)
+- [x] **INF-02**: gRPC health check
+- [x] **INF-03**: OpenTelemetry instrumentation
 
 ## Out of Scope
 
@@ -51,9 +51,9 @@
 | GW-02 | Phase 39 | Complete |
 | GW-03 | Phase 39 | Complete |
 | GW-04 | Phase 39 | Complete |
-| INF-01 | Phase 40 | Pending |
-| INF-02 | Phase 40 | Pending |
-| INF-03 | Phase 40 | Pending |
+| INF-01 | Phase 40 | Complete |
+| INF-02 | Phase 40 | Complete |
+| INF-03 | Phase 40 | Complete |
 
 **Coverage:**
 - v4.1 requirements: 11 total
