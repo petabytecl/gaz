@@ -193,7 +193,7 @@ linters:
       # NewModule returning di.Module interface is intentional design
       - linters:
           - ireturn
-        path: (config|cron|eventbus|health|worker|server/grpc|server/http)/module\.go
+        path: (config|cron|eventbus|health|worker|server|server/grpc|server/http)/module\.go
         text: "NewModule returns interface"
       # InterceptorLogger returns external interface adapter (intentional design)
       - linters:

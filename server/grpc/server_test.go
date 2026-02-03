@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1"
 
 	"github.com/petabytecl/gaz/di"
 )
@@ -49,7 +49,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerStartStop() {
 	)
 	s.Require().NoError(err)
 	s.Require().NotNil(conn)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Stop.
 	stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -88,7 +88,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflection() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Test reflection by listing services.
 	client := rpb.NewServerReflectionClient(conn)
@@ -112,10 +112,11 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflection() {
 	services := resp.GetListServicesResponse().GetService()
 	s.Require().NotEmpty(services, "Reflection should return at least one service")
 
-	// Look for reflection service.
+	// Look for reflection service (v1 or v1alpha).
 	found := false
 	for _, svc := range services {
-		if svc.Name == "grpc.reflection.v1alpha.ServerReflection" {
+		name := svc.GetName()
+		if name == "grpc.reflection.v1.ServerReflection" || name == "grpc.reflection.v1alpha.ServerReflection" {
 			found = true
 			break
 		}
@@ -157,7 +158,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerPortBindingError() {
 	// Bind a port first.
 	lis, err := net.Listen("tcp", ":0")
 	s.Require().NoError(err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	port := lis.Addr().(*net.TCPAddr).Port
 
@@ -199,7 +200,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerGracefulShutdown() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Start graceful shutdown with timeout.
 	// Graceful shutdown should complete cleanly.
@@ -240,7 +241,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Reflection should fail when disabled.
 	client := rpb.NewServerReflectionClient(conn)
@@ -260,6 +261,20 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 	s.Require().Error(err, "Reflection should not be available when disabled")
 }
 
+func (s *GRPCServerTestSuite) TestGRPCServerGetGRPCServer() {
+	// Setup.
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	logger := slog.Default()
+	container := di.New()
+
+	server := NewServer(cfg, logger, container, false)
+
+	// GRPCServer should return the underlying grpc.Server.
+	grpcServer := server.GRPCServer()
+	s.Require().NotNil(grpcServer)
+}
+
 // mockServiceRegistrar is a test double for ServiceRegistrar.
 type mockServiceRegistrar struct {
 	registered bool
@@ -276,6 +291,6 @@ func getFreePort(t *testing.T) int {
 	if err != nil {
 		t.Fatalf("failed to get free port: %v", err)
 	}
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 	return lis.Addr().(*net.TCPAddr).Port
 }

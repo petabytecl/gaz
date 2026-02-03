@@ -107,7 +107,7 @@ func (s *HTTPServerTestSuite) TestHTTPServerCustomHandler() {
 	customBody := "Hello from custom handler!"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(customBody)) //nolint:errcheck
+		_, _ = w.Write([]byte(customBody)) // Ignore error in test handler.
 	})
 
 	logger := slog.Default()
@@ -153,7 +153,7 @@ func (s *HTTPServerTestSuite) TestHTTPServerPortBindingError() {
 	// Bind a port first.
 	lis, err := net.Listen("tcp", ":0")
 	s.Require().NoError(err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	port := lis.Addr().(*net.TCPAddr).Port
 
@@ -260,7 +260,7 @@ func (s *HTTPServerTestSuite) TestHTTPServerSetHandler() {
 	customBody := "Late-bound handler!"
 	server.SetHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(customBody)) //nolint:errcheck
+		_, _ = w.Write([]byte(customBody)) // Ignore error in test handler.
 	}))
 
 	// Start.
@@ -335,6 +335,6 @@ func getFreePort(t *testing.T) int {
 	if err != nil {
 		t.Fatalf("failed to get free port: %v", err)
 	}
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 	return lis.Addr().(*net.TCPAddr).Port
 }

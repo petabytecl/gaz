@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/petabytecl/gaz/di"
@@ -106,7 +107,7 @@ func NewModule(opts ...ModuleOption) di.Module {
 		}
 		grpcModule := grpc.NewModule(grpcOpts...)
 		if err := grpcModule.Register(c); err != nil {
-			return err
+			return fmt.Errorf("register grpc module: %w", err)
 		}
 
 		// Register HTTP second (starts second, stops first).
@@ -119,7 +120,7 @@ func NewModule(opts ...ModuleOption) di.Module {
 		}
 		httpModule := shttp.NewModule(httpOpts...)
 		if err := httpModule.Register(c); err != nil {
-			return err
+			return fmt.Errorf("register http module: %w", err)
 		}
 
 		return nil
