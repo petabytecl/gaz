@@ -37,10 +37,12 @@ const (
 //
 //nolint:nilnil // nil,nil is intentional for disabled/degraded states
 func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace.TracerProvider, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	if cfg.Endpoint == "" {
-		if logger != nil {
-			logger.DebugContext(ctx, "OTEL tracing disabled, no endpoint configured")
-		}
+		logger.DebugContext(ctx, "OTEL tracing disabled, no endpoint configured")
 		return nil, nil
 	}
 
@@ -58,12 +60,10 @@ func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace
 
 	exporter, err := otlptracegrpc.New(exportCtx, exporterOpts...)
 	if err != nil {
-		if logger != nil {
-			logger.WarnContext(ctx, "failed to create OTLP exporter, tracing disabled",
-				slog.Any("error", err),
-				slog.String("endpoint", cfg.Endpoint),
-			)
-		}
+		logger.WarnContext(ctx, "failed to create OTLP exporter, tracing disabled",
+			slog.Any("error", err),
+			slog.String("endpoint", cfg.Endpoint),
+		)
 		return nil, nil // Graceful degradation.
 	}
 
@@ -103,13 +103,11 @@ func InitTracer(ctx context.Context, cfg Config, logger *slog.Logger) (*sdktrace
 		propagation.Baggage{},
 	))
 
-	if logger != nil {
-		logger.InfoContext(ctx, "OTEL tracing initialized",
-			slog.String("endpoint", cfg.Endpoint),
-			slog.String("service", cfg.ServiceName),
-			slog.Float64("sample_ratio", sampleRatio),
-		)
-	}
+	logger.InfoContext(ctx, "OTEL tracing initialized",
+		slog.String("endpoint", cfg.Endpoint),
+		slog.String("service", cfg.ServiceName),
+		slog.Float64("sample_ratio", sampleRatio),
+	)
 
 	return tp, nil
 }
