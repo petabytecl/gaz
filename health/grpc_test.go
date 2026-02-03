@@ -82,7 +82,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	s.Require().NoError(err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
 	grpcHealthServer.Register(srv)
@@ -113,7 +113,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := healthpb.NewHealthClient(conn)
 
@@ -122,7 +122,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 
 	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
 	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.Status)
+	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
 }
 
 func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
@@ -138,7 +138,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	s.Require().NoError(err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
 	grpcHealthServer.Register(srv)
@@ -169,7 +169,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := healthpb.NewHealthClient(conn)
 
@@ -178,7 +178,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 
 	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
 	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.Status)
+	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
 }
 
 func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
@@ -199,7 +199,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	s.Require().NoError(err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
 	grpcHealthServer.Register(srv)
@@ -230,7 +230,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	s.Require().NoError(err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := healthpb.NewHealthClient(conn)
 
@@ -239,7 +239,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
 	checkCancel()
 	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.Status)
+	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
 
 	// Toggle to unhealthy.
 	healthy.Store(false)
@@ -252,7 +252,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	resp, err = client.Check(checkCtx2, &healthpb.HealthCheckRequest{Service: ""})
 	checkCancel2()
 	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.Status)
+	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
 }
 
 func (s *GRPCServerTestSuite) TestGRPCServer_StopCleanly() {
@@ -336,7 +336,7 @@ func TestGRPCServer_NoChecks_Healthy(t *testing.T) {
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	defer lis.Close()
+	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
 	grpcHealthServer.Register(srv)
@@ -365,7 +365,7 @@ func TestGRPCServer_NoChecks_Healthy(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := healthpb.NewHealthClient(conn)
 
@@ -374,5 +374,5 @@ func TestGRPCServer_NoChecks_Healthy(t *testing.T) {
 
 	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
 	require.NoError(t, err)
-	assert.Equal(t, healthpb.HealthCheckResponse_SERVING, resp.Status)
+	assert.Equal(t, healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
 }

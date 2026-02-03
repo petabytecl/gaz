@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -110,7 +111,7 @@ func (s *GRPCServer) OnStop(ctx context.Context) error {
 		s.logger.InfoContext(ctx, "gRPC health server stopped")
 	case <-ctx.Done():
 		s.logger.WarnContext(ctx, "gRPC health server stop timed out")
-		return ctx.Err()
+		return fmt.Errorf("grpc health server stop: %w", ctx.Err())
 	}
 
 	// Mark all services as NOT_SERVING on shutdown.

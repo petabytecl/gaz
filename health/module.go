@@ -2,6 +2,8 @@ package health
 
 import (
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/petabytecl/gaz/di"
 )
@@ -14,6 +16,8 @@ type moduleConfig struct {
 	livenessPath  string
 	readinessPath string
 	startupPath   string
+	enableGRPC    bool
+	grpcInterval  time.Duration
 }
 
 func defaultModuleConfig() *moduleConfig {
@@ -23,6 +27,8 @@ func defaultModuleConfig() *moduleConfig {
 		livenessPath:  cfg.LivenessPath,
 		readinessPath: cfg.ReadinessPath,
 		startupPath:   cfg.StartupPath,
+		enableGRPC:    false,
+		grpcInterval:  DefaultGRPCCheckInterval,
 	}
 }
 
@@ -54,6 +60,26 @@ func WithStartupPath(path string) ModuleOption {
 	}
 }
 
+// WithGRPC enables the gRPC health server.
+// When enabled, GRPCServer is registered and can be resolved by the gRPC server module.
+// The GRPCServer syncs status from the Manager's readiness checks to the standard
+// grpc.health.v1.Health service.
+func WithGRPC() ModuleOption {
+	return func(c *moduleConfig) {
+		c.enableGRPC = true
+	}
+}
+
+// WithGRPCInterval sets the gRPC health check polling interval.
+// Default is 5 seconds. Only effective when WithGRPC() is also used.
+func WithGRPCInterval(d time.Duration) ModuleOption {
+	return func(c *moduleConfig) {
+		if d > 0 {
+			c.grpcInterval = d
+		}
+	}
+}
+
 // NewModule creates a health module with the given options.
 // Returns a di.Module that registers health check components.
 //
@@ -62,12 +88,14 @@ func WithStartupPath(path string) ModuleOption {
 //   - *health.ShutdownCheck
 //   - *health.Manager
 //   - *health.ManagementServer (eager, starts HTTP server)
+//   - *health.GRPCServer (eager, if WithGRPC() is used)
 //
 // Example:
 //
 //	app := gaz.New()
 //	app.UseDI(health.NewModule())                           // defaults
 //	app.UseDI(health.NewModule(health.WithPort(8081)))      // custom port
+//	app.UseDI(health.NewModule(health.WithGRPC()))          // enable gRPC health
 func NewModule(opts ...ModuleOption) di.Module {
 	cfg := defaultModuleConfig()
 	for _, opt := range opts {
@@ -86,8 +114,19 @@ func NewModule(opts ...ModuleOption) di.Module {
 			return fmt.Errorf("register health config: %w", err)
 		}
 
-		// Delegate to existing Module() for component registration
-		return Module(c)
+		// Register core components
+		if err := Module(c); err != nil {
+			return err
+		}
+
+		// Register GRPCServer if enabled
+		if cfg.enableGRPC {
+			if err := registerGRPCServer(c, cfg.grpcInterval); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 }
 
@@ -149,6 +188,31 @@ func Module(c *di.Container) error {
 			return NewManagementServer(cfg, manager, shutdownCheck), nil
 		}); err != nil {
 		return fmt.Errorf("register management server: %w", err)
+	}
+
+	return nil
+}
+
+// registerGRPCServer registers the GRPCServer component.
+func registerGRPCServer(c *di.Container, interval time.Duration) error {
+	// Register GRPCServer (implements di.Starter and di.Stopper)
+	if err := di.For[*GRPCServer](c).
+		Eager().
+		Provider(func(c *di.Container) (*GRPCServer, error) {
+			manager, err := di.Resolve[*Manager](c)
+			if err != nil {
+				return nil, fmt.Errorf("resolve health manager: %w", err)
+			}
+
+			// Logger is optional - use default if not registered
+			logger := slog.Default()
+			if l, resolveErr := di.Resolve[*slog.Logger](c); resolveErr == nil {
+				logger = l
+			}
+
+			return NewGRPCServer(manager, logger, WithCheckInterval(interval)), nil
+		}); err != nil {
+		return fmt.Errorf("register grpc health server: %w", err)
 	}
 
 	return nil

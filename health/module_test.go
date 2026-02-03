@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/petabytecl/gaz/di"
 )
@@ -144,6 +145,7 @@ func TestModule_ConfigNotRegistered(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo,cyclop // Test function with many subtests
 func TestNewModule(t *testing.T) {
 	t.Run("zero arguments uses defaults", func(t *testing.T) {
 		c := di.New()
@@ -262,6 +264,66 @@ func TestNewModule(t *testing.T) {
 
 		if _, err := di.Resolve[*ManagementServer](c); err != nil {
 			t.Errorf("ManagementServer not resolved: %v", err)
+		}
+	})
+
+	t.Run("WithGRPC registers GRPCServer", func(t *testing.T) {
+		c := di.New()
+		m := NewModule(WithGRPC())
+
+		if err := m.Register(c); err != nil {
+			t.Fatalf("Register failed: %v", err)
+		}
+
+		if err := c.Build(); err != nil {
+			t.Fatalf("Build failed: %v", err)
+		}
+
+		// Verify GRPCServer is registered
+		if _, err := di.Resolve[*GRPCServer](c); err != nil {
+			t.Errorf("GRPCServer not resolved: %v", err)
+		}
+	})
+
+	t.Run("WithGRPCInterval configures interval", func(t *testing.T) {
+		c := di.New()
+		m := NewModule(WithGRPC(), WithGRPCInterval(10*time.Second))
+
+		if err := m.Register(c); err != nil {
+			t.Fatalf("Register failed: %v", err)
+		}
+
+		if err := c.Build(); err != nil {
+			t.Fatalf("Build failed: %v", err)
+		}
+
+		// Verify GRPCServer is registered
+		server, err := di.Resolve[*GRPCServer](c)
+		if err != nil {
+			t.Fatalf("GRPCServer not resolved: %v", err)
+		}
+
+		// Check interval
+		if server.interval != 10*time.Second {
+			t.Errorf("Expected interval 10s, got %v", server.interval)
+		}
+	})
+
+	t.Run("without WithGRPC does not register GRPCServer", func(t *testing.T) {
+		c := di.New()
+		m := NewModule() // No WithGRPC()
+
+		if err := m.Register(c); err != nil {
+			t.Fatalf("Register failed: %v", err)
+		}
+
+		if err := c.Build(); err != nil {
+			t.Fatalf("Build failed: %v", err)
+		}
+
+		// Verify GRPCServer is NOT registered
+		if di.Has[*GRPCServer](c) {
+			t.Error("GRPCServer should not be registered without WithGRPC()")
 		}
 	})
 }
