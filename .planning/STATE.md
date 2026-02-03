@@ -14,12 +14,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 - **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 37 - Core Discovery
-- **Plan:** 2 of 2 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-02 — Completed 37-02-PLAN.md
+- **Phase:** 38 - Transport Foundations
+- **Plan:** 2 of 3 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-03 — Completed 38-02-PLAN.md
 
-Progress: [███░░░░░░░] 30% (Phase 37 complete)
+Progress: [████░░░░░░] 40% (Phase 38 in progress)
 
 ## Milestones Shipped
 
@@ -52,6 +52,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Ambiguity Handling:** Resolve returns ErrAmbiguous if multiple services registered.
 - **Plugin Pattern:** Use `gaz.ResolveAll` to discover services implementing an interface.
 - **Group Resolution:** Use `gaz.ResolveGroup` for categorized discovery (e.g., "system" vs "user" plugins).
+- **HTTP Default Port 8080:** Standard HTTP port for Gateway, separate from health (9090) and gRPC (50051).
+- **ReadHeaderTimeout 5s:** Prevents slow loris attacks per security research.
 
 ### Research Summary
 
@@ -79,6 +81,9 @@ None.
 - Quick Task 004 defined specs for v4.1 (HTTP/gRPC/Gateway).
 - Roadmap v4.1 created with 4 phases (37-40).
 - Phase 37 complete (Discovery).
+- Phase 38 in progress (Transport Foundations).
+- Plan 38-01 added gRPC server with interceptors.
+- Plan 38-02 added HTTP server with timeout protection.
 
 ### Pending Todos
 
@@ -86,9 +91,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: Completed 37-02-PLAN.md
-Resume with: `/gsd-plan-phase 38`
+Last session: 2026-02-03
+Stopped at: Completed 38-02-PLAN.md
+Resume with: `/gsd-execute-phase 38` (plan 03 remaining)
 
 ---
 
