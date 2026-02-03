@@ -1,3 +1,4 @@
+// Package pgx provides a health check for PostgreSQL databases using pgx/v5.
 package pgx
 
 import (
@@ -11,10 +12,20 @@ import (
 // ErrNilPool is returned when the pool is nil.
 var ErrNilPool = errors.New("pgx: pool is nil")
 
+// Pinger is an interface for types that can ping a database.
+// This interface is satisfied by *pgxpool.Pool.
+type Pinger interface {
+	Ping(ctx context.Context) error
+}
+
+// Compile-time check that pgxpool.Pool implements Pinger.
+var _ Pinger = (*pgxpool.Pool)(nil)
+
 // Config configures the PGX database health check.
 type Config struct {
 	// Pool is the pgx connection pool to check. Required.
-	Pool *pgxpool.Pool
+	// This accepts *pgxpool.Pool or any type implementing Pinger.
+	Pool Pinger
 }
 
 // New creates a new PGX database health check.

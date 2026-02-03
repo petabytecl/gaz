@@ -435,3 +435,33 @@ func TestRegisterTracerStopper_WithEnabledTracing(t *testing.T) {
 	err = stopper.OnStop(context.Background())
 	assert.NoError(t, err)
 }
+
+func TestRegisterTracerProvider_MissingConfig(t *testing.T) {
+	c := di.New()
+
+	// Register logger but NOT Config
+	err := di.For[*slog.Logger](c).Instance(slog.Default())
+	require.NoError(t, err)
+
+	// Register tracer provider - registration should succeed, resolution should fail
+	err = registerTracerProvider(c)
+	require.NoError(t, err)
+
+	// Resolving should fail due to missing Config
+	_, err = di.Resolve[*sdktrace.TracerProvider](c)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "config")
+}
+
+func TestRegisterTracerStopper_MissingProvider(t *testing.T) {
+	c := di.New()
+
+	// Don't register TracerProvider
+	// Register stopper - registration should succeed
+	err := registerTracerStopper(c)
+	require.NoError(t, err)
+
+	// Resolving should fail due to missing TracerProvider
+	_, err = di.Resolve[*tracerProviderStopper](c)
+	require.Error(t, err)
+}

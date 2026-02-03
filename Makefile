@@ -11,11 +11,16 @@ help: ## Show this help message
 
 TEST_PKG := ./...
 
+# Packages to exclude from coverage (examples, tests, generated code)
+COVER_EXCLUDE := examples tests
+
 test: ## Run tests
 	go test -race $(TEST_PKG)
 
 cover: ## Run tests with coverage (excludes examples)
-	go test -race -coverprofile=coverage.out -covermode=atomic $(TEST_PKG)
+	@# Get list of packages excluding examples and tests directories
+	$(eval COVER_PKGS := $(shell go list ./... | grep -v -E '/(examples|tests)/'))
+	go test -race -coverprofile=coverage.out -covermode=atomic $(COVER_PKGS)
 	@go tool cover -func=coverage.out
 	@coverage=$$(go tool cover -func=coverage.out | grep total | grep -oE '[0-9]+\.[0-9]+'); \
 	echo "Coverage: $${coverage}%"; \
