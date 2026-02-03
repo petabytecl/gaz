@@ -439,6 +439,7 @@ linters:
             - golang.org/x/term
             - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
+            - github.com/jackc/pgx/v5
             - go.uber.org/mock
             - google.golang.org/grpc
             - google.golang.org/protobuf
@@ -473,6 +474,7 @@ linters:
             - golang.org/x/term
             - github.com/valkey-io/valkey-go
             - github.com/shirou/gopsutil/v4
+            - github.com/jackc/pgx/v5
             - go.uber.org/mock
             - google.golang.org/grpc
             - google.golang.org/protobuf

@@ -120,7 +120,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 	// Auto-register gRPC health server if available.
 	// This enables standard grpc.health.v1 endpoints when health module
 	// is configured with WithGRPC().
-	if grpcHealth, err := di.Resolve[*health.GRPCServer](s.container); err == nil && grpcHealth != nil {
+	if grpcHealth, resolveErr := di.Resolve[*health.GRPCServer](s.container); resolveErr == nil && grpcHealth != nil {
 		grpcHealth.Register(s.server)
 		s.logger.DebugContext(ctx, "gRPC health server registered")
 	}
