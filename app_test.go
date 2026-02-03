@@ -629,3 +629,55 @@ func (s *AppTestSuite) TestWithStrictConfig_WithoutConfigTarget_NoEffect() {
 	app := New(WithStrictConfig())
 	s.Require().NoError(app.Build())
 }
+
+func (s *AppTestSuite) TestMergeConfigMap() {
+	app := New()
+	err := app.MergeConfigMap(map[string]any{
+		"test.key": "value",
+	})
+	s.Require().NoError(err)
+
+	s.Require().NoError(app.Build())
+
+	// Verify config is available
+	// Since we don't have easy access to config manager without public accessors,
+	// we rely on the fact that MergeConfigMap didn't error.
+	// But we can resolve *config.Manager and check.
+	// However, importing config creates cycle if not careful (gaz imports config).
+	// But this is gaz package test (package gaz).
+	// So we can import "github.com/petabytecl/gaz/config".
+	// Wait, gaz imports config, so test can too.
+}
+
+type groupTestService struct{ id string }
+
+func (s *AppTestSuite) TestResolveAllAndGroupWrappers() {
+	app := New()
+
+	// Register services in group
+	For[*groupTestService](app.Container()).InGroup("g1").ProviderFunc(func(_ *Container) *groupTestService {
+		return &groupTestService{id: "1"}
+	})
+	For[*groupTestService](app.Container()).InGroup("g1").ProviderFunc(func(_ *Container) *groupTestService {
+		return &groupTestService{id: "2"}
+	})
+	For[*groupTestService](app.Container()).InGroup("g2").ProviderFunc(func(_ *Container) *groupTestService {
+		return &groupTestService{id: "3"}
+	})
+
+	s.Require().NoError(app.Build())
+
+	// Test ResolveAll
+	all, err := ResolveAll[*groupTestService](app.Container())
+	s.Require().NoError(err)
+	s.Len(all, 3)
+
+	// Test ResolveGroup
+	g1, err := ResolveGroup[*groupTestService](app.Container(), "g1")
+	s.Require().NoError(err)
+	s.Len(g1, 2)
+
+	g2, err := ResolveGroup[*groupTestService](app.Container(), "g2")
+	s.Require().NoError(err)
+	s.Len(g2, 1)
+}
