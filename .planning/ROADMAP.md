@@ -88,6 +88,12 @@ Plans:
 **Goal:** Expose standard health checks and telemetry for production monitoring.
 **Dependencies:** Phase 38 (Servers)
 **Requirements:** INF-01, INF-02, INF-03
+**Plans:** 3 plans
+
+Plans:
+- [ ] 40-01-PLAN.md — Health check interface, aggregator, gRPC health server
+- [ ] 40-02-PLAN.md — OpenTelemetry TracerProvider and server instrumentation
+- [ ] 40-03-PLAN.md — PGX health check and comprehensive tests
 
 **Success Criteria:**
 1. Standard gRPC Health Verification endpoint returns serving status.
@@ -102,4 +108,4 @@ Plans:
 | 38 | Transport Foundations | **Complete** | TRN-01, TRN-02, TRN-03, GW-01 |
 | 38.1 | gRPC/HTTP CLI Flags | **Complete** | TRN-01, TRN-02 |
 | 39 | Gateway Integration | **Complete** | GW-02, GW-03, GW-04 |
-| 40 | Observability & Health | Pending | INF-01, INF-02, INF-03 |
+| 40 | Observability & Health | In Progress | INF-01, INF-02, INF-03 |
