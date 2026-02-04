@@ -129,6 +129,28 @@ Plans:
 **Details:**
 Refactor framework to improve config/flag management, signal/blocking management, and general ergonomics to match expected DX as demonstrated in examples/grpc-gateway/ux._expected_go.
 
+### Phase 43: Logger CLI Flags
+**Goal:** Enable logger module to register CLI flags for runtime configuration (format, level, output).
+**Depends on:** Phase 42
+**Plans:** 1 plan
+
+Plans:
+- [ ] 43-01-PLAN.md — Add logger module with CLI flag support (--log-level, --log-format, --log-output, --log-add-source)
+
+**Details:**
+Logger should register flags to get configurations from the CLI, like text vs json format, log level, etc.
+
+### Phase 44: Config File CLI Flag
+**Goal:** Enable configuration to register a `--config` flag to receive a config file path as an argument.
+**Depends on:** Phase 43
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 44 to break down)
+
+**Details:**
+[To be added during planning]
+
 ## Progress
 
 | Phase | Goal | Status | Requirements |
@@ -139,3 +161,6 @@ Refactor framework to improve config/flag management, signal/blocking management
 | 39 | Gateway Integration | **Complete** | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | **Complete** | INF-01, INF-02, INF-03 |
 | 41 | Refactor Server Arch | **Complete** | - |
+| 42 | Framework Ergonomics | In Progress | - |
+| 43 | Logger CLI Flags | Planned | - |
+| 44 | Config File CLI Flag | Planned | - |
