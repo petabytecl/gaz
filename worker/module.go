@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/petabytecl/gaz/di"
@@ -16,7 +17,7 @@ import (
 //	import workermod "github.com/petabytecl/gaz/worker/module"
 //	app.Use(workermod.New())
 func Module(c *di.Container) error {
-	return di.For[*Manager](c).Provider(func(c *di.Container) (*Manager, error) {
+	if err := di.For[*Manager](c).Provider(func(c *di.Container) (*Manager, error) {
 		// Logger is optional - use default if not registered
 		logger := slog.Default()
 		if l, err := di.Resolve[*slog.Logger](c); err == nil {
@@ -24,5 +25,8 @@ func Module(c *di.Container) error {
 		}
 
 		return NewManager(logger), nil
-	})
+	}); err != nil {
+		return fmt.Errorf("register manager: %w", err)
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package eventbus
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/petabytecl/gaz/di"
@@ -22,7 +23,7 @@ func Module(c *di.Container) error {
 		return nil
 	}
 
-	return di.For[*EventBus](c).Provider(func(c *di.Container) (*EventBus, error) {
+	if err := di.For[*EventBus](c).Provider(func(c *di.Container) (*EventBus, error) {
 		// Logger is optional - use default if not registered
 		logger := slog.Default()
 		if l, err := di.Resolve[*slog.Logger](c); err == nil {
@@ -30,5 +31,8 @@ func Module(c *di.Container) error {
 		}
 
 		return New(logger), nil
-	})
+	}); err != nil {
+		return fmt.Errorf("register eventbus: %w", err)
+	}
+	return nil
 }
