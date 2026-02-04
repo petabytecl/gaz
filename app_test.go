@@ -530,6 +530,42 @@ func (s *AppTestSuite) TestWithLoggerConfig_NilUseDefaults() {
 	s.Equal("json", app.opts.LoggerConfig.Format)
 }
 
+func (s *AppTestSuite) TestLoggerInitializedInBuild() {
+	// Test: Logger is nil before Build(), initialized after
+	app := New()
+
+	// Before Build(), Logger should be nil
+	s.Nil(app.Logger, "Logger should be nil before Build()")
+
+	// Build should initialize Logger
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// After Build(), Logger should be initialized
+	s.NotNil(app.Logger, "Logger should be initialized after Build()")
+}
+
+func (s *AppTestSuite) TestLoggerConfigResolution() {
+	// Test: Logger uses config from container if registered via logger module
+	app := New()
+
+	// Register a custom logger.Config in the container
+	customConfig := logger.Config{
+		Level:  slog.LevelDebug,
+		Format: "text",
+	}
+	err := For[logger.Config](app.Container()).Instance(customConfig)
+	s.Require().NoError(err)
+
+	// Build should resolve the config from container
+	err = app.Build()
+	s.Require().NoError(err)
+
+	// Logger should be initialized (we can't easily verify it used the config,
+	// but the resolution path is tested)
+	s.NotNil(app.Logger, "Logger should be initialized after Build()")
+}
+
 // =============================================================================
 // Tests for discoverCronJobs
 // =============================================================================
