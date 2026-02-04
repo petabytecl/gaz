@@ -2,21 +2,18 @@
 
 ## What This Is
 
-A unified Go application framework that consolidates dependency injection, application lifecycle management, configuration, and observability into a single cohesive library. Provides type-safe generics-based DI, background workers, cron scheduling, and event bus for in-process pub/sub — all integrated with a consistent lifecycle model.
+A unified Go application framework that consolidates dependency injection, application lifecycle management, configuration, and observability into a single cohesive library. Provides type-safe generics-based DI, background workers, cron scheduling, event bus for in-process pub/sub, and production-ready HTTP/gRPC server capabilities — all integrated with a consistent lifecycle model.
 
 ## Core Value
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
-## Current Milestone: v4.1 Server & Transport Layer
+## Current State
 
-**Goal:** Implement production-ready HTTP and gRPC server capabilities with a unified Gateway pattern.
-
-**Target features:**
-- HTTP Server (`net/http`, `http.ServeMux`, `Starter`/`Stopper`)
-- gRPC Server (`google.golang.org/grpc`, Interceptors, Reflection)
-- gRPC-Gateway (HTTP proxy to gRPC, dynamic registration)
-- Infrastructure (PGX support in health checks, gRPC health checks)
+**Version:** v4.1 (shipped 2026-02-04)
+**Codebase:** 123,663 lines of Go
+**Coverage:** 90%+
+**Next:** TBD — start with `/gsd-new-milestone`
 
 ## Requirements
 
@@ -57,14 +54,18 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 - ✓ Internal health package with parallel checks, IETF format — v4.0
 - ✓ Builtin health checks (SQL, Redis, HTTP, TCP, DNS, Runtime, Disk) — v4.0
 - ✓ Core Discovery (multi-binding, ResolveAll, ResolveGroup) — v4.1
+- ✓ HTTP Server with configurable timeouts — v4.1
+- ✓ gRPC Server with Interceptors (logging, recovery, OTEL) — v4.1
+- ✓ gRPC-Gateway (Unified proxy with auto-discovery) — v4.1
+- ✓ PGX health check — v4.1
+- ✓ gRPC health check — v4.1
+- ✓ OpenTelemetry instrumentation — v4.1
+- ✓ Logger CLI Flags (--log-level, --log-format, etc.) — v4.1
+- ✓ Config CLI Flags (--config, --env-prefix, --config-strict) — v4.1
 
 ### Active
 
-- [ ] HTTP Server (Standard Library)
-- [ ] gRPC Server (google.golang.org/grpc)
-- [ ] gRPC-Gateway (Unified proxy)
-- [ ] Database Health Checks (pgx)
-- [ ] gRPC Health Checks
+(None — next milestone TBD)
 
 ### Out of Scope
 
@@ -72,13 +73,15 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 - Backward compatibility with dibx/gazx — clean break, fresh API
 - External message queues (Kafka, RabbitMQ) — EventBus is in-process only
 - Distributed workers/cron — use asynq for distributed jobs
+- cmux / Single Port — Research indicates fragility and K8s ingress issues
+- HTTP/3 (QUIC) — Defer until library maturity improves
 
 ## Context
 
-Shipped v4.0 on 2026-02-02.
-Framework now has minimal external dependencies (Cobra, Viper, gopsutil, valkey-go).
-All critical infrastructure (backoff, logging, cron, health) uses internal implementations.
-Test coverage at 91.7% overall.
+Shipped v4.1 on 2026-02-04.
+Framework now has production-ready HTTP and gRPC server capabilities with dynamic Gateway pattern.
+CLI flags for logger and config enable zero-code configuration.
+Test coverage at 90%+ overall.
 
 This is an extraction and redesign of two internal libraries:
 
@@ -105,9 +108,9 @@ Target: Internal use first, open source viability later.
 ## Constraints
 
 - **Language**: Go 1.25+ (generics, slog in stdlib)
-- **Dependencies**: Minimal external deps; Cobra and Viper only. For v4.1: net/http, grpc, pgx.
+- **Dependencies**: Minimal external deps; Cobra, Viper, grpc, pgx
 - **API Surface**: Convention over configuration — sensible defaults, escape hatches when needed
-- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service, backoff, logger/tint, transport/http, transport/grpc, transport/gateway)
+- **Package Structure**: Core gaz package + subpackages (di, config, worker, cron, eventbus, health, gaztest, service, backoff, logger, server)
 
 ## Key Decisions
 
@@ -144,6 +147,12 @@ Target: Internal use first, open source viability later.
 | Builtin health checks | Production-ready checks for common infra | ✓ Good (v4.0) |
 | Implicit Collection for DI | Multiple `For` calls append, `Replace` overwrites | ✓ Good (v4.1) |
 | Discovery via Groups | `InGroup` tagging and `ResolveGroup` | ✓ Good (v4.1) |
+| Port Separation (no cmux) | Avoid fragility and K8s ingress issues | ✓ Good (v4.1) |
+| Auto-Discovery via Registrar | Gateway uses di.List[Registrar] to find services | ✓ Good (v4.1) |
+| Deferred Flag Registration | Decouples App.Use from Cobra for order independence | ✓ Good (v4.1) |
+| WithCobra as Option | Flags available before logger creation | ✓ Good (v4.1) |
+| Logger/Config Module Subpackages | Avoids circular imports with gaz package | ✓ Good (v4.1) |
+| Type Aliasing for Lifecycle Types | Single source of truth in di package | ✓ Good (v4.1) |
 
 ---
-*Last updated: 2026-02-02 after Phase 37 completion*
+*Last updated: 2026-02-04 after v4.1 milestone*

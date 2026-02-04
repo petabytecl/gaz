@@ -1,5 +1,35 @@
 # Project Milestones: gaz
 
+## v4.1 Server & Transport Layer (Shipped: 2026-02-04)
+
+**Delivered:** Production-ready gRPC and HTTP server capabilities with dynamic Gateway pattern, CLI flags for logger and config, and framework ergonomics improvements.
+
+**Phases completed:** 37-45 (23 plans total, including Phase 38.1 inserted)
+
+**Key accomplishments:**
+
+- Core Discovery API with `di.List[T]`, `gaz.ResolveAll`, and `gaz.ResolveGroup` for plugin patterns
+- Production-ready gRPC Server with interceptors (logging, recovery, OTEL), reflection, and CLI flags
+- Production-ready HTTP Server with configurable timeouts and CLI flags
+- gRPC-Gateway with dynamic HTTP→gRPC proxy, auto-service discovery via `Registrar`, CORS support
+- Observability Suite with OpenTelemetry TracerProvider, gRPC Health Server, PGX health check
+- Framework Ergonomics with deferred flag registration, Cobra lifecycle management
+- Logger CLI Flags (`--log-level`, `--log-format`, `--log-output`, `--log-add-source`)
+- Config CLI Flags (`--config`, `--env-prefix`, `--config-strict`) with XDG auto-search
+
+**Stats:**
+
+- 252 files modified
+- 21,548 lines added (net)
+- 10 phases, 23 plans
+- 2 days from milestone start to ship
+
+**Git range:** `v4.0` → `v4.1` (196 commits)
+
+**What's next:** TBD — start with `/gsd-new-milestone`
+
+---
+
 ## v4.0 Dependency Reduction (Shipped: 2026-02-02)
 
 **Delivered:** Replaced 4 external dependencies with internal implementations (backoff, tint, cron, health) and added builtin health checks for production infrastructure monitoring.
