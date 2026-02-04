@@ -2,7 +2,6 @@ package eventbus
 
 import (
 	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,49 +9,48 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-func TestNewModule(t *testing.T) {
-	t.Run("zero arguments works with defaults", func(t *testing.T) {
+func TestModule(t *testing.T) {
+	t.Run("registers EventBus", func(t *testing.T) {
 		c := di.New()
 
 		// Register logger prerequisite
-		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		err := di.For[*slog.Logger](c).Instance(logger)
+		err := di.For[*slog.Logger](c).Instance(slog.Default())
 		require.NoError(t, err)
 
-		// Register module
-		module := NewModule()
-		err = module.Register(c)
+		// Apply module
+		err = Module(c)
 		require.NoError(t, err)
+
+		// Build container
+		err = c.Build()
+		require.NoError(t, err)
+
+		// Verify EventBus resolves
+		bus, err := di.Resolve[*EventBus](c)
+		require.NoError(t, err)
+		require.NotNil(t, bus)
+
+		// Cleanup
+		bus.Close()
 	})
 
-	t.Run("returns valid di.Module", func(t *testing.T) {
-		mod := NewModule()
-		require.NotNil(t, mod)
-		require.Equal(t, "eventbus", mod.Name())
-	})
-
-	t.Run("accepts options", func(t *testing.T) {
-		// Test that options can be passed (even if none are currently defined)
-		mod := NewModule()
-		require.NotNil(t, mod)
-
+	t.Run("uses slog.Default when logger not registered", func(t *testing.T) {
 		c := di.New()
 
-		// Register logger prerequisite
-		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		err := di.For[*slog.Logger](c).Instance(logger)
+		// Apply module without registering logger
+		err := Module(c)
 		require.NoError(t, err)
 
-		err = mod.Register(c)
+		// Build container
+		err = c.Build()
 		require.NoError(t, err)
-	})
 
-	t.Run("succeeds even without logger", func(t *testing.T) {
-		// Module gracefully handles missing logger (returns nil, not error)
-		c := di.New()
+		// EventBus should still resolve (using slog.Default)
+		bus, err := di.Resolve[*EventBus](c)
+		require.NoError(t, err)
+		require.NotNil(t, bus)
 
-		module := NewModule()
-		err := module.Register(c)
-		require.NoError(t, err) // Module doesn't fail, just doesn't validate
+		// Cleanup
+		bus.Close()
 	})
 }

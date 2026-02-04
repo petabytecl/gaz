@@ -6,50 +6,29 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-// ModuleOption configures the eventbus module.
-type ModuleOption func(*moduleConfig)
-
-type moduleConfig struct {
-	// Currently no configurable options exposed
-	// Placeholder for future extensibility (e.g., WithBufferSize)
-}
-
-func defaultModuleConfig() *moduleConfig {
-	return &moduleConfig{}
-}
-
-// NewModule creates an eventbus module with the given options.
-// Returns a di.Module that provides pub/sub infrastructure.
+// Module registers eventbus infrastructure into the DI container.
+// It provides a *EventBus for in-process pub/sub messaging.
 //
-// Prerequisites:
-//   - *slog.Logger must be registered (automatically registered by gaz.New())
+// If *EventBus is already registered (e.g., by gaz.App), this is a no-op.
+// The logger is optional - if not registered, slog.Default() is used.
 //
-// Note: EventBus is auto-created during gaz.New() and registered in the
-// container. This module provides explicit opt-in and future configuration.
+// For CLI/App integration with flags, use the eventbus/module subpackage:
 //
-// Example:
-//
-//	app := gaz.New()
-//	app.UseDI(eventbus.NewModule())
-func NewModule(opts ...ModuleOption) di.Module {
-	cfg := defaultModuleConfig()
-	for _, opt := range opts {
-		opt(cfg)
+//	import eventbusmod "github.com/petabytecl/gaz/eventbus/module"
+//	app.Use(eventbusmod.New())
+func Module(c *di.Container) error {
+	// Skip if already registered (e.g., by gaz.App)
+	if di.Has[*EventBus](c) {
+		return nil
 	}
 
-	return di.NewModuleFunc("eventbus", func(c *di.Container) error {
-		// Validate prerequisites
-		if !di.Has[*slog.Logger](c) {
-			// Logger is auto-registered by gaz.New(), so this should never fail
-			// in normal usage. This check exists for direct di.Container usage.
-			return nil
+	return di.For[*EventBus](c).Provider(func(c *di.Container) (*EventBus, error) {
+		// Logger is optional - use default if not registered
+		logger := slog.Default()
+		if l, err := di.Resolve[*slog.Logger](c); err == nil {
+			logger = l
 		}
 
-		// EventBus is auto-created in gaz.New() and registered.
-		// This module validates prerequisites and serves as foundation
-		// for future options (e.g., WithBufferSize, WithErrorHandler).
-		_ = cfg // Future: use cfg for configuration
-
-		return nil
+		return New(logger), nil
 	})
 }

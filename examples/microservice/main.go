@@ -22,6 +22,7 @@ import (
 	"github.com/petabytecl/gaz/eventbus"
 	healthmod "github.com/petabytecl/gaz/health/module"
 	"github.com/petabytecl/gaz/worker"
+	workermod "github.com/petabytecl/gaz/worker/module"
 )
 
 // --- Events ---
@@ -262,11 +263,10 @@ func run(ctx context.Context) error {
 	// Note: --health-port flag allows overriding the port via CLI
 	app.Use(healthmod.New())
 
-	// Worker module: validates worker prerequisites
-	app.UseDI(worker.NewModule())
+	// Worker module: provides worker.Manager
+	app.Use(workermod.New())
 
-	// EventBus module: provides pub/sub infrastructure
-	app.UseDI(eventbus.NewModule())
+	// Note: EventBus is auto-registered by gaz.App, no module needed
 
 	// Register OrderProcessor (eager = auto-start)
 	if err := gaz.For[*OrderProcessor](app.Container()).

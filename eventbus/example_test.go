@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 )
 
@@ -198,14 +199,38 @@ func Example_typedEvents() {
 	// Output: Payment: 99.99
 }
 
-// ExampleNewModule demonstrates creating an eventbus module.
-func ExampleNewModule() {
-	// Create the eventbus module
-	module := eventbus.NewModule()
+// ExampleModule demonstrates using the eventbus module for direct DI usage.
+func ExampleModule() {
+	// Create a DI container
+	c := di.New()
 
-	// The module returns a di.Module that can be used with app.UseDI()
-	fmt.Printf("Module type: %T\n", module)
-	// Output: Module type: *di.ModuleFunc
+	// Register logger (normally done by gaz.New())
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelError, // Suppress info logs for example
+	}))
+	_ = di.For[*slog.Logger](c).Instance(logger)
+
+	// Apply eventbus module
+	if err := eventbus.Module(c); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	// Build and resolve
+	if err := c.Build(); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	bus, err := di.Resolve[*eventbus.EventBus](c)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	defer bus.Close()
+
+	fmt.Printf("EventBus: %T\n", bus)
+	// Output: EventBus: *eventbus.EventBus
 }
 
 // ExampleTestBus demonstrates using the test bus factory.
