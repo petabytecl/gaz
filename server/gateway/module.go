@@ -8,6 +8,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz"
+	servergrpc "github.com/petabytecl/gaz/server/grpc"
 	serverhttp "github.com/petabytecl/gaz/server/http"
 )
 
@@ -77,6 +78,15 @@ func newGatewayProvider(c *gaz.Container) (*Gateway, error) {
 	cfg, err := gaz.Resolve[Config](c)
 	if err != nil {
 		return nil, fmt.Errorf("resolve gateway config: %w", err)
+	}
+
+	// Auto-configure GRPCTarget from grpc.Config if available and using defaults
+	if cfg.GRPCTarget == DefaultGRPCTarget {
+		if grpcCfg, err := gaz.Resolve[servergrpc.Config](c); err == nil {
+			// If gRPC config is available in the same container, point to it.
+			// This handles the case where --grpc-port is changed but gateway target isn't.
+			cfg.GRPCTarget = fmt.Sprintf("localhost:%d", grpcCfg.Port)
+		}
 	}
 
 	logger := slog.Default()
