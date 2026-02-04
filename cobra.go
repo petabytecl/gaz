@@ -99,6 +99,11 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 
 		stopErr := a.Stop(stopCtx)
 
+		// Reset running state
+		a.mu.Lock()
+		a.running = false
+		a.mu.Unlock()
+
 		// Chain original hook
 		if originalPostRunE != nil {
 			if err := originalPostRunE(c, args); err != nil {
@@ -107,6 +112,13 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 		}
 
 		return stopErr
+	}
+
+	// Inject default RunE if no Run/RunE is defined
+	if cmd.Run == nil && cmd.RunE == nil {
+		cmd.RunE = func(c *cobra.Command, args []string) error {
+			return a.waitForShutdownSignal(c.Context())
+		}
 	}
 
 	return a
@@ -126,6 +138,26 @@ func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) 
 		}
 	}
 
+	// Initialize run state similar to App.Run
+	a.mu.Lock()
+	if a.running {
+		a.mu.Unlock()
+		return errors.New("app is already running")
+	}
+	a.stopCh = make(chan struct{})
+	a.running = true
+	a.mu.Unlock()
+
+	// Ensure we clean up if start fails
+	success := false
+	defer func() {
+		if !success {
+			a.mu.Lock()
+			a.running = false
+			a.mu.Unlock()
+		}
+	}()
+
 	// Build the app (validates registrations)
 	if err := a.Build(); err != nil {
 		return fmt.Errorf("app build failed: %w", err)
@@ -136,6 +168,7 @@ func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) 
 		return fmt.Errorf("app start failed: %w", err)
 	}
 
+	success = true
 	return nil
 }
 

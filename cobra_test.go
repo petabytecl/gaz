@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -290,4 +292,59 @@ func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
 
 	err := rootCmd.Execute()
 	s.Require().NoError(err)
+}
+
+func (s *CobraSuite) TestWithCobraAppliesDeferredFlags() {
+	app := New()
+	var flagApplied bool
+
+	// Simulate a flag function registered before WithCobra
+	app.AddFlagsFn(func(flags *pflag.FlagSet) {
+		flags.Bool("test-flag", false, "a test flag")
+		flagApplied = true
+	})
+
+	cmd := &cobra.Command{Use: "test"}
+	app.WithCobra(cmd)
+
+	// Verify flag is applied
+	s.True(flagApplied)
+	f := cmd.PersistentFlags().Lookup("test-flag")
+	s.NotNil(f)
+}
+
+func (s *CobraSuite) TestWithCobraInjectsDefaultRunE() {
+	app := New()
+	cmd := &cobra.Command{Use: "test"}
+
+	// cmd has no Run or RunE initially
+	s.Nil(cmd.Run)
+	s.Nil(cmd.RunE)
+
+	app.WithCobra(cmd)
+
+	// Should now have a RunE
+	s.Nil(cmd.Run)
+	s.NotNil(cmd.RunE)
+
+	// Verify the default RunE waits for signal
+	// We run it in a goroutine and stop the app to unblock it
+	done := make(chan error)
+	go func() {
+		done <- cmd.Execute()
+	}()
+
+	// Give it time to start
+	time.Sleep(100 * time.Millisecond)
+
+	ctx := context.Background()
+	err := app.Stop(ctx)
+	s.Require().NoError(err)
+
+	select {
+	case err := <-done:
+		s.Require().NoError(err)
+	case <-time.After(1 * time.Second):
+		s.Fail("RunE did not return after App.Stop()")
+	}
 }
