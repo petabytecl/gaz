@@ -13,13 +13,13 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-- **Milestone:** v4.3 Logger CLI Flags
-- **Phase:** 43 - Logger CLI Flags
-- **Plan:** 2 of 2 in current phase
+- **Milestone:** v4.4 Config CLI Flags
+- **Phase:** 44 - Config File CLI Flag
+- **Plan:** 1 of 1 in current phase
 - **Status:** Phase complete
-- **Last activity:** 2026-02-04 — Completed 43-02-PLAN.md
+- **Last activity:** 2026-02-04 — Completed 44-01-PLAN.md
 
-Progress: [██████████] 100% (Phase 43 complete)
+Progress: [██████████] 100% (Phase 44 complete)
 
 ## Milestones Shipped
 
@@ -88,6 +88,13 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Early Return in doStop:** `doStop()` returns early if app was never built to prevent nil panics.
 - **Logger Module Subpackage:** `logger/module` subpackage used instead of `logger/module.go` to avoid circular import between gaz and logger packages.
 
+### v4.4 Decisions (Phase 44)
+
+- **Config Module Name:** Used `config-flags` as module name to avoid collision with existing `config.NewModule()`.
+- **Strict Mode Default True:** Per CONTEXT.md, strict mode is enabled by default to catch config file typos early.
+- **XDG Auto-Search:** When --config not provided, searches cwd first, then $XDG_CONFIG_HOME/{appname}.
+- **Config Manager Recreation:** applyConfigFlags() recreates config manager with new options rather than modifying existing one.
+
 ### Research Summary
 
 See: .planning/research/SUMMARY.md
@@ -147,7 +154,9 @@ None.
 - Plan 43-01 complete: Restructured App initialization to defer Logger/subsystems until Build()
 - Plan 43-02 complete: Created logger/module subpackage with CLI flags (--log-level, --log-format, --log-output, --log-add-source)
 - Phase 43 complete: Logger CLI flags fully implemented
-- Phase 44 added: Config File CLI Flag (--config flag for config file path)
+- Phase 44 started: Config File CLI Flag (--config flag for config file path)
+- Plan 44-01 complete: Created config/module package with CLI flags and App integration
+- Phase 44 complete: Config file CLI flag fully implemented
 
 ### Pending Todos
 
@@ -156,8 +165,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 43-02-PLAN.md (Phase 43 complete)
-Resume with: Phase 44 (Config File CLI Flag)
+Stopped at: Completed 44-01-PLAN.md (Phase 44 complete)
+Resume with: Next milestone or phase
 
 
 ---

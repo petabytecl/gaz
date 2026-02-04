@@ -147,12 +147,12 @@ The logger is currently created immediately in gaz.New() BEFORE modules are load
 ### Phase 44: Config File CLI Flag
 **Goal:** Enable configuration to register a `--config` flag to receive a config file path as an argument.
 **Depends on:** Phase 43
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 44-01-PLAN.md — Add --config, --env-prefix, --config-strict CLI flags with auto-search
+- [x] 44-01-PLAN.md — Add --config, --env-prefix, --config-strict CLI flags with auto-search
 
-**Details:**
+**Status:** Complete (2026-02-04)
 Adds `config/module` package following logger/module pattern. Registers CLI flags for config file path, environment variable prefix, and strict mode. App.loadConfig() applies these flags when the config module is used. Auto-search behavior uses cwd and XDG config directories when --config is not provided.
 
 ## Progress
@@ -167,4 +167,4 @@ Adds `config/module` package following logger/module pattern. Registers CLI flag
 | 41 | Refactor Server Arch | **Complete** | - |
 | 42 | Framework Ergonomics | **Complete** | - |
 | 43 | Logger CLI Flags | **Complete** | - |
-| 44 | Config File CLI Flag | Planned | - |
+| 44 | Config File CLI Flag | **Complete** | - |
