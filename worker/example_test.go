@@ -100,13 +100,35 @@ func ExampleManager_Start() {
 	// Output: manager started and stopped
 }
 
-// ExampleNewModule demonstrates creating the worker module for DI.
-// The module integrates worker management into a gaz application.
-func ExampleNewModule() {
-	module := worker.NewModule()
+// ExampleModule demonstrates using the worker module for direct DI usage.
+// The Module function registers worker infrastructure into a DI container.
+func ExampleModule() {
+	c := di.New()
 
-	fmt.Printf("module type: %T\n", module)
-	// Output: module type: *di.ModuleFunc
+	// Register logger (normally done by gaz.New())
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	_ = di.For[*slog.Logger](c).Instance(logger)
+
+	// Apply worker module
+	if err := worker.Module(c); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	// Build and resolve
+	if err := c.Build(); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	mgr, err := di.Resolve[*worker.Manager](c)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	fmt.Printf("manager: %T\n", mgr)
+	// Output: manager: *worker.Manager
 }
 
 // Example_restartPolicy demonstrates configuring worker restart behavior.
@@ -231,7 +253,7 @@ func ExampleTestManager() {
 	// the pattern here.
 }
 
-// Example_moduleIntegration demonstrates using NewModule with di.Container.
+// Example_moduleIntegration demonstrates using Module with di.Container.
 // This shows how worker module integrates into the DI system.
 func Example_moduleIntegration() {
 	c := di.New()
@@ -241,12 +263,23 @@ func Example_moduleIntegration() {
 	_ = di.For[*slog.Logger](c).Instance(logger)
 
 	// Apply worker module
-	module := worker.NewModule()
-	if err := module.Register(c); err != nil {
+	if err := worker.Module(c); err != nil {
 		fmt.Println("error:", err)
 		return
 	}
 
-	fmt.Println("module applied")
-	// Output: module applied
+	// Build and resolve
+	if err := c.Build(); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	mgr, err := di.Resolve[*worker.Manager](c)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	fmt.Printf("manager resolved: %T\n", mgr)
+	// Output: manager resolved: *worker.Manager
 }

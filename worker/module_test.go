@@ -9,32 +9,42 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-func TestNewModule(t *testing.T) {
-	t.Run("zero arguments works with defaults", func(t *testing.T) {
+func TestModule(t *testing.T) {
+	t.Run("registers Manager", func(t *testing.T) {
 		c := di.New()
 
-		// Register logger prerequisite (normally done by gaz.New())
+		// Register logger prerequisite
 		err := di.For[*slog.Logger](c).Instance(slog.Default())
 		require.NoError(t, err)
 
 		// Apply module
-		module := NewModule()
-		err = module.Register(c)
+		err = Module(c)
 		require.NoError(t, err)
+
+		// Build container
+		err = c.Build()
+		require.NoError(t, err)
+
+		// Verify Manager resolves
+		mgr, err := di.Resolve[*Manager](c)
+		require.NoError(t, err)
+		require.NotNil(t, mgr)
 	})
 
-	t.Run("returns valid di.Module", func(t *testing.T) {
-		module := NewModule()
-		require.NotNil(t, module)
-		require.Equal(t, "worker", module.Name())
-	})
-
-	t.Run("works without logger registered", func(t *testing.T) {
+	t.Run("uses slog.Default when logger not registered", func(t *testing.T) {
 		c := di.New()
 
-		// Don't register logger - module should handle gracefully
-		module := NewModule()
-		err := module.Register(c)
-		require.NoError(t, err, "module should not error without logger")
+		// Apply module without registering logger
+		err := Module(c)
+		require.NoError(t, err)
+
+		// Build container
+		err = c.Build()
+		require.NoError(t, err)
+
+		// Manager should still resolve (using slog.Default)
+		mgr, err := di.Resolve[*Manager](c)
+		require.NoError(t, err)
+		require.NotNil(t, mgr)
 	})
 }
