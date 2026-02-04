@@ -114,7 +114,7 @@ None.
 | 005 | v4.1 Milestone Consistency Review. | 2026-02-03 | 588ea59 | [005-v4-1-milestone-consistency-review](./quick/005-v4-1-milestone-consistency-review/) |
 | 006 | Refactor server/module.go remove gaz import. | 2026-02-03 | c06f475 | [006-refactor-server-module-remove-gaz-import](./quick/006-refactor-server-module-remove-gaz-import/) |
 | 007 | Run make lint and fix all problems | 2026-02-04 | b9dcff1 | [007-run-make-lint-and-fix-all-problems](./quick/007-run-make-lint-and-fix-all-problems/) |
-| 008 | Add CLI flags to health server | 2026-02-04 | 3de68c9 | [008-add-flags-to-the-health-server-to-get-th](./quick/008-add-flags-to-the-health-server-to-get-th/) |
+| 008 | Add flags to the health server to get the port from the CLI | 2026-02-04 | ff54da5 | [008-add-flags-to-the-health-server-to-get-th](./quick/008-add-flags-to-the-health-server-to-get-th/) |
 
 ### Roadmap Evolution
 
