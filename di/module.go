@@ -11,7 +11,7 @@ package di
 //
 // Example:
 //
-//	module := health.NewModule(health.WithPort(8081))
+//	module := worker.NewModule()
 //	app := gaz.New().Use(module)
 type Module interface {
 	// Name returns the module's identifier for debugging and error messages.

@@ -78,7 +78,7 @@ func (b *Builder) WithApp(app *gaz.App) *Builder {
 // Example:
 //
 //	app, err := gaztest.New(t).
-//	    WithModules(health.NewModule(), worker.NewModule()).
+//	    WithModules(worker.NewModule()).
 //	    Build()
 func (b *Builder) WithModules(m ...di.Module) *Builder {
 	b.modules = append(b.modules, m...)

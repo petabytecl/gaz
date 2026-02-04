@@ -3,119 +3,9 @@ package health
 import (
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/petabytecl/gaz/di"
 )
-
-// ModuleOption configures the health module.
-type ModuleOption func(*moduleConfig)
-
-type moduleConfig struct {
-	port          int
-	livenessPath  string
-	readinessPath string
-	startupPath   string
-}
-
-func defaultModuleConfig() *moduleConfig {
-	cfg := DefaultConfig()
-	return &moduleConfig{
-		port:          cfg.Port,
-		livenessPath:  cfg.LivenessPath,
-		readinessPath: cfg.ReadinessPath,
-		startupPath:   cfg.StartupPath,
-	}
-}
-
-// WithPort sets the health server port. Default is 9090.
-func WithPort(port int) ModuleOption {
-	return func(c *moduleConfig) {
-		c.port = port
-	}
-}
-
-// WithLivenessPath sets the liveness endpoint path. Default is "/live".
-func WithLivenessPath(path string) ModuleOption {
-	return func(c *moduleConfig) {
-		c.livenessPath = path
-	}
-}
-
-// WithReadinessPath sets the readiness endpoint path. Default is "/ready".
-func WithReadinessPath(path string) ModuleOption {
-	return func(c *moduleConfig) {
-		c.readinessPath = path
-	}
-}
-
-// WithStartupPath sets the startup endpoint path. Default is "/startup".
-func WithStartupPath(path string) ModuleOption {
-	return func(c *moduleConfig) {
-		c.startupPath = path
-	}
-}
-
-// WithGRPC enables the gRPC health server.
-//
-// Deprecated: gRPC health check is now integrated into the gRPC server module directly.
-// This option is a no-op and will be removed in a future version.
-func WithGRPC() ModuleOption {
-	return func(_ *moduleConfig) {
-		// No-op
-	}
-}
-
-// WithGRPCInterval sets the gRPC health check polling interval.
-//
-// Deprecated: gRPC health check is now integrated into the gRPC server module directly.
-// Configure interval via gRPC server config. This option is a no-op.
-func WithGRPCInterval(_ time.Duration) ModuleOption {
-	return func(_ *moduleConfig) {
-		// No-op
-	}
-}
-
-// NewModule creates a health module with the given options.
-// Returns a di.Module that registers health check components.
-//
-// Components registered:
-//   - health.Config (from options or defaults)
-//   - *health.ShutdownCheck
-//   - *health.Manager
-//   - *health.ManagementServer (eager, starts HTTP server)
-//
-// Example:
-//
-//	app := gaz.New()
-//	app.UseDI(health.NewModule())                           // defaults
-//	app.UseDI(health.NewModule(health.WithPort(8081)))      // custom port
-func NewModule(opts ...ModuleOption) di.Module {
-	cfg := defaultModuleConfig()
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	return di.NewModuleFunc("health", func(c *di.Container) error {
-		// Register Config from module options
-		healthCfg := Config{
-			Port:          cfg.port,
-			LivenessPath:  cfg.livenessPath,
-			ReadinessPath: cfg.readinessPath,
-			StartupPath:   cfg.startupPath,
-		}
-		if err := di.For[Config](c).Instance(healthCfg); err != nil {
-			return fmt.Errorf("register health config: %w", err)
-		}
-
-		// Register core components
-		if err := Module(c); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
 
 // Module registers the health module components.
 // It provides:
@@ -124,7 +14,12 @@ func NewModule(opts ...ModuleOption) di.Module {
 // - *ManagementServer
 //
 // It assumes that health.Config has been registered in the container
-// (e.g. via gaz.WithHealthChecks or manual registration).
+// (e.g. via health/module.New() or manual registration).
+//
+// For CLI flag support, use the health/module subpackage:
+//
+//	import healthmod "github.com/petabytecl/gaz/health/module"
+//	app.Use(healthmod.New())
 func Module(c *di.Container) error {
 	// Register ShutdownCheck
 	if err := di.For[*ShutdownCheck](c).

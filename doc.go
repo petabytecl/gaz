@@ -70,9 +70,9 @@
 //
 // The health subpackage provides HTTP health check endpoints:
 //
-//	import "github.com/petabytecl/gaz/health"
+//	import healthmod "github.com/petabytecl/gaz/health/module"
 //
-//	app.Module(health.NewModule(health.Config{Port: 8081}))
+//	app.Use(healthmod.New())
 //
 // See the health package for [health.Manager], readiness, and liveness probes.
 //

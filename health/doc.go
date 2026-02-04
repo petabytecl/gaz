@@ -7,14 +7,25 @@
 //
 // # Quick Start
 //
-// Use [NewModule] to register health infrastructure with your app:
+// Use the health/module subpackage to register health infrastructure with CLI flags:
 //
-//	app := gaz.New()
-//	app.UseDI(health.NewModule())
+//	import healthmod "github.com/petabytecl/gaz/health/module"
+//
+//	app := gaz.New(gaz.WithCobra(rootCmd))
+//	app.Use(healthmod.New())
 //	app.Build()
 //
 // This registers a [Manager] for check registration, a [ManagementServer]
 // for HTTP endpoints, and a [ShutdownCheck] for graceful shutdown signaling.
+//
+// # CLI Flags
+//
+// The health/module subpackage provides these CLI flags:
+//
+//   - --health-port: Health server port (default: 9090)
+//   - --health-liveness-path: Liveness endpoint path (default: /live)
+//   - --health-readiness-path: Readiness endpoint path (default: /ready)
+//   - --health-startup-path: Startup endpoint path (default: /startup)
 //
 // # Health Check Types
 //
@@ -49,19 +60,11 @@
 //   - /ready - Readiness probe (503 when unhealthy)
 //   - /startup - Startup probe (503 when not ready)
 //
-// Configure paths and port via [NewModule] options:
-//
-//	health.NewModule(
-//	    health.WithPort(8081),
-//	    health.WithLivenessPath("/healthz"),
-//	    health.WithReadinessPath("/ready"),
-//	)
-//
 // # Graceful Shutdown
 //
 // The [ShutdownCheck] automatically fails readiness probes during shutdown,
 // allowing load balancers to drain connections before the service stops.
-// It is registered by default with [NewModule].
+// It is registered by default with the health/module.New().
 //
 // # Testing
 //

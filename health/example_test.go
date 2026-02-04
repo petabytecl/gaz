@@ -10,34 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// ExampleNewModule demonstrates creating a health module with default options.
-func ExampleNewModule() {
-	// Create the health module with defaults
-	module := health.NewModule()
-
-	// The module returns a di.Module that can be used with app.UseDI()
-	// When registered, it provides:
-	// - *health.Manager for registering checks
-	// - *health.ManagementServer for HTTP endpoints (port 9090)
-	// - *health.ShutdownCheck for graceful shutdown
-	fmt.Printf("Module created: %T\n", module)
-	// Output: Module created: *di.ModuleFunc
-}
-
-// ExampleNewModule_withOptions demonstrates configuring health module options.
-func ExampleNewModule_withOptions() {
-	// Configure custom port and paths
-	module := health.NewModule(
-		health.WithPort(8081),
-		health.WithLivenessPath("/healthz"),
-		health.WithReadinessPath("/ready"),
-		health.WithStartupPath("/started"),
-	)
-
-	fmt.Printf("Module created: %T\n", module)
-	// Output: Module created: *di.ModuleFunc
-}
-
 // ExampleManager_AddReadinessCheck demonstrates registering a readiness check.
 func ExampleManager_AddReadinessCheck() {
 	mgr := health.NewManager()
@@ -200,7 +172,7 @@ func ExampleMockRegistrar() {
 	mockReg.AssertCalled(&testing.T{}, "AddReadinessCheck", "database", mock.Anything)
 }
 
-// Helper for mock example
+// Helper for mock example.
 func registerChecks(r health.Registrar) {
 	r.AddReadinessCheck("database", func(ctx context.Context) error {
 		return nil

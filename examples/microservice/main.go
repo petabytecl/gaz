@@ -20,7 +20,7 @@ import (
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/eventbus"
-	"github.com/petabytecl/gaz/health"
+	healthmod "github.com/petabytecl/gaz/health/module"
 	"github.com/petabytecl/gaz/worker"
 )
 
@@ -254,12 +254,13 @@ func (n *NotificationSubscriber) OnStop(ctx context.Context) error {
 
 var _ worker.Worker = (*NotificationSubscriber)(nil)
 
-func run(ctx context.Context, healthPort int) error {
+func run(ctx context.Context) error {
 	app := gaz.New()
 
 	// Register modules
 	// Health module: provides /live, /ready, /startup endpoints
-	app.UseDI(health.NewModule(health.WithPort(healthPort)))
+	// Note: --health-port flag allows overriding the port via CLI
+	app.Use(healthmod.New())
 
 	// Worker module: validates worker prerequisites
 	app.UseDI(worker.NewModule())
@@ -302,9 +303,7 @@ func run(ctx context.Context, healthPort int) error {
 
 	fmt.Println("=================================================")
 	fmt.Println("Microservice starting...")
-	if healthPort != 0 {
-		fmt.Printf("Health check: http://localhost:%d/ready\n", healthPort)
-	}
+	fmt.Printf("Health check: http://localhost:9090/ready (--health-port to change)\n")
 	fmt.Println("Press Ctrl+C to stop")
 	fmt.Println("=================================================")
 
@@ -317,7 +316,7 @@ func run(ctx context.Context, healthPort int) error {
 }
 
 func main() {
-	if err := run(context.Background(), 9090); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Shutdown complete")

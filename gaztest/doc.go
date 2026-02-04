@@ -22,7 +22,7 @@
 //
 //	func TestWithModules(t *testing.T) {
 //	    app, err := gaztest.New(t).
-//	        WithModules(health.NewModule(), worker.NewModule()).
+//	        WithModules(worker.NewModule()).
 //	        Build()
 //	    require.NoError(t, err)
 //

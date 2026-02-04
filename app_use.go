@@ -10,7 +10,7 @@ import (
 // Modules bundle providers, configs, and other modules for reuse.
 //
 // Use accepts both gaz.Module (built via gaz.NewModule().Build()) and
-// di.Module (returned by subsystem packages like health.NewModule()).
+// di.Module (returned by subsystem packages like worker.NewModule()).
 // This allows subsystem packages to export modules without importing gaz,
 // avoiding import cycles.
 //
@@ -35,7 +35,7 @@ import (
 //
 //	app := gaz.New().
 //	    Use(module).
-//	    Use(health.NewModule()).    // di.Module from subsystem
+//	    Use(worker.NewModule()).    // di.Module from subsystem
 //	    Use(cacheModule).
 //	    Build()
 func (a *App) Use(m Module) *App {
@@ -72,7 +72,6 @@ func (a *App) Use(m Module) *App {
 // Example:
 //
 //	app := gaz.New().
-//	    UseDI(health.NewModule()).
 //	    UseDI(worker.NewModule()).
 //	    Build()
 func (a *App) UseDI(m di.Module) *App {
