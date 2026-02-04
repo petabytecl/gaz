@@ -63,6 +63,7 @@ func resolveOutput(cfg *Config) io.Writer {
 		return os.Stderr
 	default:
 		// File path - attempt to open
+		//nolint:gosec // Log files need to be readable by log monitoring tools
 		f, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			// Log warning to stderr and fall back to stdout
