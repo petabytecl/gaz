@@ -8,7 +8,7 @@
 //
 // Run with:
 //
-//	go run . serve --grpc.port 9090 --gateway.port 8080 --grpc.dev_mode
+//	go run . serve --grpc-port 9090 --gateway-port 8080 --grpc-dev-mode
 //
 // Test gRPC: grpcurl -plaintext -d '{"name": "Developer"}' localhost:9090 hello.Greeter/SayHello
 // Test HTTP: curl "http://localhost:8080/v1/example/echo?name=Gaz"
