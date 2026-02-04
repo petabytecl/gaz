@@ -23,6 +23,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/petabytecl/gaz"
+	configmod "github.com/petabytecl/gaz/config/module"
+	loggermod "github.com/petabytecl/gaz/logger/module"
 	"github.com/petabytecl/gaz/server"
 )
 
@@ -47,6 +49,8 @@ func execute() error {
 	// 1. Create the gaz application with Cobra integration
 	// WithCobra as an Option handles flags, lifecycle, and graceful shutdown
 	app := gaz.New(gaz.WithCobra(serveCmd))
+	app.Use(loggermod.New())
+	app.Use(configmod.New())
 
 	// 2. Use modules
 	// server.NewModule() provides gRPC + Gateway + Health + Config

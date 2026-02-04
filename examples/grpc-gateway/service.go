@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/petabytecl/gaz"
-	"github.com/petabytecl/gaz/examples/grpc-gateway/proto"
+	hello "github.com/petabytecl/gaz/examples/grpc-gateway/proto"
 	"github.com/petabytecl/gaz/server/gateway"
 	servergrpc "github.com/petabytecl/gaz/server/grpc"
 )
