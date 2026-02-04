@@ -28,8 +28,8 @@ func NewModule() gaz.Module {
 		Provide(func(c *gaz.Container) error {
 			// Register Config provider
 			return gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
-				var cfg Config
-				cfg.SetDefaults()
+				// Start with the default configuration which has flags bound to it
+				cfg := defaultCfg
 
 				// Resolve ProviderValues to load config
 				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {

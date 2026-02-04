@@ -29,43 +29,38 @@ func NewModule() gaz.Module {
 	return gaz.NewModule("gateway").
 		Flags(defaultCfg.Flags).
 		Use(serverhttp.NewModule()). // Use http module to provide the server
-		Provide(provideConfig).
+		Provide(func(c *gaz.Container) error {
+			// Register Config provider
+			if err := gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
+				// Start with the default configuration which has flags bound to it
+				cfg := defaultCfg
+
+				// Resolve ProviderValues to load config
+				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
+					if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), &cfg); unmarshalErr != nil {
+						// ignore error, use defaults
+						_ = unmarshalErr
+					}
+				}
+
+				// Re-apply CORS defaults if not set, respecting the loaded DevMode
+				if len(cfg.CORS.AllowedOrigins) == 0 {
+					cfg.CORS = DefaultCORSConfig(cfg.DevMode)
+				}
+
+				if err := cfg.Validate(); err != nil {
+					return Config{}, fmt.Errorf("gateway config validate: %w", err)
+				}
+
+				return cfg, nil
+			}); err != nil {
+				return fmt.Errorf("register config: %w", err)
+			}
+			return nil
+		}).
 		Provide(provideGateway).
 		Provide(provideHandler).
 		Build()
-}
-
-func provideConfig(c *gaz.Container) error {
-	// Register Config provider
-	if err := gaz.For[Config](c).Provider(loadConfig); err != nil {
-		return fmt.Errorf("register config: %w", err)
-	}
-	return nil
-}
-
-func loadConfig(c *gaz.Container) (Config, error) {
-	// Initialize with defaults including CORS defaults based on dev mode
-	// Note: We can't fully know dev mode from flags yet, so we start with default
-	cfg := DefaultConfig()
-
-	// Resolve ProviderValues to load config
-	if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
-		if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), &cfg); unmarshalErr != nil {
-			// ignore error, use defaults
-			_ = unmarshalErr
-		}
-	}
-
-	// Re-apply CORS defaults if not set, respecting the loaded DevMode
-	if len(cfg.CORS.AllowedOrigins) == 0 {
-		cfg.CORS = DefaultCORSConfig(cfg.DevMode)
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return Config{}, fmt.Errorf("gateway config validate: %w", err)
-	}
-
-	return cfg, nil
 }
 
 func provideGateway(c *gaz.Container) error {
