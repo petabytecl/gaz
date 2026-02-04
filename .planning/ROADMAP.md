@@ -155,6 +155,20 @@ Plans:
 **Status:** Complete (2026-02-04)
 Adds `config/module` package following logger/module pattern. Registers CLI flags for config file path, environment variable prefix, and strict mode. App.loadConfig() applies these flags when the config module is used. Auto-search behavior uses cwd and XDG config directories when --config is not provided.
 
+### Phase 45: Cleanup Pre-Milestone Closure
+
+**Goal:** Clean up dead code and reduce duplication to maintain codebase quality before closing the milestone.
+**Depends on:** Phase 44
+**Plans:** 1 plan
+
+Plans:
+- [ ] 45-01-PLAN.md — Delete dead code and consolidate lifecycle types
+
+**Details:**
+Address code quality issues discovered during milestone review:
+- Delete dead code in `di/lifecycle_engine.go` (~110 lines never called)
+- Consolidate duplicate lifecycle types between `di/lifecycle.go` and root `lifecycle.go`
+
 ## Progress
 
 | Phase | Goal | Status | Requirements |
@@ -168,3 +182,4 @@ Adds `config/module` package following logger/module pattern. Registers CLI flag
 | 42 | Framework Ergonomics | **Complete** | - |
 | 43 | Logger CLI Flags | **Complete** | - |
 | 44 | Config File CLI Flag | **Complete** | - |
+| 45 | Cleanup Pre-Milestone | Pending | - |
