@@ -105,13 +105,24 @@ func ExampleScheduler_OnStart() {
 	// running after stop: false
 }
 
-// ExampleNewModule demonstrates creating the cron module for DI.
+// ExampleModule demonstrates the cron module function for DI.
 // The module integrates cron scheduling into a gaz application.
-func ExampleNewModule() {
-	module := cron.NewModule()
+func ExampleModule() {
+	c := di.New()
 
-	fmt.Printf("module type: %T\n", module)
-	// Output: module type: *di.ModuleFunc
+	// Register logger (normally done by gaz.New())
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	_ = di.For[*slog.Logger](c).Instance(logger)
+
+	// Apply cron module
+	err := cron.Module(c)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	fmt.Println("module registered scheduler")
+	// Output: module registered scheduler
 }
 
 // ExampleSimpleJob demonstrates using SimpleJob for testing.
@@ -240,7 +251,7 @@ func Example_disabledJob() {
 	// job disabled (not scheduled)
 }
 
-// Example_moduleIntegration demonstrates using NewModule with di.Container.
+// Example_moduleIntegration demonstrates using Module with di.Container.
 // This shows how cron module integrates into the DI system.
 func Example_moduleIntegration() {
 	c := di.New()
@@ -250,14 +261,29 @@ func Example_moduleIntegration() {
 	_ = di.For[*slog.Logger](c).Instance(logger)
 
 	// Apply cron module
-	module := cron.NewModule()
-	if err := module.Register(c); err != nil {
+	if err := cron.Module(c); err != nil {
 		fmt.Println("error:", err)
 		return
 	}
 
+	// Build container
+	if err := c.Build(); err != nil {
+		fmt.Println("build error:", err)
+		return
+	}
+
+	// Resolve Scheduler
+	sched, err := di.Resolve[*cron.Scheduler](c)
+	if err != nil {
+		fmt.Println("resolve error:", err)
+		return
+	}
+
 	fmt.Println("module applied")
-	// Output: module applied
+	fmt.Println("scheduler running:", sched.IsRunning())
+	// Output:
+	// module applied
+	// scheduler running: false
 }
 
 // Example_jobWithTimeout demonstrates a job with custom timeout.

@@ -9,32 +9,42 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-func TestNewModule(t *testing.T) {
-	t.Run("zero arguments works with defaults", func(t *testing.T) {
+func TestModule(t *testing.T) {
+	t.Run("registers Scheduler", func(t *testing.T) {
 		c := di.New()
 
-		// Register logger prerequisite (normally done by gaz.New())
+		// Register logger prerequisite
 		err := di.For[*slog.Logger](c).Instance(slog.Default())
 		require.NoError(t, err)
 
 		// Apply module
-		module := NewModule()
-		err = module.Register(c)
+		err = Module(c)
 		require.NoError(t, err)
+
+		// Build container
+		err = c.Build()
+		require.NoError(t, err)
+
+		// Verify Scheduler resolves
+		sched, err := di.Resolve[*Scheduler](c)
+		require.NoError(t, err)
+		require.NotNil(t, sched)
 	})
 
-	t.Run("returns valid di.Module", func(t *testing.T) {
-		module := NewModule()
-		require.NotNil(t, module)
-		require.Equal(t, "cron", module.Name())
-	})
-
-	t.Run("works without logger registered", func(t *testing.T) {
+	t.Run("uses slog.Default when logger not registered", func(t *testing.T) {
 		c := di.New()
 
-		// Don't register logger - module should handle gracefully
-		module := NewModule()
-		err := module.Register(c)
-		require.NoError(t, err, "module should not error without logger")
+		// Apply module without registering logger
+		err := Module(c)
+		require.NoError(t, err)
+
+		// Build container
+		err = c.Build()
+		require.NoError(t, err)
+
+		// Scheduler should still resolve (using slog.Default)
+		sched, err := di.Resolve[*Scheduler](c)
+		require.NoError(t, err)
+		require.NotNil(t, sched)
 	})
 }

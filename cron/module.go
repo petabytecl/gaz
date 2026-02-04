@@ -1,56 +1,36 @@
 package cron
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/petabytecl/gaz/di"
 )
 
-// ModuleOption configures the cron module.
-type ModuleOption func(*moduleConfig)
-
-type moduleConfig struct {
-	// Currently no configurable options exposed
-	// Placeholder for future extensibility (e.g., WithTimezone)
-}
-
-func defaultModuleConfig() *moduleConfig {
-	return &moduleConfig{}
-}
-
-// NewModule creates a cron module with the given options.
-// Returns a di.Module that provides cron scheduling infrastructure.
+// Module registers cron infrastructure into the DI container.
+// It provides a *Scheduler that can schedule and execute cron jobs.
 //
-// Prerequisites:
-//   - *slog.Logger must be registered (automatically registered by gaz.New())
+// The logger is optional - if not registered, slog.Default() is used.
+// The di.Container is used as the Resolver since it implements ResolveByName.
 //
-// Note: Cron jobs are auto-discovered during gaz.App.Build() when services
-// implement the cron.CronJob interface. This module provides explicit opt-in
-// and validates prerequisites. The Scheduler is created in gaz.New().
+// For CLI/App integration with flags, use the cron/module subpackage:
 //
-// Example:
-//
-//	app := gaz.New()
-//	app.UseDI(cron.NewModule())
-func NewModule(opts ...ModuleOption) di.Module {
-	cfg := defaultModuleConfig()
-	for _, opt := range opts {
-		opt(cfg)
-	}
-
-	return di.NewModuleFunc("cron", func(c *di.Container) error {
-		// Validate prerequisites
-		if !di.Has[*slog.Logger](c) {
-			// Logger is auto-registered by gaz.New(), so this should never fail
-			// in normal usage. This check exists for direct di.Container usage.
-			return nil
+//	import cronmod "github.com/petabytecl/gaz/cron/module"
+//	app.Use(cronmod.New())
+func Module(c *di.Container) error {
+	if err := di.For[*Scheduler](c).Provider(func(c *di.Container) (*Scheduler, error) {
+		// Logger is optional - use default if not registered
+		logger := slog.Default()
+		if l, err := di.Resolve[*slog.Logger](c); err == nil {
+			logger = l
 		}
 
-		// Scheduler is auto-created in gaz.New(), so this module
-		// just validates prerequisites. Future options could configure
-		// timezone, error handlers, etc.
-		_ = cfg // Future: use cfg for configuration
-
-		return nil
-	})
+		// di.Container implements Resolver interface via ResolveByName
+		// Use context.Background() for standalone DI usage
+		return NewScheduler(c, context.Background(), logger), nil
+	}); err != nil {
+		return fmt.Errorf("register scheduler: %w", err)
+	}
+	return nil
 }
