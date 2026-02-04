@@ -47,6 +47,12 @@ func NewManagementServer(
 // OnStart starts the management server in a background goroutine.
 // It returns immediately. Implements di.Starter interface.
 func (s *ManagementServer) OnStart(ctx context.Context) error {
+	s.logger.InfoContext(ctx, "Health server starting",
+		slog.Int("port", s.config.Port),
+		slog.String("liveness-path", s.config.LivenessPath),
+		slog.String("readiness-path", s.config.ReadinessPath),
+	)
+
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.ErrorContext(ctx, "Management server error", "error", err)
@@ -60,7 +66,8 @@ func (s *ManagementServer) OnStart(ctx context.Context) error {
 // It first marks the application as shutting down to fail readiness probes.
 // Implements di.Stopper interface.
 func (s *ManagementServer) OnStop(ctx context.Context) error {
-	// 1. Mark shutting down first
+	s.logger.InfoContext(ctx, "Health server stopping")
+
 	if s.shutdownCheck != nil {
 		s.shutdownCheck.MarkShuttingDown()
 	}

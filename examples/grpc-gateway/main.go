@@ -24,6 +24,7 @@ import (
 
 	"github.com/petabytecl/gaz"
 	configmod "github.com/petabytecl/gaz/config/module"
+	healthmod "github.com/petabytecl/gaz/health/module"
 	loggermod "github.com/petabytecl/gaz/logger/module"
 	"github.com/petabytecl/gaz/server"
 )
@@ -51,6 +52,7 @@ func execute() error {
 	app := gaz.New(gaz.WithCobra(serveCmd))
 	app.Use(loggermod.New())
 	app.Use(configmod.New())
+	app.Use(healthmod.New())
 
 	// 2. Use modules
 	// server.NewModule() provides gRPC + Gateway + Health + Config
