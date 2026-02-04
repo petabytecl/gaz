@@ -99,3 +99,12 @@ metrics:
 - Framework ergonomics are verified and working.
 - Core server modules are more robust and user-friendly.
 - Ready for Phase 42 completion or next set of refactors.
+
+## Post-Completion Fixes
+
+### Fix: Documentation and Validation (2026-02-04)
+
+- **Issue:** User reported Gateway failing to use configured gRPC port.
+- **Root Cause:** Documentation in `main.go` example used incorrect flag syntax (`--grpc.port` instead of `--grpc-port`), causing flags to be ignored or fail.
+- **Fix:** Corrected example documentation and added regression tests for auto-configuration logic.
+- **Commit:** `6d89ed1`
