@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/pflag"
 )
@@ -31,6 +32,14 @@ type Config struct {
 	// Defaults to 4MB.
 	MaxSendMsgSize int `json:"max_send_msg_size" yaml:"max_send_msg_size" mapstructure:"max_send_msg_size"`
 
+	// HealthEnabled enables the built-in gRPC health check service.
+	// Defaults to true.
+	HealthEnabled bool `json:"health_enabled" yaml:"health_enabled" mapstructure:"health_enabled"`
+
+	// HealthCheckInterval is the interval for syncing health status.
+	// Defaults to 5 seconds.
+	HealthCheckInterval time.Duration `json:"health_check_interval" yaml:"health_check_interval" mapstructure:"health_check_interval"`
+
 	// DevMode enables development mode for verbose error messages.
 	// Defaults to false.
 	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode"`
@@ -39,11 +48,13 @@ type Config struct {
 // DefaultConfig returns a Config with safe defaults.
 func DefaultConfig() Config {
 	return Config{
-		Port:           DefaultPort,
-		Reflection:     true,
-		MaxRecvMsgSize: DefaultMaxMsgSize,
-		MaxSendMsgSize: DefaultMaxMsgSize,
-		DevMode:        false,
+		Port:                DefaultPort,
+		Reflection:          true,
+		MaxRecvMsgSize:      DefaultMaxMsgSize,
+		MaxSendMsgSize:      DefaultMaxMsgSize,
+		HealthEnabled:       true,
+		HealthCheckInterval: 5 * time.Second,
+		DevMode:             false,
 	}
 }
 
@@ -56,6 +67,8 @@ func (c *Config) Namespace() string {
 func (c *Config) Flags(fs *pflag.FlagSet) {
 	fs.IntVar(&c.Port, "grpc-port", c.Port, "gRPC server port")
 	fs.BoolVar(&c.Reflection, "grpc-reflection", c.Reflection, "Enable gRPC reflection")
+	fs.BoolVar(&c.HealthEnabled, "grpc-health-enabled", c.HealthEnabled, "Enable gRPC health check service")
+	fs.DurationVar(&c.HealthCheckInterval, "grpc-health-interval", c.HealthCheckInterval, "Interval for syncing gRPC health status")
 	fs.BoolVar(&c.DevMode, "grpc-dev-mode", c.DevMode, "Enable gRPC development mode")
 }
 
@@ -67,12 +80,29 @@ func (c *Config) SetDefaults() {
 	}
 	// Reflection defaults to true, but we can't distinguish between
 	// explicitly set to false vs not set. Leave as-is since bool zero is false.
+	// Wait, if it defaults to true, and user passes false, we need to respect it.
+	// Usually SetDefaults is for zero values.
+	// But bool zero value is false.
+	// We handle this by setting defaults in DefaultConfig() and having flags overwrite.
+	// Config loading usually starts with DefaultConfig().
+	// So SetDefaults might strictly be for things that are logically invalid if zero.
+
 	if c.MaxRecvMsgSize == 0 {
 		c.MaxRecvMsgSize = DefaultMaxMsgSize
 	}
 	if c.MaxSendMsgSize == 0 {
 		c.MaxSendMsgSize = DefaultMaxMsgSize
 	}
+	if c.HealthCheckInterval == 0 {
+		c.HealthCheckInterval = 5 * time.Second
+	}
+	// HealthEnabled defaults to true. But if user explicitly sets false (zero value), we shouldn't overwrite it to true here.
+	// However, if it's coming from a file/env where it was missing, it would be false.
+	// The pattern usually is DefaultConfig() provides defaults, then config loading applies.
+	// SetDefaults() is a safety net.
+	// If HealthEnabled is false, we don't know if it's intentional or missing.
+	// But since DefaultConfig sets it to true, we assume if we are here and it's false, it MIGHT be intentional if DefaultConfig wasn't used.
+	// Let's assume DefaultConfig is used.
 }
 
 // Validate checks that the configuration is valid.
@@ -86,6 +116,9 @@ func (c *Config) Validate() error {
 	}
 	if c.MaxSendMsgSize <= 0 {
 		return fmt.Errorf("grpc: invalid max_send_msg_size %d: must be positive", c.MaxSendMsgSize)
+	}
+	if c.HealthEnabled && c.HealthCheckInterval <= 0 {
+		return fmt.Errorf("grpc: invalid health_check_interval %s: must be positive", c.HealthCheckInterval)
 	}
 	return nil
 }
