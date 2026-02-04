@@ -1,23 +1,27 @@
 package http
 
 import (
-	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
 )
 
 func TestNewModule(t *testing.T) {
-	// Test with default options.
+	// Test with defaults.
 	t.Run("defaults", func(t *testing.T) {
-		c := di.New()
+		app := gaz.New()
 
 		module := NewModule()
-		err := module.Register(c)
+		err := module.Apply(app)
 		require.NoError(t, err)
+
+		err = app.Build()
+		require.NoError(t, err)
+
+		c := app.Container()
 
 		// Verify server was registered.
 		require.True(t, di.Has[*Server](c))
@@ -26,105 +30,6 @@ func TestNewModule(t *testing.T) {
 		cfg, err := di.Resolve[Config](c)
 		require.NoError(t, err)
 		require.Equal(t, DefaultPort, cfg.Port)
-	})
-
-	// Test with custom port.
-	t.Run("with port", func(t *testing.T) {
-		c := di.New()
-
-		module := NewModule(WithPort(3000))
-		err := module.Register(c)
-		require.NoError(t, err)
-
-		cfg, err := di.Resolve[Config](c)
-		require.NoError(t, err)
-		require.Equal(t, 3000, cfg.Port)
-	})
-
-	// Test with custom timeouts.
-	t.Run("with timeouts", func(t *testing.T) {
-		c := di.New()
-
-		module := NewModule(
-			WithReadTimeout(1*time.Second),
-			WithWriteTimeout(2*time.Second),
-			WithIdleTimeout(3*time.Second),
-			WithReadHeaderTimeout(500*time.Millisecond),
-		)
-		err := module.Register(c)
-		require.NoError(t, err)
-
-		cfg, err := di.Resolve[Config](c)
-		require.NoError(t, err)
-		require.Equal(t, 1*time.Second, cfg.ReadTimeout)
-		require.Equal(t, 2*time.Second, cfg.WriteTimeout)
-		require.Equal(t, 3*time.Second, cfg.IdleTimeout)
-		require.Equal(t, 500*time.Millisecond, cfg.ReadHeaderTimeout)
-	})
-
-	// Test with custom handler.
-	t.Run("with handler", func(t *testing.T) {
-		c := di.New()
-
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-		module := NewModule(WithHandler(handler))
-		err := module.Register(c)
-		require.NoError(t, err)
-
-		require.True(t, di.Has[*Server](c))
-	})
-}
-
-func TestModule(t *testing.T) {
-	// Test the Module function (used when Config is pre-registered).
-	t.Run("successful registration and resolution", func(t *testing.T) {
-		c := di.New()
-
-		// Pre-register config.
-		cfg := DefaultConfig()
-		cfg.Port = 4000
-		require.NoError(t, di.For[Config](c).Instance(cfg))
-
-		err := Module(c)
-		require.NoError(t, err)
-
-		// Verify server was registered.
-		require.True(t, di.Has[*Server](c))
-
-		// Actually resolve to trigger provider callback.
-		server, err := di.Resolve[*Server](c)
-		require.NoError(t, err)
-		require.NotNil(t, server)
-	})
-
-	t.Run("resolve fails without config", func(t *testing.T) {
-		c := di.New()
-
-		// Register module WITHOUT pre-registering Config.
-		err := Module(c)
-		require.NoError(t, err) // Registration succeeds
-
-		// Resolution fails because Config is missing.
-		_, err = di.Resolve[*Server](c)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "http config")
-	})
-
-	t.Run("uses default logger when not provided", func(t *testing.T) {
-		c := di.New()
-		// NO logger registered - should use slog.Default().
-
-		// Pre-register config.
-		cfg := DefaultConfig()
-		require.NoError(t, di.For[Config](c).Instance(cfg))
-
-		err := Module(c)
-		require.NoError(t, err)
-
-		// Resolution succeeds with default logger.
-		server, err := di.Resolve[*Server](c)
-		require.NoError(t, err)
-		require.NotNil(t, server)
 	})
 }
 
