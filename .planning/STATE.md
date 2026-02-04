@@ -16,9 +16,9 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Milestone:** v4.2 Framework Ergonomics
 - **Phase:** 42 - Refactor Framework Ergonomics
 - **Next Phase:** TBD
-- **Plan:** 1 of 3 in current phase
+- **Plan:** 2 of 3 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 42-01-PLAN.md
+- **Last activity:** 2026-02-03 — Completed 42-02-PLAN.md
 
 Progress: [█░░░░░░░░░] 10% (Phase 42 started)
 
@@ -75,6 +75,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 ### v4.2 Decisions (Phase 42)
 
 - **Deferred Flag Registration:** `App.Use` no longer applies flags immediately. Flags are stored and applied when `WithCobra` is attached, ensuring order independence.
+- **Cobra Lifecycle Management:** `WithCobra` initializes `App.running` state and `stopCh` in `bootstrap`, ensuring `App.Stop()` works correctly for manual shutdown control even when running under Cobra hooks.
 
 ### Research Summary
 
@@ -137,8 +138,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 42-01-PLAN.md
-Resume with: 42-02-PLAN.md (Phase 42 Plan 2)
+Stopped at: Completed 42-02-PLAN.md
+Resume with: 42-03-PLAN.md (Phase 42 Plan 3)
 
 ---
 

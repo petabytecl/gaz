@@ -122,8 +122,8 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 42-01-PLAN.md — Enable deferred flag registration and recursive module flag collection
-- [ ] 42-02-PLAN.md — Update Cobra integration to apply deferred flags and provide default lifecycle
+- [x] 42-01-PLAN.md — Enable deferred flag registration and recursive module flag collection
+- [x] 42-02-PLAN.md — Update Cobra integration to apply deferred flags and provide default lifecycle
 - [ ] 42-03-PLAN.md — Refactor gRPC Gateway example to demonstrate new ergonomics
 
 **Details:**
