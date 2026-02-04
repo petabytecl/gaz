@@ -13,13 +13,14 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-- **Milestone:** v4.1 Server & Transport Layer
-- **Phase:** 41 - Refactor Server Module Architecture & Consistency
-- **Plan:** 4 of 4 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-04 — Completed quick task 007: Run make lint and fix all problems
+- **Milestone:** v4.2 Framework Ergonomics
+- **Phase:** 42 - Refactor Framework Ergonomics
+- **Next Phase:** TBD
+- **Plan:** 1 of 3 in current phase
+- **Status:** In progress
+- **Last activity:** 2026-02-03 — Completed 42-01-PLAN.md
 
-Progress: [██████████] 100% (Phase 41 complete, v4.1 milestone complete)
+Progress: [█░░░░░░░░░] 10% (Phase 42 started)
 
 ## Milestones Shipped
 
@@ -70,6 +71,10 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Unified Server Module:** `server.NewModule` bundles `gRPC` and `Gateway` (which includes HTTP server) for a complete stack.
 - **Native Health Integration:** gRPC server now natively integrates health checks (enabled by default) via internal `healthAdapter`, removing need for `health.WithGRPC()`.
 - **Public Health Types:** Exported `StatusUp` and related types from `health` package for better integration.
+
+### v4.2 Decisions (Phase 42)
+
+- **Deferred Flag Registration:** `App.Use` no longer applies flags immediately. Flags are stored and applied when `WithCobra` is attached, ensuring order independence.
 
 ### Research Summary
 
@@ -122,6 +127,8 @@ None.
 - Plan 41-03 complete: Refactored server modules to use ConfigProvider pattern and simplified API
 - Plan 41-04 complete: Integrated native health checks into gRPC server
 - Phase 41 complete: Server module architecture refactored and standardized
+- Phase 42 added: Refactor Framework Ergonomics
+- Plan 42-01 complete: Deferred flag registration decoupled App.Use from Cobra
 
 ### Pending Todos
 
@@ -130,8 +137,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 007-PLAN.md
-Resume with: Milestone v4.1 complete - ready for next milestone. Linting clean.
+Stopped at: Completed 42-01-PLAN.md
+Resume with: 42-02-PLAN.md (Phase 42 Plan 2)
 
 ---
 
