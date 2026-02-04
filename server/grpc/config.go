@@ -17,32 +17,32 @@ const DefaultMaxMsgSize = 4 * 1024 * 1024
 type Config struct {
 	// Port is the TCP port the gRPC server listens on.
 	// Defaults to 50051 if not set.
-	Port int `json:"port" yaml:"port" mapstructure:"port"`
+	Port int `json:"port" yaml:"port" mapstructure:"port" gaz:"port"`
 
 	// Reflection enables gRPC reflection for service discovery.
 	// When enabled, tools like grpcurl can introspect available services.
 	// Defaults to true.
-	Reflection bool `json:"reflection" yaml:"reflection" mapstructure:"reflection"`
+	Reflection bool `json:"reflection" yaml:"reflection" mapstructure:"reflection" gaz:"reflection"`
 
 	// MaxRecvMsgSize is the maximum message size the server can receive.
 	// Defaults to 4MB.
-	MaxRecvMsgSize int `json:"max_recv_msg_size" yaml:"max_recv_msg_size" mapstructure:"max_recv_msg_size"`
+	MaxRecvMsgSize int `json:"max_recv_msg_size" yaml:"max_recv_msg_size" mapstructure:"max_recv_msg_size" gaz:"max_recv_msg_size"`
 
 	// MaxSendMsgSize is the maximum message size the server can send.
 	// Defaults to 4MB.
-	MaxSendMsgSize int `json:"max_send_msg_size" yaml:"max_send_msg_size" mapstructure:"max_send_msg_size"`
+	MaxSendMsgSize int `json:"max_send_msg_size" yaml:"max_send_msg_size" mapstructure:"max_send_msg_size" gaz:"max_send_msg_size"`
 
 	// HealthEnabled enables the built-in gRPC health check service.
 	// Defaults to true.
-	HealthEnabled bool `json:"health_enabled" yaml:"health_enabled" mapstructure:"health_enabled"`
+	HealthEnabled bool `json:"health_enabled" yaml:"health_enabled" mapstructure:"health_enabled" gaz:"health_enabled"`
 
 	// HealthCheckInterval is the interval for syncing health status.
 	// Defaults to 5 seconds.
-	HealthCheckInterval time.Duration `json:"health_check_interval" yaml:"health_check_interval" mapstructure:"health_check_interval"`
+	HealthCheckInterval time.Duration `json:"health_check_interval" yaml:"health_check_interval" mapstructure:"health_check_interval" gaz:"health_check_interval"`
 
 	// DevMode enables development mode for verbose error messages.
 	// Defaults to false.
-	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode"`
+	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode" gaz:"dev_mode"`
 }
 
 // DefaultConfig returns a Config with safe defaults.

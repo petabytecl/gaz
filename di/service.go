@@ -145,8 +145,7 @@ func (s *lazySingleton[T]) HasLifecycle() bool {
 }
 
 func (s *lazySingleton[T]) ServiceType() reflect.Type {
-	var zero T
-	return reflect.TypeOf(zero)
+	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
@@ -249,8 +248,7 @@ func (s *transientService[T]) Stop(context.Context) error  { return nil }
 func (s *transientService[T]) HasLifecycle() bool          { return false }
 
 func (s *transientService[T]) ServiceType() reflect.Type {
-	var zero T
-	return reflect.TypeOf(zero)
+	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
@@ -339,8 +337,7 @@ func (s *eagerSingleton[T]) HasLifecycle() bool {
 }
 
 func (s *eagerSingleton[T]) ServiceType() reflect.Type {
-	var zero T
-	return reflect.TypeOf(zero)
+	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
 // instanceService wraps a pre-built value. No provider is called.
@@ -391,8 +388,7 @@ func (s *instanceService[T]) HasLifecycle() bool {
 }
 
 func (s *instanceService[T]) ServiceType() reflect.Type {
-	var zero T
-	return reflect.TypeOf(zero)
+	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
 // =============================================================================

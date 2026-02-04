@@ -1,0 +1,4 @@
+version: v1
+name: buf.build/petabytecl/gaz-example
+deps:
+  - buf.build/googleapis/googleapis

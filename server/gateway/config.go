@@ -20,19 +20,19 @@ const DefaultCORSMaxAge = 86400
 type Config struct {
 	// Port is the TCP port the Gateway listens on.
 	// Defaults to 8080 if not set.
-	Port int `json:"port" yaml:"port" mapstructure:"port"`
+	Port int `json:"port" yaml:"port" mapstructure:"port" gaz:"port"`
 
 	// GRPCTarget is the gRPC server target for loopback connections.
 	// Defaults to "localhost:50051" if not set.
-	GRPCTarget string `json:"grpc_target" yaml:"grpc_target" mapstructure:"grpc_target"`
+	GRPCTarget string `json:"grpc_target" yaml:"grpc_target" mapstructure:"grpc_target" gaz:"grpc_target"`
 
 	// CORS contains CORS configuration for the Gateway.
-	CORS CORSConfig `json:"cors" yaml:"cors" mapstructure:"cors"`
+	CORS CORSConfig `json:"cors" yaml:"cors" mapstructure:"cors" gaz:"cors"`
 
 	// DevMode enables development mode.
 	// In dev mode, CORS is wide-open and error responses include details.
 	// Defaults to false.
-	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode"`
+	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode" gaz:"dev_mode"`
 }
 
 // CORSConfig holds CORS configuration for the Gateway.

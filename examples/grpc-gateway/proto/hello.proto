@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package hello;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/petabytecl/gaz/examples/grpc-gateway/proto;hello";
+
+// Greeter service
+service Greeter {
+  // Says hello
+  rpc SayHello (HelloRequest) returns (HelloReply) {
+    option (google.api.http) = {
+      post: "/v1/example/echo"
+      body: "*"
+    };
+  }
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
