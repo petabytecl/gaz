@@ -4,14 +4,18 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz/cron"
+	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 )
@@ -715,4 +719,311 @@ func (s *AppTestSuite) TestResolveAllAndGroupWrappers() {
 	g2, err := ResolveGroup[*groupTestService](app.Container(), "g2")
 	s.Require().NoError(err)
 	s.Len(g2, 1)
+}
+
+// =============================================================================
+// Tests for applyConfigFlags
+// =============================================================================
+
+func (s *AppTestSuite) TestApplyConfigFlags_NoCobraCmd() {
+	// When no cobra command is attached, applyConfigFlags should return nil
+	app := New()
+	s.Require().NoError(app.Build())
+	// applyConfigFlags is called internally during loadConfig - just verifying no error
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_NoConfigFlag() {
+	// When cobra is attached but no --config flag is registered,
+	// applyConfigFlags should return nil without error
+	cmd := &cobra.Command{Use: "test"}
+	app := New(WithCobra(cmd))
+	// Don't use config module - no --config flag registered
+	s.Require().NoError(app.Build())
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_WithConfigModule_NoFlag() {
+	// When config module is used but --config not provided,
+	// auto-search paths should be configured
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register --config flag manually (simulating config module)
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	s.NoError(err)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_ExplicitConfigExists() {
+	// Create temp config file
+	tempDir := s.T().TempDir()
+	configPath := filepath.Join(tempDir, "config.yaml")
+	s.Require().NoError(os.WriteFile(configPath, []byte("key: value"), 0o644))
+
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register --config flag manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	cmd.SetArgs([]string{"--config", configPath})
+	err := cmd.Execute()
+	s.NoError(err)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_ExplicitConfigNotExists() {
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register --config flag manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+
+	cmd.SetArgs([]string{"--config", "/nonexistent/config.yaml"})
+	err := cmd.Execute()
+	s.Error(err)
+	s.Contains(err.Error(), "not found")
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_EnvPrefix() {
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register flags manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "MYAPP", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	cmd.SetArgs([]string{"--env-prefix", "CUSTOM"})
+	err := cmd.Execute()
+	s.NoError(err)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_StrictFalse() {
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	app := New(WithCobra(cmd))
+
+	// Register flags manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	cmd.SetArgs([]string{"--config-strict=false"})
+	err := cmd.Execute()
+	s.NoError(err)
+	// Verify strict mode was set to false
+	s.False(app.strictConfig)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_StrictTrue() {
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	app := New(WithCobra(cmd))
+
+	// Register flags manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", false, "Strict mode") // Default false
+
+	cmd.SetArgs([]string{"--config-strict=true"})
+	err := cmd.Execute()
+	s.NoError(err)
+	// Verify strict mode was set to true
+	s.True(app.strictConfig)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_XDGConfigHome() {
+	// Test XDG_CONFIG_HOME environment variable handling
+	tempDir := s.T().TempDir()
+	xdgDir := filepath.Join(tempDir, "xdg-config")
+	s.Require().NoError(os.MkdirAll(xdgDir, 0o755))
+
+	// Set XDG_CONFIG_HOME
+	original := os.Getenv("XDG_CONFIG_HOME")
+	s.Require().NoError(os.Setenv("XDG_CONFIG_HOME", xdgDir))
+	defer func() {
+		if original != "" {
+			_ = os.Setenv("XDG_CONFIG_HOME", original)
+		} else {
+			_ = os.Unsetenv("XDG_CONFIG_HOME")
+		}
+	}()
+
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register --config flag manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	// No --config provided, should use XDG_CONFIG_HOME for auto-search
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	s.NoError(err)
+}
+
+func (s *AppTestSuite) TestApplyConfigFlags_NoXDGConfigHome() {
+	// Test without XDG_CONFIG_HOME set
+	original := os.Getenv("XDG_CONFIG_HOME")
+	s.Require().NoError(os.Unsetenv("XDG_CONFIG_HOME"))
+	defer func() {
+		if original != "" {
+			_ = os.Setenv("XDG_CONFIG_HOME", original)
+		}
+	}()
+
+	cmd := &cobra.Command{
+		Use: "testapp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	_ = New(WithCobra(cmd))
+
+	// Register --config flag manually
+	cmd.PersistentFlags().String("config", "", "Config file path")
+	cmd.PersistentFlags().String("env-prefix", "TEST", "Env prefix")
+	cmd.PersistentFlags().Bool("config-strict", true, "Strict mode")
+
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	s.NoError(err)
+}
+
+// Tests for UseDI
+
+func (s *AppTestSuite) TestUseDI_Basic() {
+	// Create a simple DI module
+	module := di.NewModuleFunc("test-module", func(c *di.Container) error {
+		return nil
+	})
+
+	app := New().UseDI(module)
+	s.NotNil(app)
+
+	// Build should work
+	err := app.Build()
+	s.NoError(err)
+}
+
+func (s *AppTestSuite) TestUseDI_Duplicate() {
+	// Create a module
+	module := di.NewModuleFunc("test-module", func(c *di.Container) error {
+		return nil
+	})
+
+	// Try to register same module twice
+	app := New().UseDI(module).UseDI(module)
+	s.NotNil(app)
+
+	// Build should fail with duplicate error
+	err := app.Build()
+	s.Error(err)
+	s.Contains(err.Error(), "duplicate")
+}
+
+func (s *AppTestSuite) TestUseDI_ModuleRegisterError() {
+	// Create a module that errors on registration
+	module := di.NewModuleFunc("error-module", func(c *di.Container) error {
+		return errors.New("registration failed")
+	})
+
+	app := New().UseDI(module)
+
+	// Build should fail
+	err := app.Build()
+	s.Error(err)
+	s.Contains(err.Error(), "registration failed")
+}
+
+func (s *AppTestSuite) TestUseDI_AfterBuild() {
+	module := di.NewModuleFunc("test-module", func(c *di.Container) error {
+		return nil
+	})
+
+	app := New()
+	err := app.Build()
+	s.NoError(err)
+
+	// Adding module after Build should panic
+	s.Panics(func() {
+		app.UseDI(module)
+	})
+}
+
+// Tests for GetArgs
+
+func (s *AppTestSuite) TestGetArgs_NilContainer() {
+	// GetArgs with nil container should return nil
+	args := GetArgs(nil)
+	s.Nil(args)
+}
+
+func (s *AppTestSuite) TestGetArgs_NoCommandArgs() {
+	// GetArgs when CommandArgs is not registered should return nil
+	c := di.New()
+	args := GetArgs(c)
+	s.Nil(args)
+}
+
+func (s *AppTestSuite) TestGetArgs_WithCommandArgs() {
+	// GetArgs when CommandArgs is registered should return args
+	c := di.New()
+	cmdArgs := &CommandArgs{
+		Args: []string{"arg1", "arg2"},
+	}
+	err := di.For[*CommandArgs](c).Instance(cmdArgs)
+	s.NoError(err)
+
+	args := GetArgs(c)
+	s.Equal([]string{"arg1", "arg2"}, args)
+}
+
+// Tests for MergeConfigMap error cases
+
+func (s *AppTestSuite) TestMergeConfigMap_NoConfigManager() {
+	// MergeConfigMap without config manager should return nil (no-op)
+	app := New()
+	// Don't call loadConfig - configMgr is nil
+	err := app.MergeConfigMap(map[string]any{"key": "value"})
+	s.NoError(err) // Returns nil when configMgr is nil
 }
