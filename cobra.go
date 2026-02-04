@@ -59,6 +59,11 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 	// Store command reference for module flags integration
 	a.cobraCmd = cmd
 
+	// Apply any pending flags
+	for _, fn := range a.flagFns {
+		fn(cmd.PersistentFlags())
+	}
+
 	// Preserve existing hooks
 	originalPreRunE := cmd.PersistentPreRunE
 	originalPostRunE := cmd.PersistentPostRunE

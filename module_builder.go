@@ -172,6 +172,11 @@ func (m *builtModule) Apply(app *App) error {
 		}
 	}
 
+	// Register module flags if present
+	if m.flagsFn != nil {
+		app.AddFlagsFn(m.flagsFn)
+	}
+
 	// Then apply this module's providers
 	for _, p := range m.providers {
 		if err := p(app.container); err != nil {

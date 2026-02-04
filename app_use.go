@@ -3,8 +3,6 @@ package gaz
 import (
 	"fmt"
 
-	"github.com/spf13/pflag"
-
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -54,16 +52,6 @@ func (a *App) Use(m Module) *App {
 		return a
 	}
 	a.modules[name] = true
-
-	// Apply module flags if module provides them AND cobra command is available
-	if flagsProvider, ok := m.(interface{ FlagsFn() func(*pflag.FlagSet) }); ok {
-		if fn := flagsProvider.FlagsFn(); fn != nil {
-			// If app has a cobra command, apply flags to it
-			if a.cobraCmd != nil {
-				fn(a.cobraCmd.PersistentFlags())
-			}
-		}
-	}
 
 	// Apply the module (which applies child modules first, then providers)
 	if err := m.Apply(a); err != nil {
