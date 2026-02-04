@@ -2,6 +2,8 @@ package grpc
 
 import (
 	"fmt"
+
+	"github.com/spf13/pflag"
 )
 
 // DefaultPort is the default port for the gRPC server.
@@ -28,6 +30,10 @@ type Config struct {
 	// MaxSendMsgSize is the maximum message size the server can send.
 	// Defaults to 4MB.
 	MaxSendMsgSize int `json:"max_send_msg_size" yaml:"max_send_msg_size" mapstructure:"max_send_msg_size"`
+
+	// DevMode enables development mode for verbose error messages.
+	// Defaults to false.
+	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode"`
 }
 
 // DefaultConfig returns a Config with safe defaults.
@@ -37,7 +43,20 @@ func DefaultConfig() Config {
 		Reflection:     true,
 		MaxRecvMsgSize: DefaultMaxMsgSize,
 		MaxSendMsgSize: DefaultMaxMsgSize,
+		DevMode:        false,
 	}
+}
+
+// Namespace returns the config namespace.
+func (c *Config) Namespace() string {
+	return "grpc"
+}
+
+// Flags registers the config flags.
+func (c *Config) Flags(fs *pflag.FlagSet) {
+	fs.IntVar(&c.Port, "grpc-port", c.Port, "gRPC server port")
+	fs.BoolVar(&c.Reflection, "grpc-reflection", c.Reflection, "Enable gRPC reflection")
+	fs.BoolVar(&c.DevMode, "grpc-dev-mode", c.DevMode, "Enable gRPC development mode")
 }
 
 // SetDefaults applies default values to zero-value fields.

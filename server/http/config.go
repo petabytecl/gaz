@@ -3,6 +3,8 @@ package http
 import (
 	"errors"
 	"time"
+
+	"github.com/spf13/pflag"
 )
 
 // Default configuration values.
@@ -62,6 +64,20 @@ func DefaultConfig() Config {
 		IdleTimeout:       DefaultIdleTimeout,
 		ReadHeaderTimeout: DefaultReadHeaderTimeout,
 	}
+}
+
+// Namespace returns the config namespace.
+func (c *Config) Namespace() string {
+	return "http"
+}
+
+// Flags registers the config flags.
+func (c *Config) Flags(fs *pflag.FlagSet) {
+	fs.IntVar(&c.Port, "http-port", c.Port, "HTTP server port")
+	fs.DurationVar(&c.ReadTimeout, "http-read-timeout", c.ReadTimeout, "HTTP read timeout")
+	fs.DurationVar(&c.WriteTimeout, "http-write-timeout", c.WriteTimeout, "HTTP write timeout")
+	fs.DurationVar(&c.IdleTimeout, "http-idle-timeout", c.IdleTimeout, "HTTP idle timeout")
+	fs.DurationVar(&c.ReadHeaderTimeout, "http-read-header-timeout", c.ReadHeaderTimeout, "HTTP read header timeout")
 }
 
 // SetDefaults applies default values to zero-value fields.

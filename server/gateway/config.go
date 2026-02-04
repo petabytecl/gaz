@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"fmt"
+
+	"github.com/spf13/pflag"
 )
 
 // DefaultPort is the default port for the HTTP Gateway.
@@ -26,6 +28,11 @@ type Config struct {
 
 	// CORS contains CORS configuration for the Gateway.
 	CORS CORSConfig `json:"cors" yaml:"cors" mapstructure:"cors"`
+
+	// DevMode enables development mode.
+	// In dev mode, CORS is wide-open and error responses include details.
+	// Defaults to false.
+	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode"`
 }
 
 // CORSConfig holds CORS configuration for the Gateway.
@@ -58,7 +65,20 @@ func DefaultConfig() Config {
 		Port:       DefaultPort,
 		GRPCTarget: DefaultGRPCTarget,
 		CORS:       DefaultCORSConfig(false),
+		DevMode:    false,
 	}
+}
+
+// Namespace returns the config namespace.
+func (c *Config) Namespace() string {
+	return "gateway"
+}
+
+// Flags registers the config flags.
+func (c *Config) Flags(fs *pflag.FlagSet) {
+	fs.IntVar(&c.Port, "gateway-port", c.Port, "Gateway HTTP port")
+	fs.StringVar(&c.GRPCTarget, "gateway-grpc-target", c.GRPCTarget, "gRPC server target (default: localhost:<grpc-port>)")
+	fs.BoolVar(&c.DevMode, "gateway-dev-mode", c.DevMode, "Enable development mode")
 }
 
 // DefaultCORSConfig returns a CORSConfig with appropriate defaults.

@@ -4,164 +4,73 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
-	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz"
 )
 
-// ModuleOption configures the HTTP module.
-type ModuleOption func(*moduleConfig)
-
-type moduleConfig struct {
-	port              int
-	readTimeout       time.Duration
-	writeTimeout      time.Duration
-	idleTimeout       time.Duration
-	readHeaderTimeout time.Duration
-	handler           http.Handler
-}
-
-func defaultModuleConfig() *moduleConfig {
-	cfg := DefaultConfig()
-	return &moduleConfig{
-		port:              cfg.Port,
-		readTimeout:       cfg.ReadTimeout,
-		writeTimeout:      cfg.WriteTimeout,
-		idleTimeout:       cfg.IdleTimeout,
-		readHeaderTimeout: cfg.ReadHeaderTimeout,
-		handler:           nil, // Will use NotFoundHandler as default
-	}
-}
-
-// WithPort sets the HTTP server port. Default is 8080.
-func WithPort(port int) ModuleOption {
-	return func(c *moduleConfig) {
-		c.port = port
-	}
-}
-
-// WithReadTimeout sets the read timeout. Default is 10 seconds.
-func WithReadTimeout(d time.Duration) ModuleOption {
-	return func(c *moduleConfig) {
-		c.readTimeout = d
-	}
-}
-
-// WithWriteTimeout sets the write timeout. Default is 30 seconds.
-func WithWriteTimeout(d time.Duration) ModuleOption {
-	return func(c *moduleConfig) {
-		c.writeTimeout = d
-	}
-}
-
-// WithIdleTimeout sets the idle timeout. Default is 120 seconds.
-func WithIdleTimeout(d time.Duration) ModuleOption {
-	return func(c *moduleConfig) {
-		c.idleTimeout = d
-	}
-}
-
-// WithReadHeaderTimeout sets the read header timeout. Default is 5 seconds.
-func WithReadHeaderTimeout(d time.Duration) ModuleOption {
-	return func(c *moduleConfig) {
-		c.readHeaderTimeout = d
-	}
-}
-
-// WithHandler sets the HTTP handler. Default is http.NotFoundHandler().
-// For Gateway integration, the Gateway module will set the handler
-// to proxy HTTP requests to gRPC services.
-func WithHandler(h http.Handler) ModuleOption {
-	return func(c *moduleConfig) {
-		c.handler = h
-	}
-}
-
-// NewModule creates an HTTP module with the given options.
-// Returns a di.Module that registers HTTP server components.
+// NewModule creates an HTTP module.
+// Returns a gaz.Module that registers HTTP server components.
 //
 // Components registered:
-//   - http.Config (from options or defaults)
+//   - http.Config (loaded from flags/config)
 //   - *http.Server (eager, starts HTTP server)
+//
+// The server uses http.Handler resolved from the container if available.
+// Otherwise, it defaults to http.NotFoundHandler().
 //
 // Example:
 //
 //	app := gaz.New()
-//	app.UseDI(http.NewModule())                        // defaults
-//	app.UseDI(http.NewModule(http.WithPort(3000)))     // custom port
-//	app.UseDI(http.NewModule(http.WithHandler(mux)))   // custom handler
-func NewModule(opts ...ModuleOption) di.Module {
-	cfg := defaultModuleConfig()
-	for _, opt := range opts {
-		opt(cfg)
-	}
+//	app.Use(http.NewModule())
+func NewModule() gaz.Module {
+	defaultCfg := DefaultConfig()
 
-	return di.NewModuleFunc("http", func(c *di.Container) error {
-		// Register Config from module options
-		httpCfg := Config{
-			Port:              cfg.port,
-			ReadTimeout:       cfg.readTimeout,
-			WriteTimeout:      cfg.writeTimeout,
-			IdleTimeout:       cfg.idleTimeout,
-			ReadHeaderTimeout: cfg.readHeaderTimeout,
-		}
-		if err := di.For[Config](c).Instance(httpCfg); err != nil {
-			return fmt.Errorf("register http config: %w", err)
-		}
+	return gaz.NewModule("http").
+		Flags(defaultCfg.Flags).
+		Provide(func(c *gaz.Container) error {
+			// Register Config provider
+			return gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
+				var cfg Config
+				cfg.SetDefaults()
 
-		// Store handler for provider closure
-		handler := cfg.handler
-
-		// Register Server (eager to participate in lifecycle)
-		if err := di.For[*Server](c).
-			Eager().
-			Provider(func(c *di.Container) (*Server, error) {
-				cfg, err := di.Resolve[Config](c)
-				if err != nil {
-					return nil, fmt.Errorf("resolve http config: %w", err)
+				// Resolve ProviderValues to load config
+				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
+					if err := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); err != nil {
+						// ignore error, use defaults
+					}
 				}
 
-				// Try to resolve logger, use default if not available
-				logger, err := di.Resolve[*slog.Logger](c)
-				if err != nil {
-					logger = slog.Default()
+				if err := cfg.Validate(); err != nil {
+					return Config{}, fmt.Errorf("http config validate: %w", err)
 				}
 
-				return NewServer(cfg, handler, logger), nil
-			}); err != nil {
-			return fmt.Errorf("register http server: %w", err)
-		}
+				return cfg, nil
+			})
+		}).
+		Provide(func(c *gaz.Container) error {
+			// Register Server
+			return gaz.For[*Server](c).
+				Eager().
+				Provider(func(c *gaz.Container) (*Server, error) {
+					cfg, err := gaz.Resolve[Config](c)
+					if err != nil {
+						return nil, fmt.Errorf("resolve http config: %w", err)
+					}
 
-		return nil
-	})
-}
+					// Resolve handler if available, otherwise use default
+					var handler http.Handler
+					if h, err := gaz.Resolve[http.Handler](c); err == nil {
+						handler = h
+					}
 
-// Module registers the HTTP module components.
-// It provides:
-//   - *Server
-//
-// It assumes that http.Config has been registered in the container.
-func Module(c *di.Container) error {
-	// Register Server (eager to participate in lifecycle)
-	if err := di.For[*Server](c).
-		Eager().
-		Provider(func(c *di.Container) (*Server, error) {
-			cfg, err := di.Resolve[Config](c)
-			if err != nil {
-				return nil, fmt.Errorf("resolve http config: %w", err)
-			}
+					// Try to resolve logger, use default if not available
+					logger, err := gaz.Resolve[*slog.Logger](c)
+					if err != nil {
+						logger = slog.Default()
+					}
 
-			// Try to resolve logger, use default if not available
-			logger, err := di.Resolve[*slog.Logger](c)
-			if err != nil {
-				logger = slog.Default()
-			}
-
-			// Use NotFoundHandler as default since no handler is provided
-			return NewServer(cfg, nil, logger), nil
-		}); err != nil {
-		return fmt.Errorf("register http server: %w", err)
-	}
-
-	return nil
+					return NewServer(cfg, handler, logger), nil
+				})
+		}).
+		Build()
 }

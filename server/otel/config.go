@@ -3,6 +3,8 @@ package otel
 import (
 	"errors"
 	"fmt"
+
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -38,6 +40,19 @@ func DefaultConfig() Config {
 		SampleRatio: DefaultSampleRatio, // Sample 10% of root spans.
 		Insecure:    true,               // Insecure for dev.
 	}
+}
+
+// Namespace returns the config namespace.
+func (c *Config) Namespace() string {
+	return "otel"
+}
+
+// Flags registers the config flags.
+func (c *Config) Flags(fs *pflag.FlagSet) {
+	fs.StringVar(&c.Endpoint, "otel-endpoint", c.Endpoint, "OTLP endpoint (e.g. localhost:4317)")
+	fs.StringVar(&c.ServiceName, "otel-service-name", c.ServiceName, "Service name for traces")
+	fs.Float64Var(&c.SampleRatio, "otel-sample-ratio", c.SampleRatio, "Sampling ratio for root spans (0.0-1.0)")
+	fs.BoolVar(&c.Insecure, "otel-insecure", c.Insecure, "Use insecure connection to collector")
 }
 
 // SetDefaults applies default values to zero-value fields.
