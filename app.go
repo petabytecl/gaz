@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
@@ -108,6 +109,7 @@ type App struct {
 	buildErrors []error         // collects registration errors for Build()
 	modules     map[string]bool // tracks registered module names for duplicate detection
 	cobraCmd    *cobra.Command  // cobra command for module flags integration
+	flagFns     []func(*pflag.FlagSet)
 
 	// Logger instance
 	Logger *slog.Logger
@@ -225,6 +227,21 @@ func New(opts ...Option) *App {
 // This is useful for advanced use cases or testing.
 func (a *App) Container() *Container {
 	return a.container
+}
+
+// AddFlagsFn registers a function that adds flags to the application.
+// If a Cobra command is already attached, the flags are applied immediately.
+// Otherwise, they are stored and applied when WithCobra is called.
+func (a *App) AddFlagsFn(fn func(*pflag.FlagSet)) {
+	if fn == nil {
+		return
+	}
+	a.flagFns = append(a.flagFns, fn)
+
+	// If cobra command already exists, apply immediately
+	if a.cobraCmd != nil {
+		fn(a.cobraCmd.PersistentFlags())
+	}
 }
 
 // EventBus returns the application's EventBus for pub/sub.
