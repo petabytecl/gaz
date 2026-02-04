@@ -3,6 +3,32 @@ package health
 import (
 	"context"
 	"time"
+
+	"github.com/petabytecl/gaz/health/internal"
+)
+
+// Checker is the interface for executing health checks.
+type Checker = internal.Checker
+
+// CheckerOption configures the Checker.
+type CheckerOption = internal.CheckerOption
+
+// CheckerResult holds the aggregated health status and details.
+type CheckerResult = internal.CheckerResult
+
+// CheckResult holds the result of a single check.
+type CheckResult = internal.CheckResult
+
+// AvailabilityStatus represents system/component availability.
+type AvailabilityStatus = internal.AvailabilityStatus
+
+const (
+	// StatusUnknown means the status is not yet known.
+	StatusUnknown = internal.StatusUnknown
+	// StatusUp means the system/component is available.
+	StatusUp = internal.StatusUp
+	// StatusDown means the system/component is unavailable.
+	StatusDown = internal.StatusDown
 )
 
 // CheckFunc is a function that performs a health check.
