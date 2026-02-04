@@ -130,15 +130,19 @@ Plans:
 Refactor framework to improve config/flag management, signal/blocking management, and general ergonomics to match expected DX as demonstrated in examples/grpc-gateway/ux._expected_go.
 
 ### Phase 43: Logger CLI Flags
-**Goal:** Enable logger module to register CLI flags for runtime configuration (format, level, output).
+**Goal:** Enable logger configuration via CLI flags by deferring logger creation to Build() and adding logger module.
 **Depends on:** Phase 42
-**Plans:** 1 plan
+**Plans:** 2 plans
 
 Plans:
-- [ ] 43-01-PLAN.md — Add logger module with CLI flag support (--log-level, --log-format, --log-output, --log-add-source)
+- [ ] 43-01-PLAN.md — Restructure App to defer Logger initialization to Build(), make WithCobra an Option
+- [ ] 43-02-PLAN.md — Create logger module with CLI flag support (--log-level, --log-format, --log-output, --log-add-source)
 
 **Details:**
-Logger should register flags to get configurations from the CLI, like text vs json format, log level, etc.
+The logger is currently created immediately in gaz.New() BEFORE modules are loaded or flags parsed. This must change:
+1. Move WithCobra to be an Option passed to gaz.New()
+2. Defer logger creation until Build() when flag values are available
+3. Create logger module that provides logger.Config with CLI flags
 
 ### Phase 44: Config File CLI Flag
 **Goal:** Enable configuration to register a `--config` flag to receive a config file path as an argument.
