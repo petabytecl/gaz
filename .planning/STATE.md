@@ -119,6 +119,8 @@ None.
 - Plan 41-01 complete: Standardized logger usage across server packages
 - Plan 41-02 complete: Fixed Gateway handler race condition and standardized naming
 - Plan 41-03 complete: Refactored server modules to use ConfigProvider pattern and simplified API
+- Plan 41-04 complete: Integrated native health checks into gRPC server
+- Phase 41 complete: Server module architecture refactored and standardized
 
 ### Pending Todos
 
