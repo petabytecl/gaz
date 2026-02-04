@@ -116,6 +116,19 @@ Plans:
 
 **Status:** Complete (2026-02-03)
 
+### Phase 42: Refactor Framework Ergonomics
+**Goal:** Improve library ergonomics to achieve expected DX (config/flags, signals, blocking).
+**Depends on:** Phase 41
+**Plans:** 3 plans
+
+Plans:
+- [ ] 42-01-PLAN.md — Enable deferred flag registration and recursive module flag collection
+- [ ] 42-02-PLAN.md — Update Cobra integration to apply deferred flags and provide default lifecycle
+- [ ] 42-03-PLAN.md — Refactor gRPC Gateway example to demonstrate new ergonomics
+
+**Details:**
+Refactor framework to improve config/flag management, signal/blocking management, and general ergonomics to match expected DX as demonstrated in examples/grpc-gateway/ux._expected_go.
+
 ## Progress
 
 | Phase | Goal | Status | Requirements |
