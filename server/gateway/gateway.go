@@ -125,7 +125,7 @@ func (g *Gateway) OnStart(ctx context.Context) error {
 	})
 
 	// Build the handler chain
-	var h http.Handler = corsHandler.Handler(g.mux)
+	h := corsHandler.Handler(g.mux)
 
 	// Wrap with OTEL instrumentation if TracerProvider is available.
 	// Order: mux -> CORS -> otelhttp (OTEL wraps the outermost layer).

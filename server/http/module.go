@@ -35,8 +35,9 @@ func NewModule() gaz.Module {
 
 				// Resolve ProviderValues to load config
 				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
-					if err := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); err != nil {
+					if unmarshalErr := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); unmarshalErr != nil {
 						// ignore error, use defaults
+						_ = unmarshalErr
 					}
 				}
 
@@ -59,7 +60,7 @@ func NewModule() gaz.Module {
 
 					// Resolve handler if available, otherwise use default
 					var handler http.Handler
-					if h, err := gaz.Resolve[http.Handler](c); err == nil {
+					if h, resolveErr := gaz.Resolve[http.Handler](c); resolveErr == nil {
 						handler = h
 					}
 

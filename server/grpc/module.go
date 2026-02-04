@@ -34,9 +34,10 @@ func NewModule() gaz.Module {
 				// Resolve ProviderValues to load config
 				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
 					// We use the namespace from the default config to unmarshal
-					if err := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); err != nil {
+					if unmarshalErr := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); unmarshalErr != nil {
 						// If key not found, we rely on defaults
 						// Ideally we might want to log this but for now defaults are fine
+						_ = unmarshalErr
 					}
 				}
 

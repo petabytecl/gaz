@@ -48,8 +48,9 @@ func NewModule() gaz.Module {
 
 				// Resolve ProviderValues to load config
 				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
-					if err := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); err != nil {
+					if unmarshalErr := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); unmarshalErr != nil {
 						// ignore error
+						_ = unmarshalErr
 					}
 				}
 

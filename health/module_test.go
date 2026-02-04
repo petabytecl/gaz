@@ -144,7 +144,7 @@ func TestModule_ConfigNotRegistered(t *testing.T) {
 	}
 }
 
-//nolint:gocyclo,cyclop // Test function with many subtests
+// TestNewModule tests the module creation and options.
 func TestNewModule(t *testing.T) {
 	t.Run("zero arguments uses defaults", func(t *testing.T) {
 		c := di.New()

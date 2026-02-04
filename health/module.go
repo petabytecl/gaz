@@ -57,19 +57,21 @@ func WithStartupPath(path string) ModuleOption {
 }
 
 // WithGRPC enables the gRPC health server.
+//
 // Deprecated: gRPC health check is now integrated into the gRPC server module directly.
 // This option is a no-op and will be removed in a future version.
 func WithGRPC() ModuleOption {
-	return func(c *moduleConfig) {
+	return func(_ *moduleConfig) {
 		// No-op
 	}
 }
 
 // WithGRPCInterval sets the gRPC health check polling interval.
+//
 // Deprecated: gRPC health check is now integrated into the gRPC server module directly.
 // Configure interval via gRPC server config. This option is a no-op.
-func WithGRPCInterval(d time.Duration) ModuleOption {
-	return func(c *moduleConfig) {
+func WithGRPCInterval(_ time.Duration) ModuleOption {
+	return func(_ *moduleConfig) {
 		// No-op
 	}
 }

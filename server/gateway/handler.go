@@ -33,5 +33,9 @@ func (h *DynamicHandler) SetHandler(handler http.Handler) {
 
 // ServeHTTP delegates to the current underlying handler.
 func (h *DynamicHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.handler.Load().(http.Handler).ServeHTTP(w, r)
+	if handler, ok := h.handler.Load().(http.Handler); ok {
+		handler.ServeHTTP(w, r)
+	} else {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }

@@ -13,6 +13,9 @@ const DefaultPort = 50051
 // DefaultMaxMsgSize is the default maximum message size (4MB).
 const DefaultMaxMsgSize = 4 * 1024 * 1024
 
+// DefaultHealthCheckInterval is the default interval for health checks.
+const DefaultHealthCheckInterval = 5 * time.Second
+
 // Config holds configuration for the gRPC server.
 type Config struct {
 	// Port is the TCP port the gRPC server listens on.
@@ -53,7 +56,7 @@ func DefaultConfig() Config {
 		MaxRecvMsgSize:      DefaultMaxMsgSize,
 		MaxSendMsgSize:      DefaultMaxMsgSize,
 		HealthEnabled:       true,
-		HealthCheckInterval: 5 * time.Second,
+		HealthCheckInterval: DefaultHealthCheckInterval,
 		DevMode:             false,
 	}
 }
@@ -94,7 +97,7 @@ func (c *Config) SetDefaults() {
 		c.MaxSendMsgSize = DefaultMaxMsgSize
 	}
 	if c.HealthCheckInterval == 0 {
-		c.HealthCheckInterval = 5 * time.Second
+		c.HealthCheckInterval = DefaultHealthCheckInterval
 	}
 	// HealthEnabled defaults to true. But if user explicitly sets false (zero value), we shouldn't overwrite it to true here.
 	// However, if it's coming from a file/env where it was missing, it would be false.

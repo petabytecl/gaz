@@ -124,7 +124,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 	// Auto-register gRPC health server if enabled.
 	if s.config.HealthEnabled {
-		if manager, err := di.Resolve[*health.Manager](s.container); err == nil {
+		if manager, resolveErr := di.Resolve[*health.Manager](s.container); resolveErr == nil {
 			s.healthAdapter = newHealthAdapter(manager, s.config.HealthCheckInterval, s.logger)
 			s.healthAdapter.Register(s.server)
 			s.healthAdapter.Start(ctx)
