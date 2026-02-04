@@ -13,14 +13,13 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-- **Milestone:** v4.2 Framework Ergonomics
-- **Phase:** 42 - Refactor Framework Ergonomics
-- **Next Phase:** TBD
-- **Plan:** 3 of 3 in current phase
-- **Status:** Phase complete
-- **Last activity:** 2026-02-04 — Completed 42-03-PLAN.md
+- **Milestone:** v4.3 Logger CLI Flags
+- **Phase:** 43 - Logger CLI Flags
+- **Plan:** 1 of 1 in current phase
+- **Status:** Plan complete
+- **Last activity:** 2026-02-04 — Completed 43-01-PLAN.md
 
-Progress: [██████████] 100% (Phase 42 complete)
+Progress: [██████████] 100% (Plan 43-01 complete)
 
 ## Milestones Shipped
 
@@ -80,6 +79,14 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Config Defaults:** Removed manual Viper binding in examples favoring framework defaults.
 - **Smart Defaults:** Implemented auto-discovery of local gRPC port in Gateway module to improve DX.
 
+### v4.3 Decisions (Phase 43)
+
+- **WithCobra as Option:** `WithCobra(cmd)` is now an Option passed to `gaz.New()` instead of a method, enabling flags to be available before Logger creation.
+- **Deferred Logger Init:** Logger, EventBus, WorkerManager, Scheduler are nil until `Build()` is called.
+- **Immediate Flag Application:** `AddFlagsFn` applies flags immediately if cobra command is attached, ensuring order-independence.
+- **Default LoggerConfig:** LoggerConfig with Info/JSON defaults is set in `New()` for consistent defaults.
+- **Early Return in doStop:** `doStop()` returns early if app was never built to prevent nil panics.
+
 ### Research Summary
 
 See: .planning/research/SUMMARY.md
@@ -135,6 +142,9 @@ None.
 - Plan 42-01 complete: Deferred flag registration decoupled App.Use from Cobra
 - Plan 42-02 complete: Update Cobra integration to apply deferred flags and provide default lifecycle management
 - Plan 42-03 complete: Refactored examples and fixed server modules to respect default config flags
+- Phase 43 started: Logger CLI Flags (format, level, output configuration via CLI)
+- Plan 43-01 complete: Restructured App initialization to defer Logger/subsystems until Build()
+- Phase 44 added: Config File CLI Flag (--config flag for config file path)
 
 ### Pending Todos
 
@@ -143,8 +153,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 42-03-PLAN.md
-Resume with: None (Phase 42 Complete)
+Stopped at: Completed 43-01-PLAN.md
+Resume with: None (Plan 43-01 Complete)
 
 
 ---
