@@ -147,13 +147,13 @@ The logger is currently created immediately in gaz.New() BEFORE modules are load
 ### Phase 44: Config File CLI Flag
 **Goal:** Enable configuration to register a `--config` flag to receive a config file path as an argument.
 **Depends on:** Phase 43
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 44 to break down)
+- [ ] 44-01-PLAN.md — Add --config, --env-prefix, --config-strict CLI flags with auto-search
 
 **Details:**
-[To be added during planning]
+Adds `config/module` package following logger/module pattern. Registers CLI flags for config file path, environment variable prefix, and strict mode. App.loadConfig() applies these flags when the config module is used. Auto-search behavior uses cwd and XDG config directories when --config is not provided.
 
 ## Progress
 
