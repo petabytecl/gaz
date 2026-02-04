@@ -135,10 +135,10 @@ Refactor framework to improve config/flag management, signal/blocking management
 **Plans:** 2 plans
 
 Plans:
-- [ ] 43-01-PLAN.md — Restructure App to defer Logger initialization to Build(), make WithCobra an Option
-- [ ] 43-02-PLAN.md — Create logger module with CLI flag support (--log-level, --log-format, --log-output, --log-add-source)
+- [x] 43-01-PLAN.md — Restructure App to defer Logger initialization to Build(), make WithCobra an Option
+- [x] 43-02-PLAN.md — Create logger module with CLI flag support (--log-level, --log-format, --log-output, --log-add-source)
 
-**Details:**
+**Status:** Complete (2026-02-04)
 The logger is currently created immediately in gaz.New() BEFORE modules are loaded or flags parsed. This must change:
 1. Move WithCobra to be an Option passed to gaz.New()
 2. Defer logger creation until Build() when flag values are available
@@ -165,6 +165,6 @@ Plans:
 | 39 | Gateway Integration | **Complete** | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | **Complete** | INF-01, INF-02, INF-03 |
 | 41 | Refactor Server Arch | **Complete** | - |
-| 42 | Framework Ergonomics | In Progress | - |
-| 43 | Logger CLI Flags | Planned | - |
+| 42 | Framework Ergonomics | **Complete** | - |
+| 43 | Logger CLI Flags | **Complete** | - |
 | 44 | Config File CLI Flag | Planned | - |

@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.3 Logger CLI Flags
 - **Phase:** 43 - Logger CLI Flags
-- **Plan:** 1 of 1 in current phase
-- **Status:** Plan complete
-- **Last activity:** 2026-02-04 — Completed 43-01-PLAN.md
+- **Plan:** 2 of 2 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-04 — Completed 43-02-PLAN.md
 
-Progress: [██████████] 100% (Plan 43-01 complete)
+Progress: [██████████] 100% (Phase 43 complete)
 
 ## Milestones Shipped
 
@@ -86,6 +86,7 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Immediate Flag Application:** `AddFlagsFn` applies flags immediately if cobra command is attached, ensuring order-independence.
 - **Default LoggerConfig:** LoggerConfig with Info/JSON defaults is set in `New()` for consistent defaults.
 - **Early Return in doStop:** `doStop()` returns early if app was never built to prevent nil panics.
+- **Logger Module Subpackage:** `logger/module` subpackage used instead of `logger/module.go` to avoid circular import between gaz and logger packages.
 
 ### Research Summary
 
@@ -144,6 +145,8 @@ None.
 - Plan 42-03 complete: Refactored examples and fixed server modules to respect default config flags
 - Phase 43 started: Logger CLI Flags (format, level, output configuration via CLI)
 - Plan 43-01 complete: Restructured App initialization to defer Logger/subsystems until Build()
+- Plan 43-02 complete: Created logger/module subpackage with CLI flags (--log-level, --log-format, --log-output, --log-add-source)
+- Phase 43 complete: Logger CLI flags fully implemented
 - Phase 44 added: Config File CLI Flag (--config flag for config file path)
 
 ### Pending Todos
@@ -153,8 +156,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-04
-Stopped at: Completed 43-01-PLAN.md
-Resume with: None (Plan 43-01 Complete)
+Stopped at: Completed 43-02-PLAN.md (Phase 43 complete)
+Resume with: Phase 44 (Config File CLI Flag)
 
 
 ---
