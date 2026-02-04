@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 41 - Refactor Server Module Architecture & Consistency
-- **Plan:** 2 of 4 in current phase
+- **Plan:** 3 of 4 in current phase
 - **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 41-02-PLAN.md (Gateway atomic handler and naming consistency)
+- **Last activity:** 2026-02-03 — Completed 41-03-PLAN.md (Refactor server modules)
 
-Progress: [██████████] 98% (Phase 41 in progress)
+Progress: [██████████] 100% (Phase 40 complete, v4.1 milestone complete)
 
 ## Milestones Shipped
 
@@ -36,7 +36,7 @@ Progress: [██████████] 98% (Phase 41 in progress)
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 (Partial) | Core Discovery | 37 | 2 | 2026-02-02 |
 
-**Total:** 146 plans across 37+ phases
+**Total:** 149 plans across 41+ phases
 
 ## Accumulated Context
 
@@ -66,6 +66,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Health Logging:** Replaced direct stderr printing with structured logging in health server.
 - **Atomic Handler:** Used atomic.Value for DynamicHandler to ensure zero-lock reads.
 - **Naming Consistency:** Renamed ServiceRegistrar to Registrar in gRPC for consistency.
+- **ConfigProvider Pattern:** Server modules use standard `Config` structs with `Flags()` method and `gaz.NewModule` builder instead of functional options.
+- **Unified Server Module:** `server.NewModule` bundles `gRPC` and `Gateway` (which includes HTTP server) for a complete stack.
 
 ### Research Summary
 
@@ -112,6 +114,9 @@ None.
 - Plan 40-03 added PGX health check, auto gRPC health integration, and otel tests
 - Phase 40 complete: Observability & Health fully implemented
 - Phase 41 added: Refactor server module architecture and consistency
+- Plan 41-01 complete: Standardized logger usage across server packages
+- Plan 41-02 complete: Fixed Gateway handler race condition and standardized naming
+- Plan 41-03 complete: Refactored server modules to use ConfigProvider pattern and simplified API
 
 ### Pending Todos
 
@@ -120,8 +125,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 41-01-PLAN.md (Standardize Logger Usage)
-Resume with: 41-03-PLAN.md
+Stopped at: Completed 41-03-PLAN.md
+Resume with: 41-04-PLAN.md (Verify Consistency and Documentation)
 
 ---
 
