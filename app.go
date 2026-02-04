@@ -139,6 +139,10 @@ type App struct {
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
+
+	// Stop idempotency
+	stopOnce sync.Once
+	stopErr  error
 }
 
 // providerConfigEntry stores config information from a ConfigProvider.
@@ -851,7 +855,16 @@ func (a *App) handleSignalShutdown(
 // Stop initiates graceful shutdown of the application.
 // It executes OnStop hooks for all services in reverse dependency order.
 // Safe to call even if Run() was not used (e.g., Cobra integration).
+// Stop is idempotent - calling it multiple times returns the same result.
 func (a *App) Stop(ctx context.Context) error {
+	a.stopOnce.Do(func() {
+		a.stopErr = a.doStop(ctx)
+	})
+	return a.stopErr
+}
+
+// doStop performs the actual shutdown. Called only once via stopOnce.
+func (a *App) doStop(ctx context.Context) error {
 	a.mu.Lock()
 	wasRunning := a.running
 	a.mu.Unlock()
