@@ -40,6 +40,14 @@ func New(cfg Config) func(context.Context) error {
 			return ErrEmptyHost
 		}
 
+		// Check if context is already cancelled before starting lookup.
+		// This ensures consistent behavior across different DNS resolver
+		// implementations (pure Go vs cgo), as the pure Go resolver may
+		// resolve from /etc/hosts synchronously without checking context.
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("dns: %w", err)
+		}
+
 		ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
 		defer cancel()
 
