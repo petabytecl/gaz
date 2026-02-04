@@ -110,21 +110,6 @@ func (s *IntegrationSuite) TestCobraWithFullLifecycle() {
 	// This exercises WithCobra(), FromContext(), Start() from Plan 03
 
 	var startCalled, stopCalled atomic.Bool
-
-	app := gaz.New(gaz.WithShutdownTimeout(time.Second))
-
-	// Register service with lifecycle hooks using For[T] API
-	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
-	err := gaz.For[*testLifecycleService](app.Container()).
-		Eager(). // Must be eager to have hooks called
-		ProviderFunc(func(_ *gaz.Container) *testLifecycleService {
-			return &testLifecycleService{
-				onStart: func() { startCalled.Store(true) },
-				onStop:  func() { stopCalled.Store(true) },
-			}
-		})
-	s.Require().NoError(err)
-
 	var cmdExecuted bool
 
 	rootCmd := &cobra.Command{
@@ -143,7 +128,19 @@ func (s *IntegrationSuite) TestCobraWithFullLifecycle() {
 		},
 	}
 
-	app.WithCobra(rootCmd)
+	app := gaz.New(gaz.WithCobra(rootCmd), gaz.WithShutdownTimeout(time.Second))
+
+	// Register service with lifecycle hooks using For[T] API
+	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
+	err := gaz.For[*testLifecycleService](app.Container()).
+		Eager(). // Must be eager to have hooks called
+		ProviderFunc(func(_ *gaz.Container) *testLifecycleService {
+			return &testLifecycleService{
+				onStart: func() { startCalled.Store(true) },
+				onStop:  func() { stopCalled.Store(true) },
+			}
+		})
+	s.Require().NoError(err)
 
 	rootCmd.SetArgs([]string{})
 	err = rootCmd.Execute()
@@ -316,11 +313,6 @@ func (s *IntegrationSuite) TestNestedModuleDependencies() {
 func (s *IntegrationSuite) TestCobraSubcommandHierarchy() {
 	// Test: Nested subcommands all have access to App
 
-	app := gaz.New()
-	_ = gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
-		return &testDatabase{dsn: "test-db"}
-	})
-
 	var level1App, level2App *gaz.App
 
 	rootCmd := &cobra.Command{Use: "root"}
@@ -342,7 +334,10 @@ func (s *IntegrationSuite) TestCobraSubcommandHierarchy() {
 	level1Cmd.AddCommand(level2Cmd)
 	rootCmd.AddCommand(level1Cmd)
 
-	app.WithCobra(rootCmd)
+	app := gaz.New(gaz.WithCobra(rootCmd))
+	_ = gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
+		return &testDatabase{dsn: "test-db"}
+	})
 
 	// Execute level1 command first
 	rootCmd.SetArgs([]string{"level1"})
@@ -419,7 +414,21 @@ func (s *IntegrationSuite) TestCobraWithModulesAndLifecycle() {
 
 	var started, stopped atomic.Bool
 
-	app := gaz.New()
+	var dbDSN string
+	rootCmd := &cobra.Command{
+		Use: "app",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			gotApp := gaz.FromContext(cmd.Context())
+			userSvc, resolveErr := gaz.Resolve[*testUserService](gotApp.Container())
+			if resolveErr != nil {
+				return resolveErr
+			}
+			dbDSN = userSvc.db.dsn
+			return nil
+		},
+	}
+
+	app := gaz.New(gaz.WithCobra(rootCmd))
 
 	// Infrastructure module with lifecycle
 	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
@@ -452,22 +461,6 @@ func (s *IntegrationSuite) TestCobraWithModulesAndLifecycle() {
 		},
 	)
 
-	var dbDSN string
-	rootCmd := &cobra.Command{
-		Use: "app",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			gotApp := gaz.FromContext(cmd.Context())
-			userSvc, resolveErr := gaz.Resolve[*testUserService](gotApp.Container())
-			if resolveErr != nil {
-				return resolveErr
-			}
-			dbDSN = userSvc.db.dsn
-			return nil
-		},
-	}
-
-	app.WithCobra(rootCmd)
-
 	rootCmd.SetArgs([]string{})
 	err := rootCmd.Execute()
 	s.Require().NoError(err)
@@ -486,7 +479,6 @@ func (s *IntegrationSuite) TestCobraConfigIntegration() {
 	}
 
 	var cfg AppConfig
-	app := gaz.New().WithConfig(&cfg)
 
 	rootCmd := &cobra.Command{
 		Use: "app",
@@ -498,7 +490,9 @@ func (s *IntegrationSuite) TestCobraConfigIntegration() {
 	rootCmd.Flags().Int("port", 8080, "port number")
 	rootCmd.Flags().String("name", "default", "app name")
 
-	app.WithCobra(rootCmd)
+	app := gaz.New(gaz.WithCobra(rootCmd)).WithConfig(&cfg)
+
+	_ = app // app is used implicitly via cobra hooks
 
 	// Bind flags override default
 	rootCmd.SetArgs([]string{"--port", "9090", "--name", "override"})

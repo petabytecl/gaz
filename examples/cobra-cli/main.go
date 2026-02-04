@@ -3,7 +3,6 @@
 // This example shows:
 //   - Root command with persistent flags
 //   - Subcommands that use dependency injection
-//   - Flag binding to configuration via viper
 //   - gaz.WithCobra() for automatic lifecycle management
 //
 // Run with:
@@ -21,12 +20,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/petabytecl/gaz"
 )
 
 // AppConfig holds application configuration.
-// Fields are populated from flags, env vars, and config files via viper.
+// Fields are populated from flags.
 type AppConfig struct {
 	Debug   bool   `mapstructure:"debug"`
 	Port    int    `mapstructure:"port"`
@@ -108,12 +108,68 @@ with Cobra CLI. It shows:
 	rootCmd.PersistentFlags().StringP("host", "H", "localhost", "Server host")
 	rootCmd.PersistentFlags().IntP("timeout", "t", 30, "Request timeout in seconds")
 
-	// Serve subcommand
+	// Serve subcommand - the lifecycle-managed command
 	serveCmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the server",
 		Long:  "Starts the application server with the configured settings.",
-		RunE:  runServe,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			// Get the app from context (set by gaz.WithCobra)
+			app := gaz.FromContext(cmd.Context())
+			if app == nil {
+				return fmt.Errorf("app not found in context")
+			}
+
+			// Resolve the server and call Start
+			server, err := gaz.Resolve[*Server](app.Container())
+			if err != nil {
+				return fmt.Errorf("failed to resolve server: %w", err)
+			}
+
+			// Run the server until context is cancelled
+			return server.Start(cmd.Context())
+		},
+	}
+
+	// Create the gaz application with Cobra integration
+	// WithCobra as an Option handles lifecycle (Build/Start in PreRunE, Stop in PostRunE)
+	app := gaz.New(
+		gaz.WithShutdownTimeout(10*time.Second),
+		gaz.WithCobra(serveCmd),
+	)
+
+	// Register flag functions to add module flags
+	app.AddFlagsFn(func(fs *pflag.FlagSet) {
+		// Module-specific flags would go here
+	})
+
+	// Register server with lifecycle hooks (Server implements di.Starter and di.Stopper)
+	if err := gaz.For[*Server](app.Container()).
+		Eager().
+		Provider(func(c *gaz.Container) (*Server, error) {
+			// Get command args to read flag values
+			cmdArgs, err := gaz.Resolve[*gaz.CommandArgs](c)
+			if err != nil {
+				return nil, err
+			}
+			cmd := cmdArgs.Command
+
+			// Read flag values from the command
+			debug, _ := cmd.Flags().GetBool("debug")
+			port, _ := cmd.Flags().GetInt("port")
+			host, _ := cmd.Flags().GetString("host")
+			timeout, _ := cmd.Flags().GetInt("timeout")
+
+			config := AppConfig{
+				Debug:   debug,
+				Port:    port,
+				Host:    host,
+				Timeout: timeout,
+			}
+
+			return NewServer(config, out), nil
+		}); err != nil {
+		return fmt.Errorf("failed to register server: %w", err)
 	}
 
 	// Version subcommand (simple, no DI needed)
@@ -131,60 +187,4 @@ with Cobra CLI. It shows:
 	rootCmd.AddCommand(versionCmd)
 
 	return rootCmd.ExecuteContext(ctx)
-}
-
-// runServe is the handler for the "serve" subcommand.
-func runServe(cmd *cobra.Command, _ []string) error {
-	// Read flag values
-	debug, _ := cmd.Flags().GetBool("debug")
-	port, _ := cmd.Flags().GetInt("port")
-	host, _ := cmd.Flags().GetString("host")
-	timeout, _ := cmd.Flags().GetInt("timeout")
-
-	// Create configuration from flags
-	config := AppConfig{
-		Debug:   debug,
-		Port:    port,
-		Host:    host,
-		Timeout: timeout,
-	}
-
-	// Create the gaz application
-	app := gaz.New(
-		gaz.WithShutdownTimeout(10 * time.Second),
-	)
-
-	// Register configuration as instance using For[T]()
-	if err := gaz.For[AppConfig](app.Container()).Instance(config); err != nil {
-		return fmt.Errorf("failed to register config: %w", err)
-	}
-
-	// Register server with lifecycle hooks (Server implements di.Starter and di.Stopper)
-	if err := gaz.For[*Server](app.Container()).
-		Eager().
-		Provider(func(c *gaz.Container) (*Server, error) {
-			cfg, err := gaz.Resolve[AppConfig](c)
-			if err != nil {
-				return nil, err
-			}
-			return NewServer(cfg, cmd.OutOrStdout()), nil
-		}); err != nil {
-		return fmt.Errorf("failed to register server: %w", err)
-	}
-
-	// Attach gaz lifecycle to the Cobra command
-	app.WithCobra(cmd)
-
-	// The lifecycle is now managed:
-	// - PersistentPreRunE: Build() and Start() are called
-	// - PersistentPostRunE: Stop() is called
-
-	// Start the server (blocks until signal)
-	server, err := gaz.Resolve[*Server](app.Container())
-	if err != nil {
-		return fmt.Errorf("failed to resolve server: %w", err)
-	}
-
-	// Run the server with context from Cobra
-	return server.Start(cmd.Context())
 }

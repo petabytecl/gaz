@@ -111,7 +111,7 @@ type App struct {
 	cobraCmd    *cobra.Command  // cobra command for module flags integration
 	flagFns     []func(*pflag.FlagSet)
 
-	// Logger instance
+	// Logger instance - nil until Build() is called
 	Logger *slog.Logger
 
 	// Configuration
@@ -126,14 +126,15 @@ type App struct {
 	configLoaded             bool
 	providerValuesRegistered bool
 	providerConfigsCollected bool
+	loggerInitialized        bool // tracks if initializeLogger was called
 
-	// Worker management
+	// Worker management - nil until Build() is called
 	workerMgr *worker.Manager
 
-	// Cron scheduler
+	// Cron scheduler - nil until Build() is called
 	scheduler *cron.Scheduler
 
-	// EventBus for pub/sub
+	// EventBus for pub/sub - nil until Build() is called
 	eventBus *eventbus.EventBus
 
 	mu      sync.Mutex
@@ -155,6 +156,10 @@ type providerConfigEntry struct {
 // New creates a new App with the given options.
 // Use the For[T]() fluent API to register services, then call Build() and Run().
 //
+// Logger, WorkerManager, Scheduler, and EventBus are NOT created here.
+// They are initialized in Build() after config is loaded and flags are parsed.
+// This allows logger CLI flags to take effect.
+//
 // Example:
 //
 //	app := gaz.New(gaz.WithShutdownTimeout(10 * time.Second))
@@ -170,48 +175,15 @@ func New(opts ...Option) *App {
 		opts: AppOptions{
 			ShutdownTimeout: defaultShutdownTimeout,
 			PerHookTimeout:  defaultPerHookTimeout,
+			LoggerConfig: &logger.Config{
+				Level:  slog.LevelInfo,
+				Format: "json",
+			},
 		},
 		modules: make(map[string]bool),
 	}
 	for _, opt := range opts {
 		opt(app)
-	}
-
-	// Initialize Logger
-	if app.opts.LoggerConfig == nil {
-		app.opts.LoggerConfig = &logger.Config{
-			Level:  slog.LevelInfo,
-			Format: "json",
-		}
-	}
-	app.Logger = logger.NewLogger(app.opts.LoggerConfig)
-
-	// Initialize WorkerManager
-	app.workerMgr = worker.NewManager(app.Logger)
-	app.workerMgr.SetCriticalFailHandler(func() {
-		app.Logger.Error("critical worker failed, initiating shutdown")
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), app.opts.ShutdownTimeout)
-			defer cancel()
-			_ = app.Stop(ctx)
-		}()
-	})
-
-	// Initialize Scheduler with background context (job execution uses app context)
-	app.scheduler = cron.NewScheduler(app.container, context.Background(), app.Logger)
-
-	// Initialize EventBus
-	app.eventBus = eventbus.New(app.Logger)
-
-	// Register Logger in container using For[T]() pattern
-	if err := For[*slog.Logger](app.container).Instance(app.Logger); err != nil {
-		// Should not happen as container is empty
-		panic(fmt.Errorf("failed to register logger: %w", err))
-	}
-
-	// Register EventBus as singleton for DI resolution
-	if err := For[*eventbus.EventBus](app.container).Instance(app.eventBus); err != nil {
-		panic(fmt.Errorf("failed to register eventbus: %w", err))
 	}
 
 	// Initialize ConfigManager with convention-based defaults:
@@ -234,24 +206,101 @@ func (a *App) Container() *Container {
 }
 
 // AddFlagsFn registers a function that adds flags to the application.
-// If a Cobra command is already attached, the flags are applied immediately.
-// Otherwise, they are stored and applied when WithCobra is called.
+// Flags are stored and applied when WithCobra option is processed or
+// when a Cobra command is attached.
+// If a Cobra command is already attached, flags are applied immediately.
 func (a *App) AddFlagsFn(fn func(*pflag.FlagSet)) {
 	if fn == nil {
 		return
 	}
 	a.flagFns = append(a.flagFns, fn)
 
-	// If cobra command already exists, apply immediately
+	// If cobra command is already attached, apply flags immediately
 	if a.cobraCmd != nil {
 		fn(a.cobraCmd.PersistentFlags())
 	}
 }
 
+// initializeLogger creates the logger from resolved config or defaults.
+// Called during Build() after config is loaded and flags are parsed.
+// This method is idempotent - subsequent calls return nil.
+func (a *App) initializeLogger() error {
+	if a.loggerInitialized {
+		return nil
+	}
+
+	// Check if logger.Config is available (logger module registered)
+	cfg, err := Resolve[logger.Config](a.container)
+	if err != nil {
+		// No logger module - use option config or defaults
+		if a.opts.LoggerConfig == nil {
+			a.opts.LoggerConfig = &logger.Config{
+				Level:  slog.LevelInfo,
+				Format: "text",
+			}
+		}
+		a.Logger = logger.NewLogger(a.opts.LoggerConfig)
+	} else {
+		// Logger module provided config - use it
+		a.Logger = logger.NewLogger(&cfg)
+	}
+
+	// Register Logger in container
+	if regErr := For[*slog.Logger](a.container).Instance(a.Logger); regErr != nil {
+		return fmt.Errorf("register logger: %w", regErr)
+	}
+
+	a.loggerInitialized = true
+	return nil
+}
+
+// initializeSubsystems creates WorkerManager, Scheduler, EventBus.
+// Called during Build() after logger is initialized.
+func (a *App) initializeSubsystems() error {
+	// Use slog.Default() if Logger is nil (shouldn't happen after initializeLogger)
+	log := a.Logger
+	if log == nil {
+		log = slog.Default()
+	}
+
+	// WorkerManager
+	a.workerMgr = worker.NewManager(log)
+	a.workerMgr.SetCriticalFailHandler(func() {
+		log.Error("critical worker failed, initiating shutdown")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
+			defer cancel()
+			_ = a.Stop(ctx)
+		}()
+	})
+
+	// Scheduler
+	a.scheduler = cron.NewScheduler(a.container, context.Background(), log)
+
+	// EventBus
+	a.eventBus = eventbus.New(log)
+
+	// Register EventBus in container
+	if err := For[*eventbus.EventBus](a.container).Instance(a.eventBus); err != nil {
+		return fmt.Errorf("register eventbus: %w", err)
+	}
+	return nil
+}
+
 // EventBus returns the application's EventBus for pub/sub.
+// Returns nil if called before Build().
 // Prefer injecting *eventbus.EventBus as a dependency instead.
 func (a *App) EventBus() *eventbus.EventBus {
 	return a.eventBus
+}
+
+// getLogger returns the app's logger or slog.Default() if not initialized.
+// This allows methods to safely log before Build() is called.
+func (a *App) getLogger() *slog.Logger {
+	if a.Logger != nil {
+		return a.Logger
+	}
+	return slog.Default()
 }
 
 // WithConfig configures the application to load configuration into the target struct.
@@ -536,7 +585,7 @@ func (a *App) discoverWorkers() {
 			// Register with default options
 			// Providers can customize via WithWorkerOptions in future
 			if regErr := a.workerMgr.Register(w); regErr != nil {
-				a.Logger.Warn("failed to register worker",
+				a.getLogger().Warn("failed to register worker",
 					"name", name,
 					"error", regErr,
 				)
@@ -568,7 +617,7 @@ func (a *App) discoverCronJobs() {
 
 		// CronJobs should be transient (new instance per execution)
 		if !svc.IsTransient() {
-			a.Logger.Warn("CronJob should be transient",
+			a.getLogger().Warn("CronJob should be transient",
 				"name", name,
 			)
 		}
@@ -587,7 +636,7 @@ func (a *App) discoverCronJobs() {
 				job.Schedule(), // cron expression
 				job.Timeout(),  // execution timeout
 			); regErr != nil {
-				a.Logger.Warn("failed to register cron job",
+				a.getLogger().Warn("failed to register cron job",
 					"name", job.Name(),
 					"error", regErr,
 				)
@@ -618,6 +667,17 @@ func (a *App) Build() error {
 
 	// Register ProviderValues EARLY so providers can inject it
 	if err := a.registerProviderValuesEarly(); err != nil {
+		errs = append(errs, err)
+	}
+
+	// Initialize Logger BEFORE collecting provider configs
+	// This allows logger config from modules to be used
+	if err := a.initializeLogger(); err != nil {
+		errs = append(errs, err)
+	}
+
+	// Initialize subsystems (WorkerManager, Scheduler, EventBus) after logger
+	if err := a.initializeSubsystems(); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -867,7 +927,13 @@ func (a *App) Stop(ctx context.Context) error {
 func (a *App) doStop(ctx context.Context) error {
 	a.mu.Lock()
 	wasRunning := a.running
+	wasBuilt := a.built
 	a.mu.Unlock()
+
+	// If app was never built, there's nothing to stop
+	if !wasBuilt {
+		return nil
+	}
 
 	// Start global timeout force-exit goroutine
 	done := make(chan struct{})
@@ -880,7 +946,7 @@ func (a *App) doStop(ctx context.Context) error {
 				"shutdown: global timeout %s exceeded, forcing exit",
 				a.opts.ShutdownTimeout,
 			)
-			a.Logger.Error(msg)
+			a.getLogger().Error(msg)
 			fmt.Fprintln(os.Stderr, msg)
 			callExitFunc(1)
 		}
@@ -914,10 +980,15 @@ func (a *App) doStop(ctx context.Context) error {
 
 	var errs []error
 
+	// Get logger safely (uses slog.Default() if nil)
+	log := a.getLogger()
+
 	// Stop workers first (they may depend on services)
-	a.Logger.InfoContext(ctx, "stopping workers")
-	if workerStopErr := a.workerMgr.Stop(); workerStopErr != nil {
-		errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
+	log.InfoContext(ctx, "stopping workers")
+	if a.workerMgr != nil {
+		if workerStopErr := a.workerMgr.Stop(); workerStopErr != nil {
+			errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
+		}
 	}
 
 	if serviceStopErr := a.stopServices(ctx, shutdownOrder, services); serviceStopErr != nil {

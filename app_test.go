@@ -477,21 +477,20 @@ func (s *AppTestSuite) TestLoggerInjection() {
 func (s *AppTestSuite) TestEventBus() {
 	app := New()
 
-	// Before Build(), EventBus should be accessible via accessor
-	eventBus := app.EventBus()
-	s.NotNil(eventBus, "EventBus should be available before Build()")
+	// Before Build(), EventBus should be nil (deferred initialization)
+	eventBusBefore := app.EventBus()
+	s.Nil(eventBusBefore, "EventBus should be nil before Build()")
 
 	s.Require().NoError(app.Build())
 
-	// After Build(), EventBus should still be accessible
+	// After Build(), EventBus should be accessible
 	eventBusAfter := app.EventBus()
 	s.NotNil(eventBusAfter, "EventBus should be available after Build()")
-	s.Same(eventBus, eventBusAfter, "EventBus should be the same instance")
 
 	// EventBus should also be resolvable via DI
 	resolvedEventBus, err := Resolve[*eventbus.EventBus](app.Container())
 	s.Require().NoError(err)
-	s.Same(eventBus, resolvedEventBus, "Resolved EventBus should be the same as accessor")
+	s.Same(eventBusAfter, resolvedEventBus, "Resolved EventBus should be the same as accessor")
 }
 
 func (s *AppTestSuite) TestWithLoggerConfig() {

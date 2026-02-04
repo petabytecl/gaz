@@ -44,8 +44,9 @@ func execute() error {
 		Short: "Start the server",
 	}
 
-	// 1. Create the gaz application
-	app := gaz.New()
+	// 1. Create the gaz application with Cobra integration
+	// WithCobra as an Option handles flags, lifecycle, and graceful shutdown
+	app := gaz.New(gaz.WithCobra(serveCmd))
 
 	// 2. Use modules
 	// server.NewModule() provides gRPC + Gateway + Health + Config
@@ -55,10 +56,6 @@ func execute() error {
 	if err := gaz.For[*GreeterService](app.Container()).Provider(NewGreeterService); err != nil {
 		return fmt.Errorf("register greeter service: %w", err)
 	}
-
-	// 4. Attach Cobra integration
-	// This handles flags, lifecycle, and graceful shutdown
-	app.WithCobra(serveCmd)
 
 	rootCmd.AddCommand(serveCmd)
 

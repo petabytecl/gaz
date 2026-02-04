@@ -205,6 +205,7 @@ func (s *ShutdownTestSuite) createLogCapturingApp(
 		Level: slog.LevelDebug,
 	})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	return app
 }
@@ -310,6 +311,7 @@ func (s *ShutdownTestSuite) TestPerHookTimeoutContinuesToNextHook() {
 	// Replace logger to capture blame logs
 	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	// Build the app
 	err := app.Build()
@@ -350,6 +352,7 @@ func (s *ShutdownTestSuite) TestGlobalTimeoutForcesExit() {
 	// Replace logger to capture logs
 	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	// Build the app
 	err := app.Build()
@@ -441,6 +444,7 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	logBuf := &syncBuffer{}
 	handler := slog.NewTextHandler(logBuf, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	// Build the app
 	err := app.Build()
@@ -497,6 +501,7 @@ func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
 	// Replace logger to capture logs
 	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	// Build the app
 	err := app.Build()
@@ -552,6 +557,7 @@ func (s *ShutdownTestSuite) TestSIGTERMDoesNotEnableDoubleSignal() {
 	// Replace logger to capture logs
 	handler := slog.NewTextHandler(s.logBuffer, &slog.HandlerOptions{Level: slog.LevelDebug})
 	app.Logger = slog.New(handler)
+	app.loggerInitialized = true // Prevent Build() from overwriting
 
 	// Build the app
 	err := app.Build()

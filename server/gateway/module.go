@@ -82,7 +82,7 @@ func newGatewayProvider(c *gaz.Container) (*Gateway, error) {
 
 	// Auto-configure GRPCTarget from grpc.Config if available and using defaults
 	if cfg.GRPCTarget == DefaultGRPCTarget {
-		if grpcCfg, err := gaz.Resolve[servergrpc.Config](c); err == nil {
+		if grpcCfg, resolveErr := gaz.Resolve[servergrpc.Config](c); resolveErr == nil {
 			// If gRPC config is available in the same container, point to it.
 			// This handles the case where --grpc-port is changed but gateway target isn't.
 			cfg.GRPCTarget = fmt.Sprintf("localhost:%d", grpcCfg.Port)

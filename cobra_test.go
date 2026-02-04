@@ -43,7 +43,12 @@ func (s *cobraTestService) OnStop(_ context.Context) error {
 }
 
 func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
-	app := New()
+	rootCmd := &cobra.Command{
+		Use: "test",
+	}
+
+	// Create app with WithCobra option
+	app := New(WithCobra(rootCmd))
 
 	var buildCalled bool
 	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
@@ -52,25 +57,21 @@ func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
 	})
 	s.Require().NoError(err)
 
-	rootCmd := &cobra.Command{
-		Use: "test",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			// Access app from context
-			gotApp := FromContext(cmd.Context())
-			s.NotNil(gotApp)
-			s.Same(app, gotApp)
+	// Set RunE that verifies app is in context
+	rootCmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		// Access app from context
+		gotApp := FromContext(cmd.Context())
+		s.NotNil(gotApp)
+		s.Same(app, gotApp)
 
-			// Resolve service
-			svc, err := Resolve[*cobraTestService](gotApp.Container())
-			s.Require().NoError(err)
-			s.NotNil(svc)
-			s.Equal("test", svc.name)
+		// Resolve service
+		svc, err := Resolve[*cobraTestService](gotApp.Container())
+		s.Require().NoError(err)
+		s.NotNil(svc)
+		s.Equal("test", svc.name)
 
-			return nil
-		},
+		return nil
 	}
-
-	app.WithCobra(rootCmd)
 
 	// Execute command
 	rootCmd.SetArgs([]string{})
@@ -80,8 +81,6 @@ func (s *CobraSuite) TestWithCobraBuildsAndStartsApp() {
 }
 
 func (s *CobraSuite) TestWithCobraPreservesExistingHooks() {
-	app := New()
-
 	var preRunCalled, postRunCalled bool
 
 	rootCmd := &cobra.Command{
@@ -99,7 +98,7 @@ func (s *CobraSuite) TestWithCobraPreservesExistingHooks() {
 		},
 	}
 
-	app.WithCobra(rootCmd)
+	_ = New(WithCobra(rootCmd))
 
 	rootCmd.SetArgs([]string{})
 	err := rootCmd.Execute()
@@ -115,16 +114,20 @@ func (s *CobraSuite) TestFromContextReturnsNilWhenNoApp() {
 	s.Nil(app)
 }
 
-func (s *CobraSuite) TestWithCobraChaining() {
-	app := New()
+func (s *CobraSuite) TestWithCobraAsOption() {
 	rootCmd := &cobra.Command{Use: "test"}
 
-	result := app.WithCobra(rootCmd)
-	s.Same(app, result) // Returns same app for chaining
+	// WithCobra is now an Option, not a method
+	app := New(WithCobra(rootCmd))
+	s.NotNil(app)
+	s.NotNil(rootCmd.PersistentPreRunE, "WithCobra should set PersistentPreRunE")
 }
 
 func (s *CobraSuite) TestWithCobraSubcommandAccess() {
-	app := New()
+	rootCmd := &cobra.Command{Use: "root"}
+
+	// Create app with WithCobra option
+	app := New(WithCobra(rootCmd))
 
 	// Register a service
 	err := For[*cobraTestService](app.Container()).Provider(func(_ *Container) (*cobraTestService, error) {
@@ -134,7 +137,6 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 
 	var resolvedName string
 
-	rootCmd := &cobra.Command{Use: "root"}
 	subCmd := &cobra.Command{
 		Use: "sub",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -149,8 +151,6 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 	}
 	rootCmd.AddCommand(subCmd)
 
-	app.WithCobra(rootCmd)
-
 	rootCmd.SetArgs([]string{"sub"})
 	execErr := rootCmd.Execute()
 	s.Require().NoError(execErr)
@@ -158,7 +158,12 @@ func (s *CobraSuite) TestWithCobraSubcommandAccess() {
 }
 
 func (s *CobraSuite) TestWithCobraBuildError() {
-	app := New()
+	rootCmd := &cobra.Command{
+		Use:  "test",
+		RunE: func(_ *cobra.Command, _ []string) error { return nil },
+	}
+
+	app := New(WithCobra(rootCmd))
 
 	buildErr := errors.New("build failed")
 
@@ -168,13 +173,6 @@ func (s *CobraSuite) TestWithCobraBuildError() {
 	})
 	s.Require().NoError(err)
 
-	rootCmd := &cobra.Command{
-		Use:  "test",
-		RunE: func(_ *cobra.Command, _ []string) error { return nil },
-	}
-
-	app.WithCobra(rootCmd)
-
 	// Execute command should fail because Build failed
 	execErr := rootCmd.Execute()
 	s.Require().Error(execErr)
@@ -182,7 +180,12 @@ func (s *CobraSuite) TestWithCobraBuildError() {
 }
 
 func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {
-	app := New()
+	rootCmd := &cobra.Command{
+		Use:  "test",
+		RunE: func(_ *cobra.Command, _ []string) error { return nil },
+	}
+
+	app := New(WithCobra(rootCmd))
 
 	var startCalled, stopCalled bool
 	// Service implements di.Starter and di.Stopper interfaces - no fluent hooks needed
@@ -194,13 +197,6 @@ func (s *CobraSuite) TestWithCobraLifecycleHooksExecuted() {
 			}, nil
 		})
 	s.Require().NoError(err)
-
-	rootCmd := &cobra.Command{
-		Use:  "test",
-		RunE: func(_ *cobra.Command, _ []string) error { return nil },
-	}
-
-	app.WithCobra(rootCmd)
 
 	rootCmd.SetArgs([]string{})
 	execErr := rootCmd.Execute()
@@ -228,26 +224,25 @@ func (s *CobraSuite) TestStartWithoutBuildCallsBuild() {
 }
 
 func (s *CobraSuite) TestWithCobraArgsInjection() {
-	app := New()
+	rootCmd := &cobra.Command{
+		Use: "test",
+	}
+
+	_ = New(WithCobra(rootCmd))
 
 	var receivedArgs []string
 
-	rootCmd := &cobra.Command{
-		Use: "test",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			// Verify access via GetArgs
-			// Note: We need to use FromContext because app inside RunE might be closure-captured,
-			// but we want to simulate real usage.
-			gotApp := FromContext(cmd.Context())
-			s.NotNil(gotApp)
+	rootCmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		// Verify access via GetArgs
+		// Note: We need to use FromContext because app inside RunE might be closure-captured,
+		// but we want to simulate real usage.
+		gotApp := FromContext(cmd.Context())
+		s.NotNil(gotApp)
 
-			args := GetArgs(gotApp.Container())
-			receivedArgs = args
-			return nil
-		},
+		args := GetArgs(gotApp.Container())
+		receivedArgs = args
+		return nil
 	}
-
-	app.WithCobra(rootCmd)
 
 	// Pass arguments
 	expectedArgs := []string{"foo", "bar"}
@@ -260,34 +255,35 @@ func (s *CobraSuite) TestWithCobraArgsInjection() {
 }
 
 func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
-	app := New()
+	rootCmd := &cobra.Command{
+		Use: "test",
+	}
+
+	_ = New(WithCobra(rootCmd))
 
 	type argsService struct {
 		args []string
 	}
 
-	For[*argsService](app.Container()).Provider(func(c *Container) (*argsService, error) {
-		cmdArgs, err := Resolve[*CommandArgs](c)
-		if err != nil {
-			return nil, err
-		}
-		return &argsService{args: cmdArgs.Args}, nil
-	})
+	// We need to get the app from context since we don't store it
+	rootCmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		gotApp := FromContext(cmd.Context())
+		s.NotNil(gotApp)
 
-	rootCmd := &cobra.Command{
-		Use: "test",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			gotApp := FromContext(cmd.Context())
-			s.NotNil(gotApp)
+		For[*argsService](gotApp.Container()).Provider(func(c *Container) (*argsService, error) {
+			cmdArgs, err := Resolve[*CommandArgs](c)
+			if err != nil {
+				return nil, err
+			}
+			return &argsService{args: cmdArgs.Args}, nil
+		})
 
-			svc, err := Resolve[*argsService](gotApp.Container())
-			s.Require().NoError(err)
-			s.Equal([]string{"foo", "bar"}, svc.args)
-			return nil
-		},
+		svc, err := Resolve[*argsService](gotApp.Container())
+		s.Require().NoError(err)
+		s.Equal([]string{"foo", "bar"}, svc.args)
+		return nil
 	}
 
-	app.WithCobra(rootCmd)
 	rootCmd.SetArgs([]string{"foo", "bar"})
 
 	err := rootCmd.Execute()
@@ -295,33 +291,37 @@ func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
 }
 
 func (s *CobraSuite) TestWithCobraAppliesDeferredFlags() {
-	app := New()
-	var flagApplied bool
+	cmd := &cobra.Command{Use: "test"}
 
-	// Simulate a flag function registered before WithCobra
+	app := New(WithCobra(cmd))
+
+	var flagApplied bool
+	// Simulate a flag function registered after WithCobra option
 	app.AddFlagsFn(func(flags *pflag.FlagSet) {
 		flags.Bool("test-flag", false, "a test flag")
 		flagApplied = true
 	})
 
-	cmd := &cobra.Command{Use: "test"}
-	app.WithCobra(cmd)
+	// Execute command to trigger flag application in PersistentPreRunE
+	cmd.RunE = func(_ *cobra.Command, _ []string) error { return nil }
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	s.Require().NoError(err)
 
-	// Verify flag is applied
+	// Verify flag was applied during PersistentPreRunE
 	s.True(flagApplied)
 	f := cmd.PersistentFlags().Lookup("test-flag")
 	s.NotNil(f)
 }
 
 func (s *CobraSuite) TestWithCobraInjectsDefaultRunE() {
-	app := New()
 	cmd := &cobra.Command{Use: "test"}
 
 	// cmd has no Run or RunE initially
 	s.Nil(cmd.Run)
 	s.Nil(cmd.RunE)
 
-	app.WithCobra(cmd)
+	app := New(WithCobra(cmd))
 
 	// Should now have a RunE
 	s.Nil(cmd.Run)

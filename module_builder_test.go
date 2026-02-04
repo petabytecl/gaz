@@ -307,7 +307,7 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_FlagsApplied_WithCobraCommand() {
 		}).
 		Build()
 
-	app := New().WithCobra(cmd).Use(module)
+	app := New(WithCobra(cmd)).Use(module)
 
 	// Verify flags were registered on the command
 	hostFlag := cmd.PersistentFlags().Lookup("redis-host")
@@ -343,7 +343,7 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_Flags_NilFunction() {
 	module := NewModule("test").Build()
 
 	cmd := &cobra.Command{Use: "test"}
-	app := New().WithCobra(cmd).Use(module)
+	app := New(WithCobra(cmd)).Use(module)
 
 	// Should succeed without error
 	err := app.Build()
@@ -365,7 +365,7 @@ func (s *ModuleBuilderSuite) TestModuleBuilder_FlagsApplied_MultipleModules() {
 		}).
 		Build()
 
-	app := New().WithCobra(cmd).Use(redisModule).Use(dbModule)
+	app := New(WithCobra(cmd)).Use(redisModule).Use(dbModule)
 
 	// Both flags should be registered
 	s.NotNil(cmd.PersistentFlags().Lookup("redis-host"))

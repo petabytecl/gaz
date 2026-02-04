@@ -220,18 +220,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsWithBuildIntegration() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsWithCobraLifecycle() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "app",
-		flags: []ConfigFlag{
-			{Key: "name", Type: ConfigFlagTypeString, Default: "myapp", Description: "App name"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedName string
 
 	rootCmd := &cobra.Command{
@@ -244,11 +232,21 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsWithCobraLifecycle() {
 		},
 	}
 
-	// Full lifecycle: RegisterCobraFlags -> WithCobra -> Execute
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "app",
+		flags: []ConfigFlag{
+			{Key: "name", Type: ConfigFlagTypeString, Default: "myapp", Description: "App name"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	// Full lifecycle: RegisterCobraFlags -> Execute
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	rootCmd.SetArgs([]string{})
 	execErr := rootCmd.Execute()
@@ -259,18 +257,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsWithCobraLifecycle() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsCliOverride() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "server",
-		flags: []ConfigFlag{
-			{Key: "port", Type: ConfigFlagTypeInt, Default: 8080, Description: "Server port"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedPort int
 
 	rootCmd := &cobra.Command{
@@ -283,10 +269,20 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsCliOverride() {
 		},
 	}
 
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "server",
+		flags: []ConfigFlag{
+			{Key: "port", Type: ConfigFlagTypeInt, Default: 8080, Description: "Server port"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	// Pass flag on command line to override default
 	rootCmd.SetArgs([]string{"--server-port=9090"})
@@ -379,18 +375,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsMultipleProviders() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsStringOverride() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "app",
-		flags: []ConfigFlag{
-			{Key: "name", Type: ConfigFlagTypeString, Default: "default-name", Description: "App name"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedName string
 
 	rootCmd := &cobra.Command{
@@ -403,10 +387,20 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsStringOverride() {
 		},
 	}
 
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "app",
+		flags: []ConfigFlag{
+			{Key: "name", Type: ConfigFlagTypeString, Default: "default-name", Description: "App name"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	// Override via CLI flag
 	rootCmd.SetArgs([]string{"--app-name=override-name"})
@@ -417,18 +411,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsStringOverride() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsBoolOverride() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "app",
-		flags: []ConfigFlag{
-			{Key: "debug", Type: ConfigFlagTypeBool, Default: false, Description: "Debug mode"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedDebug bool
 
 	rootCmd := &cobra.Command{
@@ -441,10 +423,20 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsBoolOverride() {
 		},
 	}
 
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "app",
+		flags: []ConfigFlag{
+			{Key: "debug", Type: ConfigFlagTypeBool, Default: false, Description: "Debug mode"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	// Override via CLI flag
 	rootCmd.SetArgs([]string{"--app-debug=true"})
@@ -455,18 +447,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsBoolOverride() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsDurationOverride() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "app",
-		flags: []ConfigFlag{
-			{Key: "timeout", Type: ConfigFlagTypeDuration, Default: 30 * time.Second, Description: "Timeout"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedTimeout time.Duration
 
 	rootCmd := &cobra.Command{
@@ -479,10 +459,20 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsDurationOverride() {
 		},
 	}
 
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "app",
+		flags: []ConfigFlag{
+			{Key: "timeout", Type: ConfigFlagTypeDuration, Default: 30 * time.Second, Description: "Timeout"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	// Override via CLI flag
 	rootCmd.SetArgs([]string{"--app-timeout=5m"})
@@ -493,18 +483,6 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsDurationOverride() {
 }
 
 func (s *CobraFlagsSuite) TestRegisterCobraFlagsFloatOverride() {
-	app := New()
-
-	provider := &testConfigProvider{
-		namespace: "app",
-		flags: []ConfigFlag{
-			{Key: "rate", Type: ConfigFlagTypeFloat, Default: 1.0, Description: "Rate limit"},
-		},
-	}
-
-	err := For[*testConfigProvider](app.Container()).Instance(provider)
-	s.Require().NoError(err)
-
 	var capturedRate float64
 
 	rootCmd := &cobra.Command{
@@ -517,10 +495,20 @@ func (s *CobraFlagsSuite) TestRegisterCobraFlagsFloatOverride() {
 		},
 	}
 
-	err = app.RegisterCobraFlags(rootCmd)
+	app := New(WithCobra(rootCmd))
+
+	provider := &testConfigProvider{
+		namespace: "app",
+		flags: []ConfigFlag{
+			{Key: "rate", Type: ConfigFlagTypeFloat, Default: 1.0, Description: "Rate limit"},
+		},
+	}
+
+	err := For[*testConfigProvider](app.Container()).Instance(provider)
 	s.Require().NoError(err)
 
-	app.WithCobra(rootCmd)
+	err = app.RegisterCobraFlags(rootCmd)
+	s.Require().NoError(err)
 
 	// Override via CLI flag
 	rootCmd.SetArgs([]string{"--app-rate=2.5"})

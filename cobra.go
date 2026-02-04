@@ -38,8 +38,9 @@ func FromContext(ctx context.Context) *App {
 }
 
 // WithCobra attaches the App lifecycle to a Cobra command.
-// This hooks into PersistentPreRunE to Build() and Start() the app,
-// and into PersistentPostRunE to Stop() the app.
+// This is an Option passed to gaz.New() that hooks into:
+// - PersistentPreRunE: applies stored flags, Build() and Start() the app
+// - PersistentPostRunE: Stop() the app
 //
 // The App is stored in the command's context, accessible via FromContext().
 //
@@ -48,35 +49,46 @@ func FromContext(ctx context.Context) *App {
 // Example:
 //
 //	rootCmd := &cobra.Command{Use: "myapp"}
-//	app := gaz.New()
+//	app := gaz.New(gaz.WithCobra(rootCmd))
 //	gaz.For[*Database](app.Container()).Provider(NewDatabase)
-//	app.WithCobra(rootCmd)
 //
 //	// In subcommand:
 //	app := gaz.FromContext(cmd.Context())
 //	db, _ := gaz.Resolve[*Database](app.Container())
-func (a *App) WithCobra(cmd *cobra.Command) *App {
-	// Store command reference for module flags integration
-	a.cobraCmd = cmd
+func WithCobra(cmd *cobra.Command) Option {
+	return func(a *App) {
+		a.cobraCmd = cmd
 
-	// Apply any pending flags
-	for _, fn := range a.flagFns {
-		fn(cmd.PersistentFlags())
+		// Apply any flags that were already registered before WithCobra() was called
+		for _, fn := range a.flagFns {
+			fn(cmd.PersistentFlags())
+		}
+
+		// Preserve existing hooks
+		originalPreRunE := cmd.PersistentPreRunE
+		originalPostRunE := cmd.PersistentPostRunE
+
+		cmd.PersistentPreRunE = a.makePreRunE(originalPreRunE)
+		cmd.PersistentPostRunE = a.makePostRunE(originalPostRunE)
+
+		// Inject default RunE if no Run/RunE is defined
+		if cmd.Run == nil && cmd.RunE == nil {
+			cmd.RunE = func(c *cobra.Command, _ []string) error {
+				return a.waitForShutdownSignal(c.Context())
+			}
+		}
 	}
+}
 
-	// Preserve existing hooks
-	originalPreRunE := cmd.PersistentPreRunE
-	originalPostRunE := cmd.PersistentPostRunE
-
-	cmd.PersistentPreRunE = func(c *cobra.Command, args []string) error {
-		// Chain original hook first
-		if originalPreRunE != nil {
-			if err := originalPreRunE(c, args); err != nil {
+// makePreRunE creates the PersistentPreRunE hook that bootstraps the app.
+func (a *App) makePreRunE(original func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
+	return func(c *cobra.Command, args []string) error {
+		if original != nil {
+			if err := original(c, args); err != nil {
 				return err
 			}
 		}
 
-		// Get context from command (Cobra provides background if none)
 		ctx := c.Context()
 		if ctx == nil {
 			ctx = context.Background()
@@ -86,42 +98,31 @@ func (a *App) WithCobra(cmd *cobra.Command) *App {
 			return err
 		}
 
-		// Store app in context for subcommand access
 		c.SetContext(context.WithValue(ctx, contextKey{}, a))
-
 		return nil
 	}
+}
 
-	cmd.PersistentPostRunE = func(c *cobra.Command, args []string) error {
-		// Stop with configured timeout
+// makePostRunE creates the PersistentPostRunE hook that stops the app.
+func (a *App) makePostRunE(original func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
+	return func(c *cobra.Command, args []string) error {
 		stopCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 		defer cancel()
 
 		stopErr := a.Stop(stopCtx)
 
-		// Reset running state
 		a.mu.Lock()
 		a.running = false
 		a.mu.Unlock()
 
-		// Chain original hook
-		if originalPostRunE != nil {
-			if err := originalPostRunE(c, args); err != nil {
+		if original != nil {
+			if err := original(c, args); err != nil {
 				return errors.Join(stopErr, err)
 			}
 		}
 
 		return stopErr
 	}
-
-	// Inject default RunE if no Run/RunE is defined
-	if cmd.Run == nil && cmd.RunE == nil {
-		cmd.RunE = func(c *cobra.Command, args []string) error {
-			return a.waitForShutdownSignal(c.Context())
-		}
-	}
-
-	return a
 }
 
 func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) error {
