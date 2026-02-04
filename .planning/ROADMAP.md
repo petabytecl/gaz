@@ -106,15 +106,15 @@ Plans:
 
 **Goal:** Ensure architectural consistency, robust lifecycle management, and standard patterns across server modules.
 **Dependencies:** Phase 40
-**Plans:** 2/4 plans complete
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 41-01-PLAN.md — Standardize Logger Usage
 - [x] 41-02-PLAN.md — Gateway atomic handler and naming consistency
-- [ ] 41-03-PLAN.md — Simplify server module and config consistency
-- [ ] 41-04-PLAN.md — Integrate health check into gRPC server
+- [x] 41-03-PLAN.md — Simplify server module and config consistency
+- [x] 41-04-PLAN.md — Integrate health check into gRPC server
 
-**Status:** In Progress (Started 2026-02-03)
+**Status:** Complete (2026-02-03)
 
 ## Progress
 
@@ -125,4 +125,4 @@ Plans:
 | 38.1 | gRPC/HTTP CLI Flags | **Complete** | TRN-01, TRN-02 |
 | 39 | Gateway Integration | **Complete** | GW-02, GW-03, GW-04 |
 | 40 | Observability & Health | **Complete** | INF-01, INF-02, INF-03 |
-| 41 | Refactor Server Arch | **In Progress** | - |
+| 41 | Refactor Server Arch | **Complete** | - |

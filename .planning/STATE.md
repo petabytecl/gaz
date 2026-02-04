@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 - **Milestone:** v4.1 Server & Transport Layer
 - **Phase:** 41 - Refactor Server Module Architecture & Consistency
-- **Plan:** 3 of 4 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 41-03-PLAN.md (Refactor server modules)
+- **Plan:** 4 of 4 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-03 — Completed 41-04-PLAN.md (Native gRPC health integration)
 
-Progress: [██████████] 100% (Phase 40 complete, v4.1 milestone complete)
+Progress: [██████████] 100% (Phase 41 complete, v4.1 milestone complete)
 
 ## Milestones Shipped
 
@@ -68,6 +68,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - **Naming Consistency:** Renamed ServiceRegistrar to Registrar in gRPC for consistency.
 - **ConfigProvider Pattern:** Server modules use standard `Config` structs with `Flags()` method and `gaz.NewModule` builder instead of functional options.
 - **Unified Server Module:** `server.NewModule` bundles `gRPC` and `Gateway` (which includes HTTP server) for a complete stack.
+- **Native Health Integration:** gRPC server now natively integrates health checks (enabled by default) via internal `healthAdapter`, removing need for `health.WithGRPC()`.
+- **Public Health Types:** Exported `StatusUp` and related types from `health` package for better integration.
 
 ### Research Summary
 
@@ -125,8 +127,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-03
-Stopped at: Completed 41-03-PLAN.md
-Resume with: 41-04-PLAN.md (Verify Consistency and Documentation)
+Stopped at: Completed 41-04-PLAN.md
+Resume with: Milestone v4.1 complete - ready for next milestone
 
 ---
 
