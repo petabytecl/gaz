@@ -36,13 +36,14 @@ type Registrar interface {
 // Server is a gRPC server with lifecycle management and auto-discovery.
 // It implements di.Starter and di.Stopper for integration with gaz's lifecycle.
 type Server struct {
-	config      Config
-	server      *grpc.Server
-	listener    net.Listener
-	container   *di.Container
-	logger      *slog.Logger
-	devMode     bool
-	otelEnabled bool
+	config        Config
+	server        *grpc.Server
+	listener      net.Listener
+	container     *di.Container
+	logger        *slog.Logger
+	devMode       bool
+	otelEnabled   bool
+	healthAdapter *healthAdapter
 }
 
 // NewServer creates a new gRPC server with the given configuration.
@@ -121,12 +122,16 @@ func (s *Server) OnStart(ctx context.Context) error {
 		r.RegisterService(s.server)
 	}
 
-	// Auto-register gRPC health server if available.
-	// This enables standard grpc.health.v1 endpoints when health module
-	// is configured with WithGRPC().
-	if grpcHealth, resolveErr := di.Resolve[*health.GRPCServer](s.container); resolveErr == nil && grpcHealth != nil {
-		grpcHealth.Register(s.server)
-		s.logger.DebugContext(ctx, "gRPC health server registered")
+	// Auto-register gRPC health server if enabled.
+	if s.config.HealthEnabled {
+		if manager, err := di.Resolve[*health.Manager](s.container); err == nil {
+			s.healthAdapter = newHealthAdapter(manager, s.config.HealthCheckInterval, s.logger)
+			s.healthAdapter.Register(s.server)
+			s.healthAdapter.Start(ctx)
+			s.logger.DebugContext(ctx, "gRPC health server registered")
+		} else {
+			s.logger.WarnContext(ctx, "gRPC health enabled but health.Manager not found - skipping health service registration")
+		}
 	}
 
 	// Enable reflection if configured.
@@ -139,6 +144,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 		slog.Bool("reflection", s.config.Reflection),
 		slog.Int("services", len(registrars)),
 		slog.Bool("otel", s.otelEnabled),
+		slog.Bool("health", s.config.HealthEnabled),
 	)
 
 	// Spawn serve goroutine (non-blocking).
@@ -156,6 +162,13 @@ func (s *Server) OnStart(ctx context.Context) error {
 // Implements di.Stopper.
 func (s *Server) OnStop(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "gRPC server stopping")
+
+	// Stop health adapter first.
+	if s.healthAdapter != nil {
+		if err := s.healthAdapter.Stop(ctx); err != nil {
+			s.logger.WarnContext(ctx, "gRPC health adapter stop error", slog.Any("error", err))
+		}
+	}
 
 	done := make(chan struct{})
 	go func() {
