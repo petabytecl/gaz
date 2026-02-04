@@ -1,4 +1,4 @@
-package health
+package grpc
 
 import (
 	"context"
@@ -15,49 +15,35 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+
+	gazhealth "github.com/petabytecl/gaz/health"
 )
 
-type GRPCServerTestSuite struct {
+type HealthAdapterTestSuite struct {
 	suite.Suite
 	logger *slog.Logger
 }
 
-func TestGRPCServerTestSuite(t *testing.T) {
-	suite.Run(t, new(GRPCServerTestSuite))
+func TestHealthAdapterTestSuite(t *testing.T) {
+	suite.Run(t, new(HealthAdapterTestSuite))
 }
 
-func (s *GRPCServerTestSuite) SetupTest() {
+func (s *HealthAdapterTestSuite) SetupTest() {
 	s.logger = slog.Default()
 }
 
-func (s *GRPCServerTestSuite) TestNewGRPCServer_DefaultInterval() {
-	manager := NewManager()
-	server := NewGRPCServer(manager, s.logger)
+func (s *HealthAdapterTestSuite) TestNewHealthAdapter_DefaultInterval() {
+	manager := gazhealth.NewManager()
+	interval := 5 * time.Second
+	adapter := newHealthAdapter(manager, interval, s.logger)
 
-	s.Require().NotNil(server)
-	s.Equal(DefaultGRPCCheckInterval, server.interval)
+	s.Require().NotNil(adapter)
+	s.Equal(interval, adapter.interval)
 }
 
-func (s *GRPCServerTestSuite) TestNewGRPCServer_WithCheckInterval() {
-	manager := NewManager()
-	interval := 10 * time.Second
-	server := NewGRPCServer(manager, s.logger, WithCheckInterval(interval))
-
-	s.Require().NotNil(server)
-	s.Equal(interval, server.interval)
-}
-
-func (s *GRPCServerTestSuite) TestNewGRPCServer_WithZeroInterval_UsesDefault() {
-	manager := NewManager()
-	server := NewGRPCServer(manager, s.logger, WithCheckInterval(0))
-
-	s.Require().NotNil(server)
-	s.Equal(DefaultGRPCCheckInterval, server.interval)
-}
-
-func (s *GRPCServerTestSuite) TestRegister() {
-	manager := NewManager()
-	grpcServer := NewGRPCServer(manager, s.logger)
+func (s *HealthAdapterTestSuite) TestRegister() {
+	manager := gazhealth.NewManager()
+	adapter := newHealthAdapter(manager, time.Second, s.logger)
 
 	// Create a gRPC server and register health service.
 	srv := grpc.NewServer()
@@ -65,19 +51,19 @@ func (s *GRPCServerTestSuite) TestRegister() {
 
 	// Register should not panic.
 	s.NotPanics(func() {
-		grpcServer.Register(srv)
+		adapter.Register(srv)
 	})
 }
 
-func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
+func (s *HealthAdapterTestSuite) TestHealthAdapter_Healthy() {
 	// Create manager with a healthy check.
-	manager := NewManager()
+	manager := gazhealth.NewManager()
 	manager.AddReadinessCheck("always-healthy", func(_ context.Context) error {
 		return nil
 	})
 
-	// Create gRPC health server with short interval.
-	grpcHealthServer := NewGRPCServer(manager, s.logger, WithCheckInterval(50*time.Millisecond))
+	// Create gRPC health adapter with short interval.
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, s.logger)
 
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -85,7 +71,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
-	grpcHealthServer.Register(srv)
+	adapter.Register(srv)
 
 	go func() {
 		if serveErr := srv.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
@@ -94,14 +80,13 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 	}()
 	defer srv.Stop()
 
-	// Start the health server.
+	// Start the health adapter.
 	ctx := context.Background()
-	err = grpcHealthServer.OnStart(ctx)
-	s.Require().NoError(err)
+	adapter.Start(ctx)
 	defer func() {
 		stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		_ = grpcHealthServer.OnStop(stopCtx)
+		_ = adapter.Stop(stopCtx)
 	}()
 
 	// Wait for initial check.
@@ -125,15 +110,15 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Healthy() {
 	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
 }
 
-func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
+func (s *HealthAdapterTestSuite) TestHealthAdapter_Unhealthy() {
 	// Create manager with a failing check.
-	manager := NewManager()
+	manager := gazhealth.NewManager()
 	manager.AddReadinessCheck("always-failing", func(_ context.Context) error {
 		return errors.New("unhealthy")
 	})
 
-	// Create gRPC health server with short interval.
-	grpcHealthServer := NewGRPCServer(manager, s.logger, WithCheckInterval(50*time.Millisecond))
+	// Create gRPC health adapter with short interval.
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, s.logger)
 
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -141,7 +126,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
-	grpcHealthServer.Register(srv)
+	adapter.Register(srv)
 
 	go func() {
 		if serveErr := srv.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
@@ -150,14 +135,13 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 	}()
 	defer srv.Stop()
 
-	// Start the health server.
+	// Start the health adapter.
 	ctx := context.Background()
-	err = grpcHealthServer.OnStart(ctx)
-	s.Require().NoError(err)
+	adapter.Start(ctx)
 	defer func() {
 		stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		_ = grpcHealthServer.OnStop(stopCtx)
+		_ = adapter.Stop(stopCtx)
 	}()
 
 	// Wait for initial check.
@@ -181,11 +165,11 @@ func (s *GRPCServerTestSuite) TestGRPCServer_Unhealthy() {
 	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
 }
 
-func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
+func (s *HealthAdapterTestSuite) TestHealthAdapter_StatusTransition() {
 	// Create manager with a controllable check using atomic for thread safety.
 	var healthy atomic.Bool
 	healthy.Store(true)
-	manager := NewManager()
+	manager := gazhealth.NewManager()
 	manager.AddReadinessCheck("toggle", func(_ context.Context) error {
 		if healthy.Load() {
 			return nil
@@ -193,8 +177,8 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 		return errors.New("unhealthy")
 	})
 
-	// Create gRPC health server with short interval.
-	grpcHealthServer := NewGRPCServer(manager, s.logger, WithCheckInterval(50*time.Millisecond))
+	// Create gRPC health adapter with short interval.
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, s.logger)
 
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -202,7 +186,7 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
-	grpcHealthServer.Register(srv)
+	adapter.Register(srv)
 
 	go func() {
 		if serveErr := srv.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
@@ -211,14 +195,13 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	}()
 	defer srv.Stop()
 
-	// Start the health server.
+	// Start the health adapter.
 	ctx := context.Background()
-	err = grpcHealthServer.OnStart(ctx)
-	s.Require().NoError(err)
+	adapter.Start(ctx)
 	defer func() {
 		stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		_ = grpcHealthServer.OnStop(stopCtx)
+		_ = adapter.Stop(stopCtx)
 	}()
 
 	// Wait for initial check (healthy).
@@ -255,14 +238,13 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StatusTransition() {
 	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
 }
 
-func (s *GRPCServerTestSuite) TestGRPCServer_StopCleanly() {
-	manager := NewManager()
-	grpcHealthServer := NewGRPCServer(manager, s.logger, WithCheckInterval(50*time.Millisecond))
+func (s *HealthAdapterTestSuite) TestHealthAdapter_StopCleanly() {
+	manager := gazhealth.NewManager()
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, s.logger)
 
-	// Start the health server.
+	// Start the health adapter.
 	ctx := context.Background()
-	err := grpcHealthServer.OnStart(ctx)
-	s.Require().NoError(err)
+	adapter.Start(ctx)
 
 	// Let it run for a bit.
 	time.Sleep(100 * time.Millisecond)
@@ -271,20 +253,11 @@ func (s *GRPCServerTestSuite) TestGRPCServer_StopCleanly() {
 	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err = grpcHealthServer.OnStop(stopCtx)
+	err := adapter.Stop(stopCtx)
 	s.NoError(err)
 }
 
-func (s *GRPCServerTestSuite) TestGRPCServer_HealthServerAccessor() {
-	manager := NewManager()
-	grpcHealthServer := NewGRPCServer(manager, s.logger)
-
-	// Should be able to access the underlying health server.
-	healthServer := grpcHealthServer.HealthServer()
-	s.NotNil(healthServer)
-}
-
-func (s *GRPCServerTestSuite) TestStatusToString() {
+func (s *HealthAdapterTestSuite) TestStatusToString() {
 	tests := []struct {
 		status   healthpb.HealthCheckResponse_ServingStatus
 		expected string
@@ -306,32 +279,22 @@ func (s *GRPCServerTestSuite) TestStatusToString() {
 
 // Standalone tests for additional coverage.
 
-func TestGRPCServer_InitialUnknown(t *testing.T) {
-	manager := NewManager()
+func TestHealthAdapter_InitialUnknown(t *testing.T) {
+	manager := gazhealth.NewManager()
 	logger := slog.Default()
-	grpcHealthServer := NewGRPCServer(manager, logger)
+	adapter := newHealthAdapter(manager, time.Second, logger)
 
-	// Before OnStart, status should be UNKNOWN.
-	// The internal health.Server starts with UNKNOWN for "".
-	require.NotNil(t, grpcHealthServer.health)
-	assert.Equal(t, healthpb.HealthCheckResponse_UNKNOWN, grpcHealthServer.lastStatus)
+	// Before Start, status should be UNKNOWN.
+	require.NotNil(t, adapter.health)
+	assert.Equal(t, healthpb.HealthCheckResponse_UNKNOWN, adapter.lastStatus)
 }
 
-func TestGRPCServer_WithNegativeInterval_UsesDefault(t *testing.T) {
-	manager := NewManager()
-	logger := slog.Default()
-	server := NewGRPCServer(manager, logger, WithCheckInterval(-1*time.Second))
-
-	require.NotNil(t, server)
-	assert.Equal(t, DefaultGRPCCheckInterval, server.interval)
-}
-
-func TestGRPCServer_NoChecks_Healthy(t *testing.T) {
+func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
 	// Manager with no checks should report as healthy.
-	manager := NewManager()
+	manager := gazhealth.NewManager()
 	logger := slog.Default()
 
-	grpcHealthServer := NewGRPCServer(manager, logger, WithCheckInterval(50*time.Millisecond))
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, logger)
 
 	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -339,21 +302,20 @@ func TestGRPCServer_NoChecks_Healthy(t *testing.T) {
 	defer func() { _ = lis.Close() }()
 
 	srv := grpc.NewServer()
-	grpcHealthServer.Register(srv)
+	adapter.Register(srv)
 
 	go func() {
 		_ = srv.Serve(lis)
 	}()
 	defer srv.Stop()
 
-	// Start the health server.
+	// Start the health adapter.
 	ctx := context.Background()
-	err = grpcHealthServer.OnStart(ctx)
-	require.NoError(t, err)
+	adapter.Start(ctx)
 	defer func() {
 		stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		_ = grpcHealthServer.OnStop(stopCtx)
+		_ = adapter.Stop(stopCtx)
 	}()
 
 	// Wait for initial check.
