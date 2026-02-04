@@ -16,11 +16,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 - **Milestone:** v4.2 Framework Ergonomics
 - **Phase:** 42 - Refactor Framework Ergonomics
 - **Next Phase:** TBD
-- **Plan:** 2 of 3 in current phase
-- **Status:** In progress
-- **Last activity:** 2026-02-03 — Completed 42-02-PLAN.md
+- **Plan:** 3 of 3 in current phase
+- **Status:** Phase complete
+- **Last activity:** 2026-02-04 — Completed 42-03-PLAN.md
 
-Progress: [█░░░░░░░░░] 10% (Phase 42 started)
+Progress: [██████████] 100% (Phase 42 complete)
 
 ## Milestones Shipped
 
@@ -36,8 +36,9 @@ Progress: [█░░░░░░░░░] 10% (Phase 42 started)
 | v3.2 | Feature Maturity | 31 | 2 | 2026-02-01 |
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 (Partial) | Core Discovery | 37 | 2 | 2026-02-02 |
+| v4.2 | Framework Ergonomics | 42 | 3 | 2026-02-04 |
 
-**Total:** 149 plans across 41+ phases
+**Total:** 152 plans across 42+ phases
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 
 - **Deferred Flag Registration:** `App.Use` no longer applies flags immediately. Flags are stored and applied when `WithCobra` is attached, ensuring order independence.
 - **Cobra Lifecycle Management:** `WithCobra` initializes `App.running` state and `stopCh` in `bootstrap`, ensuring `App.Stop()` works correctly for manual shutdown control even when running under Cobra hooks.
+- **Config Defaults:** Removed manual Viper binding in examples favoring framework defaults.
+- **Smart Defaults:** Implemented auto-discovery of local gRPC port in Gateway module to improve DX.
 
 ### Research Summary
 
@@ -130,6 +133,8 @@ None.
 - Phase 41 complete: Server module architecture refactored and standardized
 - Phase 42 added: Refactor Framework Ergonomics
 - Plan 42-01 complete: Deferred flag registration decoupled App.Use from Cobra
+- Plan 42-02 complete: Update Cobra integration to apply deferred flags and provide default lifecycle management
+- Plan 42-03 complete: Refactored examples and fixed server modules to respect default config flags
 
 ### Pending Todos
 
@@ -137,9 +142,10 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-03
-Stopped at: Completed 42-02-PLAN.md
-Resume with: 42-03-PLAN.md (Phase 42 Plan 3)
+Last session: 2026-02-04
+Stopped at: Completed 42-03-PLAN.md
+Resume with: None (Phase 42 Complete)
+
 
 ---
 
