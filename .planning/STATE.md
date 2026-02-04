@@ -161,6 +161,7 @@ None.
 ### Pending Todos
 
 1 todo(s) in `.planning/todos/pending/`
+- Review documentation, README, and examples for v4.1 features
 
 ## Session Continuity
 

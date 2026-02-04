@@ -61,16 +61,30 @@ func main() {
 
 ## Features
 
+### Core DI
 - **Type-safe container** - Compile-time type checking via generics
 - **Singleton and transient scopes** - One instance or new instance per resolution
 - **Lifecycle hooks** - `OnStart`/`OnStop` interfaces for startup/shutdown logic
-- **Graceful shutdown** - Configurable timeout with per-hook limits
-- **Configuration loading** - YAML/JSON/TOML files, environment variables, profiles
-- **Struct validation** - `validate` tags with go-playground/validator
-- **Health checks** - Readiness and liveness probes via `health` subpackage
-- **Background workers** - Supervised workers with restart, circuit breaker, lifecycle integration
-- **Cobra CLI integration** - Build CLI apps with dependency injection
+- **Discovery** - `ResolveAll[T]` and `ResolveGroup[T]` for plugin-style architectures
 - **Module organization** - Group related providers into reusable modules
+
+### Application Framework
+- **Graceful shutdown** - Configurable timeout with per-hook limits and signal handling
+- **Configuration loading** - YAML/JSON/TOML files, environment variables, CLI flags
+- **Struct validation** - `validate` tags with go-playground/validator
+- **Cobra CLI integration** - Build CLI apps with dependency injection
+- **Background workers** - Supervised workers with restart, circuit breaker, lifecycle integration
+
+### Server & Transport (v4.1)
+- **gRPC Server** - Interceptors, reflection, service discovery, native health checks
+- **HTTP Server** - Configurable timeouts, graceful shutdown
+- **gRPC-Gateway** - Auto-discovering HTTP-to-gRPC proxy
+- **OpenTelemetry** - TracerProvider with OTLP export and server instrumentation
+- **Health checks** - Readiness/liveness probes, gRPC health protocol, builtin checks
+
+### CLI Flags
+- **Logger flags** - `--log-level`, `--log-format`, `--log-output`, `--log-add-source`
+- **Config flags** - `--config`, `--env-prefix`, `--config-strict` with XDG auto-search
 
 ## Core Concepts
 
@@ -150,6 +164,8 @@ See the [examples](examples/) directory:
 - [modules](examples/modules/) - Organizing providers into modules
 - [cobra-cli](examples/cobra-cli/) - CLI application with Cobra
 - [background-workers](examples/background-workers/) - Background task processing
+- [discovery](examples/discovery/) - Plugin-style architecture with ResolveAll
+- [grpc-gateway](examples/grpc-gateway/) - Unified gRPC + HTTP Gateway server
 - [microservice](examples/microservice/) - Complete microservice with health, workers, eventbus
 
 ## License
