@@ -1,29 +1,25 @@
 package gaz
 
 import (
-	"context"
 	"time"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // HookFunc is a function that performs a lifecycle action.
-type HookFunc func(context.Context) error
+type HookFunc = di.HookFunc
 
 // HookConfig holds configuration for lifecycle hooks.
-type HookConfig struct {
-	// Timeout is the per-hook timeout for shutdown. If zero, uses App's PerHookTimeout.
-	Timeout time.Duration
-}
+type HookConfig = di.HookConfig
+
+// HookOption configures a lifecycle hook.
+type HookOption = di.HookOption
 
 // WithHookTimeout sets a custom timeout for this specific hook.
 // If not set, the hook uses the App's default PerHookTimeout.
 func WithHookTimeout(d time.Duration) HookOption {
-	return func(cfg *HookConfig) {
-		cfg.Timeout = d
-	}
+	return di.WithHookTimeout(d)
 }
-
-// HookOption configures a lifecycle hook.
-type HookOption func(*HookConfig)
 
 // Starter is an interface for services that need to perform action on startup.
 // Implementing this interface is the sole mechanism for lifecycle participation.
@@ -32,9 +28,7 @@ type HookOption func(*HookConfig)
 //
 // This interface is auto-detected by the DI container. No registration of lifecycle
 // hooks is needed - simply implement the interface.
-type Starter interface {
-	OnStart(context.Context) error
-}
+type Starter = di.Starter
 
 // Stopper is an interface for services that need to perform action on shutdown.
 // Implementing this interface is the sole mechanism for lifecycle participation.
@@ -43,6 +37,4 @@ type Starter interface {
 //
 // This interface is auto-detected by the DI container. No registration of lifecycle
 // hooks is needed - simply implement the interface.
-type Stopper interface {
-	OnStop(context.Context) error
-}
+type Stopper = di.Stopper
