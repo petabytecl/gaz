@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"testing"
 
@@ -297,4 +298,84 @@ func (s *InterceptorBundleTestSuite) TestProvideAuthBundle_WithoutAuthFunc() {
 	// AuthBundle should NOT be registered.
 	_, err = gaz.Resolve[*AuthBundle](c)
 	s.Error(err) // Not found.
+}
+
+func (s *InterceptorBundleTestSuite) TestAlwaysPassLimiter_AllowsAllRequests() {
+	limiter := AlwaysPassLimiter{}
+	err := limiter.Limit(context.Background())
+	s.NoError(err)
+}
+
+func (s *InterceptorBundleTestSuite) TestRateLimitBundle_ImplementsInterface() {
+	bundle := NewRateLimitBundle(nil) // Uses AlwaysPassLimiter
+
+	// Verify interface compliance.
+	var _ InterceptorBundle = bundle
+
+	s.Equal("ratelimit", bundle.Name())
+	s.Equal(PriorityRateLimit, bundle.Priority())
+
+	unary, stream := bundle.Interceptors()
+	s.NotNil(unary)
+	s.NotNil(stream)
+}
+
+func (s *InterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimiter() {
+	customLimiter := &mockLimiter{shouldReject: false}
+	bundle := NewRateLimitBundle(customLimiter)
+
+	s.Equal("ratelimit", bundle.Name())
+	unary, stream := bundle.Interceptors()
+	s.NotNil(unary)
+	s.NotNil(stream)
+}
+
+func (s *InterceptorBundleTestSuite) TestPriorityRateLimit_Ordering() {
+	// RateLimit should be after logging (0), before auth (50).
+	s.Greater(PriorityRateLimit, PriorityLogging)
+	s.Less(PriorityRateLimit, PriorityAuth)
+}
+
+func (s *InterceptorBundleTestSuite) TestProvideRateLimitBundle_WithoutLimiter() {
+	c := di.New()
+
+	// No Limiter registered - should use AlwaysPassLimiter.
+	err := provideRateLimitBundle(c)
+	s.Require().NoError(err)
+
+	// RateLimitBundle should be registered.
+	bundle, err := gaz.Resolve[*RateLimitBundle](c)
+	s.Require().NoError(err)
+	s.NotNil(bundle)
+	s.Equal("ratelimit", bundle.Name())
+}
+
+func (s *InterceptorBundleTestSuite) TestProvideRateLimitBundle_WithLimiter() {
+	c := di.New()
+
+	// Register custom Limiter.
+	customLimiter := Limiter(&mockLimiter{shouldReject: false})
+	err := gaz.For[Limiter](c).Instance(customLimiter)
+	s.Require().NoError(err)
+
+	// Run provider.
+	err = provideRateLimitBundle(c)
+	s.Require().NoError(err)
+
+	// RateLimitBundle should be registered.
+	bundle, err := gaz.Resolve[*RateLimitBundle](c)
+	s.Require().NoError(err)
+	s.NotNil(bundle)
+}
+
+// mockLimiter is a test double for Limiter.
+type mockLimiter struct {
+	shouldReject bool
+}
+
+func (m *mockLimiter) Limit(_ context.Context) error {
+	if m.shouldReject {
+		return fmt.Errorf("rate limit: %w", status.Error(codes.ResourceExhausted, "rate limit exceeded"))
+	}
+	return nil
 }

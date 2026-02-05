@@ -95,6 +95,28 @@ func provideAuthBundle(c *gaz.Container) error {
 	return nil
 }
 
+// provideRateLimitBundle creates a RateLimitBundle provider function.
+// If a Limiter is registered in DI, it uses that limiter.
+// Otherwise, it registers a bundle with AlwaysPassLimiter (allows all requests).
+func provideRateLimitBundle(c *gaz.Container) error {
+	var limiter Limiter
+	if gaz.Has[Limiter](c) {
+		resolved, resolveErr := gaz.Resolve[Limiter](c)
+		if resolveErr != nil {
+			return fmt.Errorf("resolve limiter: %w", resolveErr)
+		}
+		limiter = resolved
+	}
+	// limiter is nil if not registered, NewRateLimitBundle handles this
+
+	if regErr := gaz.For[*RateLimitBundle](c).Provider(func(_ *gaz.Container) (*RateLimitBundle, error) {
+		return NewRateLimitBundle(limiter), nil
+	}); regErr != nil {
+		return fmt.Errorf("register ratelimit bundle: %w", regErr)
+	}
+	return nil
+}
+
 // provideServer creates a Server provider function.
 func provideServer(c *gaz.Container) error {
 	if err := gaz.For[*Server](c).
@@ -123,6 +145,7 @@ func provideServer(c *gaz.Container) error {
 // Components registered:
 //   - grpc.Config (loaded from flags/config)
 //   - *grpc.LoggingBundle (logging interceptor)
+//   - *grpc.RateLimitBundle (rate limit interceptor, uses AlwaysPassLimiter unless Limiter registered)
 //   - *grpc.AuthBundle (auth interceptor, only if AuthFunc registered)
 //   - *grpc.ValidationBundle (protovalidate interceptor)
 //   - *grpc.RecoveryBundle (panic recovery interceptor)
@@ -156,6 +179,7 @@ func NewModule() gaz.Module {
 		Flags(defaultCfg.Flags).
 		Provide(provideConfig(defaultCfg)).
 		Provide(provideLoggingBundle).
+		Provide(provideRateLimitBundle).
 		Provide(provideAuthBundle).
 		Provide(provideValidationBundle).
 		Provide(provideRecoveryBundle).
