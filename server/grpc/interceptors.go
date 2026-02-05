@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"buf.build/go/protovalidate"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	protovalidateinterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -23,6 +24,8 @@ import (
 const (
 	// PriorityLogging is the priority for the logging interceptor (runs first).
 	PriorityLogging = 0
+	// PriorityAuth is the priority for the auth interceptor (after logging, before validation).
+	PriorityAuth = 50
 	// PriorityValidation is the priority for the validation interceptor.
 	PriorityValidation = 100
 	// PriorityRecovery is the priority for the recovery interceptor (runs last).
@@ -177,6 +180,53 @@ func (b *LoggingBundle) Priority() int {
 // Interceptors returns the logging interceptors.
 func (b *LoggingBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
 	return NewLoggingInterceptor(b.logger)
+}
+
+// AuthFunc is the authentication function type.
+// It extracts and validates credentials from the context, returning an enriched context
+// or an error if authentication fails.
+//
+// Use auth.AuthFromMD to extract tokens from metadata:
+//
+//	func myAuthFunc(ctx context.Context) (context.Context, error) {
+//	    token, err := auth.AuthFromMD(ctx, "bearer")
+//	    if err != nil {
+//	        return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+//	    }
+//	    // Validate token and enrich context...
+//	    return ctx, nil
+//	}
+//
+// Register in DI to enable auth interceptor:
+//
+//	gaz.For[grpc.AuthFunc](c).Instance(myAuthFunc)
+type AuthFunc = auth.AuthFunc
+
+// AuthBundle is the built-in authentication interceptor bundle.
+// It validates requests using the registered AuthFunc.
+type AuthBundle struct {
+	authFunc AuthFunc
+}
+
+// NewAuthBundle creates a new auth interceptor bundle.
+func NewAuthBundle(authFunc AuthFunc) *AuthBundle {
+	return &AuthBundle{authFunc: authFunc}
+}
+
+// Name returns the bundle identifier.
+func (b *AuthBundle) Name() string {
+	return "auth"
+}
+
+// Priority returns the auth priority (after logging, before validation).
+func (b *AuthBundle) Priority() int {
+	return PriorityAuth
+}
+
+// Interceptors returns the auth interceptors.
+func (b *AuthBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return auth.UnaryServerInterceptor(b.authFunc),
+		auth.StreamServerInterceptor(b.authFunc)
 }
 
 // RecoveryBundle is the built-in panic recovery interceptor bundle.
