@@ -62,6 +62,16 @@ func provideRecoveryBundle(c *gaz.Container) error {
 	return nil
 }
 
+// provideValidationBundle creates a ValidationBundle provider function.
+func provideValidationBundle(c *gaz.Container) error {
+	if err := gaz.For[*ValidationBundle](c).Provider(func(c *gaz.Container) (*ValidationBundle, error) {
+		return NewValidationBundle()
+	}); err != nil {
+		return fmt.Errorf("register validation bundle: %w", err)
+	}
+	return nil
+}
+
 // provideServer creates a Server provider function.
 func provideServer(c *gaz.Container) error {
 	if err := gaz.For[*Server](c).
@@ -90,6 +100,7 @@ func provideServer(c *gaz.Container) error {
 // Components registered:
 //   - grpc.Config (loaded from flags/config)
 //   - *grpc.LoggingBundle (logging interceptor)
+//   - *grpc.ValidationBundle (protovalidate interceptor)
 //   - *grpc.RecoveryBundle (panic recovery interceptor)
 //   - *grpc.Server (eager, starts on app start)
 //
@@ -110,7 +121,7 @@ func provideServer(c *gaz.Container) error {
 //	// MyInterceptor implements grpc.InterceptorBundle
 //	type MyInterceptor struct{}
 //	func (m *MyInterceptor) Name() string { return "my-interceptor" }
-//	func (m *MyInterceptor) Priority() int { return 50 } // Between logging (0) and recovery (1000)
+//	func (m *MyInterceptor) Priority() int { return 500 } // Between validation (100) and recovery (1000)
 //	func (m *MyInterceptor) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
 //	    return myUnaryInterceptor, myStreamInterceptor
 //	}
@@ -121,6 +132,7 @@ func NewModule() gaz.Module {
 		Flags(defaultCfg.Flags).
 		Provide(provideConfig(defaultCfg)).
 		Provide(provideLoggingBundle).
+		Provide(provideValidationBundle).
 		Provide(provideRecoveryBundle).
 		Provide(provideServer).
 		Build()
