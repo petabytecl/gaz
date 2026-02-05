@@ -25,14 +25,23 @@ func TestGRPCServerTestSuite(t *testing.T) {
 	suite.Run(t, new(GRPCServerTestSuite))
 }
 
+// setupTestContainer creates a DI container with built-in interceptor bundles registered.
+func setupTestContainer(logger *slog.Logger) *di.Container {
+	container := di.New()
+	// Register built-in interceptor bundles.
+	_ = di.For[*LoggingBundle](container).Instance(NewLoggingBundle(logger))
+	_ = di.For[*RecoveryBundle](container).Instance(NewRecoveryBundle(logger, false))
+	return container
+}
+
 func (s *GRPCServerTestSuite) TestGRPCServerStartStop() {
 	// Setup.
 	cfg := DefaultConfig()
 	cfg.Port = getFreePort(s.T())
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -64,9 +73,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflection() {
 	cfg.Port = getFreePort(s.T())
 	cfg.Reflection = true
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -129,7 +138,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerServiceDiscovery() {
 	cfg := DefaultConfig()
 	cfg.Port = getFreePort(s.T())
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
 	// Register a mock service registrar by its concrete type.
 	// ResolveAll[Registrar] finds it because *mockRegistrar implements Registrar.
@@ -137,7 +146,7 @@ func (s *GRPCServerTestSuite) TestGRPCServerServiceDiscovery() {
 	err := di.For[*mockRegistrar](container).Instance(mockReg)
 	s.Require().NoError(err)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -166,9 +175,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerPortBindingError() {
 	cfg := DefaultConfig()
 	cfg.Port = port
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start should fail.
 	ctx := context.Background()
@@ -182,9 +191,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerGracefulShutdown() {
 	cfg := DefaultConfig()
 	cfg.Port = getFreePort(s.T())
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -217,9 +226,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 	cfg.Port = getFreePort(s.T())
 	cfg.Reflection = false
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// Start.
 	ctx := context.Background()
@@ -266,9 +275,9 @@ func (s *GRPCServerTestSuite) TestGRPCServerGetGRPCServer() {
 	cfg := DefaultConfig()
 	cfg.Port = getFreePort(s.T())
 	logger := slog.Default()
-	container := di.New()
+	container := setupTestContainer(logger)
 
-	server := NewServer(cfg, logger, container, false, nil)
+	server := NewServer(cfg, logger, container, nil)
 
 	// GRPCServer should return the underlying grpc.Server.
 	grpcServer := server.GRPCServer()

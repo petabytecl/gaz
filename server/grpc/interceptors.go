@@ -4,13 +4,95 @@ import (
 	"context"
 	"log/slog"
 	"runtime/debug"
+	"sort"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/petabytecl/gaz/di"
 )
+
+// Priority constants for built-in interceptors.
+// Custom interceptors should use values between PriorityLogging and PriorityRecovery.
+const (
+	// PriorityLogging is the priority for the logging interceptor (runs first).
+	PriorityLogging = 0
+	// PriorityRecovery is the priority for the recovery interceptor (runs last).
+	PriorityRecovery = 1000
+)
+
+// InterceptorBundle provides gRPC interceptors for auto-discovery.
+// Implementations are automatically discovered and chained by the gRPC server.
+//
+// To add custom interceptors:
+//  1. Implement this interface
+//  2. Register the implementation in the DI container
+//  3. The server will auto-discover and chain it based on Priority()
+//
+// Example:
+//
+//	type MetricsBundle struct{}
+//
+//	func (m *MetricsBundle) Name() string { return "metrics" }
+//	func (m *MetricsBundle) Priority() int { return 50 }
+//	func (m *MetricsBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+//	    return metricsUnary, metricsStream
+//	}
+//
+//	// Register in DI:
+//	gaz.For[*MetricsBundle](c).Provider(NewMetricsBundle)
+type InterceptorBundle interface {
+	// Name returns a unique identifier for logging and debugging.
+	Name() string
+
+	// Priority determines the order in the interceptor chain.
+	// Lower values run earlier. Built-in interceptors use:
+	//   - PriorityLogging (0): logging interceptor
+	//   - PriorityRecovery (1000): recovery interceptor
+	// Custom interceptors should use values between 1 and 999.
+	Priority() int
+
+	// Interceptors returns unary and stream server interceptors.
+	// Either may be nil if the bundle only provides one type.
+	Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor)
+}
+
+// collectInterceptors discovers all InterceptorBundles from the container,
+// sorts them by priority, and returns the chained interceptors.
+func collectInterceptors(container *di.Container, logger *slog.Logger) ([]grpc.UnaryServerInterceptor, []grpc.StreamServerInterceptor) {
+	bundles, err := di.ResolveAll[InterceptorBundle](container)
+	if err != nil {
+		logger.Warn("failed to resolve interceptor bundles", slog.Any("error", err))
+		return nil, nil
+	}
+
+	// Sort by priority (lower = earlier in chain).
+	sort.Slice(bundles, func(i, j int) bool {
+		return bundles[i].Priority() < bundles[j].Priority()
+	})
+
+	var unary []grpc.UnaryServerInterceptor
+	var stream []grpc.StreamServerInterceptor
+
+	for _, b := range bundles {
+		u, s := b.Interceptors()
+		if u != nil {
+			unary = append(unary, u)
+		}
+		if s != nil {
+			stream = append(stream, s)
+		}
+		logger.Debug("registered interceptor bundle",
+			slog.String("name", b.Name()),
+			slog.Int("priority", b.Priority()),
+		)
+	}
+
+	return unary, stream
+}
 
 // InterceptorLogger adapts slog.Logger to the go-grpc-middleware logging.Logger interface.
 // This allows the gRPC logging interceptor to use gaz's standard slog-based logger.
@@ -61,4 +143,63 @@ func NewRecoveryInterceptor(logger *slog.Logger, devMode bool) (grpc.UnaryServer
 
 	return recovery.UnaryServerInterceptor(recoveryHandler),
 		recovery.StreamServerInterceptor(recoveryHandler)
+}
+
+// LoggingBundle is the built-in logging interceptor bundle.
+// It logs request start, completion, duration, and status.
+type LoggingBundle struct {
+	logger *slog.Logger
+}
+
+// NewLoggingBundle creates a new logging interceptor bundle.
+func NewLoggingBundle(logger *slog.Logger) *LoggingBundle {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &LoggingBundle{logger: logger}
+}
+
+// Name returns the bundle identifier.
+func (b *LoggingBundle) Name() string {
+	return "logging"
+}
+
+// Priority returns the logging priority (runs first).
+func (b *LoggingBundle) Priority() int {
+	return PriorityLogging
+}
+
+// Interceptors returns the logging interceptors.
+func (b *LoggingBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return NewLoggingInterceptor(b.logger)
+}
+
+// RecoveryBundle is the built-in panic recovery interceptor bundle.
+// It catches panics and returns appropriate error responses.
+type RecoveryBundle struct {
+	logger  *slog.Logger
+	devMode bool
+}
+
+// NewRecoveryBundle creates a new recovery interceptor bundle.
+func NewRecoveryBundle(logger *slog.Logger, devMode bool) *RecoveryBundle {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &RecoveryBundle{logger: logger, devMode: devMode}
+}
+
+// Name returns the bundle identifier.
+func (b *RecoveryBundle) Name() string {
+	return "recovery"
+}
+
+// Priority returns the recovery priority (runs last).
+func (b *RecoveryBundle) Priority() int {
+	return PriorityRecovery
+}
+
+// Interceptors returns the recovery interceptors.
+func (b *RecoveryBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return NewRecoveryInterceptor(b.logger, b.devMode)
 }
