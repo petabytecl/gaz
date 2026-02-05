@@ -77,16 +77,20 @@ func provideValidationBundle(c *gaz.Container) error {
 // This makes authentication opt-in - services without AuthFunc skip auth.
 func provideAuthBundle(c *gaz.Container) error {
 	// Check if AuthFunc is registered - auth is optional.
-	authFunc, err := gaz.Resolve[AuthFunc](c)
-	if err != nil {
+	if !gaz.Has[AuthFunc](c) {
 		// No AuthFunc registered - skip auth interceptor silently.
 		return nil
 	}
 
-	if err := gaz.For[*AuthBundle](c).Provider(func(_ *gaz.Container) (*AuthBundle, error) {
+	authFunc, resolveErr := gaz.Resolve[AuthFunc](c)
+	if resolveErr != nil {
+		return fmt.Errorf("resolve auth func: %w", resolveErr)
+	}
+
+	if regErr := gaz.For[*AuthBundle](c).Provider(func(_ *gaz.Container) (*AuthBundle, error) {
 		return NewAuthBundle(authFunc), nil
-	}); err != nil {
-		return fmt.Errorf("register auth bundle: %w", err)
+	}); regErr != nil {
+		return fmt.Errorf("register auth bundle: %w", regErr)
 	}
 	return nil
 }

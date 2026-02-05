@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -240,4 +241,60 @@ func (m *mockInterceptorBundle) Interceptors() (grpc.UnaryServerInterceptor, grp
 	}
 
 	return unary, stream
+}
+
+func (s *InterceptorBundleTestSuite) TestAuthBundle_ImplementsInterface() {
+	authFunc := func(ctx context.Context) (context.Context, error) {
+		return ctx, nil
+	}
+	bundle := NewAuthBundle(authFunc)
+
+	// Verify interface compliance.
+	var _ InterceptorBundle = bundle
+
+	s.Equal("auth", bundle.Name())
+	s.Equal(PriorityAuth, bundle.Priority())
+
+	unary, stream := bundle.Interceptors()
+	s.NotNil(unary)
+	s.NotNil(stream)
+}
+
+func (s *InterceptorBundleTestSuite) TestPriorityAuth_Ordering() {
+	// Auth should be after logging (0), before validation (100).
+	s.Greater(PriorityAuth, PriorityLogging)
+	s.Less(PriorityAuth, PriorityValidation)
+}
+
+func (s *InterceptorBundleTestSuite) TestProvideAuthBundle_WithAuthFunc() {
+	c := di.New()
+
+	// Register AuthFunc.
+	authFunc := AuthFunc(func(ctx context.Context) (context.Context, error) {
+		return ctx, nil
+	})
+	err := gaz.For[AuthFunc](c).Instance(authFunc)
+	s.Require().NoError(err)
+
+	// Run provider.
+	err = provideAuthBundle(c)
+	s.Require().NoError(err)
+
+	// AuthBundle should be registered.
+	bundle, err := gaz.Resolve[*AuthBundle](c)
+	s.Require().NoError(err)
+	s.NotNil(bundle)
+	s.Equal("auth", bundle.Name())
+}
+
+func (s *InterceptorBundleTestSuite) TestProvideAuthBundle_WithoutAuthFunc() {
+	c := di.New()
+
+	// No AuthFunc registered.
+	err := provideAuthBundle(c)
+	s.Require().NoError(err) // Should succeed (skip silently).
+
+	// AuthBundle should NOT be registered.
+	_, err = gaz.Resolve[*AuthBundle](c)
+	s.Error(err) // Not found.
 }
