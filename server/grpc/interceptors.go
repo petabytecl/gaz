@@ -11,6 +11,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	protovalidateinterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,6 +25,8 @@ import (
 const (
 	// PriorityLogging is the priority for the logging interceptor (runs first).
 	PriorityLogging = 0
+	// PriorityRateLimit is the priority for the rate limit interceptor (after logging, before auth).
+	PriorityRateLimit = 25
 	// PriorityAuth is the priority for the auth interceptor (after logging, before validation).
 	PriorityAuth = 50
 	// PriorityValidation is the priority for the validation interceptor.
@@ -227,6 +230,53 @@ func (b *AuthBundle) Priority() int {
 func (b *AuthBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
 	return auth.UnaryServerInterceptor(b.authFunc),
 		auth.StreamServerInterceptor(b.authFunc)
+}
+
+// Limiter defines the interface for rate limiting.
+// Implementations should return nil to allow the request, or an error to reject it.
+//
+// Register a custom limiter in DI to override the default AlwaysPassLimiter:
+//
+//	gaz.For[grpc.Limiter](c).Instance(myLimiter)
+type Limiter = ratelimit.Limiter
+
+// AlwaysPassLimiter is a no-op limiter that allows all requests.
+// This is the default limiter when no custom Limiter is registered in DI.
+type AlwaysPassLimiter struct{}
+
+// Limit always returns nil, allowing all requests.
+func (l AlwaysPassLimiter) Limit(_ context.Context) error {
+	return nil
+}
+
+// RateLimitBundle is the built-in rate limiting interceptor bundle.
+// It uses the registered Limiter to control request rates.
+type RateLimitBundle struct {
+	limiter Limiter
+}
+
+// NewRateLimitBundle creates a new rate limit interceptor bundle.
+func NewRateLimitBundle(limiter Limiter) *RateLimitBundle {
+	if limiter == nil {
+		limiter = AlwaysPassLimiter{}
+	}
+	return &RateLimitBundle{limiter: limiter}
+}
+
+// Name returns the bundle identifier.
+func (b *RateLimitBundle) Name() string {
+	return "ratelimit"
+}
+
+// Priority returns the rate limit priority (after logging, before auth).
+func (b *RateLimitBundle) Priority() int {
+	return PriorityRateLimit
+}
+
+// Interceptors returns the rate limit interceptors.
+func (b *RateLimitBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return ratelimit.UnaryServerInterceptor(b.limiter),
+		ratelimit.StreamServerInterceptor(b.limiter)
 }
 
 // RecoveryBundle is the built-in panic recovery interceptor bundle.
