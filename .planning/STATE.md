@@ -77,6 +77,7 @@ None.
 | 008 | Add flags to the health server to get the port from the CLI | 2026-02-04 | ff54da5 | [008-add-flags-to-the-health-server-to-get-th](./quick/008-add-flags-to-the-health-server-to-get-th/) |
 | 009 | Refactor worker/eventbus module to follow health pattern | 2026-02-04 | b27297c | [009-refactor-worker-eventbus-module-pattern](./quick/009-refactor-worker-eventbus-module-pattern/) |
 | 010 | Refactor cron module to follow worker/eventbus pattern | 2026-02-04 | b0d92ac | [010-refactor-cron-module-pattern](./quick/010-refactor-cron-module-pattern/) |
+| 011 | Add builtin grpc protovalidate interceptor | 2026-02-04 | 721c7bc | [011-add-builtin-grpc-protovalidate-interceptor](./quick/011-add-builtin-grpc-protovalidate-interceptor/) |
 
 ### Roadmap Evolution
 
