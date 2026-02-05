@@ -100,23 +100,42 @@ func (s *InterceptorBundleTestSuite) TestRecoveryBundleImplementsInterface() {
 	s.NotNil(stream)
 }
 
+func (s *InterceptorBundleTestSuite) TestValidationBundleImplementsInterface() {
+	bundle, err := NewValidationBundle()
+	s.Require().NoError(err)
+
+	// Verify interface compliance.
+	var _ InterceptorBundle = bundle
+
+	s.Equal("validation", bundle.Name())
+	s.Equal(PriorityValidation, bundle.Priority())
+
+	unary, stream := bundle.Interceptors()
+	s.NotNil(unary)
+	s.NotNil(stream)
+}
+
 func (s *InterceptorBundleTestSuite) TestCollectInterceptorsOrdering() {
 	logger := slog.Default()
 	container := di.New()
 
+	validationBundle, err := NewValidationBundle()
+	s.Require().NoError(err)
+
 	// Register bundles in reverse priority order to test sorting.
 	_ = di.For[*RecoveryBundle](container).Instance(NewRecoveryBundle(logger, false))
 	_ = di.For[*LoggingBundle](container).Instance(NewLoggingBundle(logger))
+	_ = di.For[*ValidationBundle](container).Instance(validationBundle)
 	_ = di.For[*mockInterceptorBundle](container).Instance(&mockInterceptorBundle{
 		name:     "custom",
-		priority: 50,
+		priority: 500,
 	})
 
 	unary, stream := collectInterceptors(container, logger)
 
-	// Should have 3 interceptors (logging, custom, recovery).
-	s.Len(unary, 3)
-	s.Len(stream, 3)
+	// Should have 4 interceptors (logging, validation, custom, recovery).
+	s.Len(unary, 4)
+	s.Len(stream, 4)
 }
 
 func (s *InterceptorBundleTestSuite) TestCollectInterceptorsEmptyContainer() {
@@ -153,17 +172,21 @@ func (s *InterceptorBundleTestSuite) TestCustomInterceptorPriorityBetweenBuiltin
 	logger := slog.Default()
 	container := di.New()
 
+	validationBundle, err := NewValidationBundle()
+	s.Require().NoError(err)
+
 	// Track call order.
 	var callOrder []string
 
 	// Register bundles.
 	_ = di.For[*RecoveryBundle](container).Instance(NewRecoveryBundle(logger, false))
 	_ = di.For[*LoggingBundle](container).Instance(NewLoggingBundle(logger))
+	_ = di.For[*ValidationBundle](container).Instance(validationBundle)
 
-	// Custom interceptor with priority between logging and recovery.
+	// Custom interceptor with priority between validation and recovery.
 	customBundle := &mockInterceptorBundle{
 		name:     "custom",
-		priority: 50,
+		priority: 500,
 		onUnaryCall: func() {
 			callOrder = append(callOrder, "custom")
 		},
@@ -172,10 +195,10 @@ func (s *InterceptorBundleTestSuite) TestCustomInterceptorPriorityBetweenBuiltin
 
 	unary, _ := collectInterceptors(container, logger)
 
-	// Verify ordering: logging (0) < custom (50) < recovery (1000).
-	s.Require().Len(unary, 3)
+	// Verify ordering: logging (0) < validation (100) < custom (500) < recovery (1000).
+	s.Require().Len(unary, 4)
 
-	// The order in the slice should be logging, custom, recovery.
+	// The order in the slice should be logging, validation, custom, recovery.
 	// We can verify by checking priorities are in ascending order.
 	// Since collectInterceptors sorts by priority, the first should be logging.
 }
