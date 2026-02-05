@@ -41,7 +41,6 @@ type Server struct {
 	listener      net.Listener
 	container     *di.Container
 	logger        *slog.Logger
-	devMode       bool
 	otelEnabled   bool
 	healthAdapter *healthAdapter
 }
@@ -49,28 +48,34 @@ type Server struct {
 // NewServer creates a new gRPC server with the given configuration.
 // The server is not started until OnStart is called.
 //
+// Interceptors are auto-discovered from the DI container by resolving all
+// implementations of InterceptorBundle. They are chained in order of Priority().
+//
 // Parameters:
 //   - cfg: Server configuration (port, reflection, message sizes)
 //   - logger: Logger for request logging and error reporting
-//   - container: DI container for service discovery
-//   - devMode: If true, expose panic details in error responses
+//   - container: DI container for service and interceptor discovery
 //   - tp: Optional TracerProvider for OpenTelemetry instrumentation (may be nil)
-func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode bool, tp *sdktrace.TracerProvider) *Server {
+func NewServer(cfg Config, logger *slog.Logger, container *di.Container, tp *sdktrace.TracerProvider) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}
 
-	// Create interceptors.
-	loggingUnary, loggingStream := NewLoggingInterceptor(logger)
-	recoveryUnary, recoveryStream := NewRecoveryInterceptor(logger, devMode)
+	// Auto-discover and chain interceptors from DI container.
+	unaryInterceptors, streamInterceptors := collectInterceptors(container, logger)
 
 	// Build server options.
-	// Interceptor order: logging first (sees all requests), recovery last (catches panics).
 	opts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(loggingUnary, recoveryUnary),
-		grpc.ChainStreamInterceptor(loggingStream, recoveryStream),
 		grpc.MaxRecvMsgSize(cfg.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(cfg.MaxSendMsgSize),
+	}
+
+	// Add interceptor chains if any were discovered.
+	if len(unaryInterceptors) > 0 {
+		opts = append(opts, grpc.ChainUnaryInterceptor(unaryInterceptors...))
+	}
+	if len(streamInterceptors) > 0 {
+		opts = append(opts, grpc.ChainStreamInterceptor(streamInterceptors...))
 	}
 
 	// Add OTEL stats handler if TracerProvider is available.
@@ -91,7 +96,6 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, devMode
 		server:      grpc.NewServer(opts...),
 		container:   container,
 		logger:      logger,
-		devMode:     devMode,
 		otelEnabled: otelEnabled,
 	}
 }
