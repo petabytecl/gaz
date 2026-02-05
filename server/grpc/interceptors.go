@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"runtime/debug"
 	"sort"
@@ -219,7 +220,7 @@ type ValidationBundle struct {
 func NewValidationBundle() (*ValidationBundle, error) {
 	v, err := protovalidate.New()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create protovalidate validator: %w", err)
 	}
 	return &ValidationBundle{validator: v}, nil
 }

@@ -64,7 +64,7 @@ func provideRecoveryBundle(c *gaz.Container) error {
 
 // provideValidationBundle creates a ValidationBundle provider function.
 func provideValidationBundle(c *gaz.Container) error {
-	if err := gaz.For[*ValidationBundle](c).Provider(func(c *gaz.Container) (*ValidationBundle, error) {
+	if err := gaz.For[*ValidationBundle](c).Provider(func(_ *gaz.Container) (*ValidationBundle, error) {
 		return NewValidationBundle()
 	}); err != nil {
 		return fmt.Errorf("register validation bundle: %w", err)

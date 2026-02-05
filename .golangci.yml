@@ -448,6 +448,7 @@ linters:
             - github.com/rs/cors
             - go.opentelemetry.io/otel
             - go.opentelemetry.io/contrib
+            - buf.build/go/protovalidate
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -483,6 +484,7 @@ linters:
             - github.com/rs/cors
             - go.opentelemetry.io/otel
             - go.opentelemetry.io/contrib
+            - buf.build/go/protovalidate
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog
