@@ -6,7 +6,9 @@ import (
 	"runtime/debug"
 	"sort"
 
+	"buf.build/go/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	protovalidateinterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,6 +22,8 @@ import (
 const (
 	// PriorityLogging is the priority for the logging interceptor (runs first).
 	PriorityLogging = 0
+	// PriorityValidation is the priority for the validation interceptor.
+	PriorityValidation = 100
 	// PriorityRecovery is the priority for the recovery interceptor (runs last).
 	PriorityRecovery = 1000
 )
@@ -202,4 +206,36 @@ func (b *RecoveryBundle) Priority() int {
 // Interceptors returns the recovery interceptors.
 func (b *RecoveryBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
 	return NewRecoveryInterceptor(b.logger, b.devMode)
+}
+
+// ValidationBundle is the built-in protovalidate interceptor bundle.
+// It validates protobuf messages using buf.build/go/protovalidate rules.
+type ValidationBundle struct {
+	validator protovalidate.Validator
+}
+
+// NewValidationBundle creates a new validation interceptor bundle.
+// Returns an error if the validator cannot be created.
+func NewValidationBundle() (*ValidationBundle, error) {
+	v, err := protovalidate.New()
+	if err != nil {
+		return nil, err
+	}
+	return &ValidationBundle{validator: v}, nil
+}
+
+// Name returns the bundle identifier.
+func (b *ValidationBundle) Name() string {
+	return "validation"
+}
+
+// Priority returns the validation priority.
+func (b *ValidationBundle) Priority() int {
+	return PriorityValidation
+}
+
+// Interceptors returns the validation interceptors.
+func (b *ValidationBundle) Interceptors() (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
+	return protovalidateinterceptor.UnaryServerInterceptor(b.validator),
+		protovalidateinterceptor.StreamServerInterceptor(b.validator)
 }
