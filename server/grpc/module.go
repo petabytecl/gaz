@@ -72,6 +72,25 @@ func provideValidationBundle(c *gaz.Container) error {
 	return nil
 }
 
+// provideAuthBundle creates an AuthBundle provider function.
+// The bundle is only registered if an AuthFunc is registered in the container.
+// This makes authentication opt-in - services without AuthFunc skip auth.
+func provideAuthBundle(c *gaz.Container) error {
+	// Check if AuthFunc is registered - auth is optional.
+	authFunc, err := gaz.Resolve[AuthFunc](c)
+	if err != nil {
+		// No AuthFunc registered - skip auth interceptor silently.
+		return nil
+	}
+
+	if err := gaz.For[*AuthBundle](c).Provider(func(_ *gaz.Container) (*AuthBundle, error) {
+		return NewAuthBundle(authFunc), nil
+	}); err != nil {
+		return fmt.Errorf("register auth bundle: %w", err)
+	}
+	return nil
+}
+
 // provideServer creates a Server provider function.
 func provideServer(c *gaz.Container) error {
 	if err := gaz.For[*Server](c).
@@ -100,6 +119,7 @@ func provideServer(c *gaz.Container) error {
 // Components registered:
 //   - grpc.Config (loaded from flags/config)
 //   - *grpc.LoggingBundle (logging interceptor)
+//   - *grpc.AuthBundle (auth interceptor, only if AuthFunc registered)
 //   - *grpc.ValidationBundle (protovalidate interceptor)
 //   - *grpc.RecoveryBundle (panic recovery interceptor)
 //   - *grpc.Server (eager, starts on app start)
@@ -132,6 +152,7 @@ func NewModule() gaz.Module {
 		Flags(defaultCfg.Flags).
 		Provide(provideConfig(defaultCfg)).
 		Provide(provideLoggingBundle).
+		Provide(provideAuthBundle).
 		Provide(provideValidationBundle).
 		Provide(provideRecoveryBundle).
 		Provide(provideServer).
