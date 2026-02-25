@@ -63,7 +63,7 @@ func New(cfg Config) func(context.Context) error {
 		}
 		req.Header.Set("Connection", "close")
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:gosec // URL is provided by application developer, not user input
 		if err != nil {
 			return fmt.Errorf("http: request failed: %w", err)
 		}

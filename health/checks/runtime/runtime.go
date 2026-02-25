@@ -59,7 +59,7 @@ func GCPause(threshold time.Duration) func(context.Context) error {
 		if m.NumGC > 0 {
 			idx := (m.NumGC + pauseNsBufferSize - 1) % pauseNsBufferSize
 			if m.PauseNs[idx] > thresholdNs {
-				pauseDuration := time.Duration(m.PauseNs[idx]) //nolint:gosec // safe for GC pause durations
+				pauseDuration := time.Duration(m.PauseNs[idx])
 				return fmt.Errorf("runtime: GC pause too long (%s > %s)",
 					pauseDuration, threshold)
 			}

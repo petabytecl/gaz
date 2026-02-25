@@ -265,6 +265,16 @@ linters:
           - revive
         path: server/http/
         text: "var-naming"
+      # Package name runtime shadows stdlib but is intentional for cleaner imports
+      - linters:
+          - revive
+        path: health/checks/runtime/
+        text: "var-naming"
+      # Package name sql shadows stdlib but is intentional for cleaner imports
+      - linters:
+          - revive
+        path: health/checks/sql/
+        text: "var-naming"
       # Unexported return in scheduler is internal API
       - linters:
           - revive

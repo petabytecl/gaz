@@ -44,7 +44,7 @@ func NewHandler(w io.Writer, opts *Options) *Handler {
 	// We only auto-detect if the caller didn't set NoColor.
 	if !h.opts.NoColor {
 		if f, ok := w.(*os.File); ok {
-			h.opts.NoColor = !term.IsTerminal(int(f.Fd()))
+			h.opts.NoColor = !term.IsTerminal(int(f.Fd())) //nolint:gosec // file descriptors are small integers, safe conversion
 		} else {
 			h.opts.NoColor = true // Not a file, assume no TTY
 		}
