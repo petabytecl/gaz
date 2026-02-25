@@ -60,6 +60,10 @@ type WorkerOptions struct {
 	// Use this to log, alert, or persist failed worker info.
 	// The handler is wrapped in recover() for safety.
 	OnDeadLetter DeadLetterHandler
+
+	// MaxWorkers is the maximum number of workers that can be registered.
+	// Default: 100. Set to 0 to disable limit.
+	MaxWorkers int
 }
 
 // WorkerOption configures WorkerOptions.
@@ -73,6 +77,7 @@ type WorkerOption func(*WorkerOptions)
 //   - StableRunPeriod: 30 seconds
 //   - MaxRestarts: 5
 //   - CircuitWindow: 10 minutes
+//   - MaxWorkers: 100
 func DefaultWorkerOptions() *WorkerOptions {
 	return &WorkerOptions{
 		PoolSize:        1,
@@ -80,6 +85,7 @@ func DefaultWorkerOptions() *WorkerOptions {
 		StableRunPeriod: 30 * time.Second,
 		MaxRestarts:     5,
 		CircuitWindow:   10 * time.Minute,
+		MaxWorkers:      100,
 	}
 }
 

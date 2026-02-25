@@ -12,9 +12,9 @@ import (
 func TestHandlers(t *testing.T) {
 	// 1. Setup Manager with failing checks
 	m := NewManager()
-	m.AddLivenessCheck("live_fail", func(_ context.Context) error { return errors.New("fail") })
-	m.AddReadinessCheck("ready_fail", func(_ context.Context) error { return errors.New("fail") })
-	m.AddStartupCheck("startup_fail", func(_ context.Context) error { return errors.New("fail") })
+	_ = m.AddLivenessCheck("live_fail", func(_ context.Context) error { return errors.New("fail") })
+	_ = m.AddReadinessCheck("ready_fail", func(_ context.Context) error { return errors.New("fail") })
+	_ = m.AddStartupCheck("startup_fail", func(_ context.Context) error { return errors.New("fail") })
 
 	// 2. Test Liveness (Expect 200 on failure)
 	t.Run("Liveness", func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestHandlers(t *testing.T) {
 func TestHandlersSuccess(t *testing.T) {
 	// 1. Setup Manager with passing checks
 	m := NewManager()
-	m.AddLivenessCheck("live_pass", func(_ context.Context) error { return nil })
+	_ = m.AddLivenessCheck("live_pass", func(_ context.Context) error { return nil })
 
 	// 2. Test Liveness (Expect 200)
 	t.Run("LivenessSuccess", func(t *testing.T) {

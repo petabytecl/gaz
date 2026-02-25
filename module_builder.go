@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+
+	"github.com/petabytecl/gaz/di"
 )
 
 // Module represents a reusable bundle of providers.
@@ -40,6 +42,7 @@ type ModuleBuilder struct {
 
 // NewModule creates a new ModuleBuilder with the given name.
 // The name is used for debugging, error messages, and duplicate detection.
+// The name is validated to prevent injection attacks.
 //
 // Example:
 //
@@ -157,9 +160,19 @@ func (m *builtModule) Name() string {
 // Child modules are applied FIRST (in order), then the parent's providers.
 // Each module's name is registered in app.modules for duplicate detection.
 func (m *builtModule) Apply(app *App) error {
+	// Validate module name
+	if err := di.ValidateModuleName(m.name); err != nil {
+		return fmt.Errorf("module %q: %w", m.name, err)
+	}
+
 	// Apply child modules FIRST (composition)
 	for _, child := range m.childModules {
 		childName := child.Name()
+
+		// Validate child module name
+		if err := di.ValidateModuleName(childName); err != nil {
+			return fmt.Errorf("child module %q: %w", childName, err)
+		}
 
 		// Check for duplicate child module name
 		if app.modules[childName] {

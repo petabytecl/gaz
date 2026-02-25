@@ -20,4 +20,7 @@ var (
 	// ErrManagerAlreadyRunning indicates an attempt to register a worker
 	// after the manager has started.
 	ErrManagerAlreadyRunning = errors.New("worker: cannot register worker after manager has started")
+
+	// ErrResourceLimitExceeded indicates a resource limit was exceeded.
+	ErrResourceLimitExceeded = errors.New("worker: resource limit exceeded")
 )

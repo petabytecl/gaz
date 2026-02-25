@@ -145,6 +145,9 @@ type App struct {
 	// Stop idempotency
 	stopOnce sync.Once
 	stopErr  error
+
+	// Cached shutdown order (computed during Build())
+	shutdownOrder [][]string
 }
 
 // providerConfigEntry stores config information from a ConfigProvider.
@@ -248,7 +251,7 @@ func (a *App) initializeLogger() error {
 
 	// Register Logger in container
 	if regErr := For[*slog.Logger](a.container).Instance(a.Logger); regErr != nil {
-		return fmt.Errorf("register logger: %w", regErr)
+		return wrapErr("register logger", regErr)
 	}
 
 	a.loggerInitialized = true
@@ -283,7 +286,7 @@ func (a *App) initializeSubsystems() error {
 
 	// Register EventBus in container
 	if err := For[*eventbus.EventBus](a.container).Instance(a.eventBus); err != nil {
-		return fmt.Errorf("register eventbus: %w", err)
+		return wrapErr("register eventbus", err)
 	}
 	return nil
 }
@@ -364,7 +367,7 @@ func (a *App) MergeConfigMap(cfg map[string]any) error {
 	backend := a.configMgr.Backend()
 	if merger, ok := backend.(configMapMerger); ok {
 		if err := merger.MergeConfigMap(cfg); err != nil {
-			return fmt.Errorf("gaz: merge config map: %w", err)
+			return wrapErr("merge config map", err)
 		}
 		return nil
 	}
@@ -390,7 +393,9 @@ func (a *App) registerInstance(instance any) error {
 	}
 
 	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance)
-	a.container.Register(typeNameStr, svc)
+	if err := a.container.Register(typeNameStr, svc); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -413,17 +418,17 @@ func (a *App) loadConfig() error {
 	if a.configTarget != nil {
 		if a.strictConfig {
 			if err := a.configMgr.LoadIntoStrict(a.configTarget); err != nil {
-				return fmt.Errorf("loading config (strict mode): %w", err)
+				return wrapErr("loading config (strict mode)", err)
 			}
 		} else {
 			if err := a.configMgr.LoadInto(a.configTarget); err != nil {
-				return fmt.Errorf("loading config into target: %w", err)
+				return wrapErr("loading config into target", err)
 			}
 		}
 	} else {
 		// Otherwise just load the config file (for ConfigProvider pattern)
 		if err := a.configMgr.Load(); err != nil {
-			return fmt.Errorf("loading config: %w", err)
+			return wrapErr("loading config", err)
 		}
 	}
 	a.configLoaded = true
@@ -455,7 +460,7 @@ func (a *App) applyConfigFlags() error {
 	if configPath != "" {
 		// Explicit config file - validate exists
 		if _, statErr := os.Stat(configPath); statErr != nil {
-			return fmt.Errorf("config: file not found: %s", configPath)
+			return fmt.Errorf("config file not found: %s", configPath)
 		}
 		opts = append(opts, config.WithConfigFile(configPath))
 	} else {
@@ -629,7 +634,7 @@ func (a *App) registerProviderFlags() error {
 		}
 
 		if err := a.configMgr.RegisterProviderFlags(entry.namespace, cfgFlags); err != nil {
-			return fmt.Errorf("registering provider flags for %s: %w", entry.namespace, err)
+			return wrapErr(fmt.Sprintf("registering provider flags for %s", entry.namespace), err)
 		}
 		errs := a.configMgr.ValidateProviderFlags(entry.namespace, cfgFlags)
 		validationErrors = append(validationErrors, errs...)
@@ -773,14 +778,14 @@ func (a *App) Build() error {
 
 				// Register health.Config in container
 				if err := For[health.Config](a.container).Instance(cfg); err != nil {
-					errs = append(errs, fmt.Errorf("register health config: %w", err))
+					errs = append(errs, wrapErr("register health config", err))
 				} else {
 					// Create and apply health module
 					healthModule := NewModule("health").
 						Provide(health.Module).
 						Build()
 					if applyErr := healthModule.Apply(a); applyErr != nil {
-						errs = append(errs, fmt.Errorf("apply health module: %w", applyErr))
+						errs = append(errs, wrapErr("apply health module", applyErr))
 					} else {
 						a.modules["health"] = true
 					}
@@ -794,7 +799,7 @@ func (a *App) Build() error {
 
 	// Register EventBus with worker manager for lifecycle management
 	if err := a.workerMgr.Register(a.eventBus); err != nil {
-		errs = append(errs, fmt.Errorf("registering eventbus: %w", err))
+		errs = append(errs, wrapErr("registering eventbus", err))
 	}
 
 	// Discover cron jobs from registered services
@@ -803,7 +808,7 @@ func (a *App) Build() error {
 	// Register scheduler with worker manager (only if jobs exist)
 	if a.scheduler.JobCount() > 0 {
 		if err := a.workerMgr.Register(a.scheduler); err != nil {
-			errs = append(errs, fmt.Errorf("registering scheduler: %w", err))
+			errs = append(errs, wrapErr("registering scheduler", err))
 		}
 	}
 
@@ -814,6 +819,31 @@ func (a *App) Build() error {
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
+	}
+
+	// Cache shutdown order for efficient Stop() calls
+	// Compute startup order to derive shutdown order
+	graph := a.container.GetGraph()
+	servicesForOrder := make(map[string]di.ServiceWrapper)
+	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		// Skip workers - they have their own lifecycle via WorkerManager
+		if !svc.IsTransient() {
+			if instance, err := a.container.ResolveByName(name, nil); err == nil {
+				if _, isWorker := instance.(worker.Worker); isWorker {
+					return
+				}
+			}
+		}
+		servicesForOrder[name] = svc
+	})
+
+	startupOrder, err := ComputeStartupOrder(graph, servicesForOrder)
+	if err != nil {
+		// If we can't compute order, we'll recompute on Stop() as fallback
+		// This shouldn't happen if Build() succeeded, but be defensive
+		a.shutdownOrder = nil
+	} else {
+		a.shutdownOrder = ComputeShutdownOrder(startupOrder)
 	}
 
 	a.built = true
@@ -884,7 +914,7 @@ func (a *App) Run(ctx context.Context) error {
 						"name", name,
 						"error", startErr,
 					)
-					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
+					errCh <- wrapErr(fmt.Sprintf("starting service %s", name), startErr)
 				} else {
 					a.Logger.InfoContext(
 						ctx,
@@ -917,7 +947,7 @@ func (a *App) Run(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 		defer cancel()
 		_ = a.Stop(shutdownCtx)
-		return fmt.Errorf("starting workers: %w", workerErr)
+		return wrapErr("starting workers", workerErr)
 	}
 
 	return a.waitForShutdownSignal(ctx)
@@ -1028,31 +1058,37 @@ func (a *App) doStop(ctx context.Context) error {
 		}
 	}()
 
-	// Compute shutdown order (reverse of startup)
-	// We need to re-compute because we don't store it.
-	graph := a.container.GetGraph()
-	services := make(map[string]di.ServiceWrapper)
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		// Skip workers - they have their own lifecycle via WorkerManager
-		// Workers implement OnStart/OnStop which looks like di.Starter/di.Stopper,
-		// but they should only be started/stopped by WorkerManager, not the DI layer.
-		if !svc.IsTransient() {
-			if instance, err := a.container.ResolveByName(name, nil); err == nil {
-				if _, isWorker := instance.(worker.Worker); isWorker {
-					return
+	// Use cached shutdown order if available (computed during Build())
+	// Fallback to recomputing if cache is missing (shouldn't happen, but defensive)
+	var shutdownOrder [][]string
+	if a.shutdownOrder != nil {
+		shutdownOrder = a.shutdownOrder
+	} else {
+		// Fallback: recompute shutdown order
+		graph := a.container.GetGraph()
+		services := make(map[string]di.ServiceWrapper)
+		a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
+			// Skip workers - they have their own lifecycle via WorkerManager
+			// Workers implement OnStart/OnStop which looks like di.Starter/di.Stopper,
+			// but they should only be started/stopped by WorkerManager, not the DI layer.
+			if !svc.IsTransient() {
+				if instance, err := a.container.ResolveByName(name, nil); err == nil {
+					if _, isWorker := instance.(worker.Worker); isWorker {
+						return
+					}
 				}
 			}
-		}
-		services[name] = svc
-	})
+			services[name] = svc
+		})
 
-	startupOrder, err := ComputeStartupOrder(graph, services)
-	if err != nil {
-		close(done)
-		// Should not happen if Build passed, unless graph changed (impossible after Build)
-		return err
+		startupOrder, err := ComputeStartupOrder(graph, services)
+		if err != nil {
+			close(done)
+			// Should not happen if Build passed, unless graph changed (impossible after Build)
+			return err
+		}
+		shutdownOrder = ComputeShutdownOrder(startupOrder)
 	}
-	shutdownOrder := ComputeShutdownOrder(startupOrder)
 
 	var errs []error
 
@@ -1063,7 +1099,7 @@ func (a *App) doStop(ctx context.Context) error {
 	log.InfoContext(ctx, "stopping workers")
 	if a.workerMgr != nil {
 		if workerStopErr := a.workerMgr.Stop(); workerStopErr != nil {
-			errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
+			errs = append(errs, wrapErr("stopping workers", workerStopErr))
 		}
 	}
 
@@ -1129,7 +1165,7 @@ func (a *App) stopServices(
 						"error", stopErr,
 						"elapsed", elapsed,
 					)
-					errs = append(errs, fmt.Errorf("stopping service %s: %w", name, stopErr))
+					errs = append(errs, wrapErr(fmt.Sprintf("stopping service %s", name), stopErr))
 				} else {
 					a.Logger.InfoContext(
 						ctx,
@@ -1145,8 +1181,12 @@ func (a *App) stopServices(
 				a.logBlame(name, timeout, elapsed)
 				errs = append(
 					errs,
-					fmt.Errorf("stopping service %s: %w", name, context.DeadlineExceeded),
+					wrapErr(fmt.Sprintf("stopping service %s", name), context.DeadlineExceeded),
 				)
+				// Ensure goroutine completes - drain channel in background to prevent leak
+				go func() {
+					<-errCh // Drain to prevent goroutine leak
+				}()
 				// Continue to next hook (don't wait for the timed-out hook)
 			}
 		}

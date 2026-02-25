@@ -1,7 +1,20 @@
 package di
 
+// ContainerOptions configures resource limits for the container.
+type ContainerOptions struct {
+	// MaxServices is the maximum number of services that can be registered.
+	// Default: 1000
+	MaxServices int
+}
+
+// DefaultContainerOptions returns ContainerOptions with sensible defaults.
+func DefaultContainerOptions() *ContainerOptions {
+	return &ContainerOptions{
+		MaxServices: 1000,
+	}
+}
+
 // ResolveOption modifies resolution behavior.
-// Options are passed to Resolve[T]() to customize the resolution process.
 type ResolveOption func(*resolveOptions)
 
 // resolveOptions holds resolution configuration.
@@ -10,12 +23,6 @@ type resolveOptions struct {
 }
 
 // Named resolves a service by its registered name instead of type.
-// Use this when you have multiple registrations of the same type.
-//
-// Example:
-//
-//	primaryDB, err := di.Resolve[*sql.DB](c, di.Named("primary"))
-//	replicaDB, err := di.Resolve[*sql.DB](c, di.Named("replica"))
 func Named(name string) ResolveOption {
 	return func(o *resolveOptions) {
 		o.name = name

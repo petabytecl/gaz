@@ -45,13 +45,16 @@ type CheckOptions struct {
 type Registrar interface {
 	// AddLivenessCheck registers a check for liveness probes (is app running?).
 	// Failures here may cause the orchestrator to restart the container.
-	AddLivenessCheck(name string, check CheckFunc)
+	// Returns an error if resource limits are exceeded.
+	AddLivenessCheck(name string, check CheckFunc) error
 
 	// AddReadinessCheck registers a check for readiness probes (can app accept traffic?).
 	// Failures here cause the orchestrator to stop sending traffic.
-	AddReadinessCheck(name string, check CheckFunc)
+	// Returns an error if resource limits are exceeded.
+	AddReadinessCheck(name string, check CheckFunc) error
 
 	// AddStartupCheck registers a check for startup probes (is app initialized?).
 	// Failures here hold off liveness/readiness checks.
-	AddStartupCheck(name string, check CheckFunc)
+	// Returns an error if resource limits are exceeded.
+	AddStartupCheck(name string, check CheckFunc) error
 }

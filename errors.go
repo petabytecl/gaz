@@ -54,6 +54,10 @@ var (
 	// ErrDIAmbiguous is returned when multiple services are registered for the same key.
 	// Check with: errors.Is(err, gaz.ErrDIAmbiguous).
 	ErrDIAmbiguous = di.ErrAmbiguous
+
+	// ErrDIResourceLimitExceeded is returned when a resource limit is exceeded.
+	// Check with: errors.Is(err, gaz.ErrDIResourceLimitExceeded).
+	ErrDIResourceLimitExceeded = di.ErrResourceLimitExceeded
 )
 
 // Config subsystem errors.
@@ -201,4 +205,17 @@ func NewFieldError(namespace, tag, param, message string) FieldError {
 // This is a convenience wrapper for config.NewValidationError.
 func NewValidationError(errs []FieldError) ValidationError {
 	return config.NewValidationError(errs)
+}
+
+// wrapErr wraps an error with a lowercase action description.
+// This standardizes error message formatting across the codebase.
+// Format: "action: %w" (lowercase, no trailing punctuation).
+//
+// Example:
+//
+//	if err := doSomething(); err != nil {
+//	    return wrapErr("register service", err)
+//	}
+func wrapErr(action string, err error) error {
+	return fmt.Errorf("%s: %w", strings.ToLower(action), err)
 }

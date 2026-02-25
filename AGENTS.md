@@ -123,12 +123,17 @@ var (
 )
 ```
 
-**Error wrapping:** Use `%w`, lowercase context, no trailing punctuation
+**Error wrapping:** Use `wrapErr()` helper for consistency, lowercase action, no trailing punctuation
 ```go
 if err := doSomething(); err != nil {
-    return fmt.Errorf("register manager: %w", err)
+    return wrapErr("register manager", err)
 }
 ```
+
+The `wrapErr()` helper standardizes error message format across the codebase:
+- Lowercase action description
+- No trailing punctuation
+- Proper error wrapping with `%w`
 
 **Error types (if needed):** `Error` suffix
 ```go

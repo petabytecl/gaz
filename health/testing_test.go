@@ -36,9 +36,9 @@ func TestMockRegistrar(t *testing.T) {
 	m := NewMockRegistrar()
 
 	// Should accept all check registrations without error
-	m.AddLivenessCheck("db", func(ctx context.Context) error { return nil })
-	m.AddReadinessCheck("cache", func(ctx context.Context) error { return nil })
-	m.AddStartupCheck("migrations", func(ctx context.Context) error { return nil })
+	_ = m.AddLivenessCheck("db", func(ctx context.Context) error { return nil })
+	_ = m.AddReadinessCheck("cache", func(ctx context.Context) error { return nil })
+	_ = m.AddStartupCheck("migrations", func(ctx context.Context) error { return nil })
 
 	// Verify all calls were made
 	m.AssertCalled(t, "AddLivenessCheck", "db", mock.Anything)
@@ -65,13 +65,13 @@ func TestRequireHealthy(t *testing.T) {
 	RequireHealthy(t, m)
 
 	// Add a passing check - still healthy
-	m.AddReadinessCheck("ok", func(ctx context.Context) error { return nil })
+	_ = m.AddReadinessCheck("ok", func(ctx context.Context) error { return nil })
 	RequireHealthy(t, m)
 }
 
 func TestRequireUnhealthy(t *testing.T) {
 	m := TestManager()
-	m.AddReadinessCheck("failing", func(ctx context.Context) error {
+	_ = m.AddReadinessCheck("failing", func(ctx context.Context) error {
 		return errors.New("service unavailable")
 	})
 
@@ -81,9 +81,9 @@ func TestRequireUnhealthy(t *testing.T) {
 func TestRequireCheckRegistered(t *testing.T) {
 	m := TestManager()
 
-	m.AddLivenessCheck("db-live", func(ctx context.Context) error { return nil })
-	m.AddReadinessCheck("db-ready", func(ctx context.Context) error { return nil })
-	m.AddStartupCheck("db-startup", func(ctx context.Context) error { return nil })
+	_ = m.AddLivenessCheck("db-live", func(ctx context.Context) error { return nil })
+	_ = m.AddReadinessCheck("db-ready", func(ctx context.Context) error { return nil })
+	_ = m.AddStartupCheck("db-startup", func(ctx context.Context) error { return nil })
 
 	RequireLivenessCheckRegistered(t, m, "db-live")
 	RequireReadinessCheckRegistered(t, m, "db-ready")

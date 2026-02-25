@@ -34,9 +34,12 @@ type Container struct {
 	// This is used for lifecycle management (ordered startup/shutdown).
 	dependencyGraph map[string][]string
 	graphMu         sync.RWMutex
+
+	// options contains resource limits and other configuration.
+	options *ContainerOptions
 }
 
-// New creates a new empty Container.
+// New creates a new empty Container with default options.
 // Register services using For[T](), then call Build() to prepare
 // the container for resolution.
 //
@@ -49,19 +52,48 @@ type Container struct {
 //	}
 //	db, _ := di.Resolve[*Database](c)
 func New() *Container {
+	return NewWithOptions(DefaultContainerOptions())
+}
+
+// NewWithOptions creates a new Container with the given options.
+// Use this to configure resource limits.
+//
+// Example:
+//
+//	opts := di.DefaultContainerOptions()
+//	opts.MaxServices = 500
+//	c := di.NewWithOptions(opts)
+func NewWithOptions(opts *ContainerOptions) *Container {
+	if opts == nil {
+		opts = DefaultContainerOptions()
+	}
 	return &Container{
 		services:         make(map[string][]ServiceWrapper),
 		resolutionChains: make(map[int64][]string),
 		dependencyGraph:  make(map[string][]string),
+		options:          opts,
 	}
 }
 
 // Register adds a service to the container.
 // Exported for use by gaz.App for reflection-based registration.
-func (c *Container) Register(name string, svc ServiceWrapper) {
+// Returns ErrResourceLimitExceeded if MaxServices limit is reached.
+func (c *Container) Register(name string, svc ServiceWrapper) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Check if this is a new service name (not just adding to existing multi-binding)
+	if _, exists := c.services[name]; !exists {
+		// Check resource limit
+		if c.options != nil && c.options.MaxServices > 0 {
+			if len(c.services) >= c.options.MaxServices {
+				return fmt.Errorf("%w: max services (%d) reached", ErrResourceLimitExceeded, c.options.MaxServices)
+			}
+		}
+	}
+
 	c.services[name] = append(c.services[name], svc)
+	return nil
 }
 
 // ReplaceService replaces all services registered under the given name with the new service.

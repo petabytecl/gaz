@@ -4,10 +4,41 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/pflag"
 )
+
+var (
+	// configKeyRegex validates config keys (alphanumeric + dots/hyphens/underscores).
+	configKeyRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
+)
+
+// validateConfigKey validates a configuration key.
+func validateConfigKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("config key cannot be empty")
+	}
+	if !configKeyRegex.MatchString(key) {
+		return fmt.Errorf("config key %q (must be alphanumeric with dots/hyphens/underscores)", key)
+	}
+	// Prevent path traversal attempts
+	if key == ".." || key == "." || containsPathTraversal(key) {
+		return fmt.Errorf("config key %q contains invalid path characters", key)
+	}
+	return nil
+}
+
+// validateConfigNamespace validates a configuration namespace.
+func validateConfigNamespace(namespace string) error {
+	return validateConfigKey(namespace) // Same validation rules
+}
+
+// containsPathTraversal checks for path traversal patterns.
+func containsPathTraversal(key string) bool {
+	return regexp.MustCompile(`\.\./|\.\.\\|/\.\.|\\\.\.`).MatchString(key)
+}
 
 // Manager handles configuration loading, binding, and validation.
 // It provides a unified interface for loading configuration from multiple sources
@@ -359,7 +390,17 @@ func (m *Manager) bindStructEnv(eb EnvBinder, target any, prefix string) {
 // RegisterProviderFlags registers provider config flags with defaults and env binding.
 // For each flag, it sets the default value and binds to an environment variable.
 func (m *Manager) RegisterProviderFlags(namespace string, flags []ConfigFlag) error {
+	// Validate namespace
+	if err := validateConfigNamespace(namespace); err != nil {
+		return fmt.Errorf("namespace %q: %w", namespace, err)
+	}
+
 	for _, flag := range flags {
+		// Validate config key
+		if err := validateConfigKey(flag.Key); err != nil {
+			return fmt.Errorf("flag key %q: %w", flag.Key, err)
+		}
+
 		fullKey := namespace + "." + flag.Key
 
 		// Set default if provided

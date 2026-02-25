@@ -151,6 +151,8 @@ Hooks are called in dependency order (dependencies start first, stop last).
 - [Configuration](docs/configuration.md) - Config loading, env vars, validation
 - [Validation](docs/validation.md) - Struct tags and custom validators
 - [Advanced](docs/advanced.md) - Modules, testing, Cobra integration
+- [Profiling](docs/profiling.md) - Performance monitoring and leak detection
+- [Security](docs/security.md) - Input validation, resource limits, DoS prevention
 - [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 
 ## Examples

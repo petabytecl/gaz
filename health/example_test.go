@@ -15,7 +15,7 @@ func ExampleManager_AddReadinessCheck() {
 	mgr := health.NewManager()
 
 	// Register a readiness check for database connectivity
-	mgr.AddReadinessCheck("database", func(ctx context.Context) error {
+	_ = mgr.AddReadinessCheck("database", func(ctx context.Context) error {
 		// In real code, this would ping the database
 		// return db.PingContext(ctx)
 		return nil // healthy
@@ -34,7 +34,7 @@ func ExampleManager_AddLivenessCheck() {
 	mgr := health.NewManager()
 
 	// Register a liveness check for basic process health
-	mgr.AddLivenessCheck("heartbeat", func(ctx context.Context) error {
+	_ = mgr.AddLivenessCheck("heartbeat", func(ctx context.Context) error {
 		// Liveness checks should be simple and fast
 		// Returning nil means the process is alive
 		return nil
@@ -56,7 +56,7 @@ func ExampleManager_AddStartupCheck() {
 	initialized := true
 
 	// Register a startup check
-	mgr.AddStartupCheck("init", func(ctx context.Context) error {
+	_ = mgr.AddStartupCheck("init", func(ctx context.Context) error {
 		if !initialized {
 			return errors.New("initialization in progress")
 		}
@@ -83,7 +83,7 @@ func Example_customCheck() {
 	mgr := health.NewManager()
 
 	// The Check method signature matches health.CheckFunc
-	mgr.AddReadinessCheck("database", func(ctx context.Context) error {
+	_ = mgr.AddReadinessCheck("database", func(ctx context.Context) error {
 		if !db.connectionOK {
 			return errors.New("database connection lost")
 		}
@@ -103,7 +103,7 @@ func Example_unhealthyCheck() {
 	mgr := health.NewManager()
 
 	// Register a check that always fails
-	mgr.AddReadinessCheck("broken", func(ctx context.Context) error {
+	_ = mgr.AddReadinessCheck("broken", func(ctx context.Context) error {
 		return errors.New("service unavailable")
 	})
 
@@ -148,7 +148,7 @@ func ExampleTestManager() {
 	mgr := health.TestManager()
 
 	// Add a test check
-	mgr.AddReadinessCheck("test", func(ctx context.Context) error {
+	_ = mgr.AddReadinessCheck("test", func(ctx context.Context) error {
 		return nil
 	})
 
@@ -174,7 +174,7 @@ func ExampleMockRegistrar() {
 
 // Helper for mock example.
 func registerChecks(r health.Registrar) {
-	r.AddReadinessCheck("database", func(ctx context.Context) error {
+	_ = r.AddReadinessCheck("database", func(ctx context.Context) error {
 		return nil
 	})
 }

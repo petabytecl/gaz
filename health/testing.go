@@ -44,25 +44,28 @@ type MockRegistrar struct {
 // All Add* methods accept any arguments and return without error.
 func NewMockRegistrar() *MockRegistrar {
 	m := &MockRegistrar{}
-	m.On("AddLivenessCheck", mock.Anything, mock.Anything).Return()
-	m.On("AddReadinessCheck", mock.Anything, mock.Anything).Return()
-	m.On("AddStartupCheck", mock.Anything, mock.Anything).Return()
+	m.On("AddLivenessCheck", mock.Anything, mock.Anything).Return(nil)
+	m.On("AddReadinessCheck", mock.Anything, mock.Anything).Return(nil)
+	m.On("AddStartupCheck", mock.Anything, mock.Anything).Return(nil)
 	return m
 }
 
 // AddLivenessCheck records a liveness check registration.
-func (m *MockRegistrar) AddLivenessCheck(name string, check CheckFunc) {
+func (m *MockRegistrar) AddLivenessCheck(name string, check CheckFunc) error {
 	m.Called(name, check)
+	return nil
 }
 
 // AddReadinessCheck records a readiness check registration.
-func (m *MockRegistrar) AddReadinessCheck(name string, check CheckFunc) {
+func (m *MockRegistrar) AddReadinessCheck(name string, check CheckFunc) error {
 	m.Called(name, check)
+	return nil
 }
 
 // AddStartupCheck records a startup check registration.
-func (m *MockRegistrar) AddStartupCheck(name string, check CheckFunc) {
+func (m *MockRegistrar) AddStartupCheck(name string, check CheckFunc) error {
 	m.Called(name, check)
+	return nil
 }
 
 // TestManager creates a Manager with no checks registered, suitable for testing.

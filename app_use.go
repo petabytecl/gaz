@@ -45,6 +45,13 @@ func (a *App) Use(m Module) *App {
 
 	name := m.Name()
 
+	// Validate module name
+	if err := di.ValidateModuleName(name); err != nil {
+		a.buildErrors = append(a.buildErrors,
+			fmt.Errorf("module %q: %w", name, err))
+		return a
+	}
+
 	// Check for duplicate module name
 	if a.modules[name] {
 		a.buildErrors = append(a.buildErrors,
@@ -80,6 +87,13 @@ func (a *App) UseDI(m di.Module) *App {
 	}
 
 	name := m.Name()
+
+	// Validate module name
+	if err := di.ValidateModuleName(name); err != nil {
+		a.buildErrors = append(a.buildErrors,
+			fmt.Errorf("module %q: %w", name, err))
+		return a
+	}
 
 	// Check for duplicate module name
 	if a.modules[name] {

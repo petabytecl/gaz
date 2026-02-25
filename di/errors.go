@@ -37,4 +37,8 @@ var (
 	// ErrAmbiguous is returned when multiple services are registered for the same key.
 	// Check with: errors.Is(err, di.ErrAmbiguous).
 	ErrAmbiguous = errors.New("di: ambiguous resolution: multiple services registered")
+
+	// ErrResourceLimitExceeded is returned when a resource limit is exceeded.
+	// Check with: errors.Is(err, di.ErrResourceLimitExceeded).
+	ErrResourceLimitExceeded = errors.New("di: resource limit exceeded")
 )

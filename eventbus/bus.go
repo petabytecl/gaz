@@ -60,21 +60,30 @@ func (s *asyncSubscription) safeInvoke(ctx context.Context, event any, logger *s
 // EventBus is safe for concurrent use. Multiple goroutines can subscribe,
 // unsubscribe, and publish concurrently.
 type EventBus struct {
-	mu       sync.RWMutex
-	handlers map[subscriptionKey][]*asyncSubscription
-	nextID   uint64
-	closed   bool
-	logger   *slog.Logger
+	mu             sync.RWMutex
+	handlers       map[subscriptionKey][]*asyncSubscription
+	nextID         uint64
+	closed         bool
+	logger         *slog.Logger
+	maxSubscriptions int // Maximum number of subscriptions (0 = unlimited)
 }
 
-// New creates a new EventBus.
+// New creates a new EventBus with default options.
 //
 // The logger is used for panic recovery logging. Pass slog.Default() if
 // you don't have a custom logger.
 func New(logger *slog.Logger) *EventBus {
+	return NewWithOptions(logger, 1000) // Default: 1000 subscriptions
+}
+
+// NewWithOptions creates a new EventBus with custom resource limits.
+//
+// maxSubscriptions is the maximum number of subscriptions allowed (0 = unlimited).
+func NewWithOptions(logger *slog.Logger, maxSubscriptions int) *EventBus {
 	return &EventBus{
-		handlers: make(map[subscriptionKey][]*asyncSubscription),
-		logger:   logger.With("component", "eventbus.EventBus"),
+		handlers:         make(map[subscriptionKey][]*asyncSubscription),
+		logger:           logger.With("component", "eventbus.EventBus"),
+		maxSubscriptions: maxSubscriptions,
 	}
 }
 
@@ -103,6 +112,21 @@ func Subscribe[T Event](b *EventBus, handler Handler[T], opts ...SubscribeOption
 
 	if b.closed {
 		return nil // Can't subscribe to closed bus
+	}
+
+	// Check resource limit
+	if b.maxSubscriptions > 0 {
+		totalSubs := 0
+		for _, subs := range b.handlers {
+			totalSubs += len(subs)
+		}
+		if totalSubs >= b.maxSubscriptions {
+			b.logger.Error("subscription limit exceeded",
+				"max", b.maxSubscriptions,
+				"current", totalSubs,
+			)
+			return nil // Return nil to indicate failure (matches closed bus behavior)
+		}
 	}
 
 	eventType := reflect.TypeOf((*T)(nil)).Elem()

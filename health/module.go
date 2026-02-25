@@ -41,7 +41,9 @@ func Module(c *di.Container) error {
 			}
 
 			// Register as readiness check
-			m.AddReadinessCheck("shutdown", shutdownCheck.Check)
+			if err := m.AddReadinessCheck("shutdown", shutdownCheck.Check); err != nil {
+				return nil, fmt.Errorf("register shutdown check: %w", err)
+			}
 
 			return m, nil
 		}); err != nil {

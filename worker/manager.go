@@ -4,8 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"sync"
 )
+
+var (
+	// nameRegex validates worker names (alphanumeric + hyphens/underscores).
+	nameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+)
+
+// validateWorkerName validates a worker name.
+func validateWorkerName(name string) error {
+	if name == "" {
+		return fmt.Errorf("worker name cannot be empty")
+	}
+	if !nameRegex.MatchString(name) {
+		return fmt.Errorf("worker name %q (must be alphanumeric with hyphens/underscores)", name)
+	}
+	return nil
+}
 
 // Manager coordinates multiple workers, providing registration, startup,
 // and graceful shutdown. It wraps each worker in a supervisor that handles
@@ -30,6 +47,7 @@ import (
 type Manager struct {
 	logger      *slog.Logger
 	supervisors []*supervisor
+	options     *WorkerOptions
 
 	mu      sync.Mutex
 	running bool
@@ -44,9 +62,18 @@ type Manager struct {
 
 // NewManager creates a new worker manager with the given logger.
 func NewManager(logger *slog.Logger) *Manager {
+	return NewManagerWithOptions(logger, DefaultWorkerOptions())
+}
+
+// NewManagerWithOptions creates a new worker manager with custom options.
+func NewManagerWithOptions(logger *slog.Logger, opts *WorkerOptions) *Manager {
+	if opts == nil {
+		opts = DefaultWorkerOptions()
+	}
 	return &Manager{
 		logger:      logger.With(slog.String("component", "worker.Manager")),
 		supervisors: make([]*supervisor, 0),
+		options:     opts,
 		done:        make(chan struct{}),
 	}
 }
@@ -74,9 +101,31 @@ func (m *Manager) Register(w Worker, opts ...WorkerOption) error {
 		return ErrManagerAlreadyRunning
 	}
 
+	// Validate worker name
+	if err := validateWorkerName(w.Name()); err != nil {
+		return fmt.Errorf("worker %q: %w", w.Name(), err)
+	}
+
 	// Apply options to defaults
 	options := DefaultWorkerOptions()
+	if m.options != nil {
+		options.MaxWorkers = m.options.MaxWorkers
+	}
 	options.ApplyOptions(opts...)
+
+	// Check resource limit
+	if options.MaxWorkers > 0 {
+		totalWorkers := len(m.supervisors)
+		if options.PoolSize > 1 {
+			totalWorkers += options.PoolSize
+		} else {
+			totalWorkers++
+		}
+		if totalWorkers > options.MaxWorkers {
+			return fmt.Errorf("%w: max workers (%d) would be exceeded (current: %d, adding: %d)",
+				ErrResourceLimitExceeded, options.MaxWorkers, len(m.supervisors), options.PoolSize)
+		}
+	}
 
 	// Create supervisors (multiple for pool workers)
 	if options.PoolSize > 1 {

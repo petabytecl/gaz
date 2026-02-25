@@ -48,6 +48,7 @@ func For[T any](c *Container) *RegistrationBuilder[T] {
 
 // Named sets a custom registration name for the service.
 // This allows multiple registrations of the same type with different names.
+// The name is validated to prevent injection attacks.
 //
 // Example:
 //
@@ -121,7 +122,9 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 	if b.allowReplace {
 		b.container.ReplaceService(b.name, svc)
 	} else {
-		b.container.Register(b.name, svc)
+		if err := b.container.Register(b.name, svc); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -150,11 +153,20 @@ func (b *RegistrationBuilder[T]) ProviderFunc(fn func(*Container) T) error {
 //	cfg := &Config{Debug: true}
 //	err := di.For[*Config](c).Instance(cfg)
 func (b *RegistrationBuilder[T]) Instance(val T) error {
+	// Validate service name if it's a custom name (not type name)
+	if b.name != b.typeName {
+		if err := validateServiceName(b.name); err != nil {
+			return err
+		}
+	}
+
 	svc := newInstanceService(b.name, b.typeName, val, b.groups...)
 	if b.allowReplace {
 		b.container.ReplaceService(b.name, svc)
 	} else {
-		b.container.Register(b.name, svc)
+		if err := b.container.Register(b.name, svc); err != nil {
+			return err
+		}
 	}
 	return nil
 }
