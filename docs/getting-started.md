@@ -4,7 +4,7 @@ Build your first gaz application in 5 minutes.
 
 ## Prerequisites
 
-- Go 1.25 or later
+- Go 1.26 or later
 - A terminal
 
 ## Installation

@@ -1,6 +1,6 @@
 module github.com/petabytecl/gaz/examples/system-info-cli
 
-go 1.25.6
+go 1.26
 
 require (
 	github.com/petabytecl/gaz v0.0.0

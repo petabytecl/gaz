@@ -4,7 +4,7 @@
 `gaz` is a simple, type-safe dependency injection library for Go applications with built-in lifecycle management. It avoids code generation and reflection magic, relying on Go generics for type safety. It provides a robust foundation for building modular applications with integrated support for configuration, health checks, background workers, cron jobs, and an event bus.
 
 ## Key Technologies
-*   **Language:** Go (1.25+)
+*   **Language:** Go (1.26+)
 *   **Core Dependencies:**
     *   `spf13/cobra` (CLI integration)
     *   `spf13/viper` (Configuration management)

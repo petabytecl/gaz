@@ -1,7 +1,7 @@
 # gaz
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/petabytecl/gaz.svg)](https://pkg.go.dev/github.com/petabytecl/gaz)
-![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)
+![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)
 
 Simple, type-safe dependency injection with lifecycle management for Go applications. No code generation, no reflection magic.
 

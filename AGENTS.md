@@ -4,7 +4,7 @@ This document provides essential context for AI coding agents working in the `ga
 
 **Project:** gaz - Type-safe dependency injection framework for Go with lifecycle management  
 **Module:** `github.com/petabytecl/gaz`  
-**Go Version:** 1.25+
+**Go Version:** 1.26+
 
 ## Build, Lint, and Test Commands
 
@@ -302,6 +302,6 @@ func ConfigProvider[T any](c *gaz.Container) (*T, error) {
 ## CI/CD
 
 GitHub Actions runs on push/PR with:
-1. Go 1.25 setup
+1. Go 1.26 setup
 2. golangci-lint v2.8
 3. `make cover` (tests + 90% coverage threshold)
