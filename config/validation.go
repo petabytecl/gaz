@@ -71,14 +71,12 @@ func ValidateStruct(cfg any) error {
 	}
 
 	// Handle invalid validation input (programming error)
-	var invalidValidationError *validator.InvalidValidationError
-	if errors.As(err, &invalidValidationError) {
+	if _, ok := errors.AsType[*validator.InvalidValidationError](err); ok {
 		return fmt.Errorf("config: invalid validation input: %w", err)
 	}
 
 	// Handle validation errors
-	var validationErrors validator.ValidationErrors
-	if errors.As(err, &validationErrors) {
+	if validationErrors, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		return formatValidationErrors(validationErrors)
 	}
 

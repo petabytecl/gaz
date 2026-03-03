@@ -5,11 +5,9 @@ import "sync"
 // buffer is a byte slice that can be pooled for efficient allocation.
 type buffer []byte
 
-// bufPool is a sync.Pool for buffer reuse.
 var bufPool = sync.Pool{
 	New: func() any {
-		b := make(buffer, 0, 1024)
-		return &b
+		return new(make(buffer, 0, 1024))
 	},
 }
 

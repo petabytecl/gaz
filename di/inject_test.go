@@ -93,9 +93,7 @@ func (s *InjectSuite) TestInjectStruct_NonPointer() {
 
 func (s *InjectSuite) TestInjectStruct_NonStructPointer() {
 	c := New()
-	str := "hello"
-
-	err := injectStruct(c, &str, nil)
+	err := injectStruct(c, new("hello"), nil)
 	s.NoError(err, "pointer to non-struct should return nil error")
 }
 
