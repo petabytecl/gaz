@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,9 +18,12 @@ func TestConnectRegistrarTestSuite(t *testing.T) {
 }
 
 // mockConnectRegistrar implements ConnectRegistrar for testing.
-type mockConnectRegistrar struct{}
+type mockConnectRegistrar struct {
+	receivedOpts []connect.HandlerOption
+}
 
-func (m *mockConnectRegistrar) RegisterConnect() (string, http.Handler) {
+func (m *mockConnectRegistrar) RegisterConnect(opts ...connect.HandlerOption) (string, http.Handler) {
+	m.receivedOpts = opts
 	return "/test.v1.TestService/", http.NewServeMux()
 }
 
@@ -44,4 +48,29 @@ func (s *ConnectRegistrarTestSuite) TestRegisterConnectPathFormat() {
 
 	// Connect-Go service paths follow the /package.Service/ pattern.
 	s.Require().Contains(path, "/", "Service path should contain forward slashes")
+}
+
+func (s *ConnectRegistrarTestSuite) TestRegisterConnectReceivesHandlerOptions() {
+	registrar := &mockConnectRegistrar{}
+
+	// Pass handler options (e.g., interceptors) to verify they are received.
+	noopInterceptor := connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
+		return next
+	})
+	opts := []connect.HandlerOption{connect.WithInterceptors(noopInterceptor)}
+
+	registrar.RegisterConnect(opts...)
+
+	s.Require().Len(registrar.receivedOpts, 1, "Handler options should be forwarded to RegisterConnect")
+}
+
+func (s *ConnectRegistrarTestSuite) TestRegisterConnectNoOptions() {
+	registrar := &mockConnectRegistrar{}
+
+	// Variadic allows calling with no options.
+	path, handler := registrar.RegisterConnect()
+
+	s.NotEmpty(path)
+	s.NotNil(handler)
+	s.Empty(registrar.receivedOpts, "No options should be received when none are passed")
 }
