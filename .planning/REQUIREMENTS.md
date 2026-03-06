@@ -18,7 +18,7 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 
 ### Connect Integration
 
-- [ ] **CONN-01**: Developer can register Connect-Go services via ConnectRegistrar interface with auto-discovery through di.List
+- [x] **CONN-01**: Developer can register Connect-Go services via ConnectRegistrar interface with auto-discovery through di.List
 - [ ] **CONN-02**: Framework automatically injects Connect interceptors (auth, logging, validation, OTEL) into all Connect handlers
 - [ ] **CONN-03**: Developer can create ConnectInterceptorBundle with priority-sorted, auto-discovered interceptor chains
 - [ ] **CONN-04**: Developer can enable gRPC reflection for Connect services via connectrpc.com/grpcreflect
@@ -69,7 +69,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | USRV-04 | Phase 46 | Pending |
 | USRV-05 | Phase 46 | Pending |
 | USRV-06 | Phase 46 | Pending |
-| CONN-01 | Phase 46 | Pending |
+| CONN-01 | Phase 46 | Complete |
 | CONN-02 | Phase 47 | Pending |
 | CONN-03 | Phase 47 | Pending |
 | CONN-04 | Phase 46 | Pending |

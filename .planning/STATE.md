@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 - **Milestone:** v5.0 Vanguard Unified Server
 - **Phase:** 46 of 48 (Core Vanguard Server)
-- **Plan:** —
-- **Status:** Context captured, ready to plan
-- **Last activity:** 2026-03-06 — Phase 46 context captured (ConnectRegistrar, Vanguard server, skip-listener mode, config decisions)
+- **Plan:** 1 of 2
+- **Status:** Plan 01 complete, ready for Plan 02
+- **Last activity:** 2026-03-06 — Plan 01 complete (ConnectRegistrar interface + gRPC skip-listener mode)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Milestones Shipped
 
@@ -53,6 +53,9 @@ Progress: [░░░░░░░░░░] 0%
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
+- Renamed ConnectRegistrar to connect.Registrar to avoid golangci-lint stutter (matches grpc.Registrar pattern)
+- Extracted registerServices() helper to eliminate duplication between OnStart and onStartSkipListener
+
 ### v5.0 Research Summary
 
 See: .planning/research/SUMMARY.md
@@ -76,8 +79,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 46 context captured — all implementation decisions locked
-Resume with: `/gsd-plan-phase 46`
+Stopped at: Phase 46 Plan 01 complete — ConnectRegistrar + skip-listener mode done
+Resume with: `/gsd-execute-phase 46` (Plan 02: Vanguard server)
 
 ---
 

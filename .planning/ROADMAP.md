@@ -36,7 +36,7 @@
   3. REST endpoints work from proto `google.api.http` annotations without any codegen — developer only writes proto files and Connect handlers
   4. Non-RPC HTTP routes (health, metrics, static files) are mountable on the same port via unknown handler configuration
   5. Server address, timeouts, and Vanguard options are configurable via CLI flags and config struct, with streaming-safe timeout defaults
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
   - [ ] 46-01-PLAN.md — ConnectRegistrar interface + gRPC skip-listener mode
   - [ ] 46-02-PLAN.md — Vanguard server config, server lifecycle, health, reflection, and module
 
@@ -69,6 +69,6 @@ Phases execute in numeric order: 46 → 47 → 48
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 46. Core Vanguard Server | 0/2 | Planned | - |
+| 46. Core Vanguard Server | 1/2 | In Progress|  |
 | 47. Middleware & Interceptors | 0/? | Not started | - |
 | 48. Server Module & Gateway Removal | 0/? | Not started | - |
