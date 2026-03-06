@@ -21,7 +21,7 @@
 - Decimal phases (46.1, 46.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 46: Core Vanguard Server** - Single-port server serving gRPC, Connect, gRPC-Web, and REST via Vanguard transcoder with ConnectRegistrar auto-discovery
-- [ ] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation
+- [x] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation (completed 2026-03-06)
 - [ ] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation
 
 ## Phase Details
@@ -50,7 +50,7 @@
   3. `ConnectInterceptorBundle` supports priority-sorted, auto-discovered interceptor chains via DI — same pattern as gRPC `InterceptorBundle`
   4. OpenTelemetry traces span both HTTP transport layer (otelhttp) and Connect RPC layer (otelconnect), with correlated trace IDs across the boundary
   5. Proto constraint validation rejects invalid requests at the interceptor level via `connectrpc.com/validate` before reaching handler logic
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
   - [x] 47-01-PLAN.md — ConnectInterceptorBundle interface, built-in bundles, Registrar signature update
   - [ ] 47-02-PLAN.md — TransportMiddleware, CORS config, Vanguard wiring, module extension
@@ -73,5 +73,5 @@ Phases execute in numeric order: 46 → 47 → 48
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 46. Core Vanguard Server | 2/2 | Complete    | 2026-03-06 |
-| 47. Middleware & Interceptors | 1/2 | In progress | - |
+| 47. Middleware & Interceptors | 2/2 | Complete   | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 0/? | Not started | - |

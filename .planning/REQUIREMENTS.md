@@ -25,9 +25,9 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 
 ### Middleware
 
-- [ ] **MDDL-01**: Developer can apply CORS middleware at transport level for browser clients accessing Connect and gRPC-Web
-- [ ] **MDDL-02**: Vanguard server uses two-layer middleware model: HTTP transport middleware wrapping handler, Connect interceptors per-service
-- [ ] **MDDL-03**: Developer can enable OpenTelemetry tracing and metrics for both HTTP transport (otelhttp) and Connect RPC (otelconnect) layers
+- [x] **MDDL-01**: Developer can apply CORS middleware at transport level for browser clients accessing Connect and gRPC-Web
+- [x] **MDDL-02**: Vanguard server uses two-layer middleware model: HTTP transport middleware wrapping handler, Connect interceptors per-service
+- [x] **MDDL-03**: Developer can enable OpenTelemetry tracing and metrics for both HTTP transport (otelhttp) and Connect RPC (otelconnect) layers
 - [x] **MDDL-04**: Developer can enable proto constraint validation via connectrpc.com/validate interceptor
 - [x] **MDDL-05**: Health checks are wired into the unified Vanguard server
 
@@ -73,9 +73,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONN-02 | Phase 47 | Complete |
 | CONN-03 | Phase 47 | Complete |
 | CONN-04 | Phase 46 | Complete |
-| MDDL-01 | Phase 47 | Pending |
-| MDDL-02 | Phase 47 | Pending |
-| MDDL-03 | Phase 47 | Pending |
+| MDDL-01 | Phase 47 | Complete |
+| MDDL-02 | Phase 47 | Complete |
+| MDDL-03 | Phase 47 | Complete |
 | MDDL-04 | Phase 47 | Complete |
 | MDDL-05 | Phase 46 | Complete |
 | SMOD-01 | Phase 48 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-06T21:45:17.000Z"
-last_activity: 2026-03-06 — Plan 01 complete (ConnectInterceptorBundle interface and built-in bundles)
+last_updated: "2026-03-06T22:04:39.000Z"
+last_activity: 2026-03-06 — Plan 02 complete (TransportMiddleware, CORS, OTEL, Vanguard wiring)
 progress:
   total_phases: 56
   completed_phases: 55
   total_plans: 170
-  completed_plans: 168
+  completed_plans: 170
 ---
 
 # Project State
@@ -23,17 +23,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 47 — Middleware & Interceptors
+**Current focus:** Phase 48 — Finalization
 
 ## Current Position
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 47 of 48 (Middleware & Interceptors)
+- **Phase:** 48 of 48 (Finalization)
 - **Plan:** 1 of 2
 - **Status:** In progress
-- **Last activity:** 2026-03-06 — Plan 01 complete (ConnectInterceptorBundle interface and built-in bundles)
+- **Last activity:** 2026-03-06 — Plan 02 complete (TransportMiddleware, CORS, OTEL, Vanguard wiring)
 
-Progress: [█████████▒] 98%
+Progress: [█████████▒] 99%
 
 ## Milestones Shipped
 
@@ -50,14 +50,14 @@ Progress: [█████████▒] 98%
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 | Server & Transport Layer | 37-45 | 23 | 2026-02-04 |
 
-**Total:** 168 plans across 47 phases
+**Total:** 170 plans across 47 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 168
+- Total plans completed: 170
 - Average duration: ~15 min
-- Total execution time: ~41.2 hours
+- Total execution time: ~41.6 hours
 
 *Updated after each plan completion*
 
@@ -74,6 +74,10 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Added connectrpc.com packages to depguard allow lists and vanguard to ireturn exclusion
 - ConnectAuthFunc/ConnectLimiter use http.Header+connect.Spec instead of connect.AnyRequest (unexported methods prevent external impl)
 - Added connectrpc.com/validate dependency for ValidationBundle proto constraint validation
+- Exported CollectConnectInterceptors for cross-package access from vanguard
+- OTELConnectBundle placed in vanguard package (depends on sdktrace, avoids circular dependency)
+- Transport middleware applied after transcoder build, before h2c config
+- CORS always registered; OTEL transport/connect conditional on TracerProvider in DI
 
 ### v5.0 Research Summary
 
@@ -98,8 +102,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 47-01-PLAN.md (ConnectInterceptorBundle interface and built-in bundles)
-Resume with: `/gsd-execute-phase 47` to execute 47-02-PLAN.md (TransportMiddleware, CORS, Vanguard wiring)
+Stopped at: Completed 47-02-PLAN.md (TransportMiddleware, CORS, OTEL, Vanguard wiring — Phase 47 complete)
+Resume with: `/gsd-execute-phase 48` to execute Phase 48 (Finalization)
 
 ---
 
