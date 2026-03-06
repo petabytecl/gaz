@@ -22,7 +22,7 @@
 
 - [x] **Phase 46: Core Vanguard Server** - Single-port server serving gRPC, Connect, gRPC-Web, and REST via Vanguard transcoder with ConnectRegistrar auto-discovery
 - [x] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation (completed 2026-03-06)
-- [ ] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation
+- [x] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation (completed 2026-03-06)
 
 ## Phase Details
 
@@ -63,7 +63,7 @@ Plans:
   1. `server.NewModule()` provisions Vanguard server + Connect + gRPC as a unified bundle — developer calls one module function to get a complete server
   2. The `server/gateway` package is fully removed from the codebase — no lingering code, imports, or references
   3. The `server/http` package continues to work independently for HTTP-only use cases — existing HTTP-only apps are unaffected
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
   - [ ] 48-01-PLAN.md — Server module update + gateway deletion + dependency cleanup
   - [ ] 48-02-PLAN.md — Vanguard example creation + README update
@@ -77,4 +77,4 @@ Phases execute in numeric order: 46 → 47 → 48
 |-------|----------------|--------|-----------|
 | 46. Core Vanguard Server | 2/2 | Complete    | 2026-03-06 |
 | 47. Middleware & Interceptors | 2/2 | Complete    | 2026-03-06 |
-| 48. Server Module & Gateway Removal | 1/2 | In Progress|  |
+| 48. Server Module & Gateway Removal | 2/2 | Complete   | 2026-03-06 |
