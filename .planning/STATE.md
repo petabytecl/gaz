@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: milestone
-status: completed
-last_updated: "2026-03-06T20:21:48.553Z"
-last_activity: 2026-03-06 — Plan 02 complete (Vanguard server with lifecycle, health, reflection, module)
+status: in-progress
+last_updated: "2026-03-06T21:45:17.000Z"
+last_activity: 2026-03-06 — Plan 01 complete (ConnectInterceptorBundle interface and built-in bundles)
 progress:
   total_phases: 56
   completed_phases: 55
   total_plans: 170
-  completed_plans: 167
+  completed_plans: 168
 ---
 
 # Project State
@@ -23,17 +23,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 46 — Core Vanguard Server
+**Current focus:** Phase 47 — Middleware & Interceptors
 
 ## Current Position
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 46 of 48 (Core Vanguard Server)
-- **Plan:** 2 of 2
-- **Status:** Milestone complete
-- **Last activity:** 2026-03-06 — Plan 02 complete (Vanguard server with lifecycle, health, reflection, module)
+- **Phase:** 47 of 48 (Middleware & Interceptors)
+- **Plan:** 1 of 2
+- **Status:** In progress
+- **Last activity:** 2026-03-06 — Plan 01 complete (ConnectInterceptorBundle interface and built-in bundles)
 
-Progress: [██████████] 100%
+Progress: [█████████▒] 98%
 
 ## Milestones Shipped
 
@@ -50,12 +50,12 @@ Progress: [██████████] 100%
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 | Server & Transport Layer | 37-45 | 23 | 2026-02-04 |
 
-**Total:** 167 plans across 46 phases
+**Total:** 168 plans across 47 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 167
+- Total plans completed: 168
 - Average duration: ~15 min
 - Total execution time: ~41.2 hours
 
@@ -72,6 +72,8 @@ All key decisions documented in PROJECT.md Key Decisions table.
 - Used vanguardgrpc.NewTranscoder pattern — transcoder wraps gRPC server with Connect mux as unknown handler
 - Health endpoints mounted via buildHealthMux helper on unknown handler mux, not as Vanguard services
 - Added connectrpc.com packages to depguard allow lists and vanguard to ireturn exclusion
+- ConnectAuthFunc/ConnectLimiter use http.Header+connect.Spec instead of connect.AnyRequest (unexported methods prevent external impl)
+- Added connectrpc.com/validate dependency for ValidationBundle proto constraint validation
 
 ### v5.0 Research Summary
 
@@ -96,8 +98,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 47 context gathered — middleware/interceptor decisions captured
-Resume with: `/gsd-plan-phase 47` (Middleware & Interceptors)
+Stopped at: Completed 47-01-PLAN.md (ConnectInterceptorBundle interface and built-in bundles)
+Resume with: `/gsd-execute-phase 47` to execute 47-02-PLAN.md (TransportMiddleware, CORS, Vanguard wiring)
 
 ---
 

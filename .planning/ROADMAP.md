@@ -52,7 +52,7 @@
   5. Proto constraint validation rejects invalid requests at the interceptor level via `connectrpc.com/validate` before reaching handler logic
 **Plans:** 2 plans
 Plans:
-  - [ ] 47-01-PLAN.md — ConnectInterceptorBundle interface, built-in bundles, Registrar signature update
+  - [x] 47-01-PLAN.md — ConnectInterceptorBundle interface, built-in bundles, Registrar signature update
   - [ ] 47-02-PLAN.md — TransportMiddleware, CORS config, Vanguard wiring, module extension
 
 ### Phase 48: Server Module & Gateway Removal
@@ -73,5 +73,5 @@ Phases execute in numeric order: 46 → 47 → 48
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 46. Core Vanguard Server | 2/2 | Complete    | 2026-03-06 |
-| 47. Middleware & Interceptors | 0/? | Not started | - |
+| 47. Middleware & Interceptors | 1/2 | In progress | - |
 | 48. Server Module & Gateway Removal | 0/? | Not started | - |

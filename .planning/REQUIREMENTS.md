@@ -19,8 +19,8 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 ### Connect Integration
 
 - [x] **CONN-01**: Developer can register Connect-Go services via ConnectRegistrar interface with auto-discovery through di.List
-- [ ] **CONN-02**: Framework automatically injects Connect interceptors (auth, logging, validation, OTEL) into all Connect handlers
-- [ ] **CONN-03**: Developer can create ConnectInterceptorBundle with priority-sorted, auto-discovered interceptor chains
+- [x] **CONN-02**: Framework automatically injects Connect interceptors (auth, logging, validation, OTEL) into all Connect handlers
+- [x] **CONN-03**: Developer can create ConnectInterceptorBundle with priority-sorted, auto-discovered interceptor chains
 - [x] **CONN-04**: Developer can enable gRPC reflection for Connect services via connectrpc.com/grpcreflect
 
 ### Middleware
@@ -28,7 +28,7 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 - [ ] **MDDL-01**: Developer can apply CORS middleware at transport level for browser clients accessing Connect and gRPC-Web
 - [ ] **MDDL-02**: Vanguard server uses two-layer middleware model: HTTP transport middleware wrapping handler, Connect interceptors per-service
 - [ ] **MDDL-03**: Developer can enable OpenTelemetry tracing and metrics for both HTTP transport (otelhttp) and Connect RPC (otelconnect) layers
-- [ ] **MDDL-04**: Developer can enable proto constraint validation via connectrpc.com/validate interceptor
+- [x] **MDDL-04**: Developer can enable proto constraint validation via connectrpc.com/validate interceptor
 - [x] **MDDL-05**: Health checks are wired into the unified Vanguard server
 
 ### Server Module
@@ -70,13 +70,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | USRV-05 | Phase 46 | Complete |
 | USRV-06 | Phase 46 | Complete |
 | CONN-01 | Phase 46 | Complete |
-| CONN-02 | Phase 47 | Pending |
-| CONN-03 | Phase 47 | Pending |
+| CONN-02 | Phase 47 | Complete |
+| CONN-03 | Phase 47 | Complete |
 | CONN-04 | Phase 46 | Complete |
 | MDDL-01 | Phase 47 | Pending |
 | MDDL-02 | Phase 47 | Pending |
 | MDDL-03 | Phase 47 | Pending |
-| MDDL-04 | Phase 47 | Pending |
+| MDDL-04 | Phase 47 | Complete |
 | MDDL-05 | Phase 46 | Complete |
 | SMOD-01 | Phase 48 | Pending |
 | SMOD-02 | Phase 48 | Pending |
