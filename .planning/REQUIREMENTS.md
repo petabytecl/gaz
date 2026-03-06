@@ -33,9 +33,9 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 
 ### Server Module
 
-- [ ] **SMOD-01**: Developer can use updated server.NewModule() that bundles Vanguard instead of gRPC-Gateway
-- [ ] **SMOD-02**: Existing server/gateway package is removed (clean break, no backward compatibility)
-- [ ] **SMOD-03**: Existing server/http package is preserved for standalone HTTP-only use cases
+- [x] **SMOD-01**: Developer can use updated server.NewModule() that bundles Vanguard instead of gRPC-Gateway
+- [x] **SMOD-02**: Existing server/gateway package is removed (clean break, no backward compatibility)
+- [x] **SMOD-03**: Existing server/http package is preserved for standalone HTTP-only use cases
 
 ## Future Requirements
 
@@ -78,9 +78,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MDDL-03 | Phase 47 | Complete |
 | MDDL-04 | Phase 47 | Complete |
 | MDDL-05 | Phase 46 | Complete |
-| SMOD-01 | Phase 48 | Pending |
-| SMOD-02 | Phase 48 | Pending |
-| SMOD-03 | Phase 48 | Pending |
+| SMOD-01 | Phase 48 | Complete |
+| SMOD-02 | Phase 48 | Complete |
+| SMOD-03 | Phase 48 | Complete |
 
 **Coverage:**
 - v5.0 requirements: 18 total
