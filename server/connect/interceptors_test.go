@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -172,7 +173,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_NilLogger() {
 }
 
 func (s *ConnectInterceptorBundleTestSuite) TestAuthBundle_ImplementsInterface() {
-	authFunc := ConnectAuthFunc(func(_ context.Context, _ connect.AnyRequest) (context.Context, error) {
+	authFunc := ConnectAuthFunc(func(_ context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
 		return context.Background(), nil
 	})
 	bundle := NewAuthBundle(authFunc)
@@ -209,11 +210,12 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithNilLimiter_U
 	interceptor := interceptors[0]
 
 	// Should pass through without error.
+	req := connect.NewRequest[any](nil)
 	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
 		return nil, nil
 	})
 
-	_, err := wrappedFunc(context.Background(), nil)
+	_, err := wrappedFunc(context.Background(), req)
 	s.NoError(err)
 }
 
@@ -227,11 +229,12 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimite
 	interceptor := interceptors[0]
 
 	// Should reject with rate limit error.
+	req := connect.NewRequest[any](nil)
 	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
 		return nil, nil
 	})
 
-	_, err := wrappedFunc(context.Background(), nil)
+	_, err := wrappedFunc(context.Background(), req)
 	s.Require().Error(err)
 
 	var connectErr *connect.Error
@@ -241,7 +244,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimite
 
 func (s *ConnectInterceptorBundleTestSuite) TestAlwaysPassLimiter_AllowsAllRequests() {
 	limiter := AlwaysPassLimiter{}
-	err := limiter.Limit(context.Background(), nil)
+	err := limiter.Limit(context.Background(), nil, connect.Spec{})
 	s.NoError(err)
 }
 
@@ -352,7 +355,7 @@ type mockConnectLimiter struct {
 	shouldReject bool
 }
 
-func (m *mockConnectLimiter) Limit(_ context.Context, _ connect.AnyRequest) error {
+func (m *mockConnectLimiter) Limit(_ context.Context, _ http.Header, _ connect.Spec) error {
 	if m.shouldReject {
 		return connect.NewError(connect.CodeResourceExhausted, fmt.Errorf("rate limit exceeded"))
 	}

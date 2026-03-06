@@ -462,6 +462,7 @@ linters:
             - connectrpc.com/connect
             - connectrpc.com/vanguard
             - connectrpc.com/grpcreflect
+            - connectrpc.com/validate
           deny:
             - pkg: github.com/golang/protobuf
               desc: Use google.golang.org/protobuf instead, see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
@@ -501,6 +502,7 @@ linters:
             - connectrpc.com/connect
             - connectrpc.com/vanguard
             - connectrpc.com/grpcreflect
+            - connectrpc.com/validate
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog
