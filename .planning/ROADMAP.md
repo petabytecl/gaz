@@ -50,7 +50,10 @@
   3. `ConnectInterceptorBundle` supports priority-sorted, auto-discovered interceptor chains via DI — same pattern as gRPC `InterceptorBundle`
   4. OpenTelemetry traces span both HTTP transport layer (otelhttp) and Connect RPC layer (otelconnect), with correlated trace IDs across the boundary
   5. Proto constraint validation rejects invalid requests at the interceptor level via `connectrpc.com/validate` before reaching handler logic
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+  - [ ] 47-01-PLAN.md — ConnectInterceptorBundle interface, built-in bundles, Registrar signature update
+  - [ ] 47-02-PLAN.md — TransportMiddleware, CORS config, Vanguard wiring, module extension
 
 ### Phase 48: Server Module & Gateway Removal
 **Goal**: Developer uses updated `server.NewModule()` that bundles Vanguard as the default server, with the legacy gateway cleanly removed and standalone HTTP server preserved
