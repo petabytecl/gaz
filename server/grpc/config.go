@@ -46,6 +46,13 @@ type Config struct {
 	// DevMode enables development mode for verbose error messages.
 	// Defaults to false.
 	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode" gaz:"dev_mode"`
+
+	// SkipListener skips binding a listener and serving.
+	// When true, the server still discovers registrars, registers services,
+	// enables reflection, and wires health — but does not bind a port or
+	// call server.Serve(). This is used when Vanguard handles connections.
+	// Defaults to false.
+	SkipListener bool `json:"skip_listener" yaml:"skip_listener" mapstructure:"skip_listener" gaz:"skip_listener"`
 }
 
 // DefaultConfig returns a Config with safe defaults.
@@ -73,6 +80,7 @@ func (c *Config) Flags(fs *pflag.FlagSet) {
 	fs.BoolVar(&c.HealthEnabled, "grpc-health-enabled", c.HealthEnabled, "Enable gRPC health check service")
 	fs.DurationVar(&c.HealthCheckInterval, "grpc-health-interval", c.HealthCheckInterval, "Interval for syncing gRPC health status")
 	fs.BoolVar(&c.DevMode, "grpc-dev-mode", c.DevMode, "Enable gRPC development mode")
+	fs.BoolVar(&c.SkipListener, "grpc-skip-listener", c.SkipListener, "Skip binding a listener (used when Vanguard handles connections)")
 }
 
 // SetDefaults applies default values to zero-value fields.
@@ -111,7 +119,7 @@ func (c *Config) SetDefaults() {
 // Validate checks that the configuration is valid.
 // Implements the config.Validator interface.
 func (c *Config) Validate() error {
-	if c.Port <= 0 || c.Port > 65535 {
+	if !c.SkipListener && (c.Port <= 0 || c.Port > 65535) {
 		return fmt.Errorf("grpc: invalid port %d: must be between 1 and 65535", c.Port)
 	}
 	if c.MaxRecvMsgSize <= 0 {

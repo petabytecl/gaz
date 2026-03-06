@@ -103,8 +103,13 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, tp *sdk
 // OnStart starts the gRPC server.
 // It binds to the configured port, discovers and registers services,
 // enables reflection if configured, and starts serving in a goroutine.
+// When SkipListener is true, services are registered but no port is bound.
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
+	if s.config.SkipListener {
+		return s.onStartSkipListener(ctx)
+	}
+
 	// Bind port first (fail fast if already in use).
 	addr := fmt.Sprintf(":%d", s.config.Port)
 	var lc net.ListenConfig
@@ -161,8 +166,49 @@ func (s *Server) OnStart(ctx context.Context) error {
 	return nil
 }
 
+// onStartSkipListener starts the gRPC server in skip-listener mode.
+// Services are discovered and registered, but no port is bound and
+// server.Serve() is not called. This is used when Vanguard handles connections.
+func (s *Server) onStartSkipListener(ctx context.Context) error {
+	// Auto-discover and register services.
+	registrars, err := di.ResolveAll[Registrar](s.container)
+	if err != nil {
+		return fmt.Errorf("grpc: discover services: %w", err)
+	}
+
+	for _, r := range registrars {
+		r.RegisterService(s.server)
+	}
+
+	// Auto-register gRPC health server if enabled.
+	if s.config.HealthEnabled {
+		if manager, resolveErr := di.Resolve[*health.Manager](s.container); resolveErr == nil {
+			s.healthAdapter = newHealthAdapter(manager, s.config.HealthCheckInterval, s.logger)
+			s.healthAdapter.Register(s.server)
+			s.healthAdapter.Start(ctx)
+			s.logger.DebugContext(ctx, "gRPC health server registered (skip-listener mode)")
+		} else {
+			s.logger.WarnContext(ctx, "gRPC health enabled but health.Manager not found - skipping health service registration")
+		}
+	}
+
+	// Enable reflection if configured.
+	if s.config.Reflection {
+		reflection.Register(s.server)
+	}
+
+	s.logger.InfoContext(ctx, "gRPC server started (skip-listener mode)",
+		slog.Bool("reflection", s.config.Reflection),
+		slog.Int("services", len(registrars)),
+		slog.Bool("health", s.config.HealthEnabled),
+	)
+
+	return nil
+}
+
 // OnStop gracefully shuts down the gRPC server.
 // It waits for active connections to complete or forces shutdown on context timeout.
+// When SkipListener is true, GracefulStop is called directly without listener management.
 // Implements di.Stopper.
 func (s *Server) OnStop(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "gRPC server stopping")
@@ -172,6 +218,13 @@ func (s *Server) OnStop(ctx context.Context) error {
 		if err := s.healthAdapter.Stop(ctx); err != nil {
 			s.logger.WarnContext(ctx, "gRPC health adapter stop error", slog.Any("error", err))
 		}
+	}
+
+	if s.config.SkipListener {
+		// No listener to close; just stop the server directly.
+		s.server.GracefulStop()
+		s.logger.InfoContext(ctx, "gRPC server stopped (skip-listener mode)")
+		return nil
 	}
 
 	done := make(chan struct{})
