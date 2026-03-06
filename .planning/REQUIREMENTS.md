@@ -9,19 +9,19 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 
 ### Unified Server
 
-- [ ] **USRV-01**: Developer can create a Vanguard server that serves gRPC, Connect, gRPC-Web, and REST on a single http.Handler
-- [ ] **USRV-02**: Developer can serve all protocols on a single port using HTTP/2 cleartext (h2c) via Go native http.Protocols
-- [ ] **USRV-03**: Developer can expose REST endpoints from proto google.api.http annotations without codegen
-- [ ] **USRV-04**: Browser clients can access services via gRPC-Web without an external proxy
-- [ ] **USRV-05**: Developer can mount custom HTTP handlers for non-RPC routes (health, metrics, static) via unknown handler
-- [ ] **USRV-06**: Developer can configure Vanguard server address, timeouts, and options via CLI flags and config struct
+- [x] **USRV-01**: Developer can create a Vanguard server that serves gRPC, Connect, gRPC-Web, and REST on a single http.Handler
+- [x] **USRV-02**: Developer can serve all protocols on a single port using HTTP/2 cleartext (h2c) via Go native http.Protocols
+- [x] **USRV-03**: Developer can expose REST endpoints from proto google.api.http annotations without codegen
+- [x] **USRV-04**: Browser clients can access services via gRPC-Web without an external proxy
+- [x] **USRV-05**: Developer can mount custom HTTP handlers for non-RPC routes (health, metrics, static) via unknown handler
+- [x] **USRV-06**: Developer can configure Vanguard server address, timeouts, and options via CLI flags and config struct
 
 ### Connect Integration
 
 - [x] **CONN-01**: Developer can register Connect-Go services via ConnectRegistrar interface with auto-discovery through di.List
 - [ ] **CONN-02**: Framework automatically injects Connect interceptors (auth, logging, validation, OTEL) into all Connect handlers
 - [ ] **CONN-03**: Developer can create ConnectInterceptorBundle with priority-sorted, auto-discovered interceptor chains
-- [ ] **CONN-04**: Developer can enable gRPC reflection for Connect services via connectrpc.com/grpcreflect
+- [x] **CONN-04**: Developer can enable gRPC reflection for Connect services via connectrpc.com/grpcreflect
 
 ### Middleware
 
@@ -29,7 +29,7 @@ Requirements for the Vanguard Unified Server milestone. Each maps to roadmap pha
 - [ ] **MDDL-02**: Vanguard server uses two-layer middleware model: HTTP transport middleware wrapping handler, Connect interceptors per-service
 - [ ] **MDDL-03**: Developer can enable OpenTelemetry tracing and metrics for both HTTP transport (otelhttp) and Connect RPC (otelconnect) layers
 - [ ] **MDDL-04**: Developer can enable proto constraint validation via connectrpc.com/validate interceptor
-- [ ] **MDDL-05**: Health checks are wired into the unified Vanguard server
+- [x] **MDDL-05**: Health checks are wired into the unified Vanguard server
 
 ### Server Module
 
@@ -63,21 +63,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| USRV-01 | Phase 46 | Pending |
-| USRV-02 | Phase 46 | Pending |
-| USRV-03 | Phase 46 | Pending |
-| USRV-04 | Phase 46 | Pending |
-| USRV-05 | Phase 46 | Pending |
-| USRV-06 | Phase 46 | Pending |
+| USRV-01 | Phase 46 | Complete |
+| USRV-02 | Phase 46 | Complete |
+| USRV-03 | Phase 46 | Complete |
+| USRV-04 | Phase 46 | Complete |
+| USRV-05 | Phase 46 | Complete |
+| USRV-06 | Phase 46 | Complete |
 | CONN-01 | Phase 46 | Complete |
 | CONN-02 | Phase 47 | Pending |
 | CONN-03 | Phase 47 | Pending |
-| CONN-04 | Phase 46 | Pending |
+| CONN-04 | Phase 46 | Complete |
 | MDDL-01 | Phase 47 | Pending |
 | MDDL-02 | Phase 47 | Pending |
 | MDDL-03 | Phase 47 | Pending |
 | MDDL-04 | Phase 47 | Pending |
-| MDDL-05 | Phase 46 | Pending |
+| MDDL-05 | Phase 46 | Complete |
 | SMOD-01 | Phase 48 | Pending |
 | SMOD-02 | Phase 48 | Pending |
 | SMOD-03 | Phase 48 | Pending |

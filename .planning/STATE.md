@@ -15,11 +15,11 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 - **Milestone:** v5.0 Vanguard Unified Server
 - **Phase:** 46 of 48 (Core Vanguard Server)
-- **Plan:** 1 of 2
-- **Status:** Plan 01 complete, ready for Plan 02
-- **Last activity:** 2026-03-06 — Plan 01 complete (ConnectRegistrar interface + gRPC skip-listener mode)
+- **Plan:** 2 of 2
+- **Status:** Phase 46 complete, ready for Phase 47
+- **Last activity:** 2026-03-06 — Plan 02 complete (Vanguard server with lifecycle, health, reflection, module)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Milestones Shipped
 
@@ -36,14 +36,14 @@ Progress: [█████░░░░░] 50%
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 | Server & Transport Layer | 37-45 | 23 | 2026-02-04 |
 
-**Total:** 165 plans across 45 phases
+**Total:** 167 plans across 46 phases
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 165
+- Total plans completed: 167
 - Average duration: ~15 min
-- Total execution time: ~41 hours
+- Total execution time: ~41.2 hours
 
 *Updated after each plan completion*
 
@@ -55,6 +55,9 @@ All key decisions documented in PROJECT.md Key Decisions table.
 
 - Renamed ConnectRegistrar to connect.Registrar to avoid golangci-lint stutter (matches grpc.Registrar pattern)
 - Extracted registerServices() helper to eliminate duplication between OnStart and onStartSkipListener
+- Used vanguardgrpc.NewTranscoder pattern — transcoder wraps gRPC server with Connect mux as unknown handler
+- Health endpoints mounted via buildHealthMux helper on unknown handler mux, not as Vanguard services
+- Added connectrpc.com packages to depguard allow lists and vanguard to ireturn exclusion
 
 ### v5.0 Research Summary
 
@@ -79,8 +82,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 46 Plan 01 complete — ConnectRegistrar + skip-listener mode done
-Resume with: `/gsd-execute-phase 46` (Plan 02: Vanguard server)
+Stopped at: Phase 46 complete — Vanguard server package done (config, server, health, reflection, module)
+Resume with: `/gsd-execute-phase 47` (Middleware & Interceptors)
 
 ---
 
