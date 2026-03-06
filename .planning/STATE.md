@@ -96,8 +96,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 46 complete — Vanguard server package done (config, server, health, reflection, module)
-Resume with: `/gsd-execute-phase 47` (Middleware & Interceptors)
+Stopped at: Phase 47 context gathered — middleware/interceptor decisions captured
+Resume with: `/gsd-plan-phase 47` (Middleware & Interceptors)
 
 ---
 
