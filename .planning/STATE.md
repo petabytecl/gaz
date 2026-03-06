@@ -9,15 +9,17 @@
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Defining requirements for v5.0 Vanguard Unified Server
+**Current focus:** Phase 46 — Core Vanguard Server
 
 ## Current Position
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** Not started (defining requirements)
+- **Phase:** 46 of 48 (Core Vanguard Server)
 - **Plan:** —
-- **Status:** Defining requirements
-- **Last activity:** 2026-03-06 — Milestone v5.0 started
+- **Status:** Ready to plan
+- **Last activity:** 2026-03-06 — Roadmap created for v5.0
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestones Shipped
 
@@ -36,54 +38,36 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Total:** 165 plans across 45 phases
 
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 165
+- Average duration: ~15 min
+- Total execution time: ~41 hours
+
+*Updated after each plan completion*
+
 ## Accumulated Context
 
 ### Decisions (Cumulative)
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
-### v4.1 Key Decisions (Summary)
+### v5.0 Research Summary
 
-- Port Separation: Running Gateway and gRPC on separate ports
-- Auto-Discovery: Gateway uses di.List[Registrar] for service discovery
-- Implicit Collection: Register appends duplicates
-- Deferred Flag Registration: Decouples App.Use from Cobra
-- WithCobra as Option: Enables flags before logger creation
-- Logger/Config Module Subpackages: Avoids circular imports
-- Type Aliasing: Single source of truth for lifecycle types in di package
+See: .planning/research/SUMMARY.md
 
-### Research Summary
-
-See: .planning/research/SUMMARY.md (for v4.1)
+Key findings:
+- Vanguard v0.4.0 (alpha) — wrap behind gaz interfaces
+- Connect-Go v1.19.1 stable (4,556 importers)
+- Go 1.26+ required for native h2c via `http.Protocols`
+- Interceptor incompatibility: gRPC and Connect have different type signatures — keep separate bundles
+- Vanguard transcoder is one-shot — build in `OnStart`, not in provider
 
 ### Blockers/Concerns
 
-None.
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 001 | Do a full review of all the package. | 2026-02-02 | b215f5a | [001-full-review-code-quality-security-docs](./quick/001-full-review-code-quality-security-docs/) |
-| 002 | Add tests to examples and refactor for coverage. | 2026-02-02 | 26a4106 | [002-add-tests-to-examples-coverage](./quick/002-add-tests-to-examples-coverage/) |
-| 003 | Improve test coverage to >90%. | 2026-02-03 | 4f00dec | [003-improve-test-coverage-to-90](./quick/003-improve-test-coverage-to-90/) |
-| 004 | Create v4.1 Milestone Requirements. | 2026-02-03 | 13ce1bb | [004-create-v4-1-milestone-requirements](./quick/004-create-v4-1-milestone-requirements/) |
-| 005 | v4.1 Milestone Consistency Review. | 2026-02-03 | 588ea59 | [005-v4-1-milestone-consistency-review](./quick/005-v4-1-milestone-consistency-review/) |
-| 006 | Refactor server/module.go remove gaz import. | 2026-02-03 | c06f475 | [006-refactor-server-module-remove-gaz-import](./quick/006-refactor-server-module-remove-gaz-import/) |
-| 007 | Run make lint and fix all problems | 2026-02-04 | b9dcff1 | [007-run-make-lint-and-fix-all-problems](./quick/007-run-make-lint-and-fix-all-problems/) |
-| 008 | Add flags to the health server to get the port from the CLI | 2026-02-04 | ff54da5 | [008-add-flags-to-the-health-server-to-get-th](./quick/008-add-flags-to-the-health-server-to-get-th/) |
-| 009 | Refactor worker/eventbus module to follow health pattern | 2026-02-04 | b27297c | [009-refactor-worker-eventbus-module-pattern](./quick/009-refactor-worker-eventbus-module-pattern/) |
-| 010 | Refactor cron module to follow worker/eventbus pattern | 2026-02-04 | b0d92ac | [010-refactor-cron-module-pattern](./quick/010-refactor-cron-module-pattern/) |
-| 011 | Add builtin grpc protovalidate interceptor | 2026-02-04 | 721c7bc | [011-add-builtin-grpc-protovalidate-interceptor](./quick/011-add-builtin-grpc-protovalidate-interceptor/) |
-| 012 | Add builtin grpc auth interceptor | 2026-02-05 | 0e158ee | [012-add-builtin-grpc-auth-interceptor](./quick/012-add-builtin-grpc-auth-interceptor/) |
-| 013 | Implement rate limit gRPC interceptor | 2026-02-05 | 81a2aaa | [013-implement-ratelimit-grpc-interceptor](./quick/013-implement-ratelimit-grpc-interceptor/) |
-
-### Roadmap Evolution
-
-- v4.1 complete: Server & Transport Layer milestone shipped
-- 10 phases (37-45, including 38.1 inserted)
-- 23 plans executed
-- Key features: Discovery API, gRPC/HTTP servers, Gateway, OTEL, CLI flags
+- Vanguard v0.4.0 is pre-stable — needs abstraction layer and regression tests for known issues (#165, #170, #184)
+- h2c with non-Go gRPC clients needs empirical validation in Phase 46
 
 ### Pending Todos
 
@@ -92,9 +76,8 @@ See `.planning/todos/pending/` for any pending items.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Milestone v5.0 started, defining requirements
-Resume with: Continue requirements definition or `/gsd-plan-phase` after roadmap
-
+Stopped at: Roadmap created for v5.0 — 3 phases (46-48), 18 requirements mapped
+Resume with: `/gsd-plan-phase 46`
 
 ---
 

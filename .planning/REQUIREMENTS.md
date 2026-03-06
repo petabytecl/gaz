@@ -63,30 +63,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| USRV-01 | — | Pending |
-| USRV-02 | — | Pending |
-| USRV-03 | — | Pending |
-| USRV-04 | — | Pending |
-| USRV-05 | — | Pending |
-| USRV-06 | — | Pending |
-| CONN-01 | — | Pending |
-| CONN-02 | — | Pending |
-| CONN-03 | — | Pending |
-| CONN-04 | — | Pending |
-| MDDL-01 | — | Pending |
-| MDDL-02 | — | Pending |
-| MDDL-03 | — | Pending |
-| MDDL-04 | — | Pending |
-| MDDL-05 | — | Pending |
-| SMOD-01 | — | Pending |
-| SMOD-02 | — | Pending |
-| SMOD-03 | — | Pending |
+| USRV-01 | Phase 46 | Pending |
+| USRV-02 | Phase 46 | Pending |
+| USRV-03 | Phase 46 | Pending |
+| USRV-04 | Phase 46 | Pending |
+| USRV-05 | Phase 46 | Pending |
+| USRV-06 | Phase 46 | Pending |
+| CONN-01 | Phase 46 | Pending |
+| CONN-02 | Phase 47 | Pending |
+| CONN-03 | Phase 47 | Pending |
+| CONN-04 | Phase 46 | Pending |
+| MDDL-01 | Phase 47 | Pending |
+| MDDL-02 | Phase 47 | Pending |
+| MDDL-03 | Phase 47 | Pending |
+| MDDL-04 | Phase 47 | Pending |
+| MDDL-05 | Phase 46 | Pending |
+| SMOD-01 | Phase 48 | Pending |
+| SMOD-02 | Phase 48 | Pending |
+| SMOD-03 | Phase 48 | Pending |
 
 **Coverage:**
 - v5.0 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18
+- Mapped to phases: 18
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after initial definition*
+*Last updated: 2026-03-06 after roadmap creation*
