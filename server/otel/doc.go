@@ -30,9 +30,9 @@
 //
 // # Instrumentation
 //
-// Once the TracerProvider is registered, other server packages (grpc, gateway)
+// Once the TracerProvider is registered, other server packages (grpc, vanguard)
 // will automatically detect and use it for request tracing. Traces propagate
-// across HTTP -> gRPC boundaries using W3C Trace Context headers.
+// across service boundaries using W3C Trace Context headers.
 //
 // # Graceful Degradation
 //

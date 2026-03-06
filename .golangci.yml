@@ -193,13 +193,8 @@ linters:
       # NewModule returning di.Module interface is intentional design
       - linters:
           - ireturn
-        path: (config|cron|eventbus|health|worker|server|server/grpc|server/http|server/gateway|server/otel|server/vanguard)/module\.go
+        path: (config|cron|eventbus|health|worker|server|server/grpc|server/http|server/otel|server/vanguard)/module\.go
         text: "NewModule returns interface"
-      # NewModuleWithFlags returning gaz.Module interface is intentional design
-      - linters:
-          - ireturn
-        path: server/(module|gateway/module)\.go
-        text: "NewModuleWithFlags returns interface"
       # InterceptorLogger returns external interface adapter (intentional design)
       - linters:
           - ireturn
@@ -454,7 +449,6 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
-            - github.com/grpc-ecosystem/grpc-gateway/v2
             - github.com/rs/cors
             - go.opentelemetry.io/otel
             - go.opentelemetry.io/contrib
@@ -495,7 +489,6 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - github.com/grpc-ecosystem/go-grpc-middleware/v2
-            - github.com/grpc-ecosystem/grpc-gateway/v2
             - github.com/rs/cors
             - go.opentelemetry.io/otel
             - go.opentelemetry.io/contrib
