@@ -36,6 +36,7 @@ require (
 	cel.dev/expr v0.25.1 // indirect
 	connectrpc.com/connect v1.19.1 // indirect
 	connectrpc.com/grpcreflect v1.3.0 // indirect
+	connectrpc.com/otelconnect v0.9.0 // indirect
 	connectrpc.com/validate v0.6.0 // indirect
 	connectrpc.com/vanguard v0.4.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect

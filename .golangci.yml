@@ -462,6 +462,7 @@ linters:
             - connectrpc.com/connect
             - connectrpc.com/vanguard
             - connectrpc.com/grpcreflect
+            - connectrpc.com/otelconnect
             - connectrpc.com/validate
           deny:
             - pkg: github.com/golang/protobuf
@@ -502,6 +503,7 @@ linters:
             - connectrpc.com/connect
             - connectrpc.com/vanguard
             - connectrpc.com/grpcreflect
+            - connectrpc.com/otelconnect
             - connectrpc.com/validate
           deny:
             - pkg: log$
