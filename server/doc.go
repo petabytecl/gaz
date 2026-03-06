@@ -1,47 +1,52 @@
 // Package server provides a unified transport layer for gaz applications,
-// combining gRPC and HTTP servers with lifecycle management.
+// combining gRPC and Vanguard on a single port with lifecycle management.
 //
 // # Overview
 //
-// The server package coordinates the startup and shutdown of both gRPC and HTTP
-// servers in the correct order:
+// The server package coordinates gRPC and Vanguard to serve all supported
+// protocols (gRPC, Connect, gRPC-Web, REST) on a single h2c port. gRPC
+// registers services and interceptors without binding its own listener,
+// while Vanguard wraps them via a transcoder and handles all connections.
 //
-//   - Startup: gRPC first, then HTTP (Gateway depends on gRPC being up)
-//   - Shutdown: HTTP first, then gRPC (reverse of startup)
+// Startup order:
+//   - gRPC registers services, interceptors, reflection, and health (no listener)
+//   - Vanguard builds the transcoder and serves on a single h2c port
 //
-// This ordering ensures that the HTTP Gateway can always proxy to gRPC services
-// during normal operation and graceful shutdown.
+// Shutdown order:
+//   - Vanguard stops first (drains HTTP connections)
+//   - gRPC stops second (closes service registrations)
 //
 // # Usage
 //
-// Use NewModule to create a unified server module that registers both servers:
+// Use NewModule to create a unified server module that registers both
+// gRPC and Vanguard with correct configuration:
 //
 //	app := gaz.New()
-//	app.Use(server.NewModule(
-//	    server.WithGRPCPort(50051),
-//	    server.WithHTTPPort(8080),
-//	))
+//	app.Use(server.NewModule())
 //	app.Run()
 //
-// # Configuration Options
+// The server module automatically sets gRPC SkipListener=true so that
+// Vanguard handles all connections. No additional configuration is needed.
 //
-// The module supports various configuration options:
+// # Configuration
 //
-//   - WithGRPCPort: Set the gRPC server port (default: 50051)
-//   - WithHTTPPort: Set the HTTP server port (default: 8080)
-//   - WithGRPCReflection: Enable/disable gRPC reflection (default: true)
-//   - WithHTTPHandler: Set a custom HTTP handler (default: NotFoundHandler)
+// Configuration is handled via CLI flags and config files:
+//
+//   - Vanguard: "vanguard-address" (default ":8080"), timeouts, CORS, dev-mode
+//   - gRPC: "grpc-reflection", "grpc-dev-mode", interceptor settings
 //
 // # Subpackages
 //
 // For more granular control, the subpackages can be used directly:
 //
 //   - server/grpc: gRPC server with interceptors, reflection, and service discovery
-//   - server/http: HTTP server with configurable timeouts and lifecycle management
+//   - server/http: Standalone HTTP server with configurable timeouts and lifecycle
+//   - server/vanguard: Vanguard unified server (gRPC, Connect, gRPC-Web, REST transcoding)
+//   - server/connect: Connect interceptor bundles (auth, logging, recovery, validation, rate-limit)
 //
 // # Lifecycle Integration
 //
-// Both servers implement di.Starter and di.Stopper interfaces, integrating with
-// gaz's application lifecycle. Services are registered as Eager, meaning they
-// start automatically when the application starts.
+// Both gRPC and Vanguard servers implement di.Starter and di.Stopper interfaces,
+// integrating with gaz's application lifecycle. The Vanguard server is registered
+// as Eager, meaning it starts automatically when the application starts.
 package server
