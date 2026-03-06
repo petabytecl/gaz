@@ -119,12 +119,56 @@ func (s *Server) OnStart(ctx context.Context) error {
 	}
 	s.listener = lis
 
+	// Discover services, register health, enable reflection.
+	serviceCount, err := s.registerServices(ctx)
+	if err != nil {
+		_ = lis.Close()
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "gRPC server starting",
+		slog.Int("port", s.config.Port),
+		slog.Bool("reflection", s.config.Reflection),
+		slog.Int("services", serviceCount),
+		slog.Bool("otel", s.otelEnabled),
+		slog.Bool("health", s.config.HealthEnabled),
+	)
+
+	// Spawn serve goroutine (non-blocking).
+	go func() {
+		if serveErr := s.server.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
+			s.logger.Error("gRPC server error", slog.Any("error", serveErr))
+		}
+	}()
+
+	return nil
+}
+
+// onStartSkipListener starts the gRPC server in skip-listener mode.
+// Services are discovered and registered, but no port is bound and
+// server.Serve() is not called. This is used when Vanguard handles connections.
+func (s *Server) onStartSkipListener(ctx context.Context) error {
+	serviceCount, err := s.registerServices(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "gRPC server started (skip-listener mode)",
+		slog.Bool("reflection", s.config.Reflection),
+		slog.Int("services", serviceCount),
+		slog.Bool("health", s.config.HealthEnabled),
+	)
+
+	return nil
+}
+
+// registerServices discovers and registers gRPC services, sets up health
+// checks, and enables reflection. Returns the number of services registered.
+func (s *Server) registerServices(ctx context.Context) (int, error) {
 	// Auto-discover and register services.
 	registrars, err := di.ResolveAll[Registrar](s.container)
 	if err != nil {
-		// Close listener on error.
-		_ = lis.Close()
-		return fmt.Errorf("grpc: discover services: %w", err)
+		return 0, fmt.Errorf("grpc: discover services: %w", err)
 	}
 
 	for _, r := range registrars {
@@ -148,62 +192,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 		reflection.Register(s.server)
 	}
 
-	s.logger.InfoContext(ctx, "gRPC server starting",
-		slog.Int("port", s.config.Port),
-		slog.Bool("reflection", s.config.Reflection),
-		slog.Int("services", len(registrars)),
-		slog.Bool("otel", s.otelEnabled),
-		slog.Bool("health", s.config.HealthEnabled),
-	)
-
-	// Spawn serve goroutine (non-blocking).
-	go func() {
-		if serveErr := s.server.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
-			s.logger.Error("gRPC server error", slog.Any("error", serveErr))
-		}
-	}()
-
-	return nil
-}
-
-// onStartSkipListener starts the gRPC server in skip-listener mode.
-// Services are discovered and registered, but no port is bound and
-// server.Serve() is not called. This is used when Vanguard handles connections.
-func (s *Server) onStartSkipListener(ctx context.Context) error {
-	// Auto-discover and register services.
-	registrars, err := di.ResolveAll[Registrar](s.container)
-	if err != nil {
-		return fmt.Errorf("grpc: discover services: %w", err)
-	}
-
-	for _, r := range registrars {
-		r.RegisterService(s.server)
-	}
-
-	// Auto-register gRPC health server if enabled.
-	if s.config.HealthEnabled {
-		if manager, resolveErr := di.Resolve[*health.Manager](s.container); resolveErr == nil {
-			s.healthAdapter = newHealthAdapter(manager, s.config.HealthCheckInterval, s.logger)
-			s.healthAdapter.Register(s.server)
-			s.healthAdapter.Start(ctx)
-			s.logger.DebugContext(ctx, "gRPC health server registered (skip-listener mode)")
-		} else {
-			s.logger.WarnContext(ctx, "gRPC health enabled but health.Manager not found - skipping health service registration")
-		}
-	}
-
-	// Enable reflection if configured.
-	if s.config.Reflection {
-		reflection.Register(s.server)
-	}
-
-	s.logger.InfoContext(ctx, "gRPC server started (skip-listener mode)",
-		slog.Bool("reflection", s.config.Reflection),
-		slog.Int("services", len(registrars)),
-		slog.Bool("health", s.config.HealthEnabled),
-	)
-
-	return nil
+	return len(registrars), nil
 }
 
 // OnStop gracefully shuts down the gRPC server.

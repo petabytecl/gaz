@@ -84,20 +84,14 @@ func (c *Config) Flags(fs *pflag.FlagSet) {
 }
 
 // SetDefaults applies default values to zero-value fields.
+// Boolean fields (Reflection, HealthEnabled, SkipListener) are not set here
+// because their zero value (false) is indistinguishable from an explicit false.
+// Use DefaultConfig() to get safe defaults before config loading.
 // Implements the config.Defaulter interface.
 func (c *Config) SetDefaults() {
 	if c.Port == 0 {
 		c.Port = DefaultPort
 	}
-	// Reflection defaults to true, but we can't distinguish between
-	// explicitly set to false vs not set. Leave as-is since bool zero is false.
-	// Wait, if it defaults to true, and user passes false, we need to respect it.
-	// Usually SetDefaults is for zero values.
-	// But bool zero value is false.
-	// We handle this by setting defaults in DefaultConfig() and having flags overwrite.
-	// Config loading usually starts with DefaultConfig().
-	// So SetDefaults might strictly be for things that are logically invalid if zero.
-
 	if c.MaxRecvMsgSize == 0 {
 		c.MaxRecvMsgSize = DefaultMaxMsgSize
 	}
@@ -107,13 +101,6 @@ func (c *Config) SetDefaults() {
 	if c.HealthCheckInterval == 0 {
 		c.HealthCheckInterval = DefaultHealthCheckInterval
 	}
-	// HealthEnabled defaults to true. But if user explicitly sets false (zero value), we shouldn't overwrite it to true here.
-	// However, if it's coming from a file/env where it was missing, it would be false.
-	// The pattern usually is DefaultConfig() provides defaults, then config loading applies.
-	// SetDefaults() is a safety net.
-	// If HealthEnabled is false, we don't know if it's intentional or missing.
-	// But since DefaultConfig sets it to true, we assume if we are here and it's false, it MIGHT be intentional if DefaultConfig wasn't used.
-	// Let's assume DefaultConfig is used.
 }
 
 // Validate checks that the configuration is valid.
