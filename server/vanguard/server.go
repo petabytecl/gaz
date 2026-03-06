@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/vanguard"
 	"connectrpc.com/vanguard/vanguardgrpc"
@@ -15,7 +16,7 @@ import (
 
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/health"
-	"github.com/petabytecl/gaz/server/connect"
+	connectpkg "github.com/petabytecl/gaz/server/connect"
 )
 
 // Server is a unified server that composes gRPC, Connect, gRPC-Web, and REST
@@ -73,8 +74,15 @@ func (s *Server) SetUnknownHandler(h http.Handler) {
 // over h2c on the configured port.
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
+	// 0. Collect Connect interceptors from DI.
+	connectInterceptors := connectpkg.CollectConnectInterceptors(s.container, s.logger)
+	var handlerOpts []connect.HandlerOption
+	if len(connectInterceptors) > 0 {
+		handlerOpts = append(handlerOpts, connect.WithInterceptors(connectInterceptors...))
+	}
+
 	// 1. Discover Connect services from DI.
-	connectRegistrars, err := di.ResolveAll[connect.Registrar](s.container)
+	connectRegistrars, err := di.ResolveAll[connectpkg.Registrar](s.container)
 	if err != nil {
 		return fmt.Errorf("vanguard: discover connect services: %w", err)
 	}
@@ -86,7 +94,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 	// Mount Connect service handlers on the mux.
 	for _, reg := range connectRegistrars {
-		path, handler := reg.RegisterConnect()
+		path, handler := reg.RegisterConnect(handlerOpts...)
 		unknownMux.Handle(path, handler)
 		serviceNames = append(serviceNames, servicePathToName(path))
 	}
@@ -130,24 +138,14 @@ func (s *Server) OnStart(ctx context.Context) error {
 		vanguard.WithUnknownHandler(unknownMux),
 	}
 
-	// 8. Build the transcoder. Use vanguardgrpc if gRPC server is available,
-	// otherwise use plain vanguard transcoder with Connect-only services.
-	var handler http.Handler
-	if s.grpcServer != nil {
-		transcoder, transcoderErr := vanguardgrpc.NewTranscoder(s.grpcServer, transcoderOpts...)
-		if transcoderErr != nil {
-			return fmt.Errorf("vanguard: build grpc transcoder: %w", transcoderErr)
-		}
-		handler = transcoder
-	} else {
-		// No gRPC server — build a plain transcoder with no services.
-		// Connect services are handled by the unknownMux.
-		transcoder, transcoderErr := vanguard.NewTranscoder(nil, transcoderOpts...)
-		if transcoderErr != nil {
-			return fmt.Errorf("vanguard: build transcoder: %w", transcoderErr)
-		}
-		handler = transcoder
+	// 8. Build the transcoder.
+	handler, transcoderErr := s.buildTranscoder(transcoderOpts)
+	if transcoderErr != nil {
+		return transcoderErr
 	}
+
+	// 8.5. Apply transport middleware chain (CORS, OTEL, custom middleware).
+	handler = collectTransportMiddleware(s.container, s.logger, handler)
 
 	// 9. Configure h2c via Go 1.26+ http.Protocols.
 	protocols := new(http.Protocols)
@@ -175,6 +173,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "vanguard server starting",
 		slog.Int("port", s.config.Port),
 		slog.Int("connect_services", len(connectRegistrars)),
+		slog.Int("connect_interceptors", len(connectInterceptors)),
 		slog.Bool("reflection", s.config.Reflection),
 		slog.Bool("health", s.healthManager != nil),
 		slog.Bool("grpc_bridge", s.grpcServer != nil),
@@ -188,6 +187,25 @@ func (s *Server) OnStart(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+// buildTranscoder creates the Vanguard transcoder.
+// Uses vanguardgrpc if a gRPC server is available, otherwise uses plain vanguard transcoder.
+func (s *Server) buildTranscoder(opts []vanguard.TranscoderOption) (http.Handler, error) {
+	if s.grpcServer != nil {
+		transcoder, err := vanguardgrpc.NewTranscoder(s.grpcServer, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("vanguard: build grpc transcoder: %w", err)
+		}
+		return transcoder, nil
+	}
+	// No gRPC server — build a plain transcoder with no services.
+	// Connect services are handled by the unknownMux.
+	transcoder, err := vanguard.NewTranscoder(nil, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("vanguard: build transcoder: %w", err)
+	}
+	return transcoder, nil
 }
 
 // OnStop gracefully shuts down the Vanguard server.

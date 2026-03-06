@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
@@ -335,7 +336,7 @@ type mockConnectRegistrar struct {
 	handler http.Handler
 }
 
-func (m *mockConnectRegistrar) RegisterConnect() (string, http.Handler) {
+func (m *mockConnectRegistrar) RegisterConnect(_ ...connect.HandlerOption) (string, http.Handler) {
 	return m.path, m.handler
 }
 

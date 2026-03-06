@@ -70,9 +70,9 @@ type ConnectInterceptorBundle interface {
 	Interceptors() []connect.Interceptor
 }
 
-// collectConnectInterceptors discovers all ConnectInterceptorBundle implementations from
+// CollectConnectInterceptors discovers all ConnectInterceptorBundle implementations from
 // the container, sorts them by priority, and returns the flattened interceptor slice.
-func collectConnectInterceptors(container *di.Container, logger *slog.Logger) []connect.Interceptor {
+func CollectConnectInterceptors(container *di.Container, logger *slog.Logger) []connect.Interceptor {
 	bundles, err := di.ResolveAll[ConnectInterceptorBundle](container)
 	if err != nil {
 		logger.Warn("failed to resolve connect interceptor bundles", slog.Any("error", err))

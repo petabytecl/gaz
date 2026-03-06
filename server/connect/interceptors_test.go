@@ -274,7 +274,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Order
 		priority: 500,
 	})
 
-	interceptors := collectConnectInterceptors(container, logger)
+	interceptors := CollectConnectInterceptors(container, logger)
 
 	// Should have interceptors from all 4 bundles.
 	// Logging (1) + Recovery (1) + Validation (1) + custom (1) = 4.
@@ -285,7 +285,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Empty
 	logger := slog.Default()
 	container := di.New()
 
-	interceptors := collectConnectInterceptors(container, logger)
+	interceptors := CollectConnectInterceptors(container, logger)
 
 	s.Nil(interceptors)
 }
@@ -301,7 +301,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Flatt
 		interceptorCount: 3,
 	})
 
-	interceptors := collectConnectInterceptors(container, logger)
+	interceptors := CollectConnectInterceptors(container, logger)
 
 	// Should flatten 3 interceptors from the single bundle.
 	s.Len(interceptors, 3)
@@ -336,7 +336,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Sorts
 		},
 	})
 
-	interceptors := collectConnectInterceptors(container, logger)
+	interceptors := CollectConnectInterceptors(container, logger)
 	s.Require().Len(interceptors, 3)
 
 	// Execute all interceptors in order to verify they're sorted.
