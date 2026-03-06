@@ -78,7 +78,7 @@ func main() {
 ### Server & Transport (v4.1)
 - **gRPC Server** - Interceptors, reflection, service discovery, native health checks
 - **HTTP Server** - Configurable timeouts, graceful shutdown
-- **gRPC-Gateway** - Auto-discovering HTTP-to-gRPC proxy
+- **Vanguard** - Unified server: gRPC, Connect, gRPC-Web, REST on a single port
 - **OpenTelemetry** - TracerProvider with OTLP export and server instrumentation
 - **Health checks** - Readiness/liveness probes, gRPC health protocol, builtin checks
 
@@ -165,7 +165,7 @@ See the [examples](examples/) directory:
 - [cobra-cli](examples/cobra-cli/) - CLI application with Cobra
 - [background-workers](examples/background-workers/) - Background task processing
 - [discovery](examples/discovery/) - Plugin-style architecture with ResolveAll
-- [grpc-gateway](examples/grpc-gateway/) - Unified gRPC + HTTP Gateway server
+- [vanguard](examples/vanguard/) - Unified server: gRPC, Connect, gRPC-Web, REST on a single port
 - [microservice](examples/microservice/) - Complete microservice with health, workers, eventbus
 
 ## License
