@@ -123,8 +123,7 @@ func doRetryNotify[T any](operation OperationWithData[T], backOff BackOff, notif
 			return res, nil
 		}
 
-		var permanent *PermanentError
-		if errors.As(err, &permanent) {
+		if permanent, ok := errors.AsType[*PermanentError](err); ok {
 			return res, permanent.Err
 		}
 

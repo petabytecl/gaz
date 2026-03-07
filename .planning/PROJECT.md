@@ -8,12 +8,24 @@ A unified Go application framework that consolidates dependency injection, appli
 
 Simple, type-safe dependency injection with sane defaults — developers register providers and resolve dependencies without fighting configuration options.
 
+## Current Milestone: v5.0 Vanguard Unified Server
+
+**Goal:** Replace the multi-port gRPC + Gateway architecture with a single-port Vanguard server that serves gRPC, Connect, and REST transcoding, with auto-discovered Connect handlers and unified middleware.
+
+**Target features:**
+- Vanguard as unified HTTP multiplexer (single port for gRPC, Connect, REST)
+- Full replacement of gRPC-Gateway with Vanguard REST transcoding
+- ConnectRegistrar interface with auto-discovery (same di.List pattern as gRPC)
+- Plain HTTP handler mounting on the same Vanguard port
+- Unified middleware layer across gRPC and Connect protocols
+- Keep standalone HTTP server for HTTP-only use cases
+
 ## Current State
 
 **Version:** v4.1 (shipped 2026-02-04)
 **Codebase:** 123,663 lines of Go
 **Coverage:** 90%+
-**Next:** TBD — start with `/gsd-new-milestone`
+**Next:** v5.0 Vanguard Unified Server
 
 ## Requirements
 
@@ -65,7 +77,12 @@ Simple, type-safe dependency injection with sane defaults — developers registe
 
 ### Active
 
-(None — next milestone TBD)
+- [ ] Vanguard as unified HTTP multiplexer (single port for gRPC, Connect, REST)
+- [ ] Full replacement of gRPC-Gateway with Vanguard REST transcoding
+- [ ] ConnectRegistrar interface with auto-discovery via di.List
+- [ ] Plain HTTP handler mounting on Vanguard port
+- [ ] Unified middleware layer across gRPC and Connect
+- [ ] Keep standalone HTTP server for HTTP-only use cases
 
 ### Out of Scope
 
@@ -155,4 +172,4 @@ Target: Internal use first, open source viability later.
 | Type Aliasing for Lifecycle Types | Single source of truth in di package | ✓ Good (v4.1) |
 
 ---
-*Last updated: 2026-02-04 after v4.1 milestone*
+*Last updated: 2026-03-06 after v5.0 milestone started*

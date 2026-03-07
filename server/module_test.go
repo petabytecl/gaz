@@ -7,9 +7,8 @@ import (
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
-	"github.com/petabytecl/gaz/server/gateway"
 	"github.com/petabytecl/gaz/server/grpc"
-	shttp "github.com/petabytecl/gaz/server/http"
+	"github.com/petabytecl/gaz/server/vanguard"
 )
 
 func TestNewModule(t *testing.T) {
@@ -28,9 +27,25 @@ func TestNewModule(t *testing.T) {
 
 		// Verify servers were registered.
 		require.True(t, di.Has[*grpc.Server](c))
-		require.True(t, di.Has[*gateway.Gateway](c))
-		// http.Server is registered via gateway module -> http module
-		require.True(t, di.Has[*shttp.Server](c))
+		require.True(t, di.Has[*vanguard.Server](c))
+	})
+
+	// Test gRPC SkipListener is forced true.
+	t.Run("grpc skip listener", func(t *testing.T) {
+		app := gaz.New()
+
+		module := NewModule()
+		err := module.Apply(app)
+		require.NoError(t, err)
+
+		err = app.Build()
+		require.NoError(t, err)
+
+		c := app.Container()
+
+		cfg, err := di.Resolve[grpc.Config](c)
+		require.NoError(t, err)
+		require.True(t, cfg.SkipListener, "gRPC SkipListener must be true when using server module")
 	})
 
 	// Test module name.

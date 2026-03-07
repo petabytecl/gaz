@@ -1,26 +1,39 @@
+---
+gsd_state_version: 1.0
+milestone: v5.0
+milestone_name: milestone
+status: completed
+last_updated: "2026-03-06T23:36:28.241Z"
+last_activity: 2026-03-07 - Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
+progress:
+  total_phases: 58
+  completed_phases: 57
+  total_plans: 174
+  completed_plans: 171
+---
+
 # Project State
 
 **Project:** gaz
-**Version:** v4.1 (shipped)
+**Version:** v5.0 (in progress)
 **Core Value:** Simple, type-safe dependency injection with sane defaults
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-04)
+See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Planning next milestone
+**Current focus:** Phase 48 — Finalization
 
 ## Current Position
 
-- **Milestone:** v4.1 Server & Transport Layer — **SHIPPED**
-- **Phase:** N/A
-- **Plan:** N/A
+- **Milestone:** v5.0 Vanguard Unified Server
+- **Phase:** 48 of 48 (Finalization)
+- **Plan:** 2 of 2
 - **Status:** Milestone complete
-- **Next:** `/gsd-new-milestone` to define v4.2+
-- **Last activity:** 2026-02-04 — v4.1 milestone shipped
+- **Last activity:** 2026-03-07 - Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 
-Progress: [██████████] 100% (v4.1 complete)
+Progress: [██████████] 100%
 
 ## Milestones Shipped
 
@@ -37,7 +50,16 @@ Progress: [██████████] 100% (v4.1 complete)
 | v4.0 | Dependency Reduction | 32-36 | 18 | 2026-02-02 |
 | v4.1 | Server & Transport Layer | 37-45 | 23 | 2026-02-04 |
 
-**Total:** 165 plans across 45 phases
+**Total:** 172 plans across 48 phases
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 172
+- Average duration: ~15 min
+- Total execution time: ~41.7 hours
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -45,59 +67,52 @@ Progress: [██████████] 100% (v4.1 complete)
 
 All key decisions documented in PROJECT.md Key Decisions table.
 
-### v4.1 Key Decisions (Summary)
+- Renamed ConnectRegistrar to connect.Registrar to avoid golangci-lint stutter (matches grpc.Registrar pattern)
+- Extracted registerServices() helper to eliminate duplication between OnStart and onStartSkipListener
+- Used vanguardgrpc.NewTranscoder pattern — transcoder wraps gRPC server with Connect mux as unknown handler
+- Health endpoints mounted via buildHealthMux helper on unknown handler mux, not as Vanguard services
+- Added connectrpc.com packages to depguard allow lists and vanguard to ireturn exclusion
+- ConnectAuthFunc/ConnectLimiter use http.Header+connect.Spec instead of connect.AnyRequest (unexported methods prevent external impl)
+- Added connectrpc.com/validate dependency for ValidationBundle proto constraint validation
+- Exported CollectConnectInterceptors for cross-package access from vanguard
+- OTELConnectBundle placed in vanguard package (depends on sdktrace, avoids circular dependency)
+- Transport middleware applied after transcoder build, before h2c config
+- CORS always registered; OTEL transport/connect conditional on TracerProvider in DI
+- Used adapter pattern for Connect handler: GreeterService keeps gRPC-style SayHello, greeterConnectAdapter wraps it for Connect's generic Request/Response types
+- di.ResolveAll uses reflection-based interface matching — no .As() registration needed for auto-discovery
 
-- Port Separation: Running Gateway and gRPC on separate ports
-- Auto-Discovery: Gateway uses di.List[Registrar] for service discovery
-- Implicit Collection: Register appends duplicates
-- Deferred Flag Registration: Decouples App.Use from Cobra
-- WithCobra as Option: Enables flags before logger creation
-- Logger/Config Module Subpackages: Avoids circular imports
-- Type Aliasing: Single source of truth for lifecycle types in di package
+### v5.0 Research Summary
 
-### Research Summary
+See: .planning/research/SUMMARY.md
 
-See: .planning/research/SUMMARY.md (for v4.1)
+Key findings:
+- Vanguard v0.4.0 (alpha) — wrap behind gaz interfaces
+- Connect-Go v1.19.1 stable (4,556 importers)
+- Go 1.26+ required for native h2c via `http.Protocols`
+- Interceptor incompatibility: gRPC and Connect have different type signatures — keep separate bundles
+- Vanguard transcoder is one-shot — build in `OnStart`, not in provider
 
 ### Blockers/Concerns
 
-None.
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 001 | Do a full review of all the package. | 2026-02-02 | b215f5a | [001-full-review-code-quality-security-docs](./quick/001-full-review-code-quality-security-docs/) |
-| 002 | Add tests to examples and refactor for coverage. | 2026-02-02 | 26a4106 | [002-add-tests-to-examples-coverage](./quick/002-add-tests-to-examples-coverage/) |
-| 003 | Improve test coverage to >90%. | 2026-02-03 | 4f00dec | [003-improve-test-coverage-to-90](./quick/003-improve-test-coverage-to-90/) |
-| 004 | Create v4.1 Milestone Requirements. | 2026-02-03 | 13ce1bb | [004-create-v4-1-milestone-requirements](./quick/004-create-v4-1-milestone-requirements/) |
-| 005 | v4.1 Milestone Consistency Review. | 2026-02-03 | 588ea59 | [005-v4-1-milestone-consistency-review](./quick/005-v4-1-milestone-consistency-review/) |
-| 006 | Refactor server/module.go remove gaz import. | 2026-02-03 | c06f475 | [006-refactor-server-module-remove-gaz-import](./quick/006-refactor-server-module-remove-gaz-import/) |
-| 007 | Run make lint and fix all problems | 2026-02-04 | b9dcff1 | [007-run-make-lint-and-fix-all-problems](./quick/007-run-make-lint-and-fix-all-problems/) |
-| 008 | Add flags to the health server to get the port from the CLI | 2026-02-04 | ff54da5 | [008-add-flags-to-the-health-server-to-get-th](./quick/008-add-flags-to-the-health-server-to-get-th/) |
-| 009 | Refactor worker/eventbus module to follow health pattern | 2026-02-04 | b27297c | [009-refactor-worker-eventbus-module-pattern](./quick/009-refactor-worker-eventbus-module-pattern/) |
-| 010 | Refactor cron module to follow worker/eventbus pattern | 2026-02-04 | b0d92ac | [010-refactor-cron-module-pattern](./quick/010-refactor-cron-module-pattern/) |
-| 011 | Add builtin grpc protovalidate interceptor | 2026-02-04 | 721c7bc | [011-add-builtin-grpc-protovalidate-interceptor](./quick/011-add-builtin-grpc-protovalidate-interceptor/) |
-| 012 | Add builtin grpc auth interceptor | 2026-02-05 | 0e158ee | [012-add-builtin-grpc-auth-interceptor](./quick/012-add-builtin-grpc-auth-interceptor/) |
-| 013 | Implement rate limit gRPC interceptor | 2026-02-05 | 81a2aaa | [013-implement-ratelimit-grpc-interceptor](./quick/013-implement-ratelimit-grpc-interceptor/) |
-
-### Roadmap Evolution
-
-- v4.1 complete: Server & Transport Layer milestone shipped
-- 10 phases (37-45, including 38.1 inserted)
-- 23 plans executed
-- Key features: Discovery API, gRPC/HTTP servers, Gateway, OTEL, CLI flags
+- Vanguard v0.4.0 is pre-stable — needs abstraction layer and regression tests for known issues (#165, #170, #184)
+- h2c with non-Go gRPC clients needs empirical validation in Phase 46
 
 ### Pending Todos
 
 See `.planning/todos/pending/` for any pending items.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 14 | make sure to pass all ci tests like make test, fmt and lint | 2026-03-07 | 7a41544 | [14-make-sure-to-pass-all-ci-tests-like-make](./quick/14-make-sure-to-pass-all-ci-tests-like-make/) |
+| 15 | make sure the test coverage is over the threshold for the project (90%) | 2026-03-07 | a7d1e42 | [15-make-sure-the-test-coverage-is-over-the-](./quick/15-make-sure-the-test-coverage-is-over-the-/) |
+
 ## Session Continuity
 
-Last session: 2026-02-05
-Stopped at: Quick task 013 complete
-Resume with: `/gsd-new-milestone` to plan next milestone
-
+Last session: 2026-03-07
+Stopped at: Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
+Resume with: All v5.0 plans complete. Ready for release.
 
 ---
 

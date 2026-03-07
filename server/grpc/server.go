@@ -103,8 +103,13 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, tp *sdk
 // OnStart starts the gRPC server.
 // It binds to the configured port, discovers and registers services,
 // enables reflection if configured, and starts serving in a goroutine.
+// When SkipListener is true, services are registered but no port is bound.
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
+	if s.config.SkipListener {
+		return s.onStartSkipListener(ctx)
+	}
+
 	// Bind port first (fail fast if already in use).
 	addr := fmt.Sprintf(":%d", s.config.Port)
 	var lc net.ListenConfig
@@ -114,12 +119,56 @@ func (s *Server) OnStart(ctx context.Context) error {
 	}
 	s.listener = lis
 
+	// Discover services, register health, enable reflection.
+	serviceCount, err := s.registerServices(ctx)
+	if err != nil {
+		_ = lis.Close()
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "gRPC server starting",
+		slog.Int("port", s.config.Port),
+		slog.Bool("reflection", s.config.Reflection),
+		slog.Int("services", serviceCount),
+		slog.Bool("otel", s.otelEnabled),
+		slog.Bool("health", s.config.HealthEnabled),
+	)
+
+	// Spawn serve goroutine (non-blocking).
+	go func() {
+		if serveErr := s.server.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
+			s.logger.Error("gRPC server error", slog.Any("error", serveErr))
+		}
+	}()
+
+	return nil
+}
+
+// onStartSkipListener starts the gRPC server in skip-listener mode.
+// Services are discovered and registered, but no port is bound and
+// server.Serve() is not called. This is used when Vanguard handles connections.
+func (s *Server) onStartSkipListener(ctx context.Context) error {
+	serviceCount, err := s.registerServices(ctx)
+	if err != nil {
+		return err
+	}
+
+	s.logger.InfoContext(ctx, "gRPC server started (skip-listener mode)",
+		slog.Bool("reflection", s.config.Reflection),
+		slog.Int("services", serviceCount),
+		slog.Bool("health", s.config.HealthEnabled),
+	)
+
+	return nil
+}
+
+// registerServices discovers and registers gRPC services, sets up health
+// checks, and enables reflection. Returns the number of services registered.
+func (s *Server) registerServices(ctx context.Context) (int, error) {
 	// Auto-discover and register services.
 	registrars, err := di.ResolveAll[Registrar](s.container)
 	if err != nil {
-		// Close listener on error.
-		_ = lis.Close()
-		return fmt.Errorf("grpc: discover services: %w", err)
+		return 0, fmt.Errorf("grpc: discover services: %w", err)
 	}
 
 	for _, r := range registrars {
@@ -143,26 +192,12 @@ func (s *Server) OnStart(ctx context.Context) error {
 		reflection.Register(s.server)
 	}
 
-	s.logger.InfoContext(ctx, "gRPC server starting",
-		slog.Int("port", s.config.Port),
-		slog.Bool("reflection", s.config.Reflection),
-		slog.Int("services", len(registrars)),
-		slog.Bool("otel", s.otelEnabled),
-		slog.Bool("health", s.config.HealthEnabled),
-	)
-
-	// Spawn serve goroutine (non-blocking).
-	go func() {
-		if serveErr := s.server.Serve(lis); serveErr != nil && !errors.Is(serveErr, grpc.ErrServerStopped) {
-			s.logger.Error("gRPC server error", slog.Any("error", serveErr))
-		}
-	}()
-
-	return nil
+	return len(registrars), nil
 }
 
 // OnStop gracefully shuts down the gRPC server.
 // It waits for active connections to complete or forces shutdown on context timeout.
+// When SkipListener is true, GracefulStop is called directly without listener management.
 // Implements di.Stopper.
 func (s *Server) OnStop(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "gRPC server stopping")
@@ -172,6 +207,13 @@ func (s *Server) OnStop(ctx context.Context) error {
 		if err := s.healthAdapter.Stop(ctx); err != nil {
 			s.logger.WarnContext(ctx, "gRPC health adapter stop error", slog.Any("error", err))
 		}
+	}
+
+	if s.config.SkipListener {
+		// No listener to close; just stop the server directly.
+		s.server.GracefulStop()
+		s.logger.InfoContext(ctx, "gRPC server stopped (skip-listener mode)")
+		return nil
 	}
 
 	done := make(chan struct{})
