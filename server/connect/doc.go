@@ -1,5 +1,5 @@
 // Package connect provides the Registrar interface for auto-discovery of
-// Connect-Go services and the ConnectInterceptorBundle interface for
+// Connect-Go services and the InterceptorBundle interface for
 // auto-discovered interceptor chains within the gaz framework.
 //
 // # Overview
@@ -8,7 +8,7 @@
 //
 //   - [Registrar]: implemented by Connect-Go services for automatic discovery
 //     and registration with the Vanguard server.
-//   - [ConnectInterceptorBundle]: implemented by interceptor bundles for
+//   - [InterceptorBundle]: implemented by interceptor bundles for
 //     automatic discovery, priority-based sorting, and chaining.
 //
 // The pattern mirrors the gRPC Registrar and InterceptorBundle interfaces
@@ -37,16 +37,16 @@
 //
 // # Interceptor Bundles
 //
-// Interceptor bundles implement [ConnectInterceptorBundle] and are
-// auto-discovered via di.ResolveAll[connect.ConnectInterceptorBundle].
+// Interceptor bundles implement [InterceptorBundle] and are
+// auto-discovered via di.ResolveAll[connect.InterceptorBundle].
 // Each bundle declares a priority that determines its position in the
 // interceptor chain (lower values run earlier).
 //
 // Five built-in bundles are provided:
 //
 //   - [LoggingBundle] (priority 0): logs procedure name, duration, and errors.
-//   - [RateLimitBundle] (priority 25): enforces rate limits via [ConnectLimiter].
-//   - [AuthBundle] (priority 50): validates credentials via [ConnectAuthFunc].
+//   - [RateLimitBundle] (priority 25): enforces rate limits via [Limiter].
+//   - [AuthBundle] (priority 50): validates credentials via [AuthFunc].
 //   - [ValidationBundle] (priority 100): validates protobuf messages.
 //   - [RecoveryBundle] (priority 1000): catches panics and returns errors.
 //

@@ -132,15 +132,15 @@ func provideConnectValidationBundle(c *gaz.Container) error {
 }
 
 // provideConnectAuthBundle registers a connect.AuthBundle in the DI container.
-// The bundle is only registered if a ConnectAuthFunc is available in DI.
-// This makes authentication opt-in — services without ConnectAuthFunc skip auth.
+// The bundle is only registered if an AuthFunc is available in DI.
+// This makes authentication opt-in — services without AuthFunc skip auth.
 func provideConnectAuthBundle(c *gaz.Container) error {
-	if !gaz.Has[connectpkg.ConnectAuthFunc](c) {
-		// No ConnectAuthFunc registered — skip auth interceptor silently.
+	if !gaz.Has[connectpkg.AuthFunc](c) {
+		// No AuthFunc registered — skip auth interceptor silently.
 		return nil
 	}
 
-	authFunc, resolveErr := gaz.Resolve[connectpkg.ConnectAuthFunc](c)
+	authFunc, resolveErr := gaz.Resolve[connectpkg.AuthFunc](c)
 	if resolveErr != nil {
 		return fmt.Errorf("resolve connect auth func: %w", resolveErr)
 	}
@@ -154,12 +154,12 @@ func provideConnectAuthBundle(c *gaz.Container) error {
 }
 
 // provideConnectRateLimitBundle registers a connect.RateLimitBundle in the DI container.
-// If a ConnectLimiter is registered in DI, it uses that limiter.
+// If a Limiter is registered in DI, it uses that limiter.
 // Otherwise, it registers a bundle with AlwaysPassLimiter (allows all requests).
 func provideConnectRateLimitBundle(c *gaz.Container) error {
-	var limiter connectpkg.ConnectLimiter
-	if gaz.Has[connectpkg.ConnectLimiter](c) {
-		resolved, resolveErr := gaz.Resolve[connectpkg.ConnectLimiter](c)
+	var limiter connectpkg.Limiter
+	if gaz.Has[connectpkg.Limiter](c) {
+		resolved, resolveErr := gaz.Resolve[connectpkg.Limiter](c)
 		if resolveErr != nil {
 			return fmt.Errorf("resolve connect limiter: %w", resolveErr)
 		}
@@ -210,8 +210,8 @@ func provideServer(c *gaz.Container) error {
 //   - *connect.LoggingBundle (connect logging interceptor, always registered)
 //   - *connect.RecoveryBundle (connect panic recovery interceptor, always registered)
 //   - *connect.ValidationBundle (connect protovalidate interceptor, always registered)
-//   - *connect.AuthBundle (connect auth interceptor, only if ConnectAuthFunc registered)
-//   - *connect.RateLimitBundle (connect rate limit interceptor, uses AlwaysPassLimiter unless ConnectLimiter registered)
+//   - *connect.AuthBundle (connect auth interceptor, only if AuthFunc registered)
+//   - *connect.RateLimitBundle (connect rate limit interceptor, uses AlwaysPassLimiter unless Limiter registered)
 //   - *vanguard.Server (eager, starts on app start)
 //
 // The module depends on grpc.NewModule() being registered first, as it

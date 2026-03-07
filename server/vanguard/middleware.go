@@ -160,7 +160,7 @@ func (m *OTELMiddleware) Wrap(next http.Handler) http.Handler {
 
 // --- OTEL Connect Bundle ---
 
-// OTELConnectBundle implements connect.ConnectInterceptorBundle for OpenTelemetry
+// OTELConnectBundle implements connect.InterceptorBundle for OpenTelemetry
 // Connect RPC tracing. It provides otelconnect interceptors when a TracerProvider
 // is available.
 type OTELConnectBundle struct {

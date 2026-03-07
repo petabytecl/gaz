@@ -31,7 +31,7 @@ const (
 	PriorityRecovery = 1000
 )
 
-// ConnectInterceptorBundle provides Connect interceptors for auto-discovery.
+// InterceptorBundle provides Connect interceptors for auto-discovery.
 // Implementations are automatically discovered and chained by the Vanguard server.
 //
 // To add custom interceptors:
@@ -49,7 +49,7 @@ const (
 //
 //	// Register in DI:
 //	gaz.For[*MetricsBundle](c).Provider(NewMetricsBundle)
-type ConnectInterceptorBundle interface {
+type InterceptorBundle interface {
 	// Name returns a unique identifier for logging and debugging.
 	Name() string
 
@@ -70,10 +70,10 @@ type ConnectInterceptorBundle interface {
 	Interceptors() []connect.Interceptor
 }
 
-// CollectConnectInterceptors discovers all ConnectInterceptorBundle implementations from
+// CollectInterceptors discovers all InterceptorBundle implementations from
 // the container, sorts them by priority, and returns the flattened interceptor slice.
-func CollectConnectInterceptors(container *di.Container, logger *slog.Logger) []connect.Interceptor {
-	bundles, err := di.ResolveAll[ConnectInterceptorBundle](container)
+func CollectInterceptors(container *di.Container, logger *slog.Logger) []connect.Interceptor {
+	bundles, err := di.ResolveAll[InterceptorBundle](container)
 	if err != nil {
 		logger.Warn("failed to resolve connect interceptor bundles", slog.Any("error", err))
 		return nil
@@ -97,7 +97,7 @@ func CollectConnectInterceptors(container *di.Container, logger *slog.Logger) []
 	return interceptors
 }
 
-// ConnectAuthFunc validates Connect requests and returns an enriched context.
+// AuthFunc validates Connect requests and returns an enriched context.
 // Extract credentials from request headers (e.g., Authorization header).
 // The function receives HTTP headers and the RPC spec, which are available
 // in both unary and streaming handlers (unlike connect.AnyRequest which
@@ -105,23 +105,23 @@ func CollectConnectInterceptors(container *di.Container, logger *slog.Logger) []
 //
 // Register in DI to enable auth interceptor:
 //
-//	gaz.For[ConnectAuthFunc](c).Instance(myAuthFunc)
-type ConnectAuthFunc func(ctx context.Context, header http.Header, spec connect.Spec) (context.Context, error)
+//	gaz.For[AuthFunc](c).Instance(myAuthFunc)
+type AuthFunc func(ctx context.Context, header http.Header, spec connect.Spec) (context.Context, error)
 
-// ConnectLimiter defines the interface for Connect rate limiting.
+// Limiter defines the interface for Connect rate limiting.
 // Implementations should return nil to allow the request, or an error to reject it.
 // The error should be a *connect.Error with an appropriate code (e.g., connect.CodeResourceExhausted).
 // The function receives HTTP headers and the RPC spec for per-procedure or per-client decisions.
 //
 // Register a custom limiter in DI to override the default AlwaysPassLimiter:
 //
-//	gaz.For[ConnectLimiter](c).Instance(myLimiter)
-type ConnectLimiter interface {
+//	gaz.For[Limiter](c).Instance(myLimiter)
+type Limiter interface {
 	Limit(ctx context.Context, header http.Header, spec connect.Spec) error
 }
 
 // AlwaysPassLimiter is a no-op limiter that allows all requests.
-// This is the default limiter when no custom ConnectLimiter is registered in DI.
+// This is the default limiter when no custom Limiter is registered in DI.
 type AlwaysPassLimiter struct{}
 
 // Limit always returns nil, allowing all requests.
@@ -250,7 +250,7 @@ type recoveryInterceptor struct {
 
 // WrapUnary wraps the handler with panic recovery.
 func (r *recoveryInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (resp connect.AnyResponse, err error) {
+	return func(ctx context.Context, req connect.AnyRequest) (_ connect.AnyResponse, err error) {
 		defer func() {
 			if p := recover(); p != nil {
 				r.logger.ErrorContext(ctx, "panic recovered in connect handler",
@@ -298,13 +298,13 @@ func (r *recoveryInterceptor) WrapStreamingHandler(next connect.StreamingHandler
 // --- Auth Bundle ---
 
 // AuthBundle is the built-in authentication interceptor bundle for Connect.
-// It validates requests using the registered ConnectAuthFunc.
+// It validates requests using the registered AuthFunc.
 type AuthBundle struct {
-	authFunc ConnectAuthFunc
+	authFunc AuthFunc
 }
 
 // NewAuthBundle creates a new auth interceptor bundle.
-func NewAuthBundle(authFunc ConnectAuthFunc) *AuthBundle {
+func NewAuthBundle(authFunc AuthFunc) *AuthBundle {
 	return &AuthBundle{authFunc: authFunc}
 }
 
@@ -325,7 +325,7 @@ func (b *AuthBundle) Interceptors() []connect.Interceptor {
 
 // authInterceptor implements connect.Interceptor for authentication.
 type authInterceptor struct {
-	authFunc ConnectAuthFunc
+	authFunc AuthFunc
 }
 
 // WrapUnary validates the request using the auth function.
@@ -358,14 +358,14 @@ func (a *authInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc
 // --- Rate Limit Bundle ---
 
 // RateLimitBundle is the built-in rate limiting interceptor bundle for Connect.
-// It uses the registered ConnectLimiter to control request rates.
+// It uses the registered Limiter to control request rates.
 type RateLimitBundle struct {
-	limiter ConnectLimiter
+	limiter Limiter
 }
 
 // NewRateLimitBundle creates a new rate limit interceptor bundle.
 // If limiter is nil, AlwaysPassLimiter is used.
-func NewRateLimitBundle(limiter ConnectLimiter) *RateLimitBundle {
+func NewRateLimitBundle(limiter Limiter) *RateLimitBundle {
 	if limiter == nil {
 		limiter = AlwaysPassLimiter{}
 	}
@@ -389,14 +389,14 @@ func (b *RateLimitBundle) Interceptors() []connect.Interceptor {
 
 // rateLimitInterceptor implements connect.Interceptor for rate limiting.
 type rateLimitInterceptor struct {
-	limiter ConnectLimiter
+	limiter Limiter
 }
 
 // WrapUnary checks the rate limit before processing the request.
 func (r *rateLimitInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if err := r.limiter.Limit(ctx, req.Header(), req.Spec()); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("rate limit: %w", err)
 		}
 		return next(ctx, req)
 	}
@@ -411,7 +411,7 @@ func (r *rateLimitInterceptor) WrapStreamingClient(next connect.StreamingClientF
 func (r *rateLimitInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
 		if err := r.limiter.Limit(ctx, conn.RequestHeader(), conn.Spec()); err != nil {
-			return err
+			return fmt.Errorf("rate limit: %w", err)
 		}
 		return next(ctx, conn)
 	}

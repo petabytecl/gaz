@@ -3,7 +3,6 @@ package connect
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"testing"
@@ -14,16 +13,16 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-// ConnectInterceptorBundleTestSuite tests the ConnectInterceptorBundle interface and discovery.
-type ConnectInterceptorBundleTestSuite struct {
+// InterceptorBundleTestSuite tests the InterceptorBundle interface and discovery.
+type InterceptorBundleTestSuite struct {
 	suite.Suite
 }
 
-func TestConnectInterceptorBundleTestSuite(t *testing.T) {
-	suite.Run(t, new(ConnectInterceptorBundleTestSuite))
+func TestInterceptorBundleTestSuite(t *testing.T) {
+	suite.Run(t, new(InterceptorBundleTestSuite))
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestPriorityConstants() {
+func (s *InterceptorBundleTestSuite) TestPriorityConstants() {
 	// Priority ordering: Logging(0) < RateLimit(25) < Auth(50) < Validation(100) < Recovery(1000).
 	s.Equal(0, PriorityLogging)
 	s.Equal(25, PriorityRateLimit)
@@ -37,12 +36,12 @@ func (s *ConnectInterceptorBundleTestSuite) TestPriorityConstants() {
 	s.Less(PriorityValidation, PriorityRecovery)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestLoggingBundle_ImplementsInterface() {
+func (s *InterceptorBundleTestSuite) TestLoggingBundle_ImplementsInterface() {
 	logger := slog.Default()
 	bundle := NewLoggingBundle(logger)
 
 	// Compile-time interface compliance.
-	var _ ConnectInterceptorBundle = bundle
+	var _ InterceptorBundle = bundle
 
 	s.Equal("logging", bundle.Name())
 	s.Equal(PriorityLogging, bundle.Priority())
@@ -51,7 +50,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestLoggingBundle_ImplementsInterfac
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestLoggingBundle_NilLogger() {
+func (s *InterceptorBundleTestSuite) TestLoggingBundle_NilLogger() {
 	bundle := NewLoggingBundle(nil)
 	s.NotNil(bundle)
 	s.Equal("logging", bundle.Name())
@@ -60,12 +59,12 @@ func (s *ConnectInterceptorBundleTestSuite) TestLoggingBundle_NilLogger() {
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_ImplementsInterface() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_ImplementsInterface() {
 	logger := slog.Default()
 	bundle := NewRecoveryBundle(logger, false)
 
 	// Compile-time interface compliance.
-	var _ ConnectInterceptorBundle = bundle
+	var _ InterceptorBundle = bundle
 
 	s.Equal("recovery", bundle.Name())
 	s.Equal(PriorityRecovery, bundle.Priority())
@@ -74,7 +73,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_ImplementsInterfa
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_ProductionMode() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_ProductionMode() {
 	logger := slog.Default()
 	bundle := NewRecoveryBundle(logger, false)
 
@@ -99,7 +98,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_Prod
 	s.Equal("internal server error", connectErr.Message())
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_DevMode() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_DevMode() {
 	logger := slog.Default()
 	bundle := NewRecoveryBundle(logger, true)
 
@@ -124,7 +123,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInUnary_DevM
 	s.Contains(connectErr.Message(), "dev mode panic details")
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInStreamingHandler() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_PanicInStreamingHandler() {
 	logger := slog.Default()
 	bundle := NewRecoveryBundle(logger, false)
 
@@ -147,7 +146,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_PanicInStreamingH
 	s.Equal(connect.CodeInternal, connectErr.Code())
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_NoPanic() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_NoPanic() {
 	logger := slog.Default()
 	bundle := NewRecoveryBundle(logger, false)
 
@@ -166,20 +165,20 @@ func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_NoPanic() {
 	s.NoError(err)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRecoveryBundle_NilLogger() {
+func (s *InterceptorBundleTestSuite) TestRecoveryBundle_NilLogger() {
 	bundle := NewRecoveryBundle(nil, false)
 	s.NotNil(bundle)
 	s.Equal("recovery", bundle.Name())
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestAuthBundle_ImplementsInterface() {
-	authFunc := ConnectAuthFunc(func(_ context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+func (s *InterceptorBundleTestSuite) TestAuthBundle_ImplementsInterface() {
+	authFunc := AuthFunc(func(_ context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
 		return context.Background(), nil
 	})
 	bundle := NewAuthBundle(authFunc)
 
 	// Compile-time interface compliance.
-	var _ ConnectInterceptorBundle = bundle
+	var _ InterceptorBundle = bundle
 
 	s.Equal("auth", bundle.Name())
 	s.Equal(PriorityAuth, bundle.Priority())
@@ -188,11 +187,11 @@ func (s *ConnectInterceptorBundleTestSuite) TestAuthBundle_ImplementsInterface()
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_ImplementsInterface() {
+func (s *InterceptorBundleTestSuite) TestRateLimitBundle_ImplementsInterface() {
 	bundle := NewRateLimitBundle(nil) // Uses AlwaysPassLimiter.
 
 	// Compile-time interface compliance.
-	var _ ConnectInterceptorBundle = bundle
+	var _ InterceptorBundle = bundle
 
 	s.Equal("ratelimit", bundle.Name())
 	s.Equal(PriorityRateLimit, bundle.Priority())
@@ -201,7 +200,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_ImplementsInterf
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithNilLimiter_UsesAlwaysPass() {
+func (s *InterceptorBundleTestSuite) TestRateLimitBundle_WithNilLimiter_UsesAlwaysPass() {
 	bundle := NewRateLimitBundle(nil)
 
 	interceptors := bundle.Interceptors()
@@ -219,8 +218,8 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithNilLimiter_U
 	s.NoError(err)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimiter() {
-	limiter := &mockConnectLimiter{shouldReject: true}
+func (s *InterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimiter() {
+	limiter := &mockLimiter{shouldReject: true}
 	bundle := NewRateLimitBundle(limiter)
 
 	interceptors := bundle.Interceptors()
@@ -242,17 +241,17 @@ func (s *ConnectInterceptorBundleTestSuite) TestRateLimitBundle_WithCustomLimite
 	s.Equal(connect.CodeResourceExhausted, connectErr.Code())
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestAlwaysPassLimiter_AllowsAllRequests() {
+func (s *InterceptorBundleTestSuite) TestAlwaysPassLimiter_AllowsAllRequests() {
 	limiter := AlwaysPassLimiter{}
 	err := limiter.Limit(context.Background(), nil, connect.Spec{})
 	s.NoError(err)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestValidationBundle_ImplementsInterface() {
+func (s *InterceptorBundleTestSuite) TestValidationBundle_ImplementsInterface() {
 	bundle := NewValidationBundle()
 
 	// Compile-time interface compliance.
-	var _ ConnectInterceptorBundle = bundle
+	var _ InterceptorBundle = bundle
 
 	s.Equal("validation", bundle.Name())
 	s.Equal(PriorityValidation, bundle.Priority())
@@ -261,7 +260,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestValidationBundle_ImplementsInter
 	s.NotEmpty(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Ordering() {
+func (s *InterceptorBundleTestSuite) TestCollectInterceptors_Ordering() {
 	logger := slog.Default()
 	container := di.New()
 
@@ -269,45 +268,45 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Order
 	_ = di.For[*RecoveryBundle](container).Instance(NewRecoveryBundle(logger, false))
 	_ = di.For[*LoggingBundle](container).Instance(NewLoggingBundle(logger))
 	_ = di.For[*ValidationBundle](container).Instance(NewValidationBundle())
-	_ = di.For[*mockConnectInterceptorBundle](container).Instance(&mockConnectInterceptorBundle{
+	_ = di.For[*mockInterceptorBundle](container).Instance(&mockInterceptorBundle{
 		name:     "custom",
 		priority: 500,
 	})
 
-	interceptors := CollectConnectInterceptors(container, logger)
+	interceptors := CollectInterceptors(container, logger)
 
 	// Should have interceptors from all 4 bundles.
 	// Logging (1) + Recovery (1) + Validation (1) + custom (1) = 4.
 	s.Len(interceptors, 4)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_EmptyContainer() {
+func (s *InterceptorBundleTestSuite) TestCollectInterceptors_EmptyContainer() {
 	logger := slog.Default()
 	container := di.New()
 
-	interceptors := CollectConnectInterceptors(container, logger)
+	interceptors := CollectInterceptors(container, logger)
 
 	s.Nil(interceptors)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_FlattensMultiInterceptorBundles() {
+func (s *InterceptorBundleTestSuite) TestCollectInterceptors_FlattensMultiInterceptorBundles() {
 	logger := slog.Default()
 	container := di.New()
 
 	// Register a bundle that returns multiple interceptors.
-	_ = di.For[*mockConnectInterceptorBundle](container).Instance(&mockConnectInterceptorBundle{
+	_ = di.For[*mockInterceptorBundle](container).Instance(&mockInterceptorBundle{
 		name:             "multi",
 		priority:         50,
 		interceptorCount: 3,
 	})
 
-	interceptors := CollectConnectInterceptors(container, logger)
+	interceptors := CollectInterceptors(container, logger)
 
 	// Should flatten 3 interceptors from the single bundle.
 	s.Len(interceptors, 3)
 }
 
-func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_SortsByPriority() {
+func (s *InterceptorBundleTestSuite) TestCollectInterceptors_SortsByPriority() {
 	logger := slog.Default()
 	container := di.New()
 
@@ -336,7 +335,7 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Sorts
 		},
 	})
 
-	interceptors := CollectConnectInterceptors(container, logger)
+	interceptors := CollectInterceptors(container, logger)
 	s.Require().Len(interceptors, 3)
 
 	// Execute all interceptors in order to verify they're sorted.
@@ -350,34 +349,34 @@ func (s *ConnectInterceptorBundleTestSuite) TestCollectConnectInterceptors_Sorts
 	s.Equal([]string{"low", "mid", "high"}, callOrder)
 }
 
-// mockConnectLimiter is a test double for ConnectLimiter.
-type mockConnectLimiter struct {
+// mockLimiter is a test double for ConnectLimiter.
+type mockLimiter struct {
 	shouldReject bool
 }
 
-func (m *mockConnectLimiter) Limit(_ context.Context, _ http.Header, _ connect.Spec) error {
+func (m *mockLimiter) Limit(_ context.Context, _ http.Header, _ connect.Spec) error {
 	if m.shouldReject {
-		return connect.NewError(connect.CodeResourceExhausted, fmt.Errorf("rate limit exceeded"))
+		return connect.NewError(connect.CodeResourceExhausted, errors.New("rate limit exceeded"))
 	}
 	return nil
 }
 
-// mockConnectInterceptorBundle is a test double for ConnectInterceptorBundle.
-type mockConnectInterceptorBundle struct {
+// mockInterceptorBundle is a test double for InterceptorBundle.
+type mockInterceptorBundle struct {
 	name             string
 	priority         int
 	interceptorCount int
 }
 
-func (m *mockConnectInterceptorBundle) Name() string {
+func (m *mockInterceptorBundle) Name() string {
 	return m.name
 }
 
-func (m *mockConnectInterceptorBundle) Priority() int {
+func (m *mockInterceptorBundle) Priority() int {
 	return m.priority
 }
 
-func (m *mockConnectInterceptorBundle) Interceptors() []connect.Interceptor {
+func (m *mockInterceptorBundle) Interceptors() []connect.Interceptor {
 	count := m.interceptorCount
 	if count == 0 {
 		count = 1

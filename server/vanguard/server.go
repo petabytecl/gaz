@@ -75,7 +75,7 @@ func (s *Server) SetUnknownHandler(h http.Handler) {
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
 	// 0. Collect Connect interceptors from DI.
-	connectInterceptors := connectpkg.CollectConnectInterceptors(s.container, s.logger)
+	connectInterceptors := connectpkg.CollectInterceptors(s.container, s.logger)
 	var handlerOpts []connect.HandlerOption
 	if len(connectInterceptors) > 0 {
 		handlerOpts = append(handlerOpts, connect.WithInterceptors(connectInterceptors...))

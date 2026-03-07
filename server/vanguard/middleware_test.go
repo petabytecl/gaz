@@ -144,7 +144,7 @@ func (s *MiddlewareTestSuite) TestOTELConnectBundle_ImplementsConnectInterceptor
 
 	b := NewOTELConnectBundle(tp, slog.Default())
 
-	var _ connectpkg.ConnectInterceptorBundle = b
+	var _ connectpkg.InterceptorBundle = b
 
 	s.Equal("otelconnect", b.Name())
 	s.Equal(connectpkg.PriorityValidation-1, b.Priority(),
@@ -269,8 +269,8 @@ func (s *MiddlewareTestSuite) TestDefaultCORSConfig_Production() {
 
 // Verify compile-time interface compliance.
 var (
-	_ TransportMiddleware                 = (*CORSMiddleware)(nil)
-	_ TransportMiddleware                 = (*OTELMiddleware)(nil)
-	_ connectpkg.ConnectInterceptorBundle = (*OTELConnectBundle)(nil)
-	_ connect.Interceptor                 = (*connectotel.Interceptor)(nil)
+	_ TransportMiddleware          = (*CORSMiddleware)(nil)
+	_ TransportMiddleware          = (*OTELMiddleware)(nil)
+	_ connectpkg.InterceptorBundle = (*OTELConnectBundle)(nil)
+	_ connect.Interceptor          = (*connectotel.Interceptor)(nil)
 )
