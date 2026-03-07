@@ -56,10 +56,16 @@ type FieldError struct {
 
 // String returns a formatted string representation of the field error.
 func (fe FieldError) String() string {
+	var sb strings.Builder
+	sb.WriteString(fe.Namespace)
+	sb.WriteString(": ")
+	sb.WriteString(fe.Message)
 	if fe.Tag != "" {
-		return fe.Namespace + ": " + fe.Message + " (validate:\"" + fe.Tag + "\")"
+		sb.WriteString(" (validate:\"")
+		sb.WriteString(fe.Tag)
+		sb.WriteString("\")")
 	}
-	return fe.Namespace + ": " + fe.Message
+	return sb.String()
 }
 
 // NewFieldError creates a new FieldError with the given parameters.

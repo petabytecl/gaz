@@ -7,6 +7,7 @@ import (
 )
 
 func BenchmarkFieldError_String(b *testing.B) {
+	b.ReportAllocs()
 	feWithTag := config.NewFieldError("Config.database.host", "required", "", "required field cannot be empty")
 	feWithoutTag := config.FieldError{
 		Namespace: "Config.database.host",
