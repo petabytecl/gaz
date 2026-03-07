@@ -247,6 +247,288 @@ func (s *InterceptorBundleTestSuite) TestAlwaysPassLimiter_AllowsAllRequests() {
 	s.NoError(err)
 }
 
+// --- Logging Wrap* method tests ---
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapUnary_Success() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	called := false
+	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		called = true
+		return nil, nil
+	})
+
+	// Call with nil request (procedure check handles nil).
+	resp, err := wrappedFunc(context.Background(), nil)
+	s.True(called, "next handler should be called")
+	s.Nil(resp)
+	s.NoError(err)
+}
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapUnary_WithRequest() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	req := connect.NewRequest[any](nil)
+	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		return nil, nil
+	})
+
+	resp, err := wrappedFunc(context.Background(), req)
+	s.Nil(resp)
+	s.NoError(err)
+}
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapUnary_Error() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	expectedErr := connect.NewError(connect.CodeInternal, errors.New("handler error"))
+	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		return nil, expectedErr
+	})
+
+	resp, err := wrappedFunc(context.Background(), nil)
+	s.Nil(resp)
+	s.Require().Error(err)
+	s.ErrorIs(err, expectedErr)
+}
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapStreamingClient_IsPassthrough() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	next := connect.StreamingClientFunc(func(_ context.Context, _ connect.Spec) connect.StreamingClientConn {
+		return nil
+	})
+
+	// WrapStreamingClient should return next unchanged.
+	result := interceptor.WrapStreamingClient(next)
+	s.NotNil(result)
+}
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapStreamingHandler_Success() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	called := false
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		called = true
+		return nil
+	})
+
+	// Call with a mock conn for procedure logging.
+	err := wrappedFunc(context.Background(), &mockStreamingHandlerConn{})
+	s.True(called, "next handler should be called")
+	s.NoError(err)
+}
+
+func (s *InterceptorBundleTestSuite) TestLoggingInterceptor_WrapStreamingHandler_Error() {
+	bundle := NewLoggingBundle(slog.Default())
+	interceptor := bundle.Interceptors()[0]
+
+	expectedErr := connect.NewError(connect.CodeInternal, errors.New("stream error"))
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		return expectedErr
+	})
+
+	err := wrappedFunc(context.Background(), nil)
+	s.Require().Error(err)
+	s.ErrorIs(err, expectedErr)
+}
+
+// --- Recovery Wrap* streaming tests ---
+
+func (s *InterceptorBundleTestSuite) TestRecoveryInterceptor_WrapStreamingClient_IsPassthrough() {
+	bundle := NewRecoveryBundle(slog.Default(), false)
+	interceptor := bundle.Interceptors()[0]
+
+	next := connect.StreamingClientFunc(func(_ context.Context, _ connect.Spec) connect.StreamingClientConn {
+		return nil
+	})
+
+	result := interceptor.WrapStreamingClient(next)
+	s.NotNil(result)
+}
+
+func (s *InterceptorBundleTestSuite) TestRecoveryInterceptor_WrapStreamingHandler_DevMode_Panic() {
+	bundle := NewRecoveryBundle(slog.Default(), true)
+	interceptor := bundle.Interceptors()[0]
+
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		panic("dev stream panic")
+	})
+
+	err := wrappedFunc(context.Background(), nil)
+	s.Require().Error(err)
+
+	var connectErr *connect.Error
+	s.Require().True(errors.As(err, &connectErr))
+	s.Equal(connect.CodeInternal, connectErr.Code())
+	s.Contains(connectErr.Message(), "dev stream panic")
+}
+
+func (s *InterceptorBundleTestSuite) TestRecoveryInterceptor_WrapStreamingHandler_NoPanic() {
+	bundle := NewRecoveryBundle(slog.Default(), false)
+	interceptor := bundle.Interceptors()[0]
+
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		return nil
+	})
+
+	err := wrappedFunc(context.Background(), nil)
+	s.NoError(err)
+}
+
+// --- Auth Wrap* method tests ---
+
+func (s *InterceptorBundleTestSuite) TestAuthInterceptor_WrapUnary_Success() {
+	type ctxKey struct{}
+	authFunc := AuthFunc(func(ctx context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+		return context.WithValue(ctx, ctxKey{}, "authenticated"), nil
+	})
+	bundle := NewAuthBundle(authFunc)
+	interceptor := bundle.Interceptors()[0]
+
+	var receivedCtx context.Context
+	req := connect.NewRequest[any](nil)
+	wrappedFunc := interceptor.WrapUnary(func(ctx context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		receivedCtx = ctx
+		return nil, nil
+	})
+
+	_, err := wrappedFunc(context.Background(), req)
+	s.NoError(err)
+	s.Equal("authenticated", receivedCtx.Value(ctxKey{}))
+}
+
+func (s *InterceptorBundleTestSuite) TestAuthInterceptor_WrapUnary_Failure() {
+	authErr := connect.NewError(connect.CodeUnauthenticated, errors.New("invalid token"))
+	authFunc := AuthFunc(func(_ context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+		return nil, authErr
+	})
+	bundle := NewAuthBundle(authFunc)
+	interceptor := bundle.Interceptors()[0]
+
+	nextCalled := false
+	req := connect.NewRequest[any](nil)
+	wrappedFunc := interceptor.WrapUnary(func(_ context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+		nextCalled = true
+		return nil, nil
+	})
+
+	_, err := wrappedFunc(context.Background(), req)
+	s.Require().Error(err)
+	s.False(nextCalled, "next should not be called on auth failure")
+
+	var connectErr *connect.Error
+	s.Require().True(errors.As(err, &connectErr))
+	s.Equal(connect.CodeUnauthenticated, connectErr.Code())
+}
+
+func (s *InterceptorBundleTestSuite) TestAuthInterceptor_WrapStreamingClient_IsPassthrough() {
+	authFunc := AuthFunc(func(ctx context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+		return ctx, nil
+	})
+	bundle := NewAuthBundle(authFunc)
+	interceptor := bundle.Interceptors()[0]
+
+	next := connect.StreamingClientFunc(func(_ context.Context, _ connect.Spec) connect.StreamingClientConn {
+		return nil
+	})
+
+	result := interceptor.WrapStreamingClient(next)
+	s.NotNil(result)
+}
+
+func (s *InterceptorBundleTestSuite) TestAuthInterceptor_WrapStreamingHandler_Success() {
+	type ctxKey struct{}
+	authFunc := AuthFunc(func(ctx context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+		return context.WithValue(ctx, ctxKey{}, "stream-auth"), nil
+	})
+	bundle := NewAuthBundle(authFunc)
+	interceptor := bundle.Interceptors()[0]
+
+	var receivedCtx context.Context
+	wrappedFunc := interceptor.WrapStreamingHandler(func(ctx context.Context, _ connect.StreamingHandlerConn) error {
+		receivedCtx = ctx
+		return nil
+	})
+
+	err := wrappedFunc(context.Background(), &mockStreamingHandlerConn{})
+	s.NoError(err)
+	s.Equal("stream-auth", receivedCtx.Value(ctxKey{}))
+}
+
+func (s *InterceptorBundleTestSuite) TestAuthInterceptor_WrapStreamingHandler_Failure() {
+	authErr := connect.NewError(connect.CodeUnauthenticated, errors.New("stream auth failed"))
+	authFunc := AuthFunc(func(_ context.Context, _ http.Header, _ connect.Spec) (context.Context, error) {
+		return nil, authErr
+	})
+	bundle := NewAuthBundle(authFunc)
+	interceptor := bundle.Interceptors()[0]
+
+	nextCalled := false
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		nextCalled = true
+		return nil
+	})
+
+	err := wrappedFunc(context.Background(), &mockStreamingHandlerConn{})
+	s.Require().Error(err)
+	s.False(nextCalled, "next should not be called on auth failure")
+}
+
+// --- RateLimit Wrap* streaming tests ---
+
+func (s *InterceptorBundleTestSuite) TestRateLimitInterceptor_WrapStreamingClient_IsPassthrough() {
+	bundle := NewRateLimitBundle(nil)
+	interceptor := bundle.Interceptors()[0]
+
+	next := connect.StreamingClientFunc(func(_ context.Context, _ connect.Spec) connect.StreamingClientConn {
+		return nil
+	})
+
+	result := interceptor.WrapStreamingClient(next)
+	s.NotNil(result)
+}
+
+func (s *InterceptorBundleTestSuite) TestRateLimitInterceptor_WrapStreamingHandler_Allows() {
+	bundle := NewRateLimitBundle(AlwaysPassLimiter{})
+	interceptor := bundle.Interceptors()[0]
+
+	called := false
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		called = true
+		return nil
+	})
+
+	err := wrappedFunc(context.Background(), &mockStreamingHandlerConn{})
+	s.NoError(err)
+	s.True(called, "next handler should be called when rate limit allows")
+}
+
+func (s *InterceptorBundleTestSuite) TestRateLimitInterceptor_WrapStreamingHandler_Rejects() {
+	limiter := &mockLimiter{shouldReject: true}
+	bundle := NewRateLimitBundle(limiter)
+	interceptor := bundle.Interceptors()[0]
+
+	nextCalled := false
+	wrappedFunc := interceptor.WrapStreamingHandler(func(_ context.Context, _ connect.StreamingHandlerConn) error {
+		nextCalled = true
+		return nil
+	})
+
+	err := wrappedFunc(context.Background(), &mockStreamingHandlerConn{})
+	s.Require().Error(err)
+	s.False(nextCalled, "next should not be called when rate limited")
+
+	var connectErr *connect.Error
+	s.Require().True(errors.As(err, &connectErr))
+	s.Equal(connect.CodeResourceExhausted, connectErr.Code())
+}
+
 func (s *InterceptorBundleTestSuite) TestValidationBundle_ImplementsInterface() {
 	bundle := NewValidationBundle()
 
@@ -461,4 +743,35 @@ func (t *trackingInterceptor) WrapStreamingClient(next connect.StreamingClientFu
 
 func (t *trackingInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return next
+}
+
+// mockStreamingHandlerConn is a minimal implementation of connect.StreamingHandlerConn for testing.
+type mockStreamingHandlerConn struct{}
+
+func (m *mockStreamingHandlerConn) Spec() connect.Spec {
+	return connect.Spec{Procedure: "/test.Service/Method"}
+}
+
+func (m *mockStreamingHandlerConn) Peer() connect.Peer {
+	return connect.Peer{}
+}
+
+func (m *mockStreamingHandlerConn) Receive(_ any) error {
+	return nil
+}
+
+func (m *mockStreamingHandlerConn) RequestHeader() http.Header {
+	return http.Header{}
+}
+
+func (m *mockStreamingHandlerConn) Send(_ any) error {
+	return nil
+}
+
+func (m *mockStreamingHandlerConn) ResponseHeader() http.Header {
+	return http.Header{}
+}
+
+func (m *mockStreamingHandlerConn) ResponseTrailer() http.Header {
+	return http.Header{}
 }
