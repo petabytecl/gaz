@@ -4,7 +4,7 @@ milestone: v5.0
 milestone_name: milestone
 status: completed
 last_updated: "2026-03-06T23:36:28.241Z"
-last_activity: 2026-03-07 - Completed quick task 15: raise test coverage to 90.1%
+last_activity: 2026-03-07 - Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 progress:
   total_phases: 58
   completed_phases: 57
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 - **Phase:** 48 of 48 (Finalization)
 - **Plan:** 2 of 2
 - **Status:** Milestone complete
-- **Last activity:** 2026-03-07 - Completed quick task 15: raise test coverage to 90.1%
+- **Last activity:** 2026-03-07 - Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 
 Progress: [██████████] 100%
 
@@ -106,12 +106,12 @@ See `.planning/todos/pending/` for any pending items.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 14 | make sure to pass all ci tests like make test, fmt and lint | 2026-03-07 | 7a41544 | [14-make-sure-to-pass-all-ci-tests-like-make](./quick/14-make-sure-to-pass-all-ci-tests-like-make/) |
-| 15 | make sure the test coverage is over the 90% threshold | 2026-03-07 | b51ba73 | [15-make-sure-the-test-coverage-is-over-the-](./quick/15-make-sure-the-test-coverage-is-over-the-/) |
+| 15 | make sure the test coverage is over the threshold for the project (90%) | 2026-03-07 | a7d1e42 | [15-make-sure-the-test-coverage-is-over-the-](./quick/15-make-sure-the-test-coverage-is-over-the-/) |
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed quick task 15: raise test coverage to 90.1%
+Stopped at: Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 Resume with: All v5.0 plans complete. Ready for release.
 
 ---
