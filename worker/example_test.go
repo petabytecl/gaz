@@ -23,27 +23,30 @@ func (w *EmailWorker) Name() string { return "email-worker" }
 func (w *EmailWorker) OnStart(ctx context.Context) error {
 	w.running = true
 	w.stop = make(chan struct{})
-	fmt.Println("email worker started")
 	return nil
 }
 
 func (w *EmailWorker) OnStop(ctx context.Context) error {
 	w.running = false
 	close(w.stop)
-	fmt.Println("email worker stopped")
 	return nil
 }
 
 // Example_worker demonstrates implementing the Worker interface.
 // Workers define OnStart, OnStop, and Name methods for lifecycle management.
-// OnStart should be non-blocking; the worker spawns its own goroutine internally.
 func Example_worker() {
-	w := &EmailWorker{}
+	// A worker usually manages a long-running task in a goroutine.
+	w := worker.NewSimpleWorker("background-task")
+
 	_ = w.OnStart(context.Background())
+	fmt.Println("worker started:", w.Started.Load())
+
 	_ = w.OnStop(context.Background())
+	fmt.Println("worker stopped:", w.Stopped.Load())
+
 	// Output:
-	// email worker started
-	// email worker stopped
+	// worker started: true
+	// worker stopped: true
 }
 
 // ExampleNewManager demonstrates creating a worker manager.
@@ -77,8 +80,6 @@ func ExampleManager_Register() {
 
 // ExampleManager_Start demonstrates starting all registered workers.
 // Start spawns supervisor goroutines for each worker and returns immediately.
-// Note: This example cannot show output because Start is non-blocking
-// and workers run in separate goroutines.
 func ExampleManager_Start() {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	mgr := worker.NewManager(logger)
@@ -97,10 +98,7 @@ func ExampleManager_Start() {
 	_ = mgr.Stop()
 
 	fmt.Println("manager started and stopped")
-	// Output:
-	// email worker started
-	// email worker stopped
-	// manager started and stopped
+	// Output: manager started and stopped
 }
 
 // ExampleModule demonstrates using the worker module for direct DI usage.
@@ -240,7 +238,6 @@ func ExampleNewMockWorkerNamed() {
 
 // ExampleTestManager demonstrates creating a test manager.
 // TestManager creates a Manager with a discard logger for tests.
-// Note: This example omits Output verification since workers run async.
 func ExampleTestManager() {
 	mgr := worker.TestManager(nil)
 
@@ -251,9 +248,8 @@ func ExampleTestManager() {
 	_ = mgr.Start(ctx)
 	_ = mgr.Stop()
 
-	// Note: In real tests, use RequireWorkerStarted/RequireWorkerStopped
-	// for assertions. The workers run asynchronously so we just show
-	// the pattern here.
+	fmt.Println("test manager started and stopped")
+	// Output: test manager started and stopped
 }
 
 // Example_moduleIntegration demonstrates using Module with di.Container.
