@@ -25,12 +25,6 @@ cover: ## Run tests with coverage (excludes examples)
 fmt: ## Format code
 	gofmt -w .
 	goimports -w .
-al value (e.g. --var myvar=foo or --var myvar)
-      --var-file string                                   file with list of vars to read from (e.g. --var-file .vars) (default ".vars")
-  -v, --verbose                                           verbose output
-      --version                                           version for act
-  -w, --watch                                             watch the contents of the local repo and run when files change
-  -W, --workflows string                                  path to workflow file(s) (default "./.github/workflows/")
 
 fmt-check: ## Check formatting
 	@if [ -n "$$(gofmt -l .)" ]; then \
