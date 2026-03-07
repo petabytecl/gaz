@@ -97,7 +97,10 @@ func ExampleManager_Start() {
 	_ = mgr.Stop()
 
 	fmt.Println("manager started and stopped")
-	// Output: manager started and stopped
+	// Output:
+	// email worker started
+	// email worker stopped
+	// manager started and stopped
 }
 
 // ExampleModule demonstrates using the worker module for direct DI usage.
