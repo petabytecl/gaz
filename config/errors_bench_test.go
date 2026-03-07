@@ -14,13 +14,13 @@ func BenchmarkFieldError_String(b *testing.B) {
 	}
 
 	b.Run("WithTag", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			_ = feWithTag.String()
 		}
 	})
 
 	b.Run("WithoutTag", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			_ = feWithoutTag.String()
 		}
 	})
