@@ -57,9 +57,9 @@ type FieldError struct {
 // String returns a formatted string representation of the field error.
 func (fe FieldError) String() string {
 	if fe.Tag != "" {
-		return fmt.Sprintf("%s: %s (validate:\"%s\")", fe.Namespace, fe.Message, fe.Tag)
+		return fe.Namespace + ": " + fe.Message + " (validate:\"" + fe.Tag + "\")"
 	}
-	return fmt.Sprintf("%s: %s", fe.Namespace, fe.Message)
+	return fe.Namespace + ": " + fe.Message
 }
 
 // NewFieldError creates a new FieldError with the given parameters.
