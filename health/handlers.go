@@ -25,7 +25,12 @@ func (m *Manager) NewLivenessHandler() http.Handler {
 func (m *Manager) NewReadinessHandler() http.Handler {
 	checker := m.ReadinessChecker()
 	return internal.NewHandler(checker,
-		internal.WithResultWriter(internal.NewIETFResultWriter()),
+		internal.WithResultWriter(
+			internal.NewIETFResultWriter(
+				internal.WithShowDetails(true),
+				internal.WithShowErrors(true),
+			),
+		),
 		internal.WithStatusCodeUp(http.StatusOK),
 		internal.WithStatusCodeDown(http.StatusServiceUnavailable),
 	)
