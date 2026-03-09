@@ -51,6 +51,7 @@ func (s *ManagementServer) OnStart(ctx context.Context) error {
 		slog.Int("port", s.config.Port),
 		slog.String("liveness-path", s.config.LivenessPath),
 		slog.String("readiness-path", s.config.ReadinessPath),
+		slog.String("startup-path", s.config.StartupPath),
 	)
 
 	go func() {
