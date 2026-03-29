@@ -874,39 +874,42 @@ func (a *App) Run(ctx context.Context) error {
 		for _, name := range layer {
 			svc := services[name]
 			wg.Add(1)
-			go func() {
+			go func(n string, s di.ServiceWrapper) {
 				defer wg.Done()
 				start := time.Now()
-				if startErr := svc.Start(ctx); startErr != nil {
+				if startErr := s.Start(ctx); startErr != nil {
 					a.Logger.ErrorContext(
 						ctx,
 						"failed to start service",
-						"name", name,
+						"name", n,
 						"error", startErr,
 					)
-					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
+					errCh <- fmt.Errorf("starting service %s: %w", n, startErr)
 				} else {
 					a.Logger.InfoContext(
 						ctx,
 						"service started",
-						"name", name,
+						"name", n,
 						"duration", time.Since(start),
 					)
 				}
-			}()
+			}(name, svc)
 		}
 		wg.Wait()
 		close(errCh)
 
-		if startupErr := <-errCh; startupErr != nil {
-			// Rollback: stop everything we started?
-			// For simplicity, we call Stop() which attempts to stop everything.
-			// Ideally we only stop what started, but Stop() is safe to call on everything.
+		var startupErrors []error
+		for e := range errCh {
+			startupErrors = append(startupErrors, e)
+		}
+		if len(startupErrors) > 0 {
+			// Rollback: stop everything we started.
+			// Stop() is safe to call on all services — it handles already-stopped ones.
 			// Use background context for rollback as original ctx might be fine but we are failing.
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 			defer cancel()
 			_ = a.Stop(shutdownCtx)
-			return startupErr
+			return errors.Join(startupErrors...)
 		}
 	}
 

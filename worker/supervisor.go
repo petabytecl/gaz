@@ -16,6 +16,7 @@ const (
 	defaultMaxInterval         = 5 * time.Minute
 	defaultMultiplier          = 2.0
 	defaultRandomizationFactor = 0.5
+	defaultStopTimeout         = 30 * time.Second
 )
 
 // supervisor wraps a single worker with panic recovery, restart logic,
@@ -192,8 +193,14 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	// Wait for context cancellation (shutdown signal)
 	<-s.ctx.Done()
 
+	// Create a fresh context for OnStop — the supervisor context is cancelled,
+	// but workers need a live context to perform graceful cleanup (flush buffers,
+	// close connections, deregister from service discovery, etc.).
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+	defer stopCancel()
+
 	s.logger.Info("worker OnStop")
-	if err := s.worker.OnStop(s.ctx); err != nil {
+	if err := s.worker.OnStop(stopCtx); err != nil {
 		s.logger.Warn("worker stop error", slog.Any("error", err))
 		// Continue with shutdown even on error (stop errors are non-fatal)
 	}

@@ -1027,3 +1027,42 @@ func (s *AppTestSuite) TestMergeConfigMap_NoConfigManager() {
 	err := app.MergeConfigMap(map[string]any{"key": "value"})
 	s.NoError(err) // Returns nil when configMgr is nil
 }
+
+// FailingStartServiceA is a test service that fails during startup.
+type FailingStartServiceA struct{}
+
+func (f *FailingStartServiceA) OnStart(_ context.Context) error {
+	return errors.New("service A start failed")
+}
+
+// FailingStartServiceB is a test service that fails during startup.
+type FailingStartServiceB struct{}
+
+func (f *FailingStartServiceB) OnStart(_ context.Context) error {
+	return errors.New("service B start failed")
+}
+
+func (s *AppTestSuite) TestStartup_MultipleFailures_AllErrorsCollected() {
+	app := New()
+
+	// Register two independent services that both fail on start.
+	// They are in the same dependency layer so they start in parallel.
+	err := For[*FailingStartServiceA](app.Container()).Eager().
+		ProviderFunc(func(_ *Container) *FailingStartServiceA {
+			return &FailingStartServiceA{}
+		})
+	s.Require().NoError(err)
+
+	err = For[*FailingStartServiceB](app.Container()).Eager().
+		ProviderFunc(func(_ *Container) *FailingStartServiceB {
+			return &FailingStartServiceB{}
+		})
+	s.Require().NoError(err)
+
+	runErr := app.Run(context.Background())
+	s.Require().Error(runErr)
+
+	// Both errors should be present in the joined error.
+	s.Contains(runErr.Error(), "service A start failed")
+	s.Contains(runErr.Error(), "service B start failed")
+}
