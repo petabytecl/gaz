@@ -25,7 +25,7 @@
 - [x] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation (completed 2026-03-06)
 - [x] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation (completed 2026-03-06)
 - [x] **Phase 49: Fix Critical Concurrency Bugs** - Fix 5 concurrency bugs: goroutine closure capture race, worker OnStop, lazySingleton race, Container.Build() race, startup error drain (completed 2026-03-29)
-- [ ] **Phase 50: Fix High-Priority Safety Issues** - Fix 7 safety issues: EventBus race, resolution chain leak, X-Request-ID injection, health path hardcoding, logger issues, Slowloris
+- [x] **Phase 50: Fix High-Priority Safety Issues** - Fix 7 safety issues: EventBus race, resolution chain leak, X-Request-ID injection, health path hardcoding, logger issues, Slowloris (completed 2026-03-29)
 - [ ] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter
 - [ ] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers
 
@@ -84,7 +84,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 47. Middleware & Interceptors | 2/2 | Complete | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete | 2026-03-06 |
 | 49. Fix Critical Concurrency Bugs | 2/2 | Complete    | 2026-03-29 |
-| 50. Fix High-Priority Safety Issues | 0/3 | Planning | — |
+| 50. Fix High-Priority Safety Issues | 0/3 | Complete    | 2026-03-29 |
 | 51. Design and API Improvements | 0/0 | Pending | — |
 | 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
 
@@ -102,7 +102,7 @@ Plans:
 **Goal:** Fix 7 safety issues: EventBus close/publish race, resolution chain leak, X-Request-ID injection, Vanguard health path hardcoding, logger ContextHandler chain break, logger file handle leak, Slowloris timeout
 **Depends on:** Phase 49
 **Requirements:** SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05, SAFE-06, SAFE-07
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 50-01-PLAN.md — EventBus Close/Publish race fix + DI resolution chain leak fix

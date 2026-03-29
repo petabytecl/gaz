@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Hardening
-status: executing
-stopped_at: Completed 50-01-PLAN.md
-last_updated: "2026-03-29T20:57:23.681Z"
+status: planning
+stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
+last_updated: "2026-03-29T21:07:58.652Z"
 last_activity: 2026-03-29
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 11
   percent: 100
 ---
 
@@ -25,17 +25,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 49 — fix-critical-concurrency-bugs
+**Current focus:** Phase 50 — fix-high-priority-safety-issues
 
 ## Current Position
 
-Phase: 49 (fix-critical-concurrency-bugs) — EXECUTING
-Plan: 1 of 2
+Phase: 50 (fix-high-priority-safety-issues) — EXECUTING
+Plan: 1 of 3
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 50 of 52 (Fix High-Priority Safety Issues)
-- **Plan:** 1 of 3
-- **Status:** Executing
+- **Phase:** 51 of 48 (design and api improvements)
+- **Plan:** Not started
+- **Status:** Ready to plan
 - **Last activity:** 2026-03-29
 
 Progress: [██████████] 100%
@@ -114,12 +114,11 @@ See `.planning/todos/pending/` for any pending items.
 |---|-------------|------|--------|-----------|
 | 14 | make sure to pass all ci tests like make test, fmt and lint | 2026-03-07 | 7a41544 | [14-make-sure-to-pass-all-ci-tests-like-make](./quick/14-make-sure-to-pass-all-ci-tests-like-make/) |
 | 15 | make sure the test coverage is over the threshold for the project (90%) | 2026-03-07 | a7d1e42 | [15-make-sure-the-test-coverage-is-over-the-](./quick/15-make-sure-the-test-coverage-is-over-the-/) |
-| Phase 50 P01 | 6min | 2 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-03-29T20:57:23.680Z
-Stopped at: Completed 50-01-PLAN.md
+Last session: 2026-03-07
+Stopped at: Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 Resume with: All v5.0 plans complete. Ready for release.
 
 ---
