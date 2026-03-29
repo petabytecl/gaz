@@ -29,6 +29,7 @@ type Server struct {
 	grpcServer         *grpc.Server
 	logger             *slog.Logger
 	healthManager      *health.Manager
+	healthConfig       *health.Config
 	userUnknownHandler http.Handler
 }
 
@@ -45,11 +46,15 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, grpcSer
 		logger = slog.Default()
 	}
 
-	// Optionally resolve health.Manager from DI.
+	// Optionally resolve health.Manager and health.Config from DI.
 	var healthMgr *health.Manager
+	var healthCfg *health.Config
 	if cfg.HealthEnabled {
 		if mgr, err := di.Resolve[*health.Manager](container); err == nil {
 			healthMgr = mgr
+		}
+		if hc, err := di.Resolve[health.Config](container); err == nil {
+			healthCfg = &hc
 		}
 	}
 
@@ -59,6 +64,7 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, grpcSer
 		grpcServer:    grpcServer,
 		logger:        logger,
 		healthManager: healthMgr,
+		healthConfig:  healthCfg,
 	}
 }
 
@@ -120,12 +126,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 	// 5. Mount health endpoints if health.Manager is available.
 	if s.healthManager != nil {
-		healthMux := buildHealthMux(s.healthManager)
-		if healthMux != nil {
-			unknownMux.Handle("/healthz", healthMux)
-			unknownMux.Handle("/readyz", healthMux)
-			unknownMux.Handle("/livez", healthMux)
-		}
+		mountHealthEndpoints(unknownMux, s.healthManager, s.healthConfig)
 	}
 
 	// 6. Mount user-defined unknown handler as fallback.

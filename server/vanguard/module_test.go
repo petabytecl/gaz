@@ -64,6 +64,7 @@ func (s *ModuleTestSuite) TestResolveLogger_FallsBackToDefault() {
 func (s *ModuleTestSuite) TestProvideConfig_RegistersConfig() {
 	container := di.New()
 	cfg := DefaultConfig()
+	cfg.AllowZeroWriteTimeout = true // Explicit opt-in for streaming-safe zero timeout.
 
 	err := provideConfig(cfg)(container)
 	s.Require().NoError(err)
