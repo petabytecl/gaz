@@ -295,6 +295,21 @@ func (s *stopperService) OnStop(_ context.Context) error {
 	return nil
 }
 
+type starterStopperService struct {
+	started bool
+	stopped bool
+}
+
+func (s *starterStopperService) OnStart(_ context.Context) error {
+	s.started = true
+	return nil
+}
+
+func (s *starterStopperService) OnStop(_ context.Context) error {
+	s.stopped = true
+	return nil
+}
+
 type failingStarterService struct{}
 
 func (s *failingStarterService) OnStart(_ context.Context) error {
@@ -546,6 +561,43 @@ func (s *ServiceSuite) TestInstanceServiceAny_StopError() {
 // =============================================================================
 // eagerSingleton HasLifecycle test
 // =============================================================================
+
+func (s *ServiceSuite) TestLazySingleton_StartStop_Concurrent() {
+	provider := func(_ *Container) (*starterStopperService, error) {
+		return &starterStopperService{}, nil
+	}
+
+	svc := newLazySingleton("test", "*gaz.starterStopperService", provider)
+	c := New()
+
+	// Build the instance so s.built = true
+	_, err := svc.GetInstance(c, nil)
+	s.Require().NoError(err)
+
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines * 2)
+
+	errs := make([]error, numGoroutines*2)
+
+	// 10 goroutines calling Start, 10 calling Stop
+	for i := range numGoroutines {
+		go func(idx int) {
+			defer wg.Done()
+			errs[idx] = svc.Start(context.Background())
+		}(i)
+		go func(idx int) {
+			defer wg.Done()
+			errs[numGoroutines+idx] = svc.Stop(context.Background())
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, e := range errs {
+		s.NoError(e, "goroutine %d got error", i)
+	}
+}
 
 func (s *ServiceSuite) TestEagerSingleton_HasLifecycle() {
 	provider := func(_ *Container) (*testService, error) {
