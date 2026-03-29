@@ -23,12 +23,14 @@ func (m *mockHandler) Handle(_ context.Context, r slog.Record) error {
 	})
 	return nil
 }
+
 func (m *mockHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	// Return a new mock with the attrs set to prove delegation happened
 	newMock := &mockHandler{attrs: make([]slog.Attr, len(attrs))}
 	copy(newMock.attrs, attrs)
 	return newMock
 }
+
 func (m *mockHandler) WithGroup(name string) slog.Handler {
 	return &mockHandler{group: name}
 }
