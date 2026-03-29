@@ -78,3 +78,41 @@ Phases execute in numeric order: 46 → 47 → 48
 | 46. Core Vanguard Server | 2/2 | Complete    | 2026-03-06 |
 | 47. Middleware & Interceptors | 2/2 | Complete    | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete    | 2026-03-06 |
+
+## Backlog
+
+### Phase 999.1: Fix Critical Concurrency Bugs (BACKLOG)
+
+**Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.2: Fix High-Priority Safety Issues (BACKLOG)
+
+**Goal:** Fix 7 safety issues: EventBus close/publish race, resolution chain leak, X-Request-ID injection, Vanguard health path hardcoding, logger ContextHandler chain break, logger file handle leak, Slowloris timeout
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.3: Design and API Improvements (BACKLOG)
+
+**Goal:** 11 design improvements: split app.go, EventBus context propagation, cron context, shutdown error joining, pool size validation, duplicate comment, config panic, dead letter stack trace, async server error, timer leaks, backoff jitter
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.4: Test Coverage and Benchmarks (BACKLOG)
+
+**Goal:** Improve test infrastructure: vanguard coverage (74.4% → 90%+), add benchmarks for hot paths, cross-package integration tests, investigate cron timing, add t.Parallel() markers
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
