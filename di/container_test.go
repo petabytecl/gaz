@@ -2,6 +2,8 @@ package di
 
 import (
 	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -420,6 +422,42 @@ func (s *ContainerSuite) TestDI09_CycleDetection() {
 
 	_, err = Resolve[*testCycleA](c)
 	s.Require().ErrorIs(err, ErrCycle)
+}
+
+// =============================================================================
+// Concurrent Build() Test
+// =============================================================================
+
+func (s *ContainerSuite) TestContainer_Build_Concurrent() {
+	var instantiateCount atomic.Int32
+
+	c := New()
+	err := For[*testEagerPool](c).Eager().Provider(func(_ *Container) (*testEagerPool, error) {
+		instantiateCount.Add(1)
+		return &testEagerPool{id: 1}, nil
+	})
+	s.Require().NoError(err)
+
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	errs := make([]error, numGoroutines)
+
+	for i := range numGoroutines {
+		go func(idx int) {
+			defer wg.Done()
+			errs[idx] = c.Build()
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, e := range errs {
+		s.NoError(e, "goroutine %d got error from Build()", i)
+	}
+
+	s.Equal(int32(1), instantiateCount.Load(), "eager service should be instantiated exactly once")
 }
 
 // =============================================================================
