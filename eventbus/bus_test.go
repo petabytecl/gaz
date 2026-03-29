@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -368,6 +369,72 @@ func TestEmptyTopicPublish(t *testing.T) {
 	// But both subscribers have topic="" so both should receive
 	assert.Equal(t, int32(1), exactCount.Load())
 	assert.Equal(t, int32(1), wildcardCount.Load())
+}
+
+func TestEventBus_ConcurrentClosePublish(t *testing.T) {
+	// This test verifies that concurrent Close() and Publish() never panics
+	// with a send-on-closed-channel error. Run with -race flag.
+	for range 100 {
+		bus := New(testLogger())
+
+		// Subscribe a handler
+		Subscribe(bus, func(ctx context.Context, e testEvent) {
+			// Slow handler to increase contention window
+			time.Sleep(time.Microsecond)
+		})
+
+		var wg sync.WaitGroup
+
+		// Spawn 50 goroutines publishing concurrently
+		for i := range 50 {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				Publish(context.Background(), bus, testEvent{
+					ID:      fmt.Sprintf("%d", id),
+					Message: "concurrent",
+				}, "")
+			}(i)
+		}
+
+		// One goroutine calls Close
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			bus.Close()
+		}()
+
+		wg.Wait()
+	}
+	// If we reach here without panic, the race is fixed
+}
+
+func TestEventBus_CloseIdempotent(t *testing.T) {
+	bus := New(testLogger())
+
+	Subscribe(bus, func(ctx context.Context, e testEvent) {})
+
+	// Close multiple times must not panic
+	bus.Close()
+	bus.Close()
+	bus.Close()
+}
+
+func TestEventBus_PublishAfterCloseIsNoop(t *testing.T) {
+	bus := New(testLogger())
+
+	var count atomic.Int32
+	Subscribe(bus, func(ctx context.Context, e testEvent) {
+		count.Add(1)
+	})
+
+	bus.Close()
+
+	// Publish after close must not panic and must not deliver
+	Publish(context.Background(), bus, testEvent{ID: "1"}, "")
+	time.Sleep(50 * time.Millisecond)
+
+	assert.Equal(t, int32(0), count.Load())
 }
 
 // Run: go test -coverprofile=coverage.out ./eventbus/...
