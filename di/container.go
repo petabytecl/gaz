@@ -25,6 +25,12 @@ type Container struct {
 	// Once built, the container is ready to resolve dependencies.
 	built bool
 
+	// buildOnce ensures Build() logic executes exactly once, even under concurrent calls.
+	buildOnce sync.Once
+
+	// buildErr captures the error (if any) from the single Build() execution.
+	buildErr error
+
 	// resolutionChains tracks active resolution chains per goroutine.
 	// This enables cycle detection when providers call Resolve[T]().
 	resolutionChains map[int64][]string
@@ -156,56 +162,40 @@ func (c *Container) popChain() {
 //	    log.Fatalf("container build failed: %v", err)
 //	}
 func (c *Container) Build() error {
-	c.mu.Lock()
-	if c.built {
-		c.mu.Unlock()
-		return nil // Already built, idempotent
-	}
-	c.mu.Unlock()
+	c.buildOnce.Do(func() {
+		// Collect eager services
+		var eagerServices []ServiceWrapper
 
-	// Collect eager services
-	var eagerServices []ServiceWrapper
-	c.mu.RLock()
-	for _, wrappers := range c.services {
-		for _, wrapper := range wrappers {
-			if wrapper.IsEager() {
-				eagerServices = append(eagerServices, wrapper)
+		c.mu.RLock()
+		for _, wrappers := range c.services {
+			for _, wrapper := range wrappers {
+				if wrapper.IsEager() {
+					eagerServices = append(eagerServices, wrapper)
+				}
 			}
 		}
-	}
-	c.mu.RUnlock()
+		c.mu.RUnlock()
 
-	// Instantiate each eager service
-	for _, svc := range eagerServices {
-		// We cannot use ResolveByName here because it might be ambiguous if there are multiple services with the same name.
-		// Instead, we resolve the specific instance directly.
-		// However, we still need to respect the resolution chain for cycle detection.
-		//
-		// For now, if we assume Eager services are usually singletons and uniquely named or we don't care about the name resolution conflict in ResolveByName (which now errors),
-		// we must call GetInstance directly on the wrapper.
+		// Instantiate each eager service
+		for _, svc := range eagerServices {
+			name := svc.Name()
+			c.pushChain(name)
 
-		// Manually manage chain for this specific service
-		name := svc.Name()
-		c.pushChain(name)
+			_, err := svc.GetInstance(c, nil)
+			c.popChain()
 
-		// Check for cycle (though eager init usually starts chain)
-		// But wait, ResolveByName managed the chain.
-		// If we skip ResolveByName, we must manage it.
-
-		// Actually, let's use a helper or just do it inline.
-		_, err := svc.GetInstance(c, nil)
-		c.popChain()
-
-		if err != nil {
-			return fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
+			if err != nil {
+				c.buildErr = fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
+				return
+			}
 		}
-	}
 
-	c.mu.Lock()
-	c.built = true
-	c.mu.Unlock()
+		c.mu.Lock()
+		c.built = true
+		c.mu.Unlock()
+	})
 
-	return nil
+	return c.buildErr
 }
 
 // ResolveByName resolves a service by name, tracking the chain for cycle detection.

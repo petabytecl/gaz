@@ -172,16 +172,24 @@ func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error
 }
 
 func (s *lazySingleton[T]) Start(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if !s.built {
 		return nil
 	}
+
 	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *lazySingleton[T]) Stop(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if !s.built {
 		return nil
 	}
+
 	return s.runStopLifecycle(ctx, s.instance)
 }
 
