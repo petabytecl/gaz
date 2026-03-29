@@ -68,6 +68,83 @@ func TestNewLogger_Text(t *testing.T) {
 	assert.Contains(t, output, "value")
 }
 
+func TestNewLoggerWithCloser_FileOutput(t *testing.T) {
+	tmpFile := t.TempDir() + "/test.log"
+
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: tmpFile,
+	}
+
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	// Write something
+	logger.Info("hello file")
+
+	// Close should succeed
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Verify file has content
+	data, err := os.ReadFile(tmpFile)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "hello file")
+}
+
+func TestNewLoggerWithCloser_StdoutOutput(t *testing.T) {
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "stdout",
+	}
+
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	// Closer should be a no-op (not nil)
+	err := closer.Close()
+	require.NoError(t, err)
+}
+
+func TestNewLoggerWithCloser_StderrOutput(t *testing.T) {
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "stderr",
+	}
+
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	require.NoError(t, err)
+}
+
+func TestNewLoggerWithCloser_CloserClosesFile(t *testing.T) {
+	tmpFile := t.TempDir() + "/test-close.log"
+
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: tmpFile,
+	}
+
+	_, closer := NewLoggerWithCloser(cfg)
+
+	// Close the file
+	err := closer.Close()
+	require.NoError(t, err)
+
+	// Second close should return an error (file already closed)
+	err = closer.Close()
+	assert.Error(t, err, "closing an already-closed file should return an error")
+}
+
 func TestNewLogger_ContextPropagation(t *testing.T) {
 	output := captureOutput(func() {
 		cfg := &Config{
