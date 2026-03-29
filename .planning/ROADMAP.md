@@ -83,7 +83,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 46. Core Vanguard Server | 2/2 | Complete | 2026-03-06 |
 | 47. Middleware & Interceptors | 2/2 | Complete | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete | 2026-03-06 |
-| 49. Fix Critical Concurrency Bugs | 0/0 | Pending | — |
+| 49. Fix Critical Concurrency Bugs | 0/2 | In Progress | — |
 | 50. Fix High-Priority Safety Issues | 0/0 | Pending | — |
 | 51. Design and API Improvements | 0/0 | Pending | — |
 | 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
@@ -91,11 +91,12 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
 **Depends on:** Phase 48 (v5.0 complete)
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** CONC-01, CONC-02, CONC-03, CONC-04, CONC-05
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 49-01-PLAN.md — Fix lazySingleton Start/Stop race + Container.Build() race (di/)
+- [ ] 49-02-PLAN.md — Fix goroutine closure capture, startup error drain, worker OnStop context
 
 ### Phase 50: Fix High-Priority Safety Issues
 **Goal:** Fix 7 safety issues: EventBus close/publish race, resolution chain leak, X-Request-ID injection, Vanguard health path hardcoding, logger ContextHandler chain break, logger file handle leak, Slowloris timeout
