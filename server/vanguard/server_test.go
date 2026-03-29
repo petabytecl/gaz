@@ -124,8 +124,8 @@ func (s *ServerTestSuite) TestOnStartHealthAutoMount() {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Check health endpoints.
-	for _, endpoint := range []string{"/healthz", "/readyz", "/livez"} {
+	// Check health endpoints use health.DefaultConfig paths.
+	for _, endpoint := range []string{"/live", "/ready", "/startup"} {
 		resp, reqErr := http.Get(fmt.Sprintf("http://localhost:%d%s", cfg.Port, endpoint))
 		s.Require().NoErrorf(reqErr, "GET %s should not error", endpoint)
 		defer func() { _ = resp.Body.Close() }()
@@ -322,12 +322,44 @@ func (s *ServerTestSuite) TestNewServerNilLogger() {
 
 func (s *ServerTestSuite) TestBuildHealthMux() {
 	mgr := health.NewManager()
-	mux := buildHealthMux(mgr)
+	mux := buildHealthMux(mgr, nil)
 	s.NotNil(mux)
 
 	// Nil manager should return nil.
-	nilMux := buildHealthMux(nil)
+	nilMux := buildHealthMux(nil, nil)
 	s.Nil(nilMux)
+}
+
+func (s *ServerTestSuite) TestBuildHealthMuxDefaultPaths() {
+	mgr := health.NewManager()
+	mux := buildHealthMux(mgr, nil)
+	s.Require().NotNil(mux)
+
+	// Default health.Config paths: /live, /ready, /startup
+	for _, path := range []string{"/live", "/ready", "/startup"} {
+		req, err := http.NewRequest(http.MethodGet, path, nil)
+		s.Require().NoError(err)
+		_, pattern := mux.Handler(req)
+		s.NotEmptyf(pattern, "handler should be registered at %s", path)
+	}
+}
+
+func (s *ServerTestSuite) TestBuildHealthMuxCustomPaths() {
+	mgr := health.NewManager()
+	cfg := &health.Config{
+		LivenessPath:  "/custom-live",
+		ReadinessPath: "/custom-ready",
+		StartupPath:   "/custom-startup",
+	}
+	mux := buildHealthMux(mgr, cfg)
+	s.Require().NotNil(mux)
+
+	for _, path := range []string{"/custom-live", "/custom-ready", "/custom-startup"} {
+		req, err := http.NewRequest(http.MethodGet, path, nil)
+		s.Require().NoError(err)
+		_, pattern := mux.Handler(req)
+		s.NotEmptyf(pattern, "handler should be registered at custom path %s", path)
+	}
 }
 
 // mockConnectRegistrar is a test double for connect.Registrar.

@@ -51,8 +51,8 @@ type Config struct {
 	Reflection bool `json:"reflection" yaml:"reflection" mapstructure:"reflection" gaz:"reflection"`
 
 	// HealthEnabled enables automatic health endpoint mounting.
-	// When enabled and health.Manager is present, /healthz, /readyz, and /livez
-	// endpoints are mounted on the unknown handler.
+	// When enabled and health.Manager is present, health endpoints are mounted
+	// on the unknown handler using paths from health.Config.
 	// Defaults to true.
 	HealthEnabled bool `json:"health_enabled" yaml:"health_enabled" mapstructure:"health_enabled" gaz:"health_enabled"`
 
