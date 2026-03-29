@@ -4,9 +4,20 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"regexp"
 )
 
 const idLength = 16
+
+// validRequestID matches alphanumeric characters, dashes, underscores, and dots.
+// Maximum length is 64 characters. This prevents log injection via crafted request IDs.
+var validRequestID = regexp.MustCompile(`^[a-zA-Z0-9\-_.]{1,64}$`)
+
+// isValidRequestID checks whether a request ID is safe to use.
+// It rejects oversized, empty, or specially-crafted IDs that could enable log injection.
+func isValidRequestID(id string) bool {
+	return validRequestID.MatchString(id)
+}
 
 // generateID generates a random 16-byte hex string (32 characters).
 func generateID() string {
@@ -26,7 +37,7 @@ func generateID() string {
 func RequestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqID := r.Header.Get("X-Request-ID")
-		if reqID == "" {
+		if reqID == "" || !isValidRequestID(reqID) {
 			reqID = generateID()
 		}
 
