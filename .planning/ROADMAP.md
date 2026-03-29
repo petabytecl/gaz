@@ -84,7 +84,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 47. Middleware & Interceptors | 2/2 | Complete | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete | 2026-03-06 |
 | 49. Fix Critical Concurrency Bugs | 2/2 | Complete    | 2026-03-29 |
-| 50. Fix High-Priority Safety Issues | 0/0 | Pending | — |
+| 50. Fix High-Priority Safety Issues | 0/3 | Planning | — |
 | 51. Design and API Improvements | 0/0 | Pending | — |
 | 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
 
@@ -101,11 +101,13 @@ Plans:
 ### Phase 50: Fix High-Priority Safety Issues
 **Goal:** Fix 7 safety issues: EventBus close/publish race, resolution chain leak, X-Request-ID injection, Vanguard health path hardcoding, logger ContextHandler chain break, logger file handle leak, Slowloris timeout
 **Depends on:** Phase 49
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05, SAFE-06, SAFE-07
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 50-01-PLAN.md — EventBus Close/Publish race fix + DI resolution chain leak fix
+- [ ] 50-02-PLAN.md — X-Request-ID validation + ContextHandler chain fix + file handle leak
+- [ ] 50-03-PLAN.md — Vanguard health path config + Slowloris timeout protection
 
 ### Phase 51: Design and API Improvements
 **Goal:** 11 design improvements: split app.go, EventBus context propagation, cron context, shutdown error joining, pool size validation, duplicate comment, config panic, dead letter stack trace, async server error, timer leaks, backoff jitter
