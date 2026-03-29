@@ -29,3 +29,17 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	return h.Handler.Handle(ctx, r)
 }
+
+// WithAttrs returns a new ContextHandler wrapping the result of calling
+// WithAttrs on the underlying handler. This preserves context propagation
+// while properly chaining attributes.
+func (h *ContextHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &ContextHandler{Handler: h.Handler.WithAttrs(attrs)}
+}
+
+// WithGroup returns a new ContextHandler wrapping the result of calling
+// WithGroup on the underlying handler. This preserves context propagation
+// while properly supporting grouped log attributes.
+func (h *ContextHandler) WithGroup(name string) slog.Handler {
+	return &ContextHandler{Handler: h.Handler.WithGroup(name)}
+}
