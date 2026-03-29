@@ -24,8 +24,6 @@ import (
 //	--log-format    Log format: text, json (default: text)
 //	--log-output    Log output: stdout, stderr, or file path (default: stdout)
 //	--log-add-source  Include source file:line in logs (default: false)
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	defaultCfg := logger.DefaultConfig()
 

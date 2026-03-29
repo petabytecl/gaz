@@ -18,8 +18,6 @@ import (
 //
 // The module provides:
 //   - *worker.Manager for coordinating background workers
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	return gaz.NewModule("worker").
 		Provide(worker.Module).

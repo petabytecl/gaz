@@ -102,8 +102,6 @@ func (c *Config) GetSearchPaths(appName string) []string {
 //	--config         Config file path (auto-searches if not set)
 //	--env-prefix     Environment variable prefix (default: GAZ)
 //	--config-strict  Exit on unknown config keys (default: true)
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	defaultCfg := DefaultConfig()
 

@@ -18,8 +18,6 @@ import (
 //
 // The module provides:
 //   - *eventbus.EventBus for in-process pub/sub messaging
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	return gaz.NewModule("eventbus").
 		Provide(eventbus.Module).

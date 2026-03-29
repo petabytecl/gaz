@@ -98,15 +98,16 @@ type CORSConfig struct {
 // ReadTimeout and WriteTimeout are intentionally zero for streaming safety.
 func DefaultConfig() Config {
 	return Config{
-		Port:              DefaultPort,
-		ReadTimeout:       0,
-		WriteTimeout:      0,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
-		IdleTimeout:       DefaultIdleTimeout,
-		Reflection:        true,
-		HealthEnabled:     true,
-		DevMode:           false,
-		CORS:              DefaultCORSConfig(false),
+		Port:                  DefaultPort,
+		ReadTimeout:           0,
+		WriteTimeout:          0,
+		ReadHeaderTimeout:     DefaultReadHeaderTimeout,
+		IdleTimeout:           DefaultIdleTimeout,
+		Reflection:            true,
+		HealthEnabled:         true,
+		DevMode:               false,
+		AllowZeroWriteTimeout: true,
+		CORS:                  DefaultCORSConfig(false),
 	}
 }
 

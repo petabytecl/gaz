@@ -18,8 +18,6 @@ import (
 //
 // The module provides:
 //   - *cron.Scheduler for scheduling cron jobs
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	return gaz.NewModule("cron").
 		Provide(cron.Module).

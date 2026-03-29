@@ -25,8 +25,6 @@ import (
 //	--health-liveness-path  Liveness endpoint path (default: /live)
 //	--health-readiness-path Readiness endpoint path (default: /ready)
 //	--health-startup-path   Startup endpoint path (default: /startup)
-//
-//nolint:ireturn // Module is the expected return type for gaz modules
 func New() gaz.Module {
 	defaultCfg := health.DefaultConfig()
 
