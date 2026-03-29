@@ -35,22 +35,52 @@ func (s *ConfigTestSuite) TestNamespace() {
 	s.Equal("server", cfg.Namespace())
 }
 
-func (s *ConfigTestSuite) TestValidateAcceptsStreamingSafeZeroTimeouts() {
+func (s *ConfigTestSuite) TestValidateRejectsZeroWriteTimeoutWithoutOptIn() {
 	cfg := DefaultConfig()
 	cfg.ReadTimeout = 0
 	cfg.WriteTimeout = 0
+	cfg.AllowZeroWriteTimeout = false
 
 	err := cfg.Validate()
-	s.Require().NoError(err, "Validate must accept zero ReadTimeout and WriteTimeout for streaming")
+	s.Require().Error(err, "Validate must reject zero WriteTimeout without explicit opt-in")
+	s.Contains(err.Error(), "write_timeout")
+	s.Contains(err.Error(), "Slowloris")
+}
+
+func (s *ConfigTestSuite) TestValidateAcceptsZeroWriteTimeoutWithOptIn() {
+	cfg := DefaultConfig()
+	cfg.ReadTimeout = 0
+	cfg.WriteTimeout = 0
+	cfg.AllowZeroWriteTimeout = true
+
+	err := cfg.Validate()
+	s.Require().NoError(err, "Validate must accept zero WriteTimeout with AllowZeroWriteTimeout=true")
+}
+
+func (s *ConfigTestSuite) TestValidateAcceptsPositiveWriteTimeoutRegardless() {
+	cfg := DefaultConfig()
+	cfg.ReadTimeout = 0
+	cfg.WriteTimeout = 30 * time.Second
+	cfg.AllowZeroWriteTimeout = false
+
+	err := cfg.Validate()
+	s.Require().NoError(err, "Validate must accept positive WriteTimeout regardless of AllowZeroWriteTimeout")
 }
 
 func (s *ConfigTestSuite) TestValidateAcceptsExplicitTimeouts() {
 	cfg := DefaultConfig()
 	cfg.ReadTimeout = 30 * time.Second
 	cfg.WriteTimeout = 30 * time.Second
+	cfg.AllowZeroWriteTimeout = false
 
 	err := cfg.Validate()
 	s.Require().NoError(err)
+}
+
+func (s *ConfigTestSuite) TestSetDefaultsDoesNotSetWriteTimeout() {
+	cfg := Config{WriteTimeout: 0}
+	cfg.SetDefaults()
+	s.Equal(time.Duration(0), cfg.WriteTimeout, "SetDefaults must NOT set WriteTimeout for streaming safety")
 }
 
 func (s *ConfigTestSuite) TestValidateRejectsInvalidPort() {

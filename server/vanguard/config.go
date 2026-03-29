@@ -1,6 +1,7 @@
 package vanguard
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -59,6 +60,11 @@ type Config struct {
 	// DevMode enables development mode for verbose error messages.
 	// Defaults to false.
 	DevMode bool `json:"dev_mode" yaml:"dev_mode" mapstructure:"dev_mode" gaz:"dev_mode"`
+
+	// AllowZeroWriteTimeout explicitly opts in to zero write timeout.
+	// When false (default), WriteTimeout=0 is rejected by Validate as a Slowloris risk.
+	// Set to true only when streaming RPCs require no write timeout.
+	AllowZeroWriteTimeout bool `json:"allow_zero_write_timeout" yaml:"allow_zero_write_timeout" mapstructure:"allow_zero_write_timeout" gaz:"allow_zero_write_timeout"`
 
 	// CORS contains CORS configuration for the Vanguard server.
 	CORS CORSConfig `json:"cors" yaml:"cors" mapstructure:"cors" gaz:"cors"`
@@ -185,6 +191,10 @@ func (c *Config) Validate() error {
 	if c.IdleTimeout <= 0 {
 		return fmt.Errorf("vanguard: invalid idle_timeout %s: must be positive", c.IdleTimeout)
 	}
-	// ReadTimeout and WriteTimeout accept zero values (streaming-safe).
+	// WriteTimeout=0 is a Slowloris risk unless explicitly opted in.
+	if c.WriteTimeout == 0 && !c.AllowZeroWriteTimeout {
+		return errors.New("vanguard: write_timeout=0 disables timeout protection (Slowloris risk); " +
+			"set allow_zero_write_timeout=true to explicitly allow, or set a positive write_timeout")
+	}
 	return nil
 }
