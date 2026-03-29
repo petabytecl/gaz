@@ -135,6 +135,14 @@ func (c *Container) pushChain(name string) {
 	c.resolutionChains[gid] = append(c.resolutionChains[gid], name)
 }
 
+// clearChain removes the entire resolution chain entry for the current goroutine.
+// This ensures no stale entries remain after panic or goroutine ID reuse.
+func (c *Container) clearChain() {
+	c.chainMu.Lock()
+	defer c.chainMu.Unlock()
+	delete(c.resolutionChains, getGoroutineID())
+}
+
 // popChain removes the last service from the resolution chain for this goroutine.
 func (c *Container) popChain() {
 	c.chainMu.Lock()
@@ -178,13 +186,7 @@ func (c *Container) Build() error {
 
 		// Instantiate each eager service
 		for _, svc := range eagerServices {
-			name := svc.Name()
-			c.pushChain(name)
-
-			_, err := svc.GetInstance(c, nil)
-			c.popChain()
-
-			if err != nil {
+			if err := c.resolveEager(svc); err != nil {
 				c.buildErr = fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
 				return
 			}
@@ -196,6 +198,20 @@ func (c *Container) Build() error {
 	})
 
 	return c.buildErr
+}
+
+// resolveEager resolves a single eager service during Build, with deferred chain cleanup.
+func (c *Container) resolveEager(svc ServiceWrapper) error {
+	name := svc.Name()
+	c.pushChain(name)
+	defer c.clearChain()
+
+	_, err := svc.GetInstance(c, nil)
+	if err != nil {
+		return fmt.Errorf("getting instance: %w", err)
+	}
+
+	return nil
 }
 
 // ResolveByName resolves a service by name, tracking the chain for cycle detection.
@@ -233,9 +249,17 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 		c.recordDependency(parent, name)
 	}
 
+	// If this is a top-level call (chain is empty), defer clearChain to ensure
+	// full cleanup on panic. For nested calls, popChain handles normal unwinding.
+	isTopLevel := len(chain) == 0
+
 	// Add current service to chain before getting instance
 	c.pushChain(name)
-	defer c.popChain()
+	if isTopLevel {
+		defer c.clearChain()
+	} else {
+		defer c.popChain()
+	}
 
 	// Get instance (may resolve dependencies via provider)
 	// The provider may call Resolve[T]() which will check the chain
@@ -330,6 +354,12 @@ func (c *Container) ResolveAllByName(name string) ([]any, error) {
 		}
 	}
 
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
+
 	for _, wrapper := range wrappers {
 		// We use the wrapper's name (which matches 'name' here) for cycle tracking.
 		c.pushChain(name)
@@ -367,6 +397,12 @@ func (c *Container) ResolveGroup(group string) ([]any, error) {
 
 	var results []any
 	chain := c.getChain()
+
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
 
 	for _, wrapper := range candidates {
 		name := wrapper.Name()
@@ -413,6 +449,12 @@ func (c *Container) ResolveAllByType(t reflect.Type) ([]any, error) {
 
 	var results []any
 	chain := c.getChain()
+
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
 
 	for _, wrapper := range candidates {
 		name := wrapper.Name()

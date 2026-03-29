@@ -477,4 +477,114 @@ type (
 	testPool           struct{}
 	testCycleA         struct{ b *testCycleB }
 	testCycleB         struct{ a *testCycleA }
+	testPanicking      struct{}
 )
+
+// =============================================================================
+// Resolution Chain Cleanup Tests
+// =============================================================================
+
+func (s *ContainerSuite) TestResolutionChain_CleanedAfterNormalResolve() {
+	c := New()
+	For[*testDB](c).Provider(func(_ *Container) (*testDB, error) {
+		return &testDB{}, nil
+	})
+	s.Require().NoError(c.Build())
+
+	_, err := Resolve[*testDB](c)
+	s.Require().NoError(err)
+
+	// After resolution completes, the chain map should be empty for this goroutine
+	c.chainMu.Lock()
+	gid := getGoroutineID()
+	chain := c.resolutionChains[gid]
+	c.chainMu.Unlock()
+
+	s.Empty(chain, "resolution chain should be empty after normal resolve")
+}
+
+func (s *ContainerSuite) TestResolutionChain_CleanedAfterProviderPanic() {
+	c := New()
+	For[*testPanicking](c).Provider(func(_ *Container) (*testPanicking, error) {
+		panic("provider exploded")
+	})
+	s.Require().NoError(c.Build())
+
+	// Resolve should panic; recover and check chain cleanup
+	s.Require().Panics(func() {
+		_, _ = Resolve[*testPanicking](c)
+	})
+
+	// After panic recovery, the chain map should have no entry for this goroutine
+	c.chainMu.Lock()
+	gid := getGoroutineID()
+	_, exists := c.resolutionChains[gid]
+	c.chainMu.Unlock()
+
+	s.False(exists, "resolution chain entry should be deleted after provider panic")
+}
+
+func (s *ContainerSuite) TestResolutionChain_CleanedAfterBuildPanic() {
+	c := New()
+	For[*testPanicking](c).Eager().Provider(func(_ *Container) (*testPanicking, error) {
+		panic("eager provider exploded")
+	})
+
+	// Build should panic because the eager provider panics
+	s.Require().Panics(func() {
+		_ = c.Build()
+	})
+
+	// After panic recovery, the chain map should have no entry for this goroutine
+	c.chainMu.Lock()
+	gid := getGoroutineID()
+	_, exists := c.resolutionChains[gid]
+	c.chainMu.Unlock()
+
+	s.False(exists, "resolution chain entry should be deleted after Build panic from eager provider")
+}
+
+func (s *ContainerSuite) TestResolutionChain_CleanedAfterResolveAllPanic() {
+	c := New()
+	// Register two services under the same type name, one that panics
+	For[*testPanicking](c).Provider(func(_ *Container) (*testPanicking, error) {
+		panic("provider in ResolveAll exploded")
+	})
+
+	s.Require().NoError(c.Build())
+
+	s.Require().Panics(func() {
+		_, _ = c.ResolveAllByName(TypeName[*testPanicking]())
+	})
+
+	c.chainMu.Lock()
+	gid := getGoroutineID()
+	_, exists := c.resolutionChains[gid]
+	c.chainMu.Unlock()
+
+	s.False(exists, "resolution chain entry should be deleted after ResolveAllByName panic")
+}
+
+func (s *ContainerSuite) TestClearChain_RemovesEntireEntry() {
+	c := New()
+
+	// Manually push entries
+	c.pushChain("serviceA")
+	c.pushChain("serviceB")
+	c.pushChain("serviceC")
+
+	// Verify chain has entries
+	c.chainMu.Lock()
+	gid := getGoroutineID()
+	s.Len(c.resolutionChains[gid], 3)
+	c.chainMu.Unlock()
+
+	// clearChain should wipe everything
+	c.clearChain()
+
+	c.chainMu.Lock()
+	_, exists := c.resolutionChains[gid]
+	c.chainMu.Unlock()
+
+	s.False(exists, "clearChain should delete the entire map entry")
+}
