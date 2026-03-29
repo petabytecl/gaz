@@ -185,26 +185,7 @@ func (c *Container) Build() error {
 
 	// Instantiate each eager service
 	for _, svc := range eagerServices {
-		// We cannot use ResolveByName here because it might be ambiguous if there are multiple services with the same name.
-		// Instead, we resolve the specific instance directly.
-		// However, we still need to respect the resolution chain for cycle detection.
-		//
-		// For now, if we assume Eager services are usually singletons and uniquely named or we don't care about the name resolution conflict in ResolveByName (which now errors),
-		// we must call GetInstance directly on the wrapper.
-
-		// Manually manage chain for this specific service
-		name := svc.Name()
-		c.pushChain(name)
-
-		// Check for cycle (though eager init usually starts chain)
-		// But wait, ResolveByName managed the chain.
-		// If we skip ResolveByName, we must manage it.
-
-		// Actually, let's use a helper or just do it inline.
-		_, err := svc.GetInstance(c, nil)
-		c.popChain()
-
-		if err != nil {
+		if err := c.resolveEager(svc); err != nil {
 			return fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
 		}
 	}
@@ -212,6 +193,20 @@ func (c *Container) Build() error {
 	c.mu.Lock()
 	c.built = true
 	c.mu.Unlock()
+
+	return nil
+}
+
+// resolveEager resolves a single eager service during Build, with deferred chain cleanup.
+func (c *Container) resolveEager(svc ServiceWrapper) error {
+	name := svc.Name()
+	c.pushChain(name)
+	defer c.clearChain()
+
+	_, err := svc.GetInstance(c, nil)
+	if err != nil {
+		return fmt.Errorf("getting instance: %w", err)
+	}
 
 	return nil
 }
@@ -251,9 +246,17 @@ func (c *Container) ResolveByName(name string, _ []string) (any, error) {
 		c.recordDependency(parent, name)
 	}
 
+	// If this is a top-level call (chain is empty), defer clearChain to ensure
+	// full cleanup on panic. For nested calls, popChain handles normal unwinding.
+	isTopLevel := len(chain) == 0
+
 	// Add current service to chain before getting instance
 	c.pushChain(name)
-	defer c.popChain()
+	if isTopLevel {
+		defer c.clearChain()
+	} else {
+		defer c.popChain()
+	}
 
 	// Get instance (may resolve dependencies via provider)
 	// The provider may call Resolve[T]() which will check the chain
@@ -348,6 +351,12 @@ func (c *Container) ResolveAllByName(name string) ([]any, error) {
 		}
 	}
 
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
+
 	for _, wrapper := range wrappers {
 		// We use the wrapper's name (which matches 'name' here) for cycle tracking.
 		c.pushChain(name)
@@ -385,6 +394,12 @@ func (c *Container) ResolveGroup(group string) ([]any, error) {
 
 	var results []any
 	chain := c.getChain()
+
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
 
 	for _, wrapper := range candidates {
 		name := wrapper.Name()
@@ -431,6 +446,12 @@ func (c *Container) ResolveAllByType(t reflect.Type) ([]any, error) {
 
 	var results []any
 	chain := c.getChain()
+
+	// If this is a top-level call, defer clearChain for panic safety
+	isTopLevel := len(chain) == 0
+	if isTopLevel {
+		defer c.clearChain()
+	}
 
 	for _, wrapper := range candidates {
 		name := wrapper.Name()

@@ -2,9 +2,9 @@ package eventbus
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -391,7 +391,7 @@ func TestEventBus_ConcurrentClosePublish(t *testing.T) {
 			go func(id int) {
 				defer wg.Done()
 				Publish(context.Background(), bus, testEvent{
-					ID:      fmt.Sprintf("%d", id),
+					ID:      strconv.Itoa(id),
 					Message: "concurrent",
 				}, "")
 			}(i)
