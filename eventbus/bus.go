@@ -149,7 +149,7 @@ func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
 	b.mu.RLock()
 	if b.closed {
 		b.mu.RUnlock()
-		return // Silent no-op per CONTEXT.md
+		return // Silent no-op
 	}
 
 	eventType := reflect.TypeOf(event)
@@ -167,17 +167,20 @@ func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
 		handlers = append(handlers, b.handlers[wildcardKey]...)
 	}
 
-	b.mu.RUnlock()
-
-	// Deliver to each handler (blocks if buffer full per CONTEXT.md)
+	// Deliver while holding RLock — Close() acquires write lock before closing
+	// channels, so channels cannot be closed while any Publish holds RLock.
+	// This prevents send-on-closed-channel panics.
 	for _, h := range handlers {
 		select {
 		case h.ch <- event:
 			// Delivered
 		case <-ctx.Done():
+			b.mu.RUnlock()
 			return // Context cancelled, stop publishing
 		}
 	}
+
+	b.mu.RUnlock()
 }
 
 // Name implements worker.Worker interface.
@@ -222,14 +225,17 @@ func (b *EventBus) Close() {
 	for _, subs := range b.handlers {
 		allSubs = append(allSubs, subs...)
 	}
-	b.mu.Unlock()
 
-	// Close all channels (signals handlers to drain and exit)
+	// Close channels WHILE holding lock — prevents Publish from sending on closed channel.
+	// A concurrent Publish() holds RLock and checks b.closed; if it sees closed=false and
+	// collects handler refs, it will try to send. By closing channels under the write lock,
+	// no Publish can be in-flight when channels close.
 	for _, sub := range allSubs {
 		close(sub.ch)
 	}
+	b.mu.Unlock()
 
-	// Wait for all handlers to finish processing
+	// Wait for handlers outside lock (they only read from ch, no lock needed)
 	for _, sub := range allSubs {
 		<-sub.done
 	}
