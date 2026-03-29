@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Hardening
-status: verifying
-stopped_at: Completed 49-02-PLAN.md
-last_updated: "2026-03-29T20:38:01.040Z"
+status: planning
+stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
+last_updated: "2026-03-29T20:43:55.200Z"
 last_activity: 2026-03-29
 progress:
   total_phases: 7
@@ -25,14 +25,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 48 — Finalization
+**Current focus:** Phase 49 — fix-critical-concurrency-bugs
 
 ## Current Position
 
+Phase: 49 (fix-critical-concurrency-bugs) — EXECUTING
+Plan: 1 of 2
+
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 48 of 48 (Finalization)
-- **Plan:** 2 of 2
-- **Status:** Phase complete — ready for verification
+- **Phase:** 50 of 48 (fix high priority safety issues)
+- **Plan:** Not started
+- **Status:** Ready to plan
 - **Last activity:** 2026-03-29
 
 Progress: [██████████] 100%
@@ -111,13 +114,11 @@ See `.planning/todos/pending/` for any pending items.
 |---|-------------|------|--------|-----------|
 | 14 | make sure to pass all ci tests like make test, fmt and lint | 2026-03-07 | 7a41544 | [14-make-sure-to-pass-all-ci-tests-like-make](./quick/14-make-sure-to-pass-all-ci-tests-like-make/) |
 | 15 | make sure the test coverage is over the threshold for the project (90%) | 2026-03-07 | a7d1e42 | [15-make-sure-the-test-coverage-is-over-the-](./quick/15-make-sure-the-test-coverage-is-over-the-/) |
-| Phase 49 P01 | 3min | 2 tasks | 4 files |
-| Phase 49 P02 | 4min | 2 tasks | 4 files |
 
 ## Session Continuity
 
-Last session: 2026-03-29T20:38:01.038Z
-Stopped at: Completed 49-02-PLAN.md
+Last session: 2026-03-07
+Stopped at: Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)
 Resume with: All v5.0 plans complete. Ready for release.
 
 ---

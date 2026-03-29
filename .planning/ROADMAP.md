@@ -24,7 +24,7 @@
 - [x] **Phase 46: Core Vanguard Server** - Single-port server serving gRPC, Connect, gRPC-Web, and REST via Vanguard transcoder with ConnectRegistrar auto-discovery
 - [x] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation (completed 2026-03-06)
 - [x] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation (completed 2026-03-06)
-- [ ] **Phase 49: Fix Critical Concurrency Bugs** - Fix 5 concurrency bugs: goroutine closure capture race, worker OnStop, lazySingleton race, Container.Build() race, startup error drain
+- [x] **Phase 49: Fix Critical Concurrency Bugs** - Fix 5 concurrency bugs: goroutine closure capture race, worker OnStop, lazySingleton race, Container.Build() race, startup error drain (completed 2026-03-29)
 - [ ] **Phase 50: Fix High-Priority Safety Issues** - Fix 7 safety issues: EventBus race, resolution chain leak, X-Request-ID injection, health path hardcoding, logger issues, Slowloris
 - [ ] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter
 - [ ] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers
@@ -83,7 +83,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 46. Core Vanguard Server | 2/2 | Complete | 2026-03-06 |
 | 47. Middleware & Interceptors | 2/2 | Complete | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete | 2026-03-06 |
-| 49. Fix Critical Concurrency Bugs | 1/2 | In Progress | — |
+| 49. Fix Critical Concurrency Bugs | 2/2 | Complete    | 2026-03-29 |
 | 50. Fix High-Priority Safety Issues | 0/0 | Pending | — |
 | 51. Design and API Improvements | 0/0 | Pending | — |
 | 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
@@ -92,11 +92,11 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
 **Depends on:** Phase 48 (v5.0 complete)
 **Requirements:** CONC-01, CONC-02, CONC-03, CONC-04, CONC-05
-**Plans:** 1/2 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 49-01-PLAN.md — Fix lazySingleton Start/Stop race + Container.Build() race (di/)
-- [ ] 49-02-PLAN.md — Fix goroutine closure capture, startup error drain, worker OnStop context
+- [x] 49-02-PLAN.md — Fix goroutine closure capture, startup error drain, worker OnStop context
 
 ### Phase 50: Fix High-Priority Safety Issues
 **Goal:** Fix 7 safety issues: EventBus close/publish race, resolution chain leak, X-Request-ID injection, Vanguard health path hardcoding, logger ContextHandler chain break, logger file handle leak, Slowloris timeout
