@@ -24,7 +24,7 @@
 - [x] **Phase 46: Core Vanguard Server** - Single-port server serving gRPC, Connect, gRPC-Web, and REST via Vanguard transcoder with ConnectRegistrar auto-discovery
 - [x] **Phase 47: Middleware & Interceptors** - Two-layer middleware stack with CORS, OTEL observability, Connect interceptor bundles, and proto validation (completed 2026-03-06)
 - [x] **Phase 48: Server Module & Gateway Removal** - Updated server.NewModule() bundling Vanguard, gateway package removal, standalone HTTP preservation (completed 2026-03-06)
-- [x] **Phase 49: Fix Critical Concurrency Bugs** - Fix 5 concurrency bugs: goroutine closure capture race, worker OnStop, lazySingleton race, Container.Build() race, startup error drain (completed 2026-03-29)
+- [x] **Phase 49: Fix Critical Concurrency Bugs** - Fix 5 concurrency bugs: goroutine closure capture race (app.go), worker OnStop, lazySingleton race, Container.Build() race, startup error drain (completed 2026-03-29)
 - [x] **Phase 50: Fix High-Priority Safety Issues** - Fix 7 safety issues: EventBus race, resolution chain leak, X-Request-ID injection, health path hardcoding, logger issues, Slowloris (completed 2026-03-29)
 - [ ] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter
 - [ ] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers
@@ -84,8 +84,8 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 47. Middleware & Interceptors | 2/2 | Complete | 2026-03-06 |
 | 48. Server Module & Gateway Removal | 2/2 | Complete | 2026-03-06 |
 | 49. Fix Critical Concurrency Bugs | 2/2 | Complete    | 2026-03-29 |
-| 50. Fix High-Priority Safety Issues | 0/3 | Complete    | 2026-03-29 |
-| 51. Design and API Improvements | 0/0 | Pending | — |
+| 50. Fix High-Priority Safety Issues | 3/3 | Complete    | 2026-03-29 |
+| 51. Design and API Improvements | 0/3 | Pending | — |
 | 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
@@ -105,18 +105,20 @@ Plans:
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 50-01-PLAN.md — EventBus Close/Publish race fix + DI resolution chain leak fix
-- [ ] 50-02-PLAN.md — X-Request-ID validation + ContextHandler chain fix + file handle leak
-- [ ] 50-03-PLAN.md — Vanguard health path config + Slowloris timeout protection
+- [x] 50-01-PLAN.md — EventBus Close/Publish race fix + DI resolution chain leak fix
+- [x] 50-02-PLAN.md — X-Request-ID validation + ContextHandler chain fix + file handle leak
+- [x] 50-03-PLAN.md — Vanguard health path config + Slowloris timeout protection
 
 ### Phase 51: Design and API Improvements
 **Goal:** 11 design improvements: split app.go, EventBus context propagation, cron context, shutdown error joining, pool size validation, duplicate comment, config panic, dead letter stack trace, async server error, timer leaks, backoff jitter
 **Depends on:** Phase 50
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** DSGN-01, DSGN-02, DSGN-03, DSGN-04, DSGN-05, DSGN-06, DSGN-07, DSGN-08, DSGN-09, DSGN-10, DSGN-11
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD
+- [ ] 51-01-PLAN.md — Pool size validation, config error return, dead letter stack trace, backoff jitter fix
+- [ ] 51-02-PLAN.md — EventBus context propagation, HTTP server port bind error detection
+- [ ] 51-03-PLAN.md — Split app.go into focused files, cron context, shutdown error join, timer leaks
 
 ### Phase 52: Test Coverage and Benchmarks
 **Goal:** Improve test infrastructure: vanguard coverage (74.4% → 90%+), add benchmarks for hot paths, cross-package integration tests, investigate cron timing, add t.Parallel() markers
