@@ -129,6 +129,14 @@ func (c *Container) pushChain(name string) {
 	c.resolutionChains[gid] = append(c.resolutionChains[gid], name)
 }
 
+// clearChain removes the entire resolution chain entry for the current goroutine.
+// This ensures no stale entries remain after panic or goroutine ID reuse.
+func (c *Container) clearChain() {
+	c.chainMu.Lock()
+	defer c.chainMu.Unlock()
+	delete(c.resolutionChains, getGoroutineID())
+}
+
 // popChain removes the last service from the resolution chain for this goroutine.
 func (c *Container) popChain() {
 	c.chainMu.Lock()
