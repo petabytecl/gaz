@@ -495,3 +495,76 @@ func TestWithDeadLetterHandler_SetsOption(t *testing.T) {
 	opts.OnDeadLetter(DeadLetterInfo{})
 	assert.True(t, called)
 }
+
+// contextCheckWorker records whether OnStop receives a live (non-cancelled) context.
+type contextCheckWorker struct {
+	name           string
+	started        chan struct{}
+	stopCtxAlive   atomic.Bool
+	stopCtxErr     atomic.Value
+	onStopFinished chan struct{}
+}
+
+func newContextCheckWorker(name string) *contextCheckWorker {
+	return &contextCheckWorker{
+		name:           name,
+		started:        make(chan struct{}),
+		onStopFinished: make(chan struct{}),
+	}
+}
+
+func (w *contextCheckWorker) OnStart(_ context.Context) error {
+	close(w.started)
+	return nil
+}
+
+func (w *contextCheckWorker) OnStop(ctx context.Context) error {
+	w.stopCtxAlive.Store(ctx.Err() == nil)
+	if ctx.Err() != nil {
+		w.stopCtxErr.Store(ctx.Err().Error())
+	}
+	close(w.onStopFinished)
+	return nil
+}
+
+func (w *contextCheckWorker) Name() string { return w.name }
+
+func TestSupervisor_OnStop_FreshContext(t *testing.T) {
+	logger := slog.Default()
+	w := newContextCheckWorker("context-check")
+
+	opts := DefaultWorkerOptions()
+	opts.StableRunPeriod = 100 * time.Millisecond
+
+	sup := newSupervisor(w, opts, logger, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	sup.start(ctx)
+
+	// Wait for worker to start
+	select {
+	case <-w.started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("worker did not start in time")
+	}
+
+	// Cancel context to trigger shutdown
+	cancel()
+
+	// Wait for OnStop to finish
+	select {
+	case <-w.onStopFinished:
+	case <-time.After(5 * time.Second):
+		t.Fatal("OnStop did not finish in time")
+	}
+
+	// Wait for supervisor to fully stop
+	select {
+	case <-sup.wait():
+	case <-time.After(5 * time.Second):
+		t.Fatal("supervisor did not stop in time")
+	}
+
+	// OnStop must have received a live context (not the cancelled supervisor context)
+	assert.True(t, w.stopCtxAlive.Load(), "OnStop should receive a live (non-cancelled) context")
+}
