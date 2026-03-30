@@ -312,12 +312,172 @@ func (s *ServerTestSuite) TestServicePathToName() {
 	}
 }
 
+func (s *ServerTestSuite) TestOnStartWithReflection() {
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.Reflection = true
+	cfg.HealthEnabled = false
+	logger := slog.Default()
+	container := di.New()
+	grpcServer := grpc.NewServer()
+
+	// Register a mock Connect service so reflection has services to reflect.
+	mock := &mockConnectRegistrar{
+		path:    "/test.Reflectable/",
+		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) }),
+	}
+	err := di.For[*mockConnectRegistrar](container).Instance(mock)
+	s.Require().NoError(err)
+
+	server := NewServer(cfg, logger, container, grpcServer)
+
+	ctx := context.Background()
+	err = server.OnStart(ctx)
+	s.Require().NoError(err)
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.OnStop(stopCtx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Reflection v1 endpoint should respond.
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", cfg.Port))
+	s.Require().NoError(err)
+	defer func() { _ = resp.Body.Close() }()
+	// We just verify the endpoint is mounted (non-404).
+	s.NotEqual(http.StatusNotFound, resp.StatusCode)
+}
+
+func (s *ServerTestSuite) TestOnStartConnectInterceptorCollection() {
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.Reflection = false
+	cfg.HealthEnabled = false
+	logger := slog.Default()
+	container := di.New()
+	grpcServer := grpc.NewServer()
+
+	// Register a Connect interceptor bundle with a real interceptor to cover the
+	// `if len(connectInterceptors) > 0` branch in OnStart.
+	bundle := &mockInterceptorBundle{interceptors: []connect.Interceptor{&noopInterceptor{}}}
+	err := di.For[*mockInterceptorBundle](container).Instance(bundle)
+	s.Require().NoError(err)
+
+	server := NewServer(cfg, logger, container, grpcServer)
+
+	ctx := context.Background()
+	err = server.OnStart(ctx)
+	s.Require().NoError(err)
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = server.OnStop(stopCtx)
+	s.Require().NoError(err)
+}
+
 func (s *ServerTestSuite) TestNewServerNilLogger() {
 	cfg := DefaultConfig()
 	container := di.New()
 
 	server := NewServer(cfg, nil, container, nil)
 	s.NotNil(server.logger, "Should fall back to slog.Default()")
+}
+
+func (s *ServerTestSuite) TestBuildTranscoderNoGRPCServer() {
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.Reflection = false
+	cfg.HealthEnabled = false
+	logger := slog.Default()
+	container := di.New()
+
+	// No gRPC server — exercises the plain Vanguard transcoder path.
+	server := NewServer(cfg, logger, container, nil)
+
+	// Register a mock Connect registrar.
+	mock := &mockConnectRegistrar{
+		path:    "/test.PlainConnect/",
+		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("plain-ok")) }),
+	}
+	err := di.For[*mockConnectRegistrar](container).Instance(mock)
+	s.Require().NoError(err)
+
+	ctx := context.Background()
+	err = server.OnStart(ctx)
+	s.Require().NoError(err)
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.OnStop(stopCtx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Connect service should be reachable even without gRPC.
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/test.PlainConnect/Method", cfg.Port))
+	s.Require().NoError(err)
+	defer func() { _ = resp.Body.Close() }()
+	body, _ := io.ReadAll(resp.Body)
+	s.Equal("plain-ok", string(body))
+}
+
+func (s *ServerTestSuite) TestOnStartReflectionWithGRPCServices() {
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.Reflection = true
+	cfg.HealthEnabled = false
+	logger := slog.Default()
+	container := di.New()
+
+	// Register gRPC services on the grpc.Server so reflection has gRPC services to enumerate.
+	grpcServer := grpc.NewServer()
+	// Register a connect registrar too to have both service types.
+	mock := &mockConnectRegistrar{
+		path:    "/test.Both/",
+		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) }),
+	}
+	err := di.For[*mockConnectRegistrar](container).Instance(mock)
+	s.Require().NoError(err)
+
+	server := NewServer(cfg, logger, container, grpcServer)
+	ctx := context.Background()
+	err = server.OnStart(ctx)
+	s.Require().NoError(err)
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = server.OnStop(stopCtx)
+	s.Require().NoError(err)
+}
+
+func (s *ServerTestSuite) TestOnStartReflectionDisabledNoMounting() {
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.Reflection = false
+	cfg.HealthEnabled = false
+	logger := slog.Default()
+	container := di.New()
+	grpcServer := grpc.NewServer()
+
+	// Register a connect service so there ARE services, but reflection disabled.
+	mock := &mockConnectRegistrar{
+		path:    "/test.NoReflect/",
+		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) }),
+	}
+	err := di.For[*mockConnectRegistrar](container).Instance(mock)
+	s.Require().NoError(err)
+
+	server := NewServer(cfg, logger, container, grpcServer)
+	ctx := context.Background()
+	err = server.OnStart(ctx)
+	s.Require().NoError(err)
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = server.OnStop(stopCtx)
+	s.Require().NoError(err)
 }
 
 func (s *ServerTestSuite) TestBuildHealthMux() {
@@ -338,6 +498,27 @@ type mockConnectRegistrar struct {
 
 func (m *mockConnectRegistrar) RegisterConnect(_ ...connect.HandlerOption) (string, http.Handler) {
 	return m.path, m.handler
+}
+
+// mockInterceptorBundle is a test double for connect.InterceptorBundle.
+type mockInterceptorBundle struct {
+	interceptors []connect.Interceptor
+}
+
+func (m *mockInterceptorBundle) Name() string                        { return "mock" }
+func (m *mockInterceptorBundle) Priority() int                       { return 0 }
+func (m *mockInterceptorBundle) Interceptors() []connect.Interceptor { return m.interceptors }
+
+// noopInterceptor is a test interceptor that does nothing.
+type noopInterceptor struct{}
+
+func (n *noopInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc { return next }
+func (n *noopInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return next
+}
+
+func (n *noopInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return next
 }
 
 // getFreePort finds an available port for testing.

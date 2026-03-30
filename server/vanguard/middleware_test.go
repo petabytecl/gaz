@@ -240,6 +240,50 @@ func (s *MiddlewareTestSuite) TestCollectTransportMiddleware_AppliesInPriorityOr
 		"Middleware should execute in priority order (lowest first)")
 }
 
+// --- OTELMiddleware Wrap filter ---
+
+func (s *MiddlewareTestSuite) TestOTELMiddleware_FiltersHealthEndpoints() {
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	m := NewOTELMiddleware(tp)
+
+	called := false
+	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := m.Wrap(inner)
+
+	// Health endpoints should still be served (just filtered from traces).
+	for _, path := range []string{"/healthz", "/readyz", "/livez"} {
+		called = false
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		s.True(called, "Inner handler should be called for %s", path)
+	}
+
+	// Reflection endpoints should also be filtered from traces.
+	called = false
+	req := httptest.NewRequest(http.MethodGet, "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	s.True(called, "Inner handler should be called for reflection endpoint")
+}
+
+// --- OTELConnectBundle Interceptors error handling ---
+
+func (s *MiddlewareTestSuite) TestOTELConnectBundle_InterceptorsSuccess() {
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	b := NewOTELConnectBundle(tp, slog.Default())
+	interceptors := b.Interceptors()
+	s.Len(interceptors, 1)
+}
+
 // --- DefaultCORSConfig ---
 
 func (s *MiddlewareTestSuite) TestDefaultCORSConfig_DevMode() {

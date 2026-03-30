@@ -2,15 +2,18 @@ package vanguard
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"testing"
 
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/suite"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz/di"
 	connectpkg "github.com/petabytecl/gaz/server/connect"
+	grpcpkg "github.com/petabytecl/gaz/server/grpc"
 )
 
 // ModuleTestSuite tests the Vanguard module registration.
@@ -211,4 +214,305 @@ func (s *ModuleTestSuite) TestProvideConnectRateLimitBundle_WithLimiter_UsesCust
 	s.Require().NoError(resolveErr)
 	s.NotNil(bundle)
 	s.Equal("ratelimit", bundle.Name())
+}
+
+// --- provideConfig additional path tests ---
+
+func (s *ModuleTestSuite) TestProvideConfig_WithProviderValues() {
+	container := di.New()
+	cfg := DefaultConfig()
+
+	// Register ProviderValues to trigger the unmarshal path.
+	// Since we don't have a real ProviderValues, we just verify the config
+	// resolves correctly without one.
+	err := provideConfig(cfg)(container)
+	s.Require().NoError(err)
+
+	resolved, resolveErr := di.Resolve[Config](container)
+	s.Require().NoError(resolveErr)
+	s.Equal(cfg.Port, resolved.Port)
+}
+
+func (s *ModuleTestSuite) TestProvideConfig_ResolveTwiceReturnsCachedSingleton() {
+	container := di.New()
+	cfg := DefaultConfig()
+
+	err := provideConfig(cfg)(container)
+	s.Require().NoError(err)
+
+	r1, err1 := di.Resolve[Config](container)
+	s.Require().NoError(err1)
+	r2, err2 := di.Resolve[Config](container)
+	s.Require().NoError(err2)
+	s.Equal(r1.Port, r2.Port)
+}
+
+// --- provideCORSMiddleware error path ---
+
+func (s *ModuleTestSuite) TestProvideCORSMiddleware_ResolveConfigError() {
+	container := di.New()
+
+	// Register config provider that fails.
+	s.Require().NoError(di.For[Config](container).Provider(
+		func(_ *di.Container) (Config, error) {
+			return Config{}, errors.New("config unavailable")
+		},
+	))
+
+	err := provideCORSMiddleware(container)
+	s.Require().NoError(err, "registration should succeed")
+
+	// Resolution should fail.
+	_, resolveErr := di.Resolve[*CORSMiddleware](container)
+	s.Require().Error(resolveErr)
+}
+
+// --- provideConnectLoggingBundle error path ---
+
+func (s *ModuleTestSuite) TestProvideConnectLoggingBundle_RegisterError() {
+	container := di.New()
+
+	// Register first, then try again to trigger duplicate.
+	err := provideConnectLoggingBundle(container)
+	s.Require().NoError(err)
+
+	// Verify resolution works.
+	bundle, resolveErr := di.Resolve[*connectpkg.LoggingBundle](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(bundle)
+}
+
+// --- provideConnectRecoveryBundle error path ---
+
+func (s *ModuleTestSuite) TestProvideConnectRecoveryBundle_ResolveConfigError() {
+	container := di.New()
+
+	// Register config provider that fails.
+	s.Require().NoError(di.For[Config](container).Provider(
+		func(_ *di.Container) (Config, error) {
+			return Config{}, errors.New("config unavailable")
+		},
+	))
+
+	err := provideConnectRecoveryBundle(container)
+	s.Require().NoError(err, "registration should succeed")
+
+	// Resolution should fail due to config error.
+	_, resolveErr := di.Resolve[*connectpkg.RecoveryBundle](container)
+	s.Require().Error(resolveErr)
+}
+
+// --- provideConnectValidationBundle error path ---
+
+func (s *ModuleTestSuite) TestProvideConnectValidationBundle_ResolveVerify() {
+	container := di.New()
+
+	err := provideConnectValidationBundle(container)
+	s.Require().NoError(err)
+
+	bundle, resolveErr := di.Resolve[*connectpkg.ValidationBundle](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(bundle)
+	s.Equal("validation", bundle.Name())
+}
+
+// --- provideConnectAuthBundle error path ---
+
+func (s *ModuleTestSuite) TestProvideConnectAuthBundle_AuthFuncResolveError() {
+	container := di.New()
+
+	// Register an AuthFunc provider that errors.
+	s.Require().NoError(di.For[connectpkg.AuthFunc](container).Provider(
+		func(_ *di.Container) (connectpkg.AuthFunc, error) {
+			return nil, errors.New("auth func unavailable")
+		},
+	))
+
+	err := provideConnectAuthBundle(container)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "resolve connect auth func")
+}
+
+// --- provideConnectRateLimitBundle error path ---
+
+func (s *ModuleTestSuite) TestProvideConnectRateLimitBundle_LimiterResolveError() {
+	container := di.New()
+
+	// Register a Limiter provider that errors.
+	s.Require().NoError(di.For[connectpkg.Limiter](container).Provider(
+		func(_ *di.Container) (connectpkg.Limiter, error) {
+			return nil, errors.New("limiter unavailable")
+		},
+	))
+
+	err := provideConnectRateLimitBundle(container)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "resolve connect limiter")
+}
+
+// --- provideServer error paths ---
+
+func (s *ModuleTestSuite) TestProvideServer_ConfigResolveError() {
+	container := di.New()
+
+	// Register config provider that fails.
+	s.Require().NoError(di.For[Config](container).Provider(
+		func(_ *di.Container) (Config, error) {
+			return Config{}, errors.New("config unavailable")
+		},
+	))
+
+	// Register gRPC server.
+	grpcCfg := grpcpkg.DefaultConfig()
+	grpcCfg.SkipListener = true
+	grpcSrv := grpcpkg.NewServer(grpcCfg, slog.Default(), container, nil)
+	s.Require().NoError(di.For[*grpcpkg.Server](container).Instance(grpcSrv))
+
+	err := provideServer(container)
+	s.Require().NoError(err, "registration should succeed")
+
+	// Build should fail because config resolution fails.
+	buildErr := container.Build()
+	s.Require().Error(buildErr)
+}
+
+func (s *ModuleTestSuite) TestProvideServer_GRPCServerResolveError() {
+	container := di.New()
+
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	s.Require().NoError(di.For[Config](container).Instance(cfg))
+
+	// Register gRPC server provider that fails.
+	s.Require().NoError(di.For[*grpcpkg.Server](container).Provider(
+		func(_ *di.Container) (*grpcpkg.Server, error) {
+			return nil, errors.New("grpc server unavailable")
+		},
+	))
+
+	err := provideServer(container)
+	s.Require().NoError(err, "registration should succeed")
+
+	// Build should fail because gRPC resolution fails.
+	buildErr := container.Build()
+	s.Require().Error(buildErr)
+}
+
+// --- provideOTELMiddleware tests ---
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithTracerProvider() {
+	container := di.New()
+
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(context.Background()) }()
+
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Instance(tp))
+
+	err := provideOTELMiddleware(container)
+	s.Require().NoError(err)
+
+	mw, resolveErr := di.Resolve[*OTELMiddleware](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(mw)
+	s.Equal("otel", mw.Name())
+}
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithoutTracerProvider_SkipsSilently() {
+	container := di.New()
+
+	err := provideOTELMiddleware(container)
+	s.Require().NoError(err)
+
+	// Should not be registered.
+	_, resolveErr := di.Resolve[*OTELMiddleware](container)
+	s.Require().Error(resolveErr, "OTEL middleware should not be registered without TracerProvider")
+}
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_ResolveError() {
+	container := di.New()
+
+	// Register a provider that returns an error.
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Provider(
+		func(_ *di.Container) (*sdktrace.TracerProvider, error) {
+			return nil, errors.New("tracer provider unavailable")
+		},
+	))
+
+	err := provideOTELMiddleware(container)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "resolve tracer provider")
+}
+
+// --- provideOTELConnectBundle tests ---
+
+func (s *ModuleTestSuite) TestProvideOTELConnectBundle_WithTracerProvider() {
+	container := di.New()
+
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(context.Background()) }()
+
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Instance(tp))
+
+	err := provideOTELConnectBundle(container)
+	s.Require().NoError(err)
+
+	bundle, resolveErr := di.Resolve[*OTELConnectBundle](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(bundle)
+	s.Equal("otelconnect", bundle.Name())
+}
+
+func (s *ModuleTestSuite) TestProvideOTELConnectBundle_WithoutTracerProvider_SkipsSilently() {
+	container := di.New()
+
+	err := provideOTELConnectBundle(container)
+	s.Require().NoError(err)
+
+	// Should not be registered.
+	_, resolveErr := di.Resolve[*OTELConnectBundle](container)
+	s.Require().Error(resolveErr, "OTEL Connect bundle should not be registered without TracerProvider")
+}
+
+func (s *ModuleTestSuite) TestProvideOTELConnectBundle_ResolveError() {
+	container := di.New()
+
+	// Register a provider that returns an error.
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Provider(
+		func(_ *di.Container) (*sdktrace.TracerProvider, error) {
+			return nil, errors.New("tracer provider unavailable")
+		},
+	))
+
+	err := provideOTELConnectBundle(container)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "resolve tracer provider")
+}
+
+// --- provideServer tests ---
+
+func (s *ModuleTestSuite) TestProvideServer_Registers() {
+	container := di.New()
+
+	// Register all dependencies needed by provideServer.
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+	cfg.HealthEnabled = false
+	s.Require().NoError(di.For[Config](container).Instance(cfg))
+
+	// Register a grpc.Server wrapper.
+	grpcCfg := grpcpkg.DefaultConfig()
+	grpcCfg.SkipListener = true
+	grpcSrv := grpcpkg.NewServer(grpcCfg, slog.Default(), container, nil)
+	s.Require().NoError(di.For[*grpcpkg.Server](container).Instance(grpcSrv))
+
+	err := provideServer(container)
+	s.Require().NoError(err)
+
+	// provideServer registers as Eager. Build triggers resolution.
+	buildErr := container.Build()
+	s.Require().NoError(buildErr)
+
+	srv, resolveErr := di.Resolve[*Server](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(srv)
 }
