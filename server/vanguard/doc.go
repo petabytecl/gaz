@@ -26,10 +26,11 @@
 // # Health Endpoints
 //
 // When a health.Manager is present in the DI container, the server
-// automatically mounts health endpoints on the unknown handler:
-//   - /healthz — readiness probe
-//   - /readyz  — readiness probe
-//   - /livez   — liveness probe
+// automatically mounts health endpoints on the unknown handler.
+// Paths are configurable via health.Config (defaults shown):
+//   - /ready   — readiness probe
+//   - /live    — liveness probe
+//   - /startup — startup probe
 //
 // # Reflection
 //
