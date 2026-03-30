@@ -212,12 +212,12 @@ linters:
       # App lifecycle methods have complex but well-structured logic
       - linters:
           - gocognit
-        path: app(_build|_run|_shutdown)?\.go
+        path: app(_build|_config|_run|_shutdown)?\.go
         text: "(Build|cognitive complexity)"
       # Build/config methods have nested if blocks for setup logic
       - linters:
           - nestif
-        path: app(_build|_run|_shutdown)?\.go
+        path: app(_build|_config|_run|_shutdown)?\.go
       # TestNewModule has many subtests which increase cognitive complexity
       - linters:
           - gocognit
