@@ -1063,6 +1063,7 @@ func (s *AppTestSuite) TestStartup_MultipleFailures_AllErrorsCollected() {
 	s.Contains(runErr.Error(), "service A start failed")
 	s.Contains(runErr.Error(), "service B start failed")
 }
+
 // TestCronSchedulerReceivesCancellableContext verifies that the cron scheduler
 // receives a cancellable context (not context.Background) so it can be
 // properly stopped during shutdown.

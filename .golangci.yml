@@ -204,6 +204,11 @@ linters:
           - ireturn
         path: di/module\.go
         text: "NewModuleFunc returns interface"
+      # Config manager Load has nested type assertions for backend interfaces
+      - linters:
+          - gocognit
+        path: config/manager\.go
+        text: "Load"
       # App lifecycle methods have complex but well-structured logic
       - linters:
           - gocognit
