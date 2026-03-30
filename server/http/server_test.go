@@ -143,13 +143,6 @@ func (s *HTTPServerTestSuite) TestHTTPServerCustomHandler() {
 }
 
 func (s *HTTPServerTestSuite) TestHTTPServerPortBindingError() {
-	// Note: Unlike gRPC server which binds synchronously in OnStart,
-	// HTTP server starts ListenAndServe in a goroutine. Port binding
-	// errors are logged but not returned from OnStart.
-	//
-	// This test verifies the server logs the error correctly.
-	// We capture the log output to verify.
-
 	// Bind a port first.
 	lis, err := net.Listen("tcp", ":0")
 	s.Require().NoError(err)
@@ -164,20 +157,78 @@ func (s *HTTPServerTestSuite) TestHTTPServerPortBindingError() {
 
 	server := NewServer(cfg, nil, logger)
 
-	// Start (async - will fail to bind but returns nil).
+	// OnStart should return error synchronously on port bind failure.
 	ctx := context.Background()
 	err = server.OnStart(ctx)
-	// OnStart returns nil because ListenAndServe runs in goroutine.
-	s.NoError(err)
+	s.Error(err, "OnStart should return error when port is already bound")
+	s.Contains(err.Error(), "http server listen")
+}
 
-	// Give time for the error to be logged.
-	time.Sleep(100 * time.Millisecond)
+func (s *HTTPServerTestSuite) TestHTTPServerPort0Success() {
+	// Port 0 should bind to a random available port successfully.
+	cfg := DefaultConfig()
+	cfg.Port = 0
+	logger := slog.Default()
 
-	// Stop (should be a no-op since server failed to start).
-	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	// Shutdown is safe to call even if server never started successfully.
-	_ = server.OnStop(stopCtx)
+	server := NewServer(cfg, nil, logger)
+
+	ctx := context.Background()
+	err := server.OnStart(ctx)
+	s.Require().NoError(err, "OnStart with port 0 should succeed")
+
+	// The actual bound address should be available.
+	addr := server.Addr()
+	s.NotEmpty(addr)
+
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.OnStop(stopCtx)
+	}()
+
+	// Verify server is actually serving.
+	url := fmt.Sprintf("http://%s/", addr)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	s.Require().NoError(err)
+	resp, err := http.DefaultClient.Do(req)
+	s.Require().NoError(err)
+	resp.Body.Close()
+	s.Equal(http.StatusNotFound, resp.StatusCode)
+}
+
+func (s *HTTPServerTestSuite) TestHTTPServerServesAsyncAfterBind() {
+	// After successful bind, the server should serve requests asynchronously.
+	cfg := DefaultConfig()
+	cfg.Port = getFreePort(s.T())
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("async-ok"))
+	})
+
+	server := NewServer(cfg, handler, slog.Default())
+
+	ctx := context.Background()
+	err := server.OnStart(ctx)
+	s.Require().NoError(err)
+
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.OnStop(stopCtx)
+	}()
+
+	// Server should be immediately available after OnStart returns (bind is synchronous).
+	url := fmt.Sprintf("http://localhost:%d/", cfg.Port)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	s.Require().NoError(err)
+	resp, err := http.DefaultClient.Do(req)
+	s.Require().NoError(err)
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	s.Require().NoError(err)
+	s.Equal("async-ok", string(body))
 }
 
 func (s *HTTPServerTestSuite) TestHTTPServerGracefulShutdown() {

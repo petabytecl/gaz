@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"sync/atomic"
 )
@@ -13,11 +14,12 @@ import (
 // It implements di.Starter and di.Stopper interfaces for integration
 // with gaz's application lifecycle.
 type Server struct {
-	config  Config
-	server  *http.Server
-	logger  *slog.Logger
-	handler http.Handler
-	started atomic.Bool
+	config   Config
+	server   *http.Server
+	logger   *slog.Logger
+	handler  http.Handler
+	listener net.Listener
+	started  atomic.Bool
 }
 
 // NewServer creates a new HTTP server with the given configuration.
@@ -57,16 +59,22 @@ func (s *Server) SetHandler(h http.Handler) {
 	s.server.Handler = h
 }
 
-// OnStart starts the HTTP server in a background goroutine.
-// It returns immediately after starting the server.
+// OnStart binds the port synchronously and then serves in a background goroutine.
+// Returns an error immediately if the port cannot be bound (e.g., already in use).
 // Implements di.Starter interface.
 func (s *Server) OnStart(ctx context.Context) error {
+	var lc net.ListenConfig
+	ln, err := lc.Listen(ctx, "tcp", s.server.Addr)
+	if err != nil {
+		return fmt.Errorf("http server listen: %w", err)
+	}
+	s.listener = ln
 	s.started.Store(true)
-	s.logger.InfoContext(ctx, "HTTP server starting", "port", s.config.Port)
+	s.logger.InfoContext(ctx, "HTTP server starting", "addr", ln.Addr().String())
 
 	go func() {
-		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error("HTTP server error", "error", err)
+		if serveErr := s.server.Serve(ln); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+			s.logger.Error("HTTP server error", "error", serveErr)
 		}
 	}()
 
@@ -87,8 +95,13 @@ func (s *Server) OnStop(ctx context.Context) error {
 	return nil
 }
 
-// Addr returns the server's address in the form ":port".
+// Addr returns the server's bound address.
+// After OnStart, this returns the actual listener address (useful when port=0).
+// Before OnStart, this returns the configured address in the form ":port".
 func (s *Server) Addr() string {
+	if s.listener != nil {
+		return s.listener.Addr().String()
+	}
 	return s.server.Addr
 }
 

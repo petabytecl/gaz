@@ -14,10 +14,16 @@ type subscriptionKey struct {
 	topic     string // Empty = wildcard (all topics)
 }
 
+// eventEnvelope wraps an event with its publisher's context for propagation.
+type eventEnvelope struct {
+	ctx   context.Context //nolint:containedctx // Envelope carries publisher context through channel.
+	event any
+}
+
 // asyncSubscription holds a subscription's channel and handler.
 type asyncSubscription struct {
 	id      uint64
-	ch      chan any                   // Buffered channel for events
+	ch      chan eventEnvelope         // Buffered channel for events with context
 	done    chan struct{}              // Closed when handler goroutine exits
 	handler func(context.Context, any) // Type-erased handler
 }
@@ -25,8 +31,8 @@ type asyncSubscription struct {
 // run processes events from the channel until it's closed.
 func (s *asyncSubscription) run(logger *slog.Logger) {
 	defer close(s.done)
-	for event := range s.ch {
-		s.safeInvoke(context.Background(), event, logger)
+	for env := range s.ch {
+		s.safeInvoke(env.ctx, env.event, logger)
 	}
 }
 
@@ -114,7 +120,7 @@ func Subscribe[T Event](b *EventBus, handler Handler[T], opts ...SubscribeOption
 	// Create async subscription with per-subscriber buffer
 	sub := &asyncSubscription{
 		id:   id,
-		ch:   make(chan any, options.bufferSize),
+		ch:   make(chan eventEnvelope, options.bufferSize),
 		done: make(chan struct{}),
 		handler: func(ctx context.Context, event any) {
 			//nolint:errcheck // Type is guaranteed by generic Subscribe[T]
@@ -170,9 +176,10 @@ func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
 	// Deliver while holding RLock — Close() acquires write lock before closing
 	// channels, so channels cannot be closed while any Publish holds RLock.
 	// This prevents send-on-closed-channel panics.
+	env := eventEnvelope{ctx: ctx, event: event}
 	for _, h := range handlers {
 		select {
-		case h.ch <- event:
+		case h.ch <- env:
 			// Delivered
 		case <-ctx.Done():
 			b.mu.RUnlock()
