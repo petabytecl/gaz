@@ -86,7 +86,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 49. Fix Critical Concurrency Bugs | 2/2 | Complete    | 2026-03-29 |
 | 50. Fix High-Priority Safety Issues | 3/3 | Complete    | 2026-03-29 |
 | 51. Design and API Improvements | 0/3 | Complete    | 2026-03-30 |
-| 52. Test Coverage and Benchmarks | 0/0 | Pending | — |
+| 52. Test Coverage and Benchmarks | 0/2 | Pending | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -123,11 +123,12 @@ Plans:
 ### Phase 52: Test Coverage and Benchmarks
 **Goal:** Improve test infrastructure: vanguard coverage (74.4% → 90%+), add benchmarks for hot paths, cross-package integration tests, investigate cron timing, add t.Parallel() markers
 **Depends on:** Phase 51
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 52-01-PLAN.md — Vanguard coverage 90%+ and hot-path benchmarks (DI, EventBus, Backoff)
+- [ ] 52-02-PLAN.md — Cross-package integration tests, cron timing fix, t.Parallel() markers
 
 ## Backlog
 
