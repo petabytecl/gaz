@@ -4,13 +4,13 @@ milestone: v5.1
 milestone_name: Hardening
 status: planning
 stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
-last_updated: "2026-03-29T21:07:58.652Z"
-last_activity: 2026-03-29
+last_updated: "2026-03-30T00:43:54.338Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 7
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 6
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -25,18 +25,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 50 — fix-high-priority-safety-issues
+**Current focus:** Phase 51 — design-and-api-improvements
 
 ## Current Position
 
-Phase: 50 (fix-high-priority-safety-issues) — EXECUTING
+Phase: 51 (design-and-api-improvements) — EXECUTING
 Plan: 1 of 3
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 51 of 48 (design and api improvements)
+- **Phase:** 52 of 48 (test coverage and benchmarks)
 - **Plan:** Not started
 - **Status:** Ready to plan
-- **Last activity:** 2026-03-29
+- **Last activity:** 2026-03-30
 
 Progress: [██████████] 100%
 
