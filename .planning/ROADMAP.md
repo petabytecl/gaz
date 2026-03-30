@@ -13,7 +13,7 @@
 - ✅ **v4.0 Dependency Reduction** - Phases 32-36 (shipped 2026-02-02)
 - ✅ **v4.1 Server & Transport Layer** - Phases 37-45 (shipped 2026-02-04)
 - ✅ **v5.0 Vanguard Unified Server** - Phases 46-48 (shipped 2026-03-06)
-- 🚧 **v5.1 Hardening** - Phases 49-52 (in progress)
+- 🚧 **v5.1 Hardening** - Phases 49-53 (in progress)
 
 ## Phases
 
@@ -88,7 +88,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52 �
 | 50. Fix High-Priority Safety Issues | 3/3 | Complete    | 2026-03-29 |
 | 51. Design and API Improvements | 0/3 | Complete    | 2026-03-30 |
 | 52. Test Coverage and Benchmarks | 0/2 | Complete    | 2026-03-30 |
-| 53. Tech Debt Cleanup | 0/0 | Pending | — |
+| 53. Tech Debt Cleanup | 0/1 | Pending | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -139,9 +139,9 @@ Plans:
 ### Phase 53: Tech Debt Cleanup
 
 **Goal:** Wire logger.NewLoggerWithCloser into App shutdown lifecycle, update OTEL middleware trace filter to use health.Config paths, fix doc.go health path references
-**Requirements**: TBD
+**Requirements**: SAFE-06 (partial closure)
 **Depends on:** Phase 52
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 53 to break down)
+- [ ] 53-01-PLAN.md — Logger closer wiring + OTEL health path filter + doc.go fix
