@@ -2,7 +2,6 @@ package viper
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -204,7 +203,7 @@ func (b *Backend) SetEnvKeyReplacer(replacer config.StringReplacer) error {
 		b.v.SetEnvKeyReplacer(sr)
 		return nil
 	}
-	return fmt.Errorf("config/viper: SetEnvKeyReplacer requires a *strings.Replacer (viper limitation)")
+	return errors.New("config/viper: SetEnvKeyReplacer requires a *strings.Replacer (viper limitation)")
 }
 
 // SetStringsReplacer is a convenience method that takes a *strings.Replacer directly.

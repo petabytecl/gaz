@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -94,7 +94,7 @@ type errorWorker struct {
 
 func (w *errorWorker) OnStart(_ context.Context) error {
 	atomic.AddInt32(&w.startCount, 1)
-	return fmt.Errorf("intentional error")
+	return errors.New("intentional error")
 }
 
 func (w *errorWorker) OnStop(_ context.Context) error { return nil }
