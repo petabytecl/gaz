@@ -15,6 +15,7 @@ import (
 // =============================================================================
 
 func TestGet_String_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("host", "localhost")
 	mgr := config.NewWithBackend(backend)
@@ -24,6 +25,7 @@ func TestGet_String_ReturnsValue(t *testing.T) {
 }
 
 func TestGet_Int_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("port", 8080)
 	mgr := config.NewWithBackend(backend)
@@ -33,6 +35,7 @@ func TestGet_Int_ReturnsValue(t *testing.T) {
 }
 
 func TestGet_Bool_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("debug", true)
 	mgr := config.NewWithBackend(backend)
@@ -42,6 +45,7 @@ func TestGet_Bool_ReturnsValue(t *testing.T) {
 }
 
 func TestGet_Float64_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("rate", 1.5)
 	mgr := config.NewWithBackend(backend)
@@ -51,6 +55,7 @@ func TestGet_Float64_ReturnsValue(t *testing.T) {
 }
 
 func TestGet_MissingKey_ReturnsZeroValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend)
 
@@ -65,6 +70,7 @@ func TestGet_MissingKey_ReturnsZeroValue(t *testing.T) {
 }
 
 func TestGet_TypeMismatch_ReturnsZeroValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("port", "not-a-number") // String instead of int
 	mgr := config.NewWithBackend(backend)
@@ -78,6 +84,7 @@ func TestGet_TypeMismatch_ReturnsZeroValue(t *testing.T) {
 // =============================================================================
 
 func TestGetOr_MissingKey_ReturnsFallback(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend)
 
@@ -89,6 +96,7 @@ func TestGetOr_MissingKey_ReturnsFallback(t *testing.T) {
 }
 
 func TestGetOr_TypeMismatch_ReturnsFallback(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("port", "not-a-number")
 	mgr := config.NewWithBackend(backend)
@@ -98,6 +106,7 @@ func TestGetOr_TypeMismatch_ReturnsFallback(t *testing.T) {
 }
 
 func TestGetOr_ValuePresent_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("host", "prodhost")
 	mgr := config.NewWithBackend(backend)
@@ -107,6 +116,7 @@ func TestGetOr_ValuePresent_ReturnsValue(t *testing.T) {
 }
 
 func TestGetOr_Duration_Works(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("timeout", 30*time.Second)
 	mgr := config.NewWithBackend(backend)
@@ -124,6 +134,7 @@ func TestGetOr_Duration_Works(t *testing.T) {
 // =============================================================================
 
 func TestMustGet_ValuePresent_ReturnsValue(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("host", "localhost")
 	mgr := config.NewWithBackend(backend)
@@ -133,6 +144,7 @@ func TestMustGet_ValuePresent_ReturnsValue(t *testing.T) {
 }
 
 func TestMustGet_MissingKey_Panics(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend)
 
@@ -142,6 +154,7 @@ func TestMustGet_MissingKey_Panics(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_Panics(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("port", "not-a-number")
 	mgr := config.NewWithBackend(backend)
@@ -156,6 +169,7 @@ func TestMustGet_TypeMismatch_Panics(t *testing.T) {
 // =============================================================================
 
 func TestGet_NestedKey_Works(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("database.host", "dbhost")
 	backend.Set("database.port", 5432)
@@ -169,6 +183,7 @@ func TestGet_NestedKey_Works(t *testing.T) {
 }
 
 func TestGetOr_NestedKey_Works(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend)
 
@@ -182,6 +197,7 @@ func TestGetOr_NestedKey_Works(t *testing.T) {
 // =============================================================================
 
 func TestMustGet_TypeMismatch_PanicMessageContainsString(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", 42) // int, not string
 	mgr := config.NewWithBackend(backend)
@@ -197,6 +213,7 @@ func TestMustGet_TypeMismatch_PanicMessageContainsString(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_PanicMessageContainsInt(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", "not-an-int") // string, not int
 	mgr := config.NewWithBackend(backend)
@@ -212,6 +229,7 @@ func TestMustGet_TypeMismatch_PanicMessageContainsInt(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_PanicMessageContainsInt64(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", "not-int64")
 	mgr := config.NewWithBackend(backend)
@@ -227,6 +245,7 @@ func TestMustGet_TypeMismatch_PanicMessageContainsInt64(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_PanicMessageContainsFloat64(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", "not-float64")
 	mgr := config.NewWithBackend(backend)
@@ -242,6 +261,7 @@ func TestMustGet_TypeMismatch_PanicMessageContainsFloat64(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_PanicMessageContainsBool(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", "not-bool")
 	mgr := config.NewWithBackend(backend)
@@ -257,6 +277,7 @@ func TestMustGet_TypeMismatch_PanicMessageContainsBool(t *testing.T) {
 }
 
 func TestMustGet_TypeMismatch_PanicMessageContainsUnknown(t *testing.T) {
+	t.Parallel()
 	backend := cfgviper.New()
 	backend.Set("key", "a-string")
 	mgr := config.NewWithBackend(backend)

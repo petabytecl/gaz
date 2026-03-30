@@ -41,6 +41,7 @@ type oneOfConfig struct {
 }
 
 func TestValidateStruct_ValidStruct_ReturnsNil(t *testing.T) {
+	t.Parallel()
 	cfg := validConfig{
 		Host: "localhost",
 		Port: 8080,
@@ -51,6 +52,7 @@ func TestValidateStruct_ValidStruct_ReturnsNil(t *testing.T) {
 }
 
 func TestValidateStruct_MissingRequired_ReturnsError(t *testing.T) {
+	t.Parallel()
 	cfg := invalidRequiredConfig{
 		Host: "", // Empty, but required
 	}
@@ -65,6 +67,7 @@ func TestValidateStruct_MissingRequired_ReturnsError(t *testing.T) {
 }
 
 func TestValidateStruct_MinViolation_ReturnsError(t *testing.T) {
+	t.Parallel()
 	cfg := invalidMinConfig{
 		Port: 0, // Less than min=1
 	}
@@ -78,6 +81,7 @@ func TestValidateStruct_MinViolation_ReturnsError(t *testing.T) {
 }
 
 func TestValidateStruct_MaxViolation_ReturnsError(t *testing.T) {
+	t.Parallel()
 	cfg := invalidMaxConfig{
 		Count: 200, // Greater than max=100
 	}
@@ -91,6 +95,7 @@ func TestValidateStruct_MaxViolation_ReturnsError(t *testing.T) {
 }
 
 func TestValidateStruct_NestedStruct_ValidatesNested(t *testing.T) {
+	t.Parallel()
 	cfg := nestedConfig{}
 	// Server.Host is empty but required
 
@@ -102,6 +107,7 @@ func TestValidateStruct_NestedStruct_ValidatesNested(t *testing.T) {
 }
 
 func TestValidateStruct_OneOf_ValidValue(t *testing.T) {
+	t.Parallel()
 	cfg := oneOfConfig{
 		Level: "info",
 	}
@@ -111,6 +117,7 @@ func TestValidateStruct_OneOf_ValidValue(t *testing.T) {
 }
 
 func TestValidateStruct_OneOf_InvalidValue(t *testing.T) {
+	t.Parallel()
 	cfg := oneOfConfig{
 		Level: "verbose", // Not in oneof list
 	}
@@ -128,6 +135,7 @@ func TestValidateStruct_OneOf_InvalidValue(t *testing.T) {
 // =============================================================================
 
 func TestValidationError_Error_FormatsCorrectly(t *testing.T) {
+	t.Parallel()
 	fieldErrors := []config.FieldError{
 		{Namespace: "Config.host", Tag: "required", Message: "required field cannot be empty"},
 		{Namespace: "Config.port", Tag: "min", Param: "1", Message: "must be at least 1"},
@@ -142,12 +150,14 @@ func TestValidationError_Error_FormatsCorrectly(t *testing.T) {
 }
 
 func TestValidationError_Unwrap_ReturnsErrConfigValidation(t *testing.T) {
+	t.Parallel()
 	ve := config.NewValidationError(nil)
 
 	assert.ErrorIs(t, ve, config.ErrConfigValidation)
 }
 
 func TestFieldError_String_WithTag(t *testing.T) {
+	t.Parallel()
 	fe := config.NewFieldError("Config.host", "required", "", "required field cannot be empty")
 	s := fe.String()
 
@@ -157,6 +167,7 @@ func TestFieldError_String_WithTag(t *testing.T) {
 }
 
 func TestFieldError_String_WithoutTag(t *testing.T) {
+	t.Parallel()
 	fe := config.FieldError{
 		Namespace: "Config.host",
 		Message:   "custom error",
@@ -177,6 +188,7 @@ type mapstructureTagConfig struct {
 }
 
 func TestValidateStruct_UsesMapstructureTagInErrorMessage(t *testing.T) {
+	t.Parallel()
 	cfg := mapstructureTagConfig{
 		DatabaseHost: "", // Empty but required
 	}
@@ -255,6 +267,7 @@ type unknownTagConfig struct {
 }
 
 func TestHumanizeTag_Gte_Message(t *testing.T) {
+	t.Parallel()
 	cfg := gteConfig{Value: 5} // Less than gte=10
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -263,6 +276,7 @@ func TestHumanizeTag_Gte_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_Lte_Message(t *testing.T) {
+	t.Parallel()
 	cfg := lteConfig{Value: 100} // Greater than lte=50
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -271,6 +285,7 @@ func TestHumanizeTag_Lte_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_Gt_Message(t *testing.T) {
+	t.Parallel()
 	cfg := gtConfig{Value: 0} // Not greater than gt=0
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -279,6 +294,7 @@ func TestHumanizeTag_Gt_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_Lt_Message(t *testing.T) {
+	t.Parallel()
 	cfg := ltConfig{Value: 100} // Not less than lt=100
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -287,6 +303,7 @@ func TestHumanizeTag_Lt_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_Email_Message(t *testing.T) {
+	t.Parallel()
 	cfg := emailConfig{Email: "invalid-email"}
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -294,6 +311,7 @@ func TestHumanizeTag_Email_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_URL_Message(t *testing.T) {
+	t.Parallel()
 	cfg := urlConfig{URL: "not-a-url"}
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -301,6 +319,7 @@ func TestHumanizeTag_URL_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_IP_Message(t *testing.T) {
+	t.Parallel()
 	cfg := ipConfig{IP: "invalid-ip"}
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -308,6 +327,7 @@ func TestHumanizeTag_IP_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_IPv4_Message(t *testing.T) {
+	t.Parallel()
 	cfg := ipv4Config{IP: "::1"} // IPv6, not IPv4
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -315,6 +335,7 @@ func TestHumanizeTag_IPv4_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_IPv6_Message(t *testing.T) {
+	t.Parallel()
 	cfg := ipv6Config{IP: "192.168.1.1"} // IPv4, not IPv6
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -322,6 +343,7 @@ func TestHumanizeTag_IPv6_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_RequiredIf_Message(t *testing.T) {
+	t.Parallel()
 	cfg := requiredIfConfig{Field1: "yes", Field2: ""} // Field2 required when Field1="yes"
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -329,6 +351,7 @@ func TestHumanizeTag_RequiredIf_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_RequiredUnless_Message(t *testing.T) {
+	t.Parallel()
 	cfg := requiredUnlessConfig{Field1: "yes", Field2: ""} // Field2 required unless Field1="no"
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -336,6 +359,7 @@ func TestHumanizeTag_RequiredUnless_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_RequiredWith_Message(t *testing.T) {
+	t.Parallel()
 	cfg := requiredWithConfig{Field1: "present", Field2: ""} // Field2 required when Field1 is present
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -343,6 +367,7 @@ func TestHumanizeTag_RequiredWith_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_RequiredWithout_Message(t *testing.T) {
+	t.Parallel()
 	cfg := requiredWithoutConfig{Field1: "", Field2: ""} // Field2 required when Field1 is absent
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -350,6 +375,7 @@ func TestHumanizeTag_RequiredWithout_Message(t *testing.T) {
 }
 
 func TestHumanizeTag_UnknownTag_DefaultMessage(t *testing.T) {
+	t.Parallel()
 	cfg := unknownTagConfig{Value: "not@alphanum!"} // alphanum is not in humanizeTag switch
 	err := config.ValidateStruct(&cfg)
 	require.Error(t, err)
@@ -369,6 +395,7 @@ type multiErrorConfig struct {
 }
 
 func TestValidateStruct_MultipleErrors_ReportsAll(t *testing.T) {
+	t.Parallel()
 	cfg := multiErrorConfig{
 		Host: "",
 		Port: 0,

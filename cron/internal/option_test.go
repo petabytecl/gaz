@@ -9,6 +9,7 @@ import (
 )
 
 func TestWithLocation(t *testing.T) {
+	t.Parallel()
 	c := New(WithLocation(time.UTC))
 	if c.location != time.UTC {
 		t.Errorf("expected UTC, got %v", c.location)
@@ -16,6 +17,7 @@ func TestWithLocation(t *testing.T) {
 }
 
 func TestWithParser(t *testing.T) {
+	t.Parallel()
 	parser := NewParser(Dow)
 	c := New(WithParser(parser))
 	if c.parser != parser {
@@ -24,6 +26,7 @@ func TestWithParser(t *testing.T) {
 }
 
 func TestWithLogger(t *testing.T) {
+	t.Parallel()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	c := New(WithLogger(logger))
 
@@ -40,6 +43,7 @@ func TestWithLogger(t *testing.T) {
 }
 
 func TestWithChain(t *testing.T) {
+	t.Parallel()
 	var called atomic.Bool
 	wrapper := func(j Job) Job {
 		return FuncJob(func() {
@@ -60,6 +64,7 @@ func TestWithChain(t *testing.T) {
 }
 
 func TestWithSeconds(t *testing.T) {
+	t.Parallel()
 	c := New(WithSeconds())
 
 	// 6-field spec should work with seconds enabled

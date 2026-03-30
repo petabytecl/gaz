@@ -12,6 +12,7 @@ import (
 // =============================================================================
 
 func TestWithHookTimeout(t *testing.T) {
+	t.Parallel()
 	cfg := &HookConfig{}
 
 	// Apply default - should be zero
@@ -25,6 +26,7 @@ func TestWithHookTimeout(t *testing.T) {
 }
 
 func TestWithHookTimeout_MultipleApply(t *testing.T) {
+	t.Parallel()
 	cfg := &HookConfig{}
 
 	// Apply multiple options - last one wins
@@ -39,6 +41,7 @@ func TestWithHookTimeout_MultipleApply(t *testing.T) {
 }
 
 func TestWithHookTimeout_ZeroDuration(t *testing.T) {
+	t.Parallel()
 	cfg := &HookConfig{Timeout: 10 * time.Second}
 
 	// Apply zero duration - should set to zero

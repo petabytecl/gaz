@@ -27,6 +27,7 @@ func testLogger() *slog.Logger {
 }
 
 func TestSubscribeAndPublish(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -49,6 +50,7 @@ func TestSubscribeAndPublish(t *testing.T) {
 }
 
 func TestMultipleSubscribers(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -65,6 +67,7 @@ func TestMultipleSubscribers(t *testing.T) {
 }
 
 func TestUnsubscribe(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -86,6 +89,7 @@ func TestUnsubscribe(t *testing.T) {
 }
 
 func TestTopicFiltering(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -113,6 +117,7 @@ func TestTopicFiltering(t *testing.T) {
 }
 
 func TestPanicRecovery(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -136,6 +141,7 @@ func TestPanicRecovery(t *testing.T) {
 }
 
 func TestCloseDrainsHandlers(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 
 	var completed atomic.Bool
@@ -158,6 +164,7 @@ func TestCloseDrainsHandlers(t *testing.T) {
 }
 
 func TestPublishToClosedBus(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 
 	var count atomic.Int32
@@ -175,6 +182,7 @@ func TestPublishToClosedBus(t *testing.T) {
 }
 
 func TestSubscribeToClosedBus(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	bus.Close()
 
@@ -183,6 +191,7 @@ func TestSubscribeToClosedBus(t *testing.T) {
 }
 
 func TestWorkerInterface(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -197,6 +206,7 @@ func TestWorkerInterface(t *testing.T) {
 }
 
 func TestBufferSizeOption(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -218,6 +228,7 @@ func TestBufferSizeOption(t *testing.T) {
 }
 
 func TestContextCancellation(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -236,6 +247,7 @@ func TestContextCancellation(t *testing.T) {
 }
 
 func TestDoubleClose(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 
 	// First close
@@ -246,6 +258,7 @@ func TestDoubleClose(t *testing.T) {
 }
 
 func TestDoubleUnsubscribe(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -260,12 +273,14 @@ func TestDoubleUnsubscribe(t *testing.T) {
 }
 
 func TestNilSubscription(t *testing.T) {
+	t.Parallel()
 	// Calling Unsubscribe on a nil subscription should be safe
 	var sub *Subscription
 	sub.Unsubscribe() // Should not panic
 }
 
 func TestConcurrentPublish(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -291,6 +306,7 @@ func TestConcurrentPublish(t *testing.T) {
 }
 
 func TestConcurrentSubscribe(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -318,6 +334,7 @@ type anotherEvent struct {
 func (e anotherEvent) EventName() string { return "anotherEvent" }
 
 func TestEventTypeRouting(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 
@@ -340,6 +357,7 @@ func TestEventTypeRouting(t *testing.T) {
 }
 
 func TestEmptyTopicPublish(t *testing.T) {
+	t.Parallel()
 	bus := New(testLogger())
 	defer bus.Close()
 

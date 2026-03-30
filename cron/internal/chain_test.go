@@ -51,6 +51,7 @@ func appendingWrapper(slice *[]int, value int) JobWrapper {
 }
 
 func TestDelayIfStillRunningLogs(t *testing.T) {
+	t.Parallel()
 	var buf syncBuffer
 	logger := slog.New(slog.NewTextHandler(&buf, nil))
 
@@ -81,6 +82,7 @@ func TestDelayIfStillRunningLogs(t *testing.T) {
 }
 
 func TestChain(t *testing.T) {
+	t.Parallel()
 	var nums []int
 	var (
 		append1 = appendingWrapper(&nums, 1)
@@ -95,11 +97,13 @@ func TestChain(t *testing.T) {
 }
 
 func TestChainRecover(t *testing.T) {
+	t.Parallel()
 	panickingJob := FuncJob(func() {
 		panic("panickingJob panics")
 	})
 
 	t.Run("panic exits job by default", func(t *testing.T) {
+		t.Parallel()
 		defer func() {
 			if err := recover(); err == nil {
 				t.Errorf("panic expected, but none received")
@@ -110,12 +114,14 @@ func TestChainRecover(t *testing.T) {
 	})
 
 	t.Run("Recovering JobWrapper recovers", func(t *testing.T) {
+		t.Parallel()
 		NewChain(Recover(newDiscardLogger())).
 			Then(panickingJob).
 			Run()
 	})
 
 	t.Run("composed with the *IfStillRunning wrappers", func(t *testing.T) {
+		t.Parallel()
 		NewChain(Recover(newDiscardLogger())).
 			Then(panickingJob).
 			Run()
@@ -152,7 +158,9 @@ func (j *countJob) Done() int {
 }
 
 func TestChainDelayIfStillRunning(t *testing.T) {
+	t.Parallel()
 	t.Run("runs immediately", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
 		go wrappedJob.Run()
@@ -163,6 +171,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
 		go func() {
@@ -177,6 +186,7 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("second run delayed if first not done", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
@@ -204,7 +214,9 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 }
 
 func TestChainSkipIfStillRunning(t *testing.T) {
+	t.Parallel()
 	t.Run("runs immediately", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
 		go wrappedJob.Run()
@@ -215,6 +227,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
 		go func() {
@@ -229,6 +242,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("second run skipped if first not done", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
@@ -255,6 +269,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("skip 10 jobs on rapid fire", func(t *testing.T) {
+		t.Parallel()
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
@@ -269,6 +284,7 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 	})
 
 	t.Run("different jobs independent", func(t *testing.T) {
+		t.Parallel()
 		var j1, j2 countJob
 		j1.delay = 10 * time.Millisecond
 		j2.delay = 10 * time.Millisecond

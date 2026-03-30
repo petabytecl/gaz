@@ -37,7 +37,9 @@ func (s valueStarter) OnStart(ctx context.Context) error {
 }
 
 func TestHasLifecycle_AutoDetection(t *testing.T) {
+	t.Parallel()
 	t.Run("LazySingleton detects Starter interface", func(t *testing.T) {
+		t.Parallel()
 		provider := func(_ *Container) (*simpleStarter, error) {
 			return &simpleStarter{}, nil
 		}
@@ -48,6 +50,7 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 	})
 
 	t.Run("LazySingleton detects Stopper interface", func(t *testing.T) {
+		t.Parallel()
 		provider := func(_ *Container) (*simpleStopper, error) {
 			return &simpleStopper{}, nil
 		}
@@ -58,6 +61,7 @@ func TestHasLifecycle_AutoDetection(t *testing.T) {
 	})
 
 	t.Run("LazySingleton returns false for no lifecycle", func(t *testing.T) {
+		t.Parallel()
 		type noLifecycle struct{}
 		provider := func(_ *Container) (*noLifecycle, error) {
 			return &noLifecycle{}, nil

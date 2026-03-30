@@ -15,6 +15,7 @@ import (
 // =============================================================================
 
 func TestMapBackend_NewWithNil(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(nil)
 	require.NotNil(t, backend)
 
@@ -25,6 +26,7 @@ func TestMapBackend_NewWithNil(t *testing.T) {
 }
 
 func TestMapBackend_NewWithValues(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"host":    "localhost",
 		"port":    8080,
@@ -41,6 +43,7 @@ func TestMapBackend_NewWithValues(t *testing.T) {
 }
 
 func TestMapBackend_Set(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(nil)
 
 	backend.Set("host", "example.com")
@@ -51,6 +54,7 @@ func TestMapBackend_Set(t *testing.T) {
 }
 
 func TestMapBackend_SetDefault(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(nil)
 
 	backend.SetDefault("host", "default-host")
@@ -62,6 +66,7 @@ func TestMapBackend_SetDefault(t *testing.T) {
 }
 
 func TestMapBackend_IsSet(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(nil)
 
 	assert.False(t, backend.IsSet("missing"))
@@ -74,6 +79,7 @@ func TestMapBackend_IsSet(t *testing.T) {
 }
 
 func TestMapBackend_Get(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"key": "value",
 	})
@@ -84,6 +90,7 @@ func TestMapBackend_Get(t *testing.T) {
 }
 
 func TestMapBackend_TypeMismatch(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"string-key": "not an int",
 	})
@@ -94,6 +101,7 @@ func TestMapBackend_TypeMismatch(t *testing.T) {
 }
 
 func TestMapBackend_ThreadSafety(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(nil)
 
 	// Concurrent writes
@@ -118,6 +126,7 @@ func TestMapBackend_ThreadSafety(t *testing.T) {
 // =============================================================================
 
 func TestTestManager_EmptyConfig(t *testing.T) {
+	t.Parallel()
 	mgr := config.TestManager(nil)
 	require.NotNil(t, mgr)
 
@@ -126,6 +135,7 @@ func TestTestManager_EmptyConfig(t *testing.T) {
 }
 
 func TestTestManager_WithValues(t *testing.T) {
+	t.Parallel()
 	mgr := config.TestManager(map[string]any{
 		"server.host": "localhost",
 		"server.port": 3000,
@@ -141,6 +151,7 @@ func TestTestManager_WithValues(t *testing.T) {
 // =============================================================================
 
 func TestSampleConfig_Default(t *testing.T) {
+	t.Parallel()
 	cfg := &config.SampleConfig{}
 	cfg.Default()
 
@@ -150,6 +161,7 @@ func TestSampleConfig_Default(t *testing.T) {
 }
 
 func TestSampleConfig_DefaultPreservesValues(t *testing.T) {
+	t.Parallel()
 	cfg := &config.SampleConfig{
 		Host:  "custom",
 		Port:  9000,
@@ -168,6 +180,7 @@ func TestSampleConfig_DefaultPreservesValues(t *testing.T) {
 // =============================================================================
 
 func TestRequireConfigValue(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"key": "value",
 	})
@@ -177,6 +190,7 @@ func TestRequireConfigValue(t *testing.T) {
 }
 
 func TestRequireConfigString(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"host": "localhost",
 	})
@@ -185,6 +199,7 @@ func TestRequireConfigString(t *testing.T) {
 }
 
 func TestRequireConfigInt(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"port": 8080,
 	})
@@ -193,6 +208,7 @@ func TestRequireConfigInt(t *testing.T) {
 }
 
 func TestRequireConfigBool(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"debug": true,
 	})
@@ -201,6 +217,7 @@ func TestRequireConfigBool(t *testing.T) {
 }
 
 func TestRequireConfigIsSet(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"key": "value",
 	})
@@ -213,6 +230,7 @@ func TestRequireConfigIsSet(t *testing.T) {
 // =============================================================================
 
 func TestMapBackend_Unmarshal(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"host": "localhost",
 		"port": 8080,
@@ -231,6 +249,7 @@ func TestMapBackend_Unmarshal(t *testing.T) {
 }
 
 func TestMapBackend_UnmarshalKey(t *testing.T) {
+	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
 		"database.host": "dbhost",
 		"database.port": 5432,
@@ -252,6 +271,7 @@ func TestMapBackend_UnmarshalKey(t *testing.T) {
 // =============================================================================
 
 func TestRequireConfigLoaded(t *testing.T) {
+	t.Parallel()
 	mgr := config.TestManager(map[string]any{
 		"host":  "localhost",
 		"port":  8080,
