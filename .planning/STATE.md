@@ -4,7 +4,7 @@ milestone: v5.1
 milestone_name: Hardening
 status: completed
 stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
-last_updated: "2026-03-30T02:02:27.640Z"
+last_updated: "2026-03-30T02:03:19.041Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 8
@@ -35,7 +35,7 @@ Plan: 1 of 1
 - **Milestone:** v5.0 Vanguard Unified Server
 - **Phase:** 53 of 48 (test coverage and benchmarks)
 - **Plan:** Not started
-- **Status:** Milestone complete
+- **Status:** v5.1 milestone complete
 - **Last activity:** 2026-03-30
 
 Progress: [██████████] 100%

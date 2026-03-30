@@ -1,5 +1,31 @@
 # Project Milestones: gaz
 
+## v5.1 Hardening (Shipped: 2026-03-30)
+
+**Phases completed:** 8 phases, 17 plans, 34 tasks
+
+**Key accomplishments:**
+
+- Connect-Go Registrar interface in server/connect/ with RegisterConnect() signature, and gRPC skip-listener mode that registers services without binding a port
+- Single-port Vanguard server composing gRPC, Connect, gRPC-Web, and REST via vanguardgrpc transcoder with h2c, health auto-mount, and reflection registration
+- ConnectInterceptorBundle interface with 5 built-in bundles (logging, recovery, auth, rate-limit, validation) using priority-sorted auto-discovery from DI, plus Registrar updated to accept connect.HandlerOption for interceptor injection
+- CORS and OTEL transport middleware with priority-based chaining, OTELConnect interceptor bundle, and full middleware/interceptor wiring in Vanguard OnStart with 8 DI module providers
+- Unified server module now bundles gRPC + Vanguard with automatic SkipListener, gateway package fully deleted
+- New examples/vanguard/ demonstrating gRPC, Connect, gRPC-Web, and REST on single port via server.NewModule() with Connect adapter pattern
+- Race-safe lazySingleton lifecycle methods and Container.Build() using sync.Once, with concurrent regression tests
+- Race-safe goroutine closures in startup, full multi-error drain with errors.Join, and fresh context for worker OnStop
+- Race-safe EventBus Close with channels closed under write lock; panic-safe DI resolution chain with deferred clearChain at all entry points
+- X-Request-ID injection prevention via regexp validation, ContextHandler WithAttrs/WithGroup delegation fix, and NewLoggerWithCloser for file handle leak prevention
+- Dynamic health paths from health.Config replace hardcoded /healthz /readyz /livez, and WriteTimeout=0 now requires explicit AllowZeroWriteTimeout opt-in
+- Pool size bounds (MaxPoolSize=1024), dead letter stack traces, SetEnvKeyReplacer error return, backoff jitter off-by-one fix
+- EventBus now propagates publisher context (trace/request IDs) to handlers; HTTP server OnStart fails fast on port bind errors
+- Split 1172-line app.go into 4 focused files and fixed cron context propagation, shutdown error joining, duplicate comment, and timer leaks
+- Vanguard package coverage raised to 90.3% with 11 hot-path benchmarks across DI, EventBus, and Backoff packages
+- Commit:
+- Logger file handle leak fix, OTEL health path filter using health.Config, and doc.go path correction
+
+---
+
 ## v4.1 Server & Transport Layer (Shipped: 2026-02-04)
 
 **Delivered:** Production-ready gRPC and HTTP server capabilities with dynamic Gateway pattern, CLI flags for logger and config, and framework ergonomics improvements.
