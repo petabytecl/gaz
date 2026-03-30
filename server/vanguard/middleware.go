@@ -14,6 +14,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/health"
 	connectpkg "github.com/petabytecl/gaz/server/connect"
 )
 
@@ -116,14 +117,18 @@ func (m *CORSMiddleware) Wrap(next http.Handler) http.Handler {
 
 // OTELMiddleware implements TransportMiddleware for OpenTelemetry HTTP tracing.
 // It wraps the handler with otelhttp instrumentation, filtering out
-// health and reflection endpoints.
+// health and reflection endpoints. Health paths are read from health.Config
+// so they stay in sync with the actual health endpoint paths.
 type OTELMiddleware struct {
-	tp *sdktrace.TracerProvider
+	tp        *sdktrace.TracerProvider
+	healthCfg health.Config
 }
 
-// NewOTELMiddleware creates a new OTEL transport middleware with the given TracerProvider.
-func NewOTELMiddleware(tp *sdktrace.TracerProvider) *OTELMiddleware {
-	return &OTELMiddleware{tp: tp}
+// NewOTELMiddleware creates a new OTEL transport middleware with the given
+// TracerProvider and health configuration. Health check paths from healthCfg
+// are excluded from traces to reduce noise.
+func NewOTELMiddleware(tp *sdktrace.TracerProvider, healthCfg health.Config) *OTELMiddleware {
+	return &OTELMiddleware{tp: tp, healthCfg: healthCfg}
 }
 
 // Name returns the middleware identifier.
@@ -137,15 +142,15 @@ func (m *OTELMiddleware) Priority() int {
 }
 
 // Wrap applies OpenTelemetry HTTP instrumentation to the given handler.
-// Health endpoints (/healthz, /readyz, /livez) and gRPC reflection
+// Health endpoints (configurable via health.Config) and gRPC reflection
 // endpoints are filtered from traces to reduce noise.
 func (m *OTELMiddleware) Wrap(next http.Handler) http.Handler {
 	mw := otelhttp.NewMiddleware("vanguard",
 		otelhttp.WithTracerProvider(m.tp),
 		otelhttp.WithFilter(func(r *http.Request) bool {
 			path := r.URL.Path
-			// Filter out health check endpoints.
-			if path == "/healthz" || path == "/readyz" || path == "/livez" {
+			// Filter out health check endpoints (paths from health.Config).
+			if path == m.healthCfg.LivenessPath || path == m.healthCfg.ReadinessPath || path == m.healthCfg.StartupPath {
 				return false
 			}
 			// Filter out gRPC reflection endpoints.

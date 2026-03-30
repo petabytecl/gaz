@@ -8,7 +8,6 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/suite"
-
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz/di"

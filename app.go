@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -113,7 +114,8 @@ type App struct {
 	flagFns     []func(*pflag.FlagSet)
 
 	// Logger instance - nil until Build() is called
-	Logger *slog.Logger
+	Logger    *slog.Logger
+	logCloser io.Closer // closer for logger output handle (file-based output)
 
 	// Configuration
 	configMgr    *config.Manager
@@ -240,10 +242,10 @@ func (a *App) initializeLogger() error {
 				Format: "text",
 			}
 		}
-		a.Logger = logger.NewLogger(a.opts.LoggerConfig)
+		a.Logger, a.logCloser = logger.NewLoggerWithCloser(a.opts.LoggerConfig)
 	} else {
 		// Logger module provided config - use it
-		a.Logger = logger.NewLogger(&cfg)
+		a.Logger, a.logCloser = logger.NewLoggerWithCloser(&cfg)
 	}
 
 	// Register Logger in container
@@ -1073,6 +1075,14 @@ func (a *App) doStop(ctx context.Context) error {
 
 	// Cancel the force-exit goroutine
 	close(done)
+
+	// Close logger output handle after all services and workers are stopped.
+	// Services may still log during shutdown, so this must happen last.
+	if a.logCloser != nil {
+		if closeErr := a.logCloser.Close(); closeErr != nil {
+			errs = append(errs, fmt.Errorf("closing logger: %w", closeErr))
+		}
+	}
 
 	// Signal Run to exit (only if Run() was used)
 	if wasRunning {
