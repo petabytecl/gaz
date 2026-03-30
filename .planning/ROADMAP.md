@@ -28,6 +28,7 @@
 - [x] **Phase 50: Fix High-Priority Safety Issues** - Fix 7 safety issues: EventBus race, resolution chain leak, X-Request-ID injection, health path hardcoding, logger issues, Slowloris (completed 2026-03-29)
 - [x] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter (completed 2026-03-30)
 - [x] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers (completed 2026-03-30)
+- [ ] **Phase 53: Tech Debt Cleanup** - Wire logger closer into App shutdown, update OTEL health path filter, fix doc.go references
 
 ## Phase Details
 
@@ -76,7 +77,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
+Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52 → 53
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -87,6 +88,7 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52
 | 50. Fix High-Priority Safety Issues | 3/3 | Complete    | 2026-03-29 |
 | 51. Design and API Improvements | 0/3 | Complete    | 2026-03-30 |
 | 52. Test Coverage and Benchmarks | 0/2 | Complete    | 2026-03-30 |
+| 53. Tech Debt Cleanup | 0/0 | Pending | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -133,3 +135,13 @@ Plans:
 ## Backlog
 
 (empty)
+
+### Phase 53: Tech Debt Cleanup
+
+**Goal:** Wire logger.NewLoggerWithCloser into App shutdown lifecycle, update OTEL middleware trace filter to use health.Config paths, fix doc.go health path references
+**Requirements**: TBD
+**Depends on:** Phase 52
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 53 to break down)
