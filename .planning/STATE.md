@@ -4,13 +4,13 @@ milestone: v5.1
 milestone_name: Hardening
 status: completed
 stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
-last_updated: "2026-03-30T01:24:05.159Z"
+last_updated: "2026-03-30T02:02:27.640Z"
 last_activity: 2026-03-30
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 16
-  completed_plans: 16
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 17
+  completed_plans: 17
   percent: 100
 ---
 
@@ -25,15 +25,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 52 — test-coverage-and-benchmarks
+**Current focus:** Phase 53 — tech-debt-cleanup
 
 ## Current Position
 
-Phase: 52 (test-coverage-and-benchmarks) — EXECUTING
-Plan: 1 of 2
+Phase: 53 (tech-debt-cleanup) — EXECUTING
+Plan: 1 of 1
 
 - **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 52 of 48 (test coverage and benchmarks)
+- **Phase:** 53 of 48 (test coverage and benchmarks)
 - **Plan:** Not started
 - **Status:** Milestone complete
 - **Last activity:** 2026-03-30
