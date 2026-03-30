@@ -120,7 +120,7 @@ type App struct {
 	configLoaded             bool
 	providerValuesRegistered bool
 	providerConfigsCollected bool
-	loggerInitialized        bool // tracks if initializeLogger was called
+	loggerInitialized        bool      // tracks if initializeLogger was called
 	logCloser                io.Closer // logger file handle closer (nil for stdout/stderr)
 
 	// Worker management - nil until Build() is called

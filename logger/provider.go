@@ -67,11 +67,6 @@ func NewLoggerWithWriter(cfg *Config, w io.Writer) *slog.Logger {
 	return logger
 }
 
-// nopCloser is a no-op closer for stdout/stderr.
-type nopCloser struct{}
-
-func (nopCloser) Close() error { return nil }
-
 // resolveOutputWithCloser resolves the output destination and returns both the writer
 // and a closer. For file outputs, the closer closes the file handle. For stdout/stderr,
 // the closer is a no-op.
@@ -100,4 +95,3 @@ func resolveOutput(cfg *Config) io.Writer {
 	w, _ := resolveOutputWithCloser(cfg)
 	return w
 }
-

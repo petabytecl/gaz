@@ -247,7 +247,7 @@ func (s *MiddlewareTestSuite) TestOTELMiddleware_FiltersHealthEndpoints() {
 	tp := sdktrace.NewTracerProvider()
 	defer func() { _ = tp.Shutdown(s.T().Context()) }()
 
-	m := NewOTELMiddleware(tp)
+	m := NewOTELMiddleware(tp, health.DefaultConfig())
 
 	called := false
 	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

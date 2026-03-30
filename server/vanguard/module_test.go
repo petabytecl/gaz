@@ -450,51 +450,6 @@ func (s *ModuleTestSuite) TestProvideServer_GRPCServerResolveError() {
 	s.Require().Error(buildErr)
 }
 
-// --- provideOTELMiddleware tests ---
-
-func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithTracerProvider() {
-	container := di.New()
-
-	tp := sdktrace.NewTracerProvider()
-	defer func() { _ = tp.Shutdown(context.Background()) }()
-
-	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Instance(tp))
-
-	err := provideOTELMiddleware(container)
-	s.Require().NoError(err)
-
-	mw, resolveErr := di.Resolve[*OTELMiddleware](container)
-	s.Require().NoError(resolveErr)
-	s.NotNil(mw)
-	s.Equal("otel", mw.Name())
-}
-
-func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithoutTracerProvider_SkipsSilently() {
-	container := di.New()
-
-	err := provideOTELMiddleware(container)
-	s.Require().NoError(err)
-
-	// Should not be registered.
-	_, resolveErr := di.Resolve[*OTELMiddleware](container)
-	s.Require().Error(resolveErr, "OTEL middleware should not be registered without TracerProvider")
-}
-
-func (s *ModuleTestSuite) TestProvideOTELMiddleware_ResolveError() {
-	container := di.New()
-
-	// Register a provider that returns an error.
-	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Provider(
-		func(_ *di.Container) (*sdktrace.TracerProvider, error) {
-			return nil, errors.New("tracer provider unavailable")
-		},
-	))
-
-	err := provideOTELMiddleware(container)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "resolve tracer provider")
-}
-
 // --- provideOTELConnectBundle tests ---
 
 func (s *ModuleTestSuite) TestProvideOTELConnectBundle_WithTracerProvider() {
