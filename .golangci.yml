@@ -204,15 +204,15 @@ linters:
           - ireturn
         path: di/module\.go
         text: "NewModuleFunc returns interface"
-      # Build() has complex but well-structured setup logic
+      # App lifecycle methods have complex but well-structured logic
       - linters:
           - gocognit
-        path: app\.go
+        path: app(_build|_run|_shutdown)?\.go
         text: "(Build|cognitive complexity)"
-      # Build() has nested if blocks for config-based health module auto-registration
+      # Build/config methods have nested if blocks for setup logic
       - linters:
           - nestif
-        path: app\.go
+        path: app(_build|_run|_shutdown)?\.go
       # TestNewModule has many subtests which increase cognitive complexity
       - linters:
           - gocognit

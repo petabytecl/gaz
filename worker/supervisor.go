@@ -158,10 +158,12 @@ func (s *supervisor) supervise() {
 		)
 
 		// Wait for delay or context cancellation
+		timer := time.NewTimer(delay)
 		select {
-		case <-time.After(delay):
+		case <-timer.C:
 			// Continue to restart
 		case <-s.ctx.Done():
+			timer.Stop()
 			s.logger.Info("supervisor stopping during restart delay")
 			return
 		}
