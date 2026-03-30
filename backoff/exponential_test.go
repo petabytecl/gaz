@@ -14,6 +14,7 @@ func (c *testClock) Now() time.Time          { return c.now }
 func (c *testClock) Advance(d time.Duration) { c.now = c.now.Add(d) }
 
 func TestNewExponentialBackOff_Defaults(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff()
 
 	if b.InitialInterval != DefaultInitialInterval {
@@ -40,6 +41,7 @@ func TestNewExponentialBackOff_Defaults(t *testing.T) {
 }
 
 func TestExponentialBackOff_Options(t *testing.T) {
+	t.Parallel()
 	clock := &testClock{now: time.Now()}
 
 	b := NewExponentialBackOff(
@@ -72,6 +74,7 @@ func TestExponentialBackOff_Options(t *testing.T) {
 }
 
 func TestExponentialBackOff_InvalidOptions(t *testing.T) {
+	t.Parallel()
 	// Invalid options should be ignored, keeping defaults
 	b := NewExponentialBackOff(
 		WithInitialInterval(-1),          // invalid
@@ -101,6 +104,7 @@ func TestExponentialBackOff_InvalidOptions(t *testing.T) {
 }
 
 func TestExponentialBackOff_NextBackOff_Increases(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff(
 		WithInitialInterval(100*time.Millisecond),
 		WithMaxInterval(10*time.Second),
@@ -129,6 +133,7 @@ func TestExponentialBackOff_NextBackOff_Increases(t *testing.T) {
 }
 
 func TestExponentialBackOff_Reset(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff(
 		WithInitialInterval(100*time.Millisecond),
 		WithRandomizationFactor(0),
@@ -149,6 +154,7 @@ func TestExponentialBackOff_Reset(t *testing.T) {
 }
 
 func TestExponentialBackOff_OverflowProtection(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff(
 		WithInitialInterval(1*time.Minute),
 		WithMaxInterval(5*time.Minute),
@@ -185,6 +191,7 @@ func TestExponentialBackOff_OverflowProtection(t *testing.T) {
 }
 
 func TestExponentialBackOff_MaxElapsedTime(t *testing.T) {
+	t.Parallel()
 	clock := &testClock{now: time.Now()}
 
 	b := NewExponentialBackOff(
@@ -211,6 +218,7 @@ func TestExponentialBackOff_MaxElapsedTime(t *testing.T) {
 }
 
 func TestExponentialBackOff_ZeroRandomizationFactor(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff(
 		WithInitialInterval(100*time.Millisecond),
 		WithRandomizationFactor(0),
@@ -224,6 +232,7 @@ func TestExponentialBackOff_ZeroRandomizationFactor(t *testing.T) {
 }
 
 func TestExponentialBackOff_RandomizationInRange(t *testing.T) {
+	t.Parallel()
 	b := NewExponentialBackOff(
 		WithInitialInterval(100*time.Millisecond),
 		WithRandomizationFactor(0.5),
@@ -244,6 +253,7 @@ func TestExponentialBackOff_RandomizationInRange(t *testing.T) {
 }
 
 func TestExponentialBackOff_GetElapsedTime(t *testing.T) {
+	t.Parallel()
 	clock := &testClock{now: time.Now()}
 	b := NewExponentialBackOff(WithClock(clock))
 
@@ -267,11 +277,13 @@ func TestExponentialBackOff_GetElapsedTime(t *testing.T) {
 }
 
 func TestExponentialBackOff_InterfaceCompliance(t *testing.T) {
+	t.Parallel()
 	// Verify ExponentialBackOff implements BackOff interface
 	var _ BackOff = (*ExponentialBackOff)(nil)
 }
 
 func TestGetRandomValueFromInterval(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name                string
 		randomizationFactor float64
@@ -308,6 +320,7 @@ func TestGetRandomValueFromInterval(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := getRandomValueFromInterval(tt.randomizationFactor, tt.random, tt.currentInterval)
 			if got < tt.wantMin || got > tt.wantMax {
 				t.Errorf("getRandomValueFromInterval(%v, %v, %v) = %v, want in [%v, %v]",
