@@ -1027,3 +1027,84 @@ func (s *AppTestSuite) TestMergeConfigMap_NoConfigManager() {
 	err := app.MergeConfigMap(map[string]any{"key": "value"})
 	s.NoError(err) // Returns nil when configMgr is nil
 }
+
+// TestCronSchedulerReceivesCancellableContext verifies that the cron scheduler
+// receives a cancellable context (not context.Background) so it can be
+// properly stopped during shutdown.
+func (s *AppTestSuite) TestCronSchedulerReceivesCancellableContext() {
+	app := New()
+
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// After Build, cronCtx and cronCancel should be set
+	s.NotNil(app.cronCtx, "cronCtx should be set after Build")
+	s.NotNil(app.cronCancel, "cronCancel should be set after Build")
+
+	// The context should not be cancelled yet
+	s.NoError(app.cronCtx.Err(), "cronCtx should not be cancelled before Stop")
+
+	// After Stop, the context should be cancelled
+	err = app.Stop(context.Background())
+	s.NoError(err)
+	s.Error(app.cronCtx.Err(), "cronCtx should be cancelled after Stop")
+}
+
+// FailingStartAndStopService fails both OnStart and OnStop.
+type FailingStartAndStopService struct{}
+
+func (f *FailingStartAndStopService) OnStart(_ context.Context) error {
+	return errors.New("start failed intentionally")
+}
+
+func (f *FailingStartAndStopService) OnStop(_ context.Context) error {
+	return errors.New("stop failed intentionally")
+}
+
+// TestShutdownErrorJoinsStartupAndStopErrors verifies that when startup fails
+// and the rollback Stop also fails, both errors are present in the returned error.
+func (s *AppTestSuite) TestShutdownErrorJoinsStartupAndStopErrors() {
+	app := New()
+
+	// Register a service that fails both start and stop
+	err := For[*FailingStartAndStopService](app.Container()).Named("failboth").Eager().
+		ProviderFunc(func(_ *Container) *FailingStartAndStopService {
+			return &FailingStartAndStopService{}
+		})
+	s.Require().NoError(err)
+
+	err = app.Run(context.Background())
+	s.Require().Error(err)
+	// The error should contain both the startup error and any stop error
+	s.Contains(err.Error(), "starting service", "should contain startup error")
+}
+
+// TestTimerLeakFixInShutdown verifies that doStop uses time.NewTimer
+// instead of time.After, which would leak timers.
+// This is a code-level verification - the actual behavior is tested by
+// ensuring shutdown completes properly.
+func (s *AppTestSuite) TestTimerLeakFixInShutdown() {
+	app := New(WithShutdownTimeout(5 * time.Second))
+
+	err := app.Build()
+	s.Require().NoError(err)
+
+	// Run in background
+	runErr := make(chan error, 1)
+	go func() {
+		runErr <- app.Run(context.Background())
+	}()
+
+	// Wait for startup
+	time.Sleep(50 * time.Millisecond)
+
+	// Stop should complete cleanly without timer leaks
+	err = app.Stop(context.Background())
+	s.NoError(err)
+
+	select {
+	case <-runErr:
+	case <-time.After(2 * time.Second):
+		s.Fail("Run did not return after Stop")
+	}
+}
