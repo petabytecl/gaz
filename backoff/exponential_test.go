@@ -231,7 +231,7 @@ func TestExponentialBackOff_RandomizationInRange(t *testing.T) {
 
 	// Run multiple times to check jitter is within expected range
 	minExpected := 50 * time.Millisecond  // 100ms - 50%
-	maxExpected := 151 * time.Millisecond // 100ms + 50% + 1 (due to formula)
+	maxExpected := 150 * time.Millisecond // 100ms + 50%
 
 	for range 100 {
 		// Reset to always get first interval
@@ -277,43 +277,62 @@ func TestGetRandomValueFromInterval(t *testing.T) {
 		randomizationFactor float64
 		random              float64 // 0.0 to 1.0
 		currentInterval     time.Duration
-		wantMin             time.Duration
-		wantMax             time.Duration
+		want                time.Duration
 	}{
 		{
 			name:                "zero factor returns exact interval",
 			randomizationFactor: 0,
 			random:              0.5,
 			currentInterval:     time.Second,
-			wantMin:             time.Second,
-			wantMax:             time.Second,
+			want:                time.Second,
 		},
 		{
-			name:                "0.5 factor with random=0 returns min",
+			name:                "0.5 factor with random=0 returns minInterval",
 			randomizationFactor: 0.5,
 			random:              0,
 			currentInterval:     time.Second,
-			wantMin:             500 * time.Millisecond,
-			wantMax:             501 * time.Millisecond, // allow 1ns tolerance
+			want:                500 * time.Millisecond,
 		},
 		{
-			name:                "0.5 factor with random=1 returns max",
+			name:                "0.5 factor with random=1 returns exactly maxInterval",
 			randomizationFactor: 0.5,
-			random:              1,
+			random:              1.0,
 			currentInterval:     time.Second,
-			wantMin:             1500 * time.Millisecond,
-			wantMax:             1502 * time.Millisecond, // allow tolerance for +1 in formula
+			want:                1500 * time.Millisecond, // must be exactly maxInterval, not maxInterval+1
+		},
+		{
+			name:                "0.5 factor with random=0.5 returns currentInterval",
+			randomizationFactor: 0.5,
+			random:              0.5,
+			currentInterval:     time.Second,
+			want:                time.Second,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getRandomValueFromInterval(tt.randomizationFactor, tt.random, tt.currentInterval)
-			if got < tt.wantMin || got > tt.wantMax {
-				t.Errorf("getRandomValueFromInterval(%v, %v, %v) = %v, want in [%v, %v]",
+			if got != tt.want {
+				t.Errorf("getRandomValueFromInterval(%v, %v, %v) = %v, want %v",
 					tt.randomizationFactor, tt.random, tt.currentInterval,
-					got, tt.wantMin, tt.wantMax)
+					got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGetRandomValueFromInterval_NeverExceedsMaxInterval(t *testing.T) {
+	// With random=1.0, the result must be exactly currentInterval + delta, not more
+	currentInterval := time.Second
+	factor := 0.5
+	delta := time.Duration(factor * float64(currentInterval)) // 500ms
+	maxInterval := currentInterval + delta                    // 1500ms
+
+	got := getRandomValueFromInterval(factor, 1.0, currentInterval)
+	if got > maxInterval {
+		t.Errorf("result %v exceeds maxInterval %v (off-by-one bug)", got, maxInterval)
+	}
+	if got != maxInterval {
+		t.Errorf("result %v should be exactly maxInterval %v when random=1.0", got, maxInterval)
 	}
 }

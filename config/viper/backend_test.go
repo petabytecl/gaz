@@ -242,11 +242,26 @@ func TestBackend_SetEnvKeyReplacer(t *testing.T) {
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("APP")
-	backend.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+	err := backend.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+	require.NoError(t, err)
 	backend.AutomaticEnv()
 	_ = backend.BindEnv("database.host")
 
 	assert.Equal(t, "dbhost", backend.GetString("database.host"))
+}
+
+// customReplacer is a non-*strings.Replacer implementation for testing.
+type customReplacer struct{}
+
+func (customReplacer) Replace(s string) string { return s }
+
+func TestBackend_SetEnvKeyReplacer_NonStringsReplacer_ReturnsError(t *testing.T) {
+	backend := cfgviper.New()
+	err := backend.SetEnvKeyReplacer(customReplacer{})
+
+	assert.Error(t, err, "SetEnvKeyReplacer with non-*strings.Replacer should return error")
+	assert.Contains(t, err.Error(), "viper limitation")
+	// Must NOT panic
 }
 
 func TestBackend_SetStringsReplacer(t *testing.T) {

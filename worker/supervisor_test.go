@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -84,6 +85,21 @@ func (w *panicWorker) Name() string { return w.name }
 func (w *panicWorker) getStartCount() int {
 	return int(atomic.LoadInt32(&w.startCount))
 }
+
+// errorWorker always returns an error from OnStart (no panic).
+type errorWorker struct {
+	name       string
+	startCount int32
+}
+
+func (w *errorWorker) OnStart(_ context.Context) error {
+	atomic.AddInt32(&w.startCount, 1)
+	return errors.New("intentional error")
+}
+
+func (w *errorWorker) OnStop(_ context.Context) error { return nil }
+
+func (w *errorWorker) Name() string { return w.name }
 
 // TestSupervisor_PanicRecovery tests that a panicking worker is recovered and restarted.
 func TestSupervisor_PanicRecovery(t *testing.T) {
@@ -476,6 +492,84 @@ func TestSupervisor_DeadLetterHandler_PanicRecovery(t *testing.T) {
 	case <-time.After(15 * time.Second):
 		t.Fatal("supervisor did not stop")
 	}
+}
+
+// TestSupervisor_DeadLetterHandler_LastPanicStack tests that LastPanicStack is populated on panic.
+func TestSupervisor_DeadLetterHandler_LastPanicStack(t *testing.T) {
+	logger := slog.Default()
+	worker := &panicWorker{name: "stack-trace-worker"}
+
+	var receivedInfo DeadLetterInfo
+	var mu sync.Mutex
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour
+	opts.OnDeadLetter = func(info DeadLetterInfo) {
+		mu.Lock()
+		defer mu.Unlock()
+		receivedInfo = info
+	}
+
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	select {
+	case <-sup.wait():
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop after circuit breaker tripped")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	assert.NotEmpty(t, receivedInfo.LastPanicStack, "LastPanicStack should be populated when worker panics")
+	assert.Contains(t, receivedInfo.LastPanicStack, "goroutine", "stack trace should contain goroutine info")
+}
+
+// TestSupervisor_DeadLetterHandler_NoPanicStack_OnError tests LastPanicStack is empty on non-panic failure.
+func TestSupervisor_DeadLetterHandler_NoPanicStack_OnError(t *testing.T) {
+	logger := slog.Default()
+
+	// errorWorker always fails OnStart with an error (no panic)
+	worker := &errorWorker{name: "error-worker"}
+
+	var receivedInfo DeadLetterInfo
+	var mu sync.Mutex
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour
+	opts.OnDeadLetter = func(info DeadLetterInfo) {
+		mu.Lock()
+		defer mu.Unlock()
+		receivedInfo = info
+	}
+
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	select {
+	case <-sup.wait():
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop after circuit breaker tripped")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	assert.Empty(t, receivedInfo.LastPanicStack, "LastPanicStack should be empty when worker fails with error (not panic)")
+	assert.NotNil(t, receivedInfo.FinalError, "FinalError should be set")
 }
 
 // TestWithDeadLetterHandler_SetsOption tests the WithDeadLetterHandler option function.

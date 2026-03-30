@@ -199,7 +199,7 @@ func getRandomValueFromInterval(randomizationFactor, random float64, currentInte
 	maxInterval := float64(currentInterval) + delta
 
 	// Get a random value from the range [minInterval, maxInterval].
-	return time.Duration(minInterval + (random * (maxInterval - minInterval + 1)))
+	return time.Duration(minInterval + (random * (maxInterval - minInterval)))
 }
 
 // Compile-time interface check.

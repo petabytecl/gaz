@@ -129,7 +129,9 @@ func (m *Manager) Load() error {
 	if m.envPrefix != "" {
 		if eb, ok := m.backend.(EnvBinder); ok {
 			eb.SetEnvPrefix(m.envPrefix)
-			eb.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+			if err := eb.SetEnvKeyReplacer(strings.NewReplacer(".", "__")); err != nil {
+				return fmt.Errorf("config: set env key replacer: %w", err)
+			}
 			eb.AutomaticEnv()
 		}
 	}

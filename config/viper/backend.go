@@ -197,16 +197,13 @@ func (b *Backend) BindEnv(keys ...string) error {
 
 // SetEnvKeyReplacer sets a replacer used to transform keys to env var names.
 // The replacer must be a *strings.Replacer because viper requires this concrete type.
-// If a different StringReplacer implementation is passed, this method panics.
-func (b *Backend) SetEnvKeyReplacer(replacer config.StringReplacer) {
+// Returns an error if a different StringReplacer implementation is passed.
+func (b *Backend) SetEnvKeyReplacer(replacer config.StringReplacer) error {
 	if sr, ok := replacer.(*strings.Replacer); ok {
 		b.v.SetEnvKeyReplacer(sr)
-		return
+		return nil
 	}
-	// This shouldn't happen in practice since strings.Replacer satisfies StringReplacer
-	// and is the primary use case. If someone passes a custom implementation,
-	// viper can't handle it, so we panic with a clear message.
-	panic("config/viper: SetEnvKeyReplacer requires a *strings.Replacer (viper limitation)")
+	return errors.New("config/viper: SetEnvKeyReplacer requires a *strings.Replacer (viper limitation)")
 }
 
 // SetStringsReplacer is a convenience method that takes a *strings.Replacer directly.
