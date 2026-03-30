@@ -33,6 +33,8 @@ type supervisor struct {
 
 	// Last error for dead letter reporting
 	lastError error
+	// lastPanicStack stores the stack trace from the most recent panic
+	lastPanicStack string
 
 	// Lifecycle
 	ctx    context.Context
@@ -176,6 +178,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 				slog.String("stack", string(stack)),
 			)
 			s.lastError = fmt.Errorf("panic: %v", r)
+			s.lastPanicStack = string(stack)
 			panicked = true
 		}
 	}()
@@ -217,11 +220,12 @@ func (s *supervisor) invokeDeadLetterHandler() {
 	}()
 
 	info := DeadLetterInfo{
-		WorkerName:    s.worker.Name(),
-		FinalError:    s.lastError,
-		PanicCount:    s.failures,
-		CircuitWindow: s.opts.CircuitWindow,
-		Timestamp:     time.Now(),
+		WorkerName:     s.worker.Name(),
+		FinalError:     s.lastError,
+		PanicCount:     s.failures,
+		CircuitWindow:  s.opts.CircuitWindow,
+		Timestamp:      time.Now(),
+		LastPanicStack: s.lastPanicStack,
 	}
 	s.opts.OnDeadLetter(info)
 }

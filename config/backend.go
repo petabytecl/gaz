@@ -87,7 +87,8 @@ type EnvBinder interface {
 
 	// SetEnvKeyReplacer sets a replacer used to transform keys to env var names.
 	// Commonly used to replace dots with underscores.
-	SetEnvKeyReplacer(replacer StringReplacer)
+	// Returns an error if the replacer type is not supported by the backend.
+	SetEnvKeyReplacer(replacer StringReplacer) error
 }
 
 // StringReplacer is used for transforming config key names to environment variable names.

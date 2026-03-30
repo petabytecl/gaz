@@ -2,6 +2,10 @@ package worker
 
 import "time"
 
+// MaxPoolSize is the upper bound for worker pool size.
+// WithPoolSize clamps values above this limit.
+const MaxPoolSize = 1024
+
 // DeadLetterInfo contains information about a worker that has permanently failed.
 // This is passed to the DeadLetterHandler when the circuit breaker trips.
 type DeadLetterInfo struct {
@@ -15,6 +19,8 @@ type DeadLetterInfo struct {
 	CircuitWindow time.Duration
 	// Timestamp is when the circuit breaker tripped
 	Timestamp time.Time
+	// LastPanicStack is the stack trace from the final panic (empty if non-panic failure).
+	LastPanicStack string
 }
 
 // DeadLetterHandler is called when a worker exhausts restart attempts
@@ -100,6 +106,9 @@ func (o *WorkerOptions) ApplyOptions(opts ...WorkerOption) {
 func WithPoolSize(n int) WorkerOption {
 	return func(o *WorkerOptions) {
 		if n > 0 {
+			if n > MaxPoolSize {
+				n = MaxPoolSize
+			}
 			o.PoolSize = n
 		}
 	}
