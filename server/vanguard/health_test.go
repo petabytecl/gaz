@@ -21,11 +21,11 @@ func TestHealthTestSuite(t *testing.T) {
 
 func (s *HealthTestSuite) TestBuildHealthMux_AllPaths() {
 	mgr := health.NewManager()
-	mux := buildHealthMux(mgr)
+	mux := buildHealthMux(mgr, nil)
 	s.Require().NotNil(mux)
 
-	// Verify /healthz, /readyz, /livez all respond.
-	for _, path := range []string{"/healthz", "/readyz", "/livez"} {
+	// Verify default health paths respond.
+	for _, path := range []string{"/ready", "/live", "/startup"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
@@ -34,7 +34,7 @@ func (s *HealthTestSuite) TestBuildHealthMux_AllPaths() {
 }
 
 func (s *HealthTestSuite) TestBuildHealthMux_NilManager() {
-	mux := buildHealthMux(nil)
+	mux := buildHealthMux(nil, nil)
 	s.Nil(mux, "Nil manager should return nil mux")
 }
 
@@ -42,10 +42,10 @@ func (s *HealthTestSuite) TestMountHealthEndpoints_OnMux() {
 	// Verify health endpoints are accessible via the built mux.
 	mgr := health.NewManager()
 
-	mux := buildHealthMux(mgr)
+	mux := buildHealthMux(mgr, nil)
 	s.Require().NotNil(mux)
 
-	paths := []string{"/healthz", "/readyz", "/livez"}
+	paths := []string{"/ready", "/live", "/startup"}
 	for _, path := range paths {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
