@@ -5,12 +5,13 @@
 package helloconnect
 
 import (
-	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	proto "github.com/petabytecl/gaz/examples/vanguard/proto"
 	http "net/http"
 	strings "strings"
+
+	connect "connectrpc.com/connect"
+	proto "github.com/petabytecl/gaz/examples/vanguard/proto"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
