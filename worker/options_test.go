@@ -38,6 +38,27 @@ func TestWithPoolSize_IgnoresNegative(t *testing.T) {
 	assert.Equal(t, 1, opts.PoolSize) // Default unchanged
 }
 
+func TestWithPoolSize_MaxAllowed(t *testing.T) {
+	opts := DefaultWorkerOptions()
+	opts.ApplyOptions(WithPoolSize(MaxPoolSize))
+
+	assert.Equal(t, MaxPoolSize, opts.PoolSize)
+}
+
+func TestWithPoolSize_ClampsAboveMax(t *testing.T) {
+	opts := DefaultWorkerOptions()
+	opts.ApplyOptions(WithPoolSize(MaxPoolSize + 1))
+
+	assert.Equal(t, MaxPoolSize, opts.PoolSize, "pool size above MaxPoolSize should be clamped")
+}
+
+func TestWithPoolSize_ClampsLargeValue(t *testing.T) {
+	opts := DefaultWorkerOptions()
+	opts.ApplyOptions(WithPoolSize(10000))
+
+	assert.Equal(t, MaxPoolSize, opts.PoolSize, "large pool size should be clamped to MaxPoolSize")
+}
+
 func TestWithCritical_SetsCriticalTrue(t *testing.T) {
 	opts := DefaultWorkerOptions()
 	opts.ApplyOptions(WithCritical())
