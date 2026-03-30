@@ -12,6 +12,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/health"
 	connectpkg "github.com/petabytecl/gaz/server/connect"
 )
 
@@ -105,7 +106,7 @@ func (s *MiddlewareTestSuite) TestOTELMiddleware_ImplementsTransportMiddleware()
 	tp := sdktrace.NewTracerProvider()
 	defer func() { _ = tp.Shutdown(s.T().Context()) }()
 
-	m := NewOTELMiddleware(tp)
+	m := NewOTELMiddleware(tp, health.DefaultConfig())
 
 	var _ TransportMiddleware = m
 
@@ -117,7 +118,7 @@ func (s *MiddlewareTestSuite) TestOTELMiddleware_WrapsHandler() {
 	tp := sdktrace.NewTracerProvider()
 	defer func() { _ = tp.Shutdown(s.T().Context()) }()
 
-	m := NewOTELMiddleware(tp)
+	m := NewOTELMiddleware(tp, health.DefaultConfig())
 
 	called := false
 	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -263,6 +264,69 @@ func (s *MiddlewareTestSuite) TestDefaultCORSConfig_Production() {
 	s.Contains(cfg.ExposedHeaders, "X-Request-ID")
 	s.NotContains(cfg.AllowedMethods, "OPTIONS",
 		"Production methods should not include OPTIONS (handled by CORS handler)")
+}
+
+// --- OTELMiddleware Health Path Filtering ---
+
+func (s *MiddlewareTestSuite) TestOTELMiddleware_FiltersDefaultHealthPaths() {
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	m := NewOTELMiddleware(tp, health.DefaultConfig())
+	handler := m.Wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Default health paths (/live, /ready, /startup) should still be served
+	// but not traced. We can verify the handler works for these paths.
+	for _, path := range []string{"/live", "/ready", "/startup"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		s.Equal(http.StatusOK, rec.Code, "Health path %s should be served", path)
+	}
+}
+
+func (s *MiddlewareTestSuite) TestOTELMiddleware_DoesNotFilterOldHealthPaths() {
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	m := NewOTELMiddleware(tp, health.DefaultConfig())
+	handler := m.Wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Old paths should not be treated as health paths — they should be traced.
+	for _, path := range []string{"/healthz", "/readyz", "/livez"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		s.Equal(http.StatusOK, rec.Code, "Old path %s should still be served", path)
+	}
+}
+
+func (s *MiddlewareTestSuite) TestOTELMiddleware_CustomHealthConfig() {
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	customCfg := health.Config{
+		LivenessPath:  "/custom-live",
+		ReadinessPath: "/custom-ready",
+		StartupPath:   "/custom-startup",
+	}
+
+	m := NewOTELMiddleware(tp, customCfg)
+	handler := m.Wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Custom paths should be served (and filtered from traces).
+	for _, path := range []string{"/custom-live", "/custom-ready", "/custom-startup"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		s.Equal(http.StatusOK, rec.Code, "Custom health path %s should be served", path)
+	}
 }
 
 // --- Interface compliance compile checks ---

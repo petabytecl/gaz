@@ -571,6 +571,65 @@ func (s *AppTestSuite) TestLoggerConfigResolution() {
 }
 
 // =============================================================================
+// Tests for logCloser
+// =============================================================================
+
+func (s *AppTestSuite) TestLogCloser_FileOutput_ClosedOnStop() {
+	tmpDir := s.T().TempDir()
+	logFile := filepath.Join(tmpDir, "app.log")
+
+	app := New(WithLoggerConfig(&logger.Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: logFile,
+	}))
+	s.Require().NoError(app.Build())
+
+	// logCloser should be set after Build.
+	s.NotNil(app.logCloser, "logCloser should be set for file output")
+
+	// Write a log message.
+	app.Logger.Info("before stop")
+
+	// Stop the app — closer should be called.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := app.Stop(ctx)
+	s.Require().NoError(err)
+
+	// Verify the file was written to.
+	data, readErr := os.ReadFile(logFile)
+	s.Require().NoError(readErr)
+	s.Contains(string(data), "before stop")
+}
+
+func (s *AppTestSuite) TestLogCloser_StdoutOutput_NopCloser() {
+	app := New(WithLoggerConfig(&logger.Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "stdout",
+	}))
+	s.Require().NoError(app.Build())
+
+	// logCloser should be set (nop closer for stdout).
+	s.NotNil(app.logCloser, "logCloser should be set even for stdout")
+
+	// Stop should not error.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := app.Stop(ctx)
+	s.Require().NoError(err)
+}
+
+func (s *AppTestSuite) TestLogCloser_InitializeLoggerStoresCloser() {
+	app := New()
+	s.Require().NoError(app.Build())
+
+	// After Build, logCloser should be set.
+	s.NotNil(app.logCloser, "logCloser should be set after initializeLogger")
+}
+
+// =============================================================================
 // Tests for discoverCronJobs
 // =============================================================================
 

@@ -68,6 +68,75 @@ func TestNewLogger_Text(t *testing.T) {
 	assert.Contains(t, output, "value")
 }
 
+func TestNewLoggerWithCloser_Stdout(t *testing.T) {
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "stdout",
+	}
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	// Closing stdout closer should not error (nop closer).
+	err := closer.Close()
+	assert.NoError(t, err)
+}
+
+func TestNewLoggerWithCloser_Stderr(t *testing.T) {
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "stderr",
+	}
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	err := closer.Close()
+	assert.NoError(t, err)
+}
+
+func TestNewLoggerWithCloser_File(t *testing.T) {
+	tmpFile := t.TempDir() + "/test.log"
+
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: tmpFile,
+	}
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	// Write a log message.
+	logger.Info("file test")
+
+	// Close should work without error.
+	err := closer.Close()
+	assert.NoError(t, err)
+
+	// Verify the file was written to.
+	data, readErr := os.ReadFile(tmpFile)
+	require.NoError(t, readErr)
+	assert.Contains(t, string(data), "file test")
+}
+
+func TestNewLoggerWithCloser_EmptyOutput(t *testing.T) {
+	cfg := &Config{
+		Level:  slog.LevelInfo,
+		Format: "json",
+		Output: "",
+	}
+	logger, closer := NewLoggerWithCloser(cfg)
+	require.NotNil(t, logger)
+	require.NotNil(t, closer)
+
+	// Empty output defaults to stdout — closer should be nop.
+	err := closer.Close()
+	assert.NoError(t, err)
+}
+
 func TestNewLogger_ContextPropagation(t *testing.T) {
 	output := captureOutput(func() {
 		cfg := &Config{

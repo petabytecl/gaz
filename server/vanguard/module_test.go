@@ -9,7 +9,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/suite"
 
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
 	"github.com/petabytecl/gaz/di"
+	"github.com/petabytecl/gaz/health"
 	connectpkg "github.com/petabytecl/gaz/server/connect"
 )
 
@@ -195,6 +198,56 @@ func (s *ModuleTestSuite) TestProvideConnectRateLimitBundle_WithoutLimiter_UsesA
 	s.Require().NoError(resolveErr)
 	s.NotNil(bundle)
 	s.Equal("ratelimit", bundle.Name())
+}
+
+// --- provideOTELMiddleware tests ---
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithTracerProvider() {
+	container := di.New()
+
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Instance(tp))
+
+	// Register health config.
+	s.Require().NoError(di.For[health.Config](container).Instance(health.DefaultConfig()))
+
+	err := provideOTELMiddleware(container)
+	s.Require().NoError(err)
+
+	mw, resolveErr := di.Resolve[*OTELMiddleware](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(mw)
+	s.Equal("otel", mw.Name())
+}
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithoutHealthConfig_FallsBackToDefaults() {
+	container := di.New()
+
+	tp := sdktrace.NewTracerProvider()
+	defer func() { _ = tp.Shutdown(s.T().Context()) }()
+
+	s.Require().NoError(di.For[*sdktrace.TracerProvider](container).Instance(tp))
+
+	// Do NOT register health config — should fall back to defaults.
+	err := provideOTELMiddleware(container)
+	s.Require().NoError(err)
+
+	mw, resolveErr := di.Resolve[*OTELMiddleware](container)
+	s.Require().NoError(resolveErr)
+	s.NotNil(mw)
+}
+
+func (s *ModuleTestSuite) TestProvideOTELMiddleware_WithoutTracerProvider_Skips() {
+	container := di.New()
+
+	err := provideOTELMiddleware(container)
+	s.Require().NoError(err)
+
+	// Should not be registered.
+	_, resolveErr := di.Resolve[*OTELMiddleware](container)
+	s.Require().Error(resolveErr, "OTEL middleware should not be registered without TracerProvider")
 }
 
 func (s *ModuleTestSuite) TestProvideConnectRateLimitBundle_WithLimiter_UsesCustom() {
