@@ -33,10 +33,10 @@ func (a *App) initializeLogger() error {
 				Format: "text",
 			}
 		}
-		a.Logger = logger.NewLogger(a.opts.LoggerConfig)
+		a.Logger, a.logCloser = logger.NewLoggerWithCloser(a.opts.LoggerConfig)
 	} else {
 		// Logger module provided config - use it
-		a.Logger = logger.NewLogger(&cfg)
+		a.Logger, a.logCloser = logger.NewLoggerWithCloser(&cfg)
 	}
 
 	// Register Logger in container

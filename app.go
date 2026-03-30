@@ -3,6 +3,7 @@ package gaz
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"reflect"
@@ -120,6 +121,7 @@ type App struct {
 	providerValuesRegistered bool
 	providerConfigsCollected bool
 	loggerInitialized        bool // tracks if initializeLogger was called
+	logCloser                io.Closer // logger file handle closer (nil for stdout/stderr)
 
 	// Worker management - nil until Build() is called
 	workerMgr *worker.Manager

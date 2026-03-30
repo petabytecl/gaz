@@ -101,6 +101,13 @@ func (a *App) doStop(ctx context.Context) error {
 		errs = append(errs, serviceStopErr)
 	}
 
+	// Close logger file handle (if any) — after all services stopped, before exit
+	if a.logCloser != nil {
+		if closeErr := a.logCloser.Close(); closeErr != nil {
+			errs = append(errs, fmt.Errorf("closing logger: %w", closeErr))
+		}
+	}
+
 	// Cancel the force-exit goroutine
 	close(done)
 

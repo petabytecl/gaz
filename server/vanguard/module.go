@@ -7,6 +7,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/health"
 	connectpkg "github.com/petabytecl/gaz/server/connect"
 	grpcpkg "github.com/petabytecl/gaz/server/grpc"
 )
@@ -68,8 +69,15 @@ func provideOTELMiddleware(c *gaz.Container) error {
 		return fmt.Errorf("resolve tracer provider: %w", resolveErr)
 	}
 
+	// Resolve health config for trace filtering. Fall back to defaults
+	// when health module is not registered.
+	healthCfg, healthErr := gaz.Resolve[health.Config](c)
+	if healthErr != nil {
+		healthCfg = health.DefaultConfig()
+	}
+
 	if regErr := gaz.For[*OTELMiddleware](c).Provider(func(_ *gaz.Container) (*OTELMiddleware, error) {
-		return NewOTELMiddleware(tp), nil
+		return NewOTELMiddleware(tp, healthCfg), nil
 	}); regErr != nil {
 		return fmt.Errorf("register otel middleware: %w", regErr)
 	}

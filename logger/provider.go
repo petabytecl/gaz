@@ -9,12 +9,27 @@ import (
 	"github.com/petabytecl/gaz/logger/tint"
 )
 
+// nopCloser is an io.Closer that does nothing.
+// Used for stdout/stderr where closing is not desired.
+type nopCloser struct{}
+
+func (nopCloser) Close() error { return nil }
+
 // NewLogger creates a new slog.Logger based on the configuration.
 // It sets the default logger to the returned logger.
 // Output is resolved from cfg.Output: "stdout", "stderr", or a file path.
 func NewLogger(cfg *Config) *slog.Logger {
 	w := resolveOutput(cfg)
 	return NewLoggerWithWriter(cfg, w)
+}
+
+// NewLoggerWithCloser creates a new slog.Logger and returns an io.Closer
+// that closes the underlying output handle. For stdout/stderr, the closer
+// is a no-op. For file-based output, the closer closes the file.
+// The caller is responsible for calling Close() when the logger is no longer needed.
+func NewLoggerWithCloser(cfg *Config) (*slog.Logger, io.Closer) {
+	w, closer := resolveOutputWithCloser(cfg)
+	return NewLoggerWithWriter(cfg, w), closer
 }
 
 // NewLoggerWithWriter creates a new slog.Logger writing to the given writer.
@@ -52,14 +67,6 @@ func NewLoggerWithWriter(cfg *Config, w io.Writer) *slog.Logger {
 	return logger
 }
 
-// NewLoggerWithCloser creates a logger and returns a closer for any opened file handles.
-// The caller must call closer.Close() during shutdown to prevent file descriptor leaks.
-// If output is stdout/stderr, closer is a no-op.
-func NewLoggerWithCloser(cfg *Config) (*slog.Logger, io.Closer) {
-	w, closer := resolveOutputWithCloser(cfg)
-	return NewLoggerWithWriter(cfg, w), closer
-}
-
 // nopCloser is a no-op closer for stdout/stderr.
 type nopCloser struct{}
 
@@ -90,21 +97,7 @@ func resolveOutputWithCloser(cfg *Config) (io.Writer, io.Closer) {
 // Returns os.Stdout for "stdout" or empty, os.Stderr for "stderr",
 // or opens a file for any other path. Falls back to stdout on file errors.
 func resolveOutput(cfg *Config) io.Writer {
-	switch cfg.Output {
-	case "", "stdout":
-		return os.Stdout
-	case "stderr":
-		return os.Stderr
-	default:
-		// File path - attempt to open
-		//nolint:gosec // Log files need to be readable by log monitoring tools
-		f, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			// Log warning to stderr and fall back to stdout
-			fmt.Fprintf(os.Stderr, "logger: failed to open %s: %v, falling back to stdout\n",
-				cfg.Output, err)
-			return os.Stdout
-		}
-		return f
-	}
+	w, _ := resolveOutputWithCloser(cfg)
+	return w
 }
+
