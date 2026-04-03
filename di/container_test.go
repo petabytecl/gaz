@@ -588,3 +588,50 @@ func (s *ContainerSuite) TestClearChain_RemovesEntireEntry() {
 
 	s.False(exists, "clearChain should delete the entire map entry")
 }
+
+// =============================================================================
+// Post-Build Registration Guard Tests (AEGIS F-02-001, F-09-001)
+// =============================================================================
+
+func (s *ContainerSuite) TestRegisterAfterBuild_ReturnsError() {
+	c := New()
+	s.Require().NoError(For[string](c).Instance("initial"))
+	s.Require().NoError(c.Build())
+
+	// Attempt to register after Build — must return ErrAlreadyBuilt
+	svc := newInstanceService("late", "late", "late-value")
+	err := c.Register("late", svc)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, ErrAlreadyBuilt)
+}
+
+func (s *ContainerSuite) TestReplaceAfterBuild_Succeeds() {
+	c := New()
+	_ = For[string](c).Instance("initial")
+	s.Require().NoError(c.Build())
+
+	// ReplaceService is allowed after Build (supports test mocking via Replace())
+	svc := newInstanceService[string]("replace", "replace", "replaced")
+	s.Require().NotPanics(func() {
+		c.ReplaceService("replace", svc)
+	})
+}
+
+func (s *ContainerSuite) TestRegisterBeforeBuild_Succeeds() {
+	c := New()
+	svc := newInstanceService[string]("ok", "ok", "value")
+	err := c.Register("ok", svc)
+	s.Require().NoError(err)
+}
+
+// =============================================================================
+// Nil ServiceType Guard Test (AEGIS F-03-002)
+// =============================================================================
+
+func (s *ContainerSuite) TestNilInstanceServiceType_DoesNotPanic() {
+	svc := NewInstanceServiceAny("nil-svc", "nil-svc", nil)
+	s.Require().NotPanics(func() {
+		st := svc.ServiceType()
+		s.Nil(st)
+	})
+}

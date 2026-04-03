@@ -454,5 +454,8 @@ func (s *instanceServiceAny) HasLifecycle() bool {
 }
 
 func (s *instanceServiceAny) ServiceType() reflect.Type {
+	if s.value == nil {
+		return nil
+	}
 	return reflect.TypeOf(s.value)
 }

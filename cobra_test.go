@@ -3,6 +3,7 @@ package gaz
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -270,13 +271,15 @@ func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
 		gotApp := FromContext(cmd.Context())
 		s.NotNil(gotApp)
 
-		For[*argsService](gotApp.Container()).Provider(func(c *Container) (*argsService, error) {
-			cmdArgs, err := Resolve[*CommandArgs](c)
-			if err != nil {
-				return nil, err
+		if err := For[*argsService](gotApp.Container()).Replace().Provider(func(c *Container) (*argsService, error) {
+			cmdArgs, resolveErr := Resolve[*CommandArgs](c)
+			if resolveErr != nil {
+				return nil, resolveErr
 			}
 			return &argsService{args: cmdArgs.Args}, nil
-		})
+		}); err != nil {
+			return fmt.Errorf("register argsService: %w", err)
+		}
 
 		svc, err := Resolve[*argsService](gotApp.Container())
 		s.Require().NoError(err)

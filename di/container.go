@@ -63,14 +63,30 @@ func New() *Container {
 }
 
 // Register adds a service to the container.
+// Returns ErrAlreadyBuilt if the container has already been built via Build().
 // Exported for use by gaz.App for reflection-based registration.
-func (c *Container) Register(name string, svc ServiceWrapper) {
+func (c *Container) Register(name string, svc ServiceWrapper) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.built {
+		return fmt.Errorf("%w: cannot register %s after Build()", ErrAlreadyBuilt, name)
+	}
+
 	c.services[name] = append(c.services[name], svc)
+	return nil
+}
+
+// MustRegister adds a service to the container, panicking if registration fails.
+// Use only for internal framework registration where failure is fatal.
+func (c *Container) MustRegister(name string, svc ServiceWrapper) {
+	if err := c.Register(name, svc); err != nil {
+		panic(fmt.Sprintf("di: %v", err))
+	}
 }
 
 // ReplaceService replaces all services registered under the given name with the new service.
+// Unlike Register(), this is allowed after Build() to support test mocking via Replace().
 // This is used when RegistrationBuilder.Replace() is called.
 func (c *Container) ReplaceService(name string, svc ServiceWrapper) {
 	c.mu.Lock()
@@ -436,7 +452,8 @@ func (c *Container) ResolveAllByType(t reflect.Type) ([]any, error) {
 	for _, wrappers := range c.services {
 		for _, wrapper := range wrappers {
 			// Check if the service type implements/assigns to T
-			if wrapper.ServiceType().AssignableTo(t) {
+			st := wrapper.ServiceType()
+			if st != nil && st.AssignableTo(t) {
 				candidates = append(candidates, wrapper)
 			}
 		}

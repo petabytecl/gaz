@@ -97,7 +97,9 @@ func (a *App) registerInstance(instance any) error {
 	}
 
 	svc := di.NewInstanceServiceAny(typeNameStr, typeNameStr, instance)
-	a.container.Register(typeNameStr, svc)
+	if err := a.container.Register(typeNameStr, svc); err != nil {
+		return fmt.Errorf("gaz: register %s: %w", typeNameStr, err)
+	}
 	return nil
 }
 

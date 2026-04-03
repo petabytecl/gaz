@@ -120,10 +120,9 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 
 	if b.allowReplace {
 		b.container.ReplaceService(b.name, svc)
-	} else {
-		b.container.Register(b.name, svc)
+		return nil
 	}
-	return nil
+	return b.container.Register(b.name, svc)
 }
 
 // ProviderFunc registers a simple provider function that creates the service instance.
@@ -153,8 +152,7 @@ func (b *RegistrationBuilder[T]) Instance(val T) error {
 	svc := newInstanceService(b.name, b.typeName, val, b.groups...)
 	if b.allowReplace {
 		b.container.ReplaceService(b.name, svc)
-	} else {
-		b.container.Register(b.name, svc)
+		return nil
 	}
-	return nil
+	return b.container.Register(b.name, svc)
 }

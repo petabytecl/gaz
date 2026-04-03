@@ -429,3 +429,21 @@ func (s *ResolutionSuite) TestNewTestContainer_FunctionallyIdenticalToNew() {
 	_, err2 := Resolve[*testResolveServiceA](cTest)
 	s.Equal(err1 == nil, err2 == nil)
 }
+
+// =============================================================================
+// ResolveAll Checked Type Assertion Test (AEGIS F-03-001)
+// =============================================================================
+
+func (s *ResolutionSuite) TestResolveAll_CheckedTypeAssertion_NosPanic() {
+	c := New()
+
+	// Register a string service
+	s.Require().NoError(For[string](c).Instance("hello"))
+	s.Require().NoError(c.Build())
+
+	// ResolveAll for the registered type should work
+	results, err := ResolveAll[string](c)
+	s.Require().NoError(err)
+	s.Require().Len(results, 1)
+	s.Equal("hello", results[0])
+}

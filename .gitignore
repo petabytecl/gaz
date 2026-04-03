@@ -38,3 +38,6 @@ examples/cobra-cli/cobra-cli
 _tmp/
 _tmp_trust/
 .in-memoria/
+
+# AEGIS audit state (generated)
+.aegis/

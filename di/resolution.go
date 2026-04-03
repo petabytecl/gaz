@@ -81,10 +81,15 @@ func ResolveAll[T any](c *Container) ([]T, error) {
 		return nil, err
 	}
 
-	// Cast
+	// Cast with checked assertion
 	results := make([]T, len(instances))
 	for i, inst := range instances {
-		results[i] = inst.(T) //nolint:errcheck // Type safety is guaranteed by ResolveAllByType using reflection
+		typed, ok := inst.(T)
+		if !ok {
+			return nil, fmt.Errorf("%w: ResolveAll[%s] element %d: got %T",
+				ErrTypeMismatch, TypeName[T](), i, inst)
+		}
+		results[i] = typed
 	}
 	return results, nil
 }
