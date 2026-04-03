@@ -6,50 +6,51 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestManagementServer_StartStop(t *testing.T) {
-	// Setup
+	// Setup with port 0 for random available port
 	config := Config{
-		Port:          9091, // Use different port to avoid conflict
+		Port:          0,
 		LivenessPath:  "/live",
 		ReadinessPath: "/ready",
 		StartupPath:   "/startup",
 	}
-	manager := NewManager() // Assuming default manager works
+	manager := NewManager()
 	shutdownCheck := NewShutdownCheck()
 
 	server := NewManagementServer(config, manager, shutdownCheck, nil)
 
 	// Start
 	ctx := context.Background()
-	if err := server.OnStart(ctx); err != nil {
-		t.Fatalf("OnStart failed: %v", err)
-	}
+	err := server.OnStart(ctx)
+	require.NoError(t, err)
 
-	// Verify it's running
-	// Give it a moment to start
-	time.Sleep(100 * time.Millisecond)
+	t.Cleanup(func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		require.NoError(t, server.OnStop(stopCtx))
+	})
 
-	url := fmt.Sprintf("http://localhost:%d/live", config.Port)
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if err != nil {
-		t.Fatalf("Failed to create request: %v", err)
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("Failed to request liveness: %v", err)
-	}
-	defer resp.Body.Close()
+	// Use the actual bound port
+	port := server.Port()
+	require.NotZero(t, port)
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", resp.StatusCode)
-	}
+	// Verify liveness endpoint is reachable
+	url := fmt.Sprintf("http://localhost:%d/live", port)
+	require.Eventually(t, func() bool {
+		req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+		if reqErr != nil {
+			return false
+		}
+		resp, doErr := http.DefaultClient.Do(req)
+		if doErr != nil {
+			return false
+		}
+		_ = resp.Body.Close()
 
-	// Stop
-	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	if stopErr := server.OnStop(stopCtx); stopErr != nil {
-		t.Errorf("OnStop failed: %v", stopErr)
-	}
+		return resp.StatusCode == http.StatusOK
+	}, 2*time.Second, 50*time.Millisecond)
 }

@@ -22,13 +22,7 @@ func TestConfigModuleSuite(t *testing.T) {
 }
 
 func (s *ConfigModuleSuite) SetupTest() {
-	var err error
-	s.tempDir, err = os.MkdirTemp("", "config-module-test-*")
-	s.Require().NoError(err)
-}
-
-func (s *ConfigModuleSuite) TearDownTest() {
-	_ = os.RemoveAll(s.tempDir)
+	s.tempDir = s.T().TempDir()
 }
 
 func (s *ConfigModuleSuite) TestDefaultConfig() {
@@ -77,13 +71,7 @@ func (s *ConfigModuleSuite) TestConfigValidate_InvalidPath() {
 
 func (s *ConfigModuleSuite) TestGetSearchPaths_NoXDG() {
 	// Clear XDG env var
-	original := os.Getenv("XDG_CONFIG_HOME")
-	s.Require().NoError(os.Unsetenv("XDG_CONFIG_HOME"))
-	defer func() {
-		if original != "" {
-			_ = os.Setenv("XDG_CONFIG_HOME", original)
-		}
-	}()
+	s.T().Setenv("XDG_CONFIG_HOME", "")
 
 	cfg := configmod.DefaultConfig()
 	paths := cfg.GetSearchPaths("testapp")
@@ -100,15 +88,7 @@ func (s *ConfigModuleSuite) TestGetSearchPaths_WithXDG() {
 	xdgDir := filepath.Join(s.tempDir, "xdg-config")
 	s.Require().NoError(os.MkdirAll(xdgDir, 0o755))
 
-	original := os.Getenv("XDG_CONFIG_HOME")
-	s.Require().NoError(os.Setenv("XDG_CONFIG_HOME", xdgDir))
-	defer func() {
-		if original != "" {
-			_ = os.Setenv("XDG_CONFIG_HOME", original)
-		} else {
-			_ = os.Unsetenv("XDG_CONFIG_HOME")
-		}
-	}()
+	s.T().Setenv("XDG_CONFIG_HOME", xdgDir)
 
 	cfg := configmod.DefaultConfig()
 	paths := cfg.GetSearchPaths("testapp")

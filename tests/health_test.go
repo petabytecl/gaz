@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/health"
 )
@@ -21,55 +23,34 @@ func (c *testConfig) HealthConfig() health.Config {
 	return c.Health
 }
 
-//nolint:gocognit // Integration tests are naturally complex
 func TestHealthIntegration(t *testing.T) {
-	// Configure app with HealthConfigProvider
+	// Configure app with HealthConfigProvider using port 0 for random available port
 	cfg := &testConfig{
 		Health: health.DefaultConfig(),
 	}
-	cfg.Health.Port = 9093
+	cfg.Health.Port = 0
 
 	app := gaz.New()
 	app.WithConfig(cfg)
 
-	// Start app in background
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Build and start (instead of Run) so we can resolve the server's actual port
+	ctx := context.Background()
 
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- app.Run(ctx)
-	}()
+	err := app.Start(ctx)
+	require.NoError(t, err)
 
-	// Wait for server to be ready
-	url := fmt.Sprintf("http://localhost:%d/live", cfg.Health.Port)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-	timeout := time.After(2 * time.Second)
+	t.Cleanup(func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		require.NoError(t, app.Stop(stopCtx))
+	})
 
-	ready := false
-	for !ready {
-		select {
-		case <-timeout:
-			t.Fatal("Timeout waiting for health server to start")
-		case <-ticker.C:
-			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-			if err != nil {
-				continue
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err == nil {
-				_ = resp.Body.Close()
-				if resp.StatusCode == http.StatusOK {
-					ready = true
-				}
-			}
-		case err := <-errCh:
-			if err != nil {
-				t.Fatalf("App run failed: %v", err)
-			}
-		}
-	}
+	// Resolve the ManagementServer to get the actual bound port
+	mgmtServer, err := gaz.Resolve[*health.ManagementServer](app.Container())
+	require.NoError(t, err)
+
+	port := mgmtServer.Port()
+	require.NotZero(t, port)
 
 	// Verify endpoints
 	endpoints := []string{
@@ -79,31 +60,19 @@ func TestHealthIntegration(t *testing.T) {
 	}
 
 	for _, path := range endpoints {
-		fullURL := fmt.Sprintf("http://localhost:%d%s", cfg.Health.Port, path)
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
-		if err != nil {
-			t.Errorf("NewRequest %s failed: %v", fullURL, err)
-			continue
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			t.Errorf("GET %s failed: %v", fullURL, err)
-			continue
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			t.Errorf("GET %s status: got %d, want %d", fullURL, resp.StatusCode, http.StatusOK)
-		}
-	}
+		fullURL := fmt.Sprintf("http://localhost:%d%s", port, path)
+		require.Eventually(t, func() bool {
+			req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
+			if reqErr != nil {
+				return false
+			}
+			resp, doErr := http.DefaultClient.Do(req)
+			if doErr != nil {
+				return false
+			}
+			_ = resp.Body.Close()
 
-	// Stop app
-	cancel()
-
-	// Wait for Run to return
-	select {
-	case <-errCh:
-		// Success
-	case <-time.After(5 * time.Second):
-		t.Fatal("Timeout waiting for app to stop")
+			return resp.StatusCode == http.StatusOK
+		}, 2*time.Second, 50*time.Millisecond, "endpoint %s not reachable", fullURL)
 	}
 }

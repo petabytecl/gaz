@@ -89,6 +89,41 @@ func BenchmarkResolve_Parallel(b *testing.B) {
 	})
 }
 
+// benchDepA/B/C form a 3-level dependency chain for nested resolution benchmarks.
+type benchDepC struct{}
+type benchDepB struct{ dep *benchDepC }
+type benchDepA struct{ dep *benchDepB }
+
+func BenchmarkResolve_NestedDependencies(b *testing.B) {
+	b.ReportAllocs()
+
+	c := di.New()
+	_ = di.For[*benchDepC](c).ProviderFunc(func(_ *di.Container) *benchDepC {
+		return &benchDepC{}
+	})
+	_ = di.For[*benchDepB](c).Provider(func(c *di.Container) (*benchDepB, error) {
+		dep, err := di.Resolve[*benchDepC](c)
+		if err != nil {
+			return nil, err
+		}
+		return &benchDepB{dep: dep}, nil
+	})
+	_ = di.For[*benchDepA](c).Provider(func(c *di.Container) (*benchDepA, error) {
+		dep, err := di.Resolve[*benchDepB](c)
+		if err != nil {
+			return nil, err
+		}
+		return &benchDepA{dep: dep}, nil
+	})
+	// Warm up all singletons
+	_, _ = di.Resolve[*benchDepA](c)
+
+	for b.Loop() {
+		v, _ := di.Resolve[*benchDepA](c)
+		sink = v
+	}
+}
+
 func BenchmarkResolveAll(b *testing.B) {
 	b.ReportAllocs()
 

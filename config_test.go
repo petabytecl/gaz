@@ -53,12 +53,8 @@ func (s *ConfigSuite) TestDefaults() {
 }
 
 func (s *ConfigSuite) TestEnvVars() {
-	s.Require().NoError(os.Setenv("TEST_APP_HOST", "example.com"))
-	s.Require().NoError(os.Setenv("TEST_APP_PORT", "9090"))
-	defer func() {
-		_ = os.Unsetenv("TEST_APP_HOST")
-		_ = os.Unsetenv("TEST_APP_PORT")
-	}()
+	s.T().Setenv("TEST_APP_HOST", "example.com")
+	s.T().Setenv("TEST_APP_PORT", "9090")
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg, config.WithEnvPrefix("TEST_APP"))
@@ -71,8 +67,7 @@ func (s *ConfigSuite) TestEnvVars() {
 }
 
 func (s *ConfigSuite) TestValidation() {
-	s.Require().NoError(os.Setenv("TEST_APP_PORT", "-1"))
-	defer func() { _ = os.Unsetenv("TEST_APP_PORT") }()
+	s.T().Setenv("TEST_APP_PORT", "-1")
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg, config.WithEnvPrefix("TEST_APP"))
@@ -122,8 +117,7 @@ func (s *ConfigSuite) TestProfiles() {
 	err = os.WriteFile(filepath.Join(tmpDir, "config.prod.yaml"), prodConfig, 0o600)
 	s.Require().NoError(err)
 
-	s.Require().NoError(os.Setenv("TEST_ENV", "prod"))
-	defer func() { _ = os.Unsetenv("TEST_ENV") }()
+	s.T().Setenv("TEST_ENV", "prod")
 
 	var cfg TestConfig
 	app := gaz.New().WithConfig(&cfg,

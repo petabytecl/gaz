@@ -931,15 +931,7 @@ func (s *AppTestSuite) TestApplyConfigFlags_XDGConfigHome() {
 	s.Require().NoError(os.MkdirAll(xdgDir, 0o755))
 
 	// Set XDG_CONFIG_HOME
-	original := os.Getenv("XDG_CONFIG_HOME")
-	s.Require().NoError(os.Setenv("XDG_CONFIG_HOME", xdgDir))
-	defer func() {
-		if original != "" {
-			_ = os.Setenv("XDG_CONFIG_HOME", original)
-		} else {
-			_ = os.Unsetenv("XDG_CONFIG_HOME")
-		}
-	}()
+	s.T().Setenv("XDG_CONFIG_HOME", xdgDir)
 
 	cmd := &cobra.Command{
 		Use: "testapp",
@@ -962,13 +954,7 @@ func (s *AppTestSuite) TestApplyConfigFlags_XDGConfigHome() {
 
 func (s *AppTestSuite) TestApplyConfigFlags_NoXDGConfigHome() {
 	// Test without XDG_CONFIG_HOME set
-	original := os.Getenv("XDG_CONFIG_HOME")
-	s.Require().NoError(os.Unsetenv("XDG_CONFIG_HOME"))
-	defer func() {
-		if original != "" {
-			_ = os.Setenv("XDG_CONFIG_HOME", original)
-		}
-	}()
+	s.T().Setenv("XDG_CONFIG_HOME", "")
 
 	cmd := &cobra.Command{
 		Use: "testapp",

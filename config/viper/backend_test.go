@@ -202,8 +202,7 @@ func TestBackend_SafeWriteConfigAs_DoesNotOverwrite(t *testing.T) {
 // =============================================================================
 
 func TestBackend_SetEnvPrefix(t *testing.T) {
-	require.NoError(t, os.Setenv("VIPERTEST_HOST", "envhost"))
-	defer os.Unsetenv("VIPERTEST_HOST")
+	t.Setenv("VIPERTEST_HOST", "envhost")
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("VIPERTEST")
@@ -214,8 +213,7 @@ func TestBackend_SetEnvPrefix(t *testing.T) {
 }
 
 func TestBackend_BindEnv(t *testing.T) {
-	require.NoError(t, os.Setenv("CUSTOM_VAR", "customvalue"))
-	defer os.Unsetenv("CUSTOM_VAR")
+	t.Setenv("CUSTOM_VAR", "customvalue")
 
 	backend := cfgviper.New()
 	err := backend.BindEnv("mykey", "CUSTOM_VAR")
@@ -225,8 +223,7 @@ func TestBackend_BindEnv(t *testing.T) {
 }
 
 func TestBackend_AutomaticEnv(t *testing.T) {
-	require.NoError(t, os.Setenv("AUTOTEST_DEBUG", "true"))
-	defer os.Unsetenv("AUTOTEST_DEBUG")
+	t.Setenv("AUTOTEST_DEBUG", "true")
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("AUTOTEST")
@@ -237,8 +234,7 @@ func TestBackend_AutomaticEnv(t *testing.T) {
 }
 
 func TestBackend_SetEnvKeyReplacer(t *testing.T) {
-	require.NoError(t, os.Setenv("APP_DATABASE__HOST", "dbhost"))
-	defer os.Unsetenv("APP_DATABASE__HOST")
+	t.Setenv("APP_DATABASE__HOST", "dbhost")
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("APP")
@@ -265,8 +261,7 @@ func TestBackend_SetEnvKeyReplacer_NonStringsReplacer_ReturnsError(t *testing.T)
 }
 
 func TestBackend_SetStringsReplacer(t *testing.T) {
-	require.NoError(t, os.Setenv("APP2_SERVER__PORT", "9000"))
-	defer os.Unsetenv("APP2_SERVER__PORT")
+	t.Setenv("APP2_SERVER__PORT", "9000")
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("APP2")

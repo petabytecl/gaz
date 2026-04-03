@@ -213,8 +213,7 @@ func TestLoad_WithDefaults_AppliesDefaults(t *testing.T) {
 }
 
 func TestLoad_WithEnvPrefix_BindsEnvVars(t *testing.T) {
-	require.NoError(t, os.Setenv("CFGTEST_HOST", "envhost"))
-	defer os.Unsetenv("CFGTEST_HOST")
+	t.Setenv("CFGTEST_HOST", "envhost")
 
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend,
@@ -231,8 +230,7 @@ func TestLoad_WithEnvPrefix_BindsEnvVars(t *testing.T) {
 }
 
 func TestLoad_WithProfileConfig_MergesProfile(t *testing.T) {
-	require.NoError(t, os.Setenv("CFG_PROFILE", "local"))
-	defer os.Unsetenv("CFG_PROFILE")
+	t.Setenv("CFG_PROFILE", "local")
 
 	backend := cfgviper.New()
 	testdataDir := filepath.Join("testdata")
@@ -360,12 +358,8 @@ func TestLoadInto_WithNilTarget_NoError(t *testing.T) {
 }
 
 func TestLoadInto_WithEnvVars_BindsToStruct(t *testing.T) {
-	require.NoError(t, os.Setenv("LOADTEST_HOST", "envhost"))
-	require.NoError(t, os.Setenv("LOADTEST_PORT", "9999"))
-	defer func() {
-		os.Unsetenv("LOADTEST_HOST")
-		os.Unsetenv("LOADTEST_PORT")
-	}()
+	t.Setenv("LOADTEST_HOST", "envhost")
+	t.Setenv("LOADTEST_PORT", "9999")
 
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend,
@@ -687,8 +681,7 @@ func (c *strictConfigWithDefault) Default() {
 }
 
 func TestLoadIntoStrict_WithEnvPrefix_BindsEnvVars(t *testing.T) {
-	require.NoError(t, os.Setenv("STRICTTEST_HOST", "envhost"))
-	defer os.Unsetenv("STRICTTEST_HOST")
+	t.Setenv("STRICTTEST_HOST", "envhost")
 
 	backend := cfgviper.New()
 	mgr := config.NewWithBackend(backend,
