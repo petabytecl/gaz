@@ -1,0 +1,31 @@
+{
+  "name": "gaz",
+  "version": "5.1.0",
+  "milestone": {
+    "name": "v5.2 AEGIS Remediation",
+    "version": "5.2.0",
+    "status": "not_started"
+  },
+  "phase": {
+    "number": 1,
+    "name": "Immediate Security & Safety",
+    "status": "not_started"
+  },
+  "loop": {
+    "plan": null,
+    "position": "IDLE"
+  },
+  "timestamps": {
+    "created_at": "2026-04-02T22:30:00Z",
+    "updated_at": "2026-04-02T22:30:00Z"
+  },
+  "satellite": {
+    "groom": true
+  },
+  "aegis": {
+    "report": ".aegis/report/AEGIS-REPORT.md",
+    "execution_plan": ".aegis/execution/execution-plan.md",
+    "playbooks": ".aegis/remediation/playbooks/",
+    "guardrails": ".aegis/remediation/guardrails/claude-rules.md"
+  }
+}

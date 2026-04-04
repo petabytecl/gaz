@@ -16,6 +16,9 @@ go.sum
 # OS
 .DS_Store
 
+# Claude worktrees
+.claude/worktrees
+
 # Test artifacts
 coverage.out
 
@@ -41,3 +44,4 @@ _tmp_trust/
 
 # AEGIS audit state (generated)
 .aegis/
+.scannerwork/
