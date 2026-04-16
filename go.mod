@@ -13,7 +13,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/petermattis/goid v0.0.0-20260226131333-17d1149c6ac6
 	github.com/rs/cors v1.11.1
 	github.com/shirou/gopsutil/v4 v4.26.2
