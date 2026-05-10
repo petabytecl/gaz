@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-
-	"github.com/petabytecl/gaz/di"
 )
 
 // contextKey is used to store App in context.
@@ -175,7 +173,8 @@ func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) 
 
 // Start initiates the application lifecycle.
 // This is called automatically by WithCobra() or can be called manually.
-// It executes OnStart hooks for all services in dependency order.
+// It delegates to startServices() which provides worker filtering, parallel layer
+// startup, panic recovery, rollback on failure, and worker manager start.
 func (a *App) Start(ctx context.Context) error {
 	// Ensure Build() was called first
 	a.mu.Lock()
@@ -188,27 +187,5 @@ func (a *App) Start(ctx context.Context) error {
 	}
 	a.mu.Unlock()
 
-	// Compute startup order
-	graph := a.container.GetGraph()
-	services := make(map[string]di.ServiceWrapper)
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		services[name] = svc
-	})
-
-	startupOrder, err := ComputeStartupOrder(graph, services)
-	if err != nil {
-		return err
-	}
-
-	// Start services layer by layer
-	for _, layer := range startupOrder {
-		for _, name := range layer {
-			svc := services[name]
-			if startErr := svc.Start(ctx); startErr != nil {
-				return fmt.Errorf("starting service %s: %w", name, startErr)
-			}
-		}
-	}
-
-	return nil
+	return a.startServices(ctx)
 }

@@ -312,44 +312,52 @@ func (s *IntegrationSuite) TestNestedModuleDependencies() {
 
 func (s *IntegrationSuite) TestCobraSubcommandHierarchy() {
 	// Test: Nested subcommands all have access to App
+	// Each execution uses a fresh app because Start()/Stop() are one-shot
+	// (stopOnce prevents restarting an already-stopped app).
 
-	var level1App, level2App *gaz.App
-
-	rootCmd := &cobra.Command{Use: "root"}
-	level1Cmd := &cobra.Command{
+	// Test level1 subcommand
+	var level1App *gaz.App
+	rootCmd1 := &cobra.Command{Use: "root"}
+	level1Cmd1 := &cobra.Command{
 		Use: "level1",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			level1App = gaz.FromContext(cmd.Context())
 			return nil
 		},
 	}
-	level2Cmd := &cobra.Command{
+	rootCmd1.AddCommand(level1Cmd1)
+	app1 := gaz.New(gaz.WithCobra(rootCmd1))
+	_ = gaz.For[*testDatabase](app1.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
+		return &testDatabase{dsn: "test-db"}
+	})
+
+	rootCmd1.SetArgs([]string{"level1"})
+	err := rootCmd1.Execute()
+	s.Require().NoError(err)
+	s.Same(app1, level1App)
+
+	// Test nested level2 subcommand
+	var level2App *gaz.App
+	rootCmd2 := &cobra.Command{Use: "root"}
+	level1Cmd2 := &cobra.Command{Use: "level1"}
+	level2Cmd2 := &cobra.Command{
 		Use: "level2",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			level2App = gaz.FromContext(cmd.Context())
 			return nil
 		},
 	}
-
-	level1Cmd.AddCommand(level2Cmd)
-	rootCmd.AddCommand(level1Cmd)
-
-	app := gaz.New(gaz.WithCobra(rootCmd))
-	_ = gaz.For[*testDatabase](app.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
+	level1Cmd2.AddCommand(level2Cmd2)
+	rootCmd2.AddCommand(level1Cmd2)
+	app2 := gaz.New(gaz.WithCobra(rootCmd2))
+	_ = gaz.For[*testDatabase](app2.Container()).ProviderFunc(func(_ *gaz.Container) *testDatabase {
 		return &testDatabase{dsn: "test-db"}
 	})
 
-	// Execute level1 command first
-	rootCmd.SetArgs([]string{"level1"})
-	err := rootCmd.Execute()
+	rootCmd2.SetArgs([]string{"level1", "level2"})
+	err = rootCmd2.Execute()
 	s.Require().NoError(err)
-	s.Same(app, level1App)
-
-	// Execute nested command
-	rootCmd.SetArgs([]string{"level1", "level2"})
-	err = rootCmd.Execute()
-	s.Require().NoError(err)
-	s.Same(app, level2App)
+	s.Same(app2, level2App)
 }
 
 func (s *IntegrationSuite) TestEmptyModulesAreValid() {

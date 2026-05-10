@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/petabytecl/gaz/di"
-	"github.com/petabytecl/gaz/worker"
 )
 
 // Stop initiates graceful shutdown of the application.
@@ -61,20 +60,7 @@ func (a *App) doStop(ctx context.Context) error {
 	// Compute shutdown order (reverse of startup)
 	// We need to re-compute because we don't store it.
 	graph := a.container.GetGraph()
-	services := make(map[string]di.ServiceWrapper)
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		// Skip workers - they have their own lifecycle via WorkerManager
-		// Workers implement OnStart/OnStop which looks like di.Starter/di.Stopper,
-		// but they should only be started/stopped by WorkerManager, not the DI layer.
-		if !svc.IsTransient() {
-			if instance, err := a.container.ResolveByName(name, nil); err == nil {
-				if _, isWorker := instance.(worker.Worker); isWorker {
-					return
-				}
-			}
-		}
-		services[name] = svc
-	})
+	services := a.collectNonWorkerServices()
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {

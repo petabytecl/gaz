@@ -36,13 +36,19 @@ func (a *App) Run(ctx context.Context) error {
 		a.mu.Unlock()
 	}()
 
-	// Compute startup order
-	graph := a.container.GetGraph()
+	if err := a.startServices(ctx); err != nil {
+		return err
+	}
+
+	return a.waitForShutdownSignal(ctx)
+}
+
+// collectNonWorkerServices returns all non-transient services that are not workers.
+// Workers have their own lifecycle via WorkerManager and should not be started/stopped
+// by the DI layer directly.
+func (a *App) collectNonWorkerServices() map[string]di.ServiceWrapper {
 	services := make(map[string]di.ServiceWrapper)
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		// Skip workers - they have their own lifecycle via WorkerManager
-		// Workers implement OnStart/OnStop which looks like di.Starter/di.Stopper,
-		// but they should only be started/stopped by WorkerManager, not the DI layer.
 		if !svc.IsTransient() {
 			if instance, err := a.container.ResolveByName(name, nil); err == nil {
 				if _, isWorker := instance.(worker.Worker); isWorker {
@@ -52,7 +58,16 @@ func (a *App) Run(ctx context.Context) error {
 		}
 		services[name] = svc
 	})
+	return services
+}
 
+// startServices computes the startup order from the dependency graph, starts services
+// layer by layer in parallel, and then starts the worker manager. On failure at any
+// stage it rolls back by stopping already-started services.
+func (a *App) startServices(ctx context.Context) error {
+	services := a.collectNonWorkerServices()
+
+	graph := a.container.GetGraph()
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
 		return err
@@ -117,7 +132,7 @@ func (a *App) Run(ctx context.Context) error {
 		return errors.Join(fmt.Errorf("starting workers: %w", workerErr), stopErr)
 	}
 
-	return a.waitForShutdownSignal(ctx)
+	return nil
 }
 
 // waitForShutdownSignal blocks until a shutdown trigger (signal, context cancel, or Stop call).
