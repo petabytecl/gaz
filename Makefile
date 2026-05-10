@@ -16,7 +16,7 @@ test: ## Run tests
 cover: ## Run tests with coverage (excludes examples)
 	@# Get list of packages excluding examples and tests directories
 	$(eval COVER_PKGS := $(shell go list ./... | grep -v -E '/(examples|tests)/'))
-	go test -race -coverprofile=coverage.out -covermode=atomic $(COVER_PKGS)
+	go test -race -short -coverprofile=coverage.out -covermode=atomic $(COVER_PKGS)
 	@go tool cover -func=coverage.out
 	@coverage=$$(go tool cover -func=coverage.out | grep total | grep -oE '[0-9]+\.[0-9]+'); \
 	echo "Coverage: $${coverage}%"; \

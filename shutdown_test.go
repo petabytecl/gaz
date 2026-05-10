@@ -439,6 +439,9 @@ func (s *ShutdownTestSuite) TestWithShutdownTimeoutOption() {
 // TestFirstSIGINTLogsHint verifies that the first SIGINT logs a hint about
 // pressing Ctrl+C again to force exit.
 func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
+	if testing.Short() {
+		s.T().Skip("sends real signals to test process — unsafe with -race/-coverprofile")
+	}
 	// Create app with slow hook (1s)
 	app := s.createAppWithSlowHook(1*time.Second, 5*time.Second, 10*time.Second)
 
@@ -499,6 +502,9 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 // TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT
 // triggers immediate exitFunc(1) without waiting for graceful shutdown.
 func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
+	if testing.Short() {
+		s.T().Skip("sends real signals to test process — unsafe with -race/-coverprofile")
+	}
 	// Create app with slow hook (5s)
 	// Global timeout is 10s (won't trigger)
 	app := s.createAppWithSlowHook(5*time.Second, 10*time.Second, 10*time.Second)
@@ -558,6 +564,9 @@ func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
 // shutdown without the double-signal force exit behavior (SIGTERM + SIGKILL is
 // the standard ops pattern for force exit).
 func (s *ShutdownTestSuite) TestSIGTERMDoesNotEnableDoubleSignal() {
+	if testing.Short() {
+		s.T().Skip("sends real signals to test process — unsafe with -race/-coverprofile")
+	}
 	// Create app with hook that completes quickly
 	app := s.createAppWithSlowHook(100*time.Millisecond, 5*time.Second, 10*time.Second)
 
