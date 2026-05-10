@@ -91,8 +91,8 @@ Phases execute in numeric order: 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 ->
 | 51. Design and API Improvements | 0/3 | Complete    | 2026-03-30 |
 | 52. Test Coverage and Benchmarks | 0/2 | Complete    | 2026-03-30 |
 | 53. Tech Debt Cleanup | 0/1 | Complete    | 2026-03-30 |
-| 53.1. Critical Review Fixes (INSERTED) | 0/3 | Planned | — |
-| 53.2. High and Medium Review Fixes (INSERTED) | 0/0 | Not planned | — |
+| 53.1. Critical Review Fixes (INSERTED) | 3/3 | Complete | 2026-05-09 |
+| 53.2. High and Medium Review Fixes (INSERTED) | 0/7 | Planned | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -175,13 +175,18 @@ Items (summary — see CONTEXT.md for fix sketches):
 
 ### Phase 53.2: High and Medium Review Fixes (INSERTED)
 
-**Goal:** Clear the HIGH/MEDIUM review findings, pay down the 98-site `time.Sleep` test debt, and ship rule-enforcement automation so Rules 1/6/7/8 cannot regress silently again.
+**Goal:** Clear the HIGH/MEDIUM review findings, pay down the 103-site `time.Sleep` test debt, and ship rule-enforcement automation so Rules 1/5/6/7/8 cannot regress silently again.
 **Origin:** Full-repo code review 2026-05-09.
 **Depends on:** Phase 53.1
 **Context:** `.planning/milestones/v5.1-phases/53.2-high-medium-review-fixes/CONTEXT.md`
-**Plans:** 0/0 (not planned yet — run `/gsd-plan-phase 53.2`)
+**Requirements:** A1-A17, B1-B21, C1-C3 (41 items from CONTEXT.md)
+**Plans:** 7 plans
 
-Sections (see CONTEXT.md for full breakdown):
-- A. 17 HIGH-severity items: shutdown ctx propagation (worker.Manager.Stop, eventbus/cron OnStop), force-exit race, ReplaceService Build guard (Rule 4), eager-resolve nondeterminism, h2c TLS guidance, AllowZeroWriteTimeout/CORS defaults, env-var convention split (Rule 5), mgmt server bind address, 98-site time.Sleep sweep (Rule 6).
-- B. 21 MEDIUM-severity cleanups: DI singleton lifecycle hooks under lock, reflect-tag memoization, duplicate-Named detection (and ErrDuplicate wiring), eager discover only-by-type, gRPC server constructor moved to OnStart, Connect rate-limit error code, health timeouts, logger SetDefault side-effect, gaztest panic->error.
-- C. 3 rule-enforcement automation tasks: custom golangci-lint analysispass for lock-during-blocking-IO (Rule 1), shell-grep harness for Rules 6/7/8, doc-reality CI check (Rule 5).
+Plans:
+- [ ] 53.2-01-PLAN.md — Shutdown context propagation (A1-A5, A6-verify, A13)
+- [ ] 53.2-02-PLAN.md — DI container hardening (A7-A9, B1-verify, B3, B4, B14)
+- [ ] 53.2-03-PLAN.md — Server security defaults + config fixes (A10-A12, A14-A16, B10)
+- [ ] 53.2-04-PLAN.md — DI + app cleanup (B2, B5, B6, B16-B18)
+- [ ] 53.2-05-PLAN.md — Server + worker + cron + logger + gaztest cleanup (B7-B9, B11-B13, B15, B19-B21)
+- [ ] 53.2-06-PLAN.md — time.Sleep sweep (A17, 103 sites across 18 files)
+- [ ] 53.2-07-PLAN.md — Rule enforcement automation + CHANGELOG (C1-C3)
