@@ -95,18 +95,21 @@ func ResolveAll[T any](c *Container) ([]T, error) {
 }
 
 // ResolveGroup retrieves all services belonging to the specified group.
-// It filters services that are assignable to T.
+// Returns ErrTypeMismatch if any element cannot be asserted to T.
 func ResolveGroup[T any](c *Container, group string) ([]T, error) {
 	instances, err := c.ResolveGroup(group)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []T
-	for _, inst := range instances {
-		if typed, ok := inst.(T); ok {
-			results = append(results, typed)
+	results := make([]T, len(instances))
+	for i, inst := range instances {
+		typed, ok := inst.(T)
+		if !ok {
+			return nil, fmt.Errorf("%w: ResolveGroup[%s] element %d: got %T",
+				ErrTypeMismatch, TypeName[T](), i, inst)
 		}
+		results[i] = typed
 	}
 	return results, nil
 }

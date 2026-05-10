@@ -103,8 +103,14 @@ func (a *App) registerInstance(instance any) error {
 	return nil
 }
 
+// workerType is cached for efficient interface checks during discovery.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var workerType = reflect.TypeOf((*worker.Worker)(nil)).Elem()
+
 // discoverWorkers iterates registered services and registers those implementing
-// worker.Worker interface with the WorkerManager.
+// worker.Worker interface with the WorkerManager. Uses ServiceType() to check
+// interface compliance before resolving, avoiding unnecessary singleton instantiation.
 func (a *App) discoverWorkers() {
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
 		// Skip transient services
@@ -112,7 +118,13 @@ func (a *App) discoverWorkers() {
 			return
 		}
 
-		// Try to resolve and check for Worker interface
+		// Type check before resolve to avoid unnecessary singleton instantiation
+		st := svc.ServiceType()
+		if st == nil || !st.Implements(workerType) {
+			return // Not a worker, skip without resolving
+		}
+
+		// Resolve the worker instance
 		instance, err := a.container.ResolveByName(name, nil)
 		if err != nil {
 			return // Skip services that fail to resolve
@@ -131,8 +143,14 @@ func (a *App) discoverWorkers() {
 	})
 }
 
+// cronJobType is cached for efficient interface checks during discovery.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var cronJobType = reflect.TypeOf((*cron.CronJob)(nil)).Elem()
+
 // discoverCronJobs iterates registered services and registers those implementing
-// cron.CronJob interface with the Scheduler.
+// cron.CronJob interface with the Scheduler. Uses ServiceType() to verify interface
+// compliance before resolving, avoiding unnecessary instantiation.
 //
 // CronJobs should be registered using one of:
 //
@@ -146,10 +164,14 @@ func (a *App) discoverCronJobs() {
 
 	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
 		// Only process services registered as cron.CronJob interface
-		// TypeName() returns the interface type, so check if name equals it
-		// or if it's a named registration (name != type, but typeName = interface)
 		if svc.TypeName() != cronJobTypeName {
 			return
+		}
+
+		// Type check before resolve to avoid unnecessary instantiation
+		st := svc.ServiceType()
+		if st == nil || !st.Implements(cronJobType) {
+			return // Not a CronJob, skip without resolving
 		}
 
 		// CronJobs should be transient (new instance per execution)
@@ -159,7 +181,7 @@ func (a *App) discoverCronJobs() {
 			)
 		}
 
-		// Try to resolve and check for CronJob interface
+		// Resolve the CronJob instance
 		instance, err := a.container.ResolveByName(name, nil)
 		if err != nil {
 			return // Skip services that fail to resolve
