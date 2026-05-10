@@ -396,7 +396,7 @@ type rateLimitInterceptor struct {
 func (r *rateLimitInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if err := r.limiter.Limit(ctx, req.Header(), req.Spec()); err != nil {
-			return nil, fmt.Errorf("rate limit: %w", err)
+			return nil, connect.NewError(connect.CodeResourceExhausted, err)
 		}
 		return next(ctx, req)
 	}
@@ -411,7 +411,7 @@ func (r *rateLimitInterceptor) WrapStreamingClient(next connect.StreamingClientF
 func (r *rateLimitInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
 		if err := r.limiter.Limit(ctx, conn.RequestHeader(), conn.Spec()); err != nil {
-			return fmt.Errorf("rate limit: %w", err)
+			return connect.NewError(connect.CodeResourceExhausted, err)
 		}
 		return next(ctx, conn)
 	}
