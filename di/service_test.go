@@ -562,7 +562,9 @@ func (s *ServiceSuite) TestInstanceServiceAny_StopError() {
 // eagerSingleton HasLifecycle test
 // =============================================================================
 
-func (s *ServiceSuite) TestLazySingleton_StartStop_Concurrent() {
+func (s *ServiceSuite) TestLazySingleton_StartStop_Sequential() {
+	// Start/Stop are called sequentially by the lifecycle engine after Build.
+	// This test verifies the lock-free path works correctly.
 	provider := func(_ *Container) (*starterStopperService, error) {
 		return &starterStopperService{}, nil
 	}
@@ -571,32 +573,34 @@ func (s *ServiceSuite) TestLazySingleton_StartStop_Concurrent() {
 	c := New()
 
 	// Build the instance so s.built = true
-	_, err := svc.GetInstance(c, nil)
+	instance, err := svc.GetInstance(c, nil)
 	s.Require().NoError(err)
 
-	const numGoroutines = 10
-	var wg sync.WaitGroup
-	wg.Add(numGoroutines * 2)
+	// Start should invoke OnStart
+	err = svc.Start(context.Background())
+	s.Require().NoError(err)
+	ss := instance.(*starterStopperService)
+	s.True(ss.started)
 
-	errs := make([]error, numGoroutines*2)
+	// Stop should invoke OnStop
+	err = svc.Stop(context.Background())
+	s.Require().NoError(err)
+	s.True(ss.stopped)
+}
 
-	// 10 goroutines calling Start, 10 calling Stop
-	for i := range numGoroutines {
-		go func(idx int) {
-			defer wg.Done()
-			errs[idx] = svc.Start(context.Background())
-		}(i)
-		go func(idx int) {
-			defer wg.Done()
-			errs[numGoroutines+idx] = svc.Stop(context.Background())
-		}(i)
+func (s *ServiceSuite) TestLazySingleton_StartStop_NotBuilt() {
+	// When not built, Start/Stop should be no-ops
+	provider := func(_ *Container) (*starterStopperService, error) {
+		return &starterStopperService{}, nil
 	}
 
-	wg.Wait()
+	svc := newLazySingleton("test", "*gaz.starterStopperService", provider)
 
-	for i, e := range errs {
-		s.NoError(e, "goroutine %d got error", i)
-	}
+	err := svc.Start(context.Background())
+	s.Require().NoError(err)
+
+	err = svc.Stop(context.Background())
+	s.Require().NoError(err)
 }
 
 func (s *ServiceSuite) TestEagerSingleton_HasLifecycle() {
@@ -621,4 +625,165 @@ func (s *ServiceSuite) TestEagerSingleton_HasLifecycle() {
 	}
 	svc5 := newEagerSingleton("test", "*gaz.stopperService", stopperProvider)
 	s.True(svc5.HasLifecycle())
+}
+
+// =============================================================================
+// Deadlock-freedom and sync.Once regression tests (Rule 1)
+// =============================================================================
+
+func (s *ServiceSuite) TestLazySingletonConcurrentInitNoDeadlock() {
+	var callCount atomic.Int32
+	provider := func(_ *Container) (*testService, error) {
+		callCount.Add(1)
+		// Simulate slow provider (e.g., network I/O)
+		time.Sleep(50 * time.Millisecond)
+		return &testService{id: 42}, nil
+	}
+
+	svc := newLazySingleton("test", "*gaz.testService", provider)
+	c := New()
+
+	const numGoroutines = 50
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	instances := make([]any, numGoroutines)
+	errs := make([]error, numGoroutines)
+
+	for i := range numGoroutines {
+		go func(idx int) {
+			defer wg.Done()
+			inst, err := svc.GetInstance(c, nil)
+			instances[idx] = inst
+			errs[idx] = err
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Check no errors
+	for i, err := range errs {
+		s.Require().NoError(err, "goroutine %d got error", i)
+	}
+
+	// Provider called exactly once (sync.Once semantics)
+	s.Equal(int32(1), callCount.Load(), "provider should be called exactly once")
+
+	// All instances are the same pointer
+	first := instances[0]
+	for i, inst := range instances {
+		s.Same(first, inst, "goroutine %d got different instance", i)
+	}
+}
+
+func (s *ServiceSuite) TestLazySingletonReentrantCycleDetection() {
+	var svc *lazySingleton[*testService]
+	c := New()
+
+	// Provider that tries to resolve itself (simulating A depends on A)
+	provider := func(container *Container) (*testService, error) {
+		// This is a re-entrant call -- same goroutine trying to resolve the same singleton
+		_, err := svc.GetInstance(container, nil)
+		if err != nil {
+			return nil, err
+		}
+		return &testService{id: 1}, nil
+	}
+
+	svc = newLazySingleton("selfRef", "*gaz.testService", provider)
+
+	_, err := svc.GetInstance(c, nil)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "circular dependency")
+	s.Contains(err.Error(), "re-entrant")
+	s.ErrorIs(err, ErrCycle)
+}
+
+func (s *ServiceSuite) TestLazySingletonProviderErrorCached() {
+	var callCount atomic.Int32
+	providerErr := errors.New("provider failed")
+
+	provider := func(_ *Container) (*testService, error) {
+		callCount.Add(1)
+		return nil, providerErr
+	}
+
+	svc := newLazySingleton("test", "*gaz.testService", provider)
+	c := New()
+
+	// First call: provider fails
+	_, err1 := svc.GetInstance(c, nil)
+	s.Require().Error(err1)
+	s.ErrorIs(err1, providerErr)
+
+	// Second call: same error returned, provider NOT called again (sync.Once caching)
+	_, err2 := svc.GetInstance(c, nil)
+	s.Require().Error(err2)
+	s.ErrorIs(err2, providerErr)
+
+	// Provider called exactly once
+	s.Equal(int32(1), callCount.Load(), "provider should be called only once even on error")
+}
+
+func (s *ServiceSuite) TestEagerSingletonConcurrentInitNoDeadlock() {
+	var callCount atomic.Int32
+	provider := func(_ *Container) (*testService, error) {
+		callCount.Add(1)
+		time.Sleep(50 * time.Millisecond)
+		return &testService{id: 99}, nil
+	}
+
+	svc := newEagerSingleton("test", "*gaz.testService", provider)
+	c := New()
+
+	const numGoroutines = 50
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	instances := make([]any, numGoroutines)
+	errs := make([]error, numGoroutines)
+
+	for i := range numGoroutines {
+		go func(idx int) {
+			defer wg.Done()
+			inst, err := svc.GetInstance(c, nil)
+			instances[idx] = inst
+			errs[idx] = err
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, err := range errs {
+		s.Require().NoError(err, "goroutine %d got error", i)
+	}
+
+	s.Equal(int32(1), callCount.Load(), "provider should be called exactly once")
+
+	first := instances[0]
+	for i, inst := range instances {
+		s.Same(first, inst, "goroutine %d got different instance", i)
+	}
+}
+
+func (s *ServiceSuite) TestEagerSingletonReentrantCycleDetection() {
+	var svc *eagerSingleton[*testService]
+	c := New()
+
+	provider := func(container *Container) (*testService, error) {
+		// Re-entrant call from same goroutine
+		_, err := svc.GetInstance(container, nil)
+		if err != nil {
+			return nil, err
+		}
+		return &testService{id: 1}, nil
+	}
+
+	svc = newEagerSingleton("selfRef", "*gaz.testService", provider)
+
+	_, err := svc.GetInstance(c, nil)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "circular dependency")
+	s.Contains(err.Error(), "re-entrant")
+	s.ErrorIs(err, ErrCycle)
 }
