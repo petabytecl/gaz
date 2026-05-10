@@ -13,7 +13,7 @@
 - ✅ **v4.0 Dependency Reduction** - Phases 32-36 (shipped 2026-02-02)
 - ✅ **v4.1 Server & Transport Layer** - Phases 37-45 (shipped 2026-02-04)
 - ✅ **v5.0 Vanguard Unified Server** - Phases 46-48 (shipped 2026-03-06)
-- 🚧 **v5.1 Hardening** - Phases 49-53 (in progress)
+- 🚧 **v5.1 Hardening** - Phases 49-53.2 (reopened — 2026-05-09 audit follow-up)
 
 ## Phases
 
@@ -29,6 +29,8 @@
 - [x] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter (completed 2026-03-30)
 - [x] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers (completed 2026-03-30)
 - [x] **Phase 53: Tech Debt Cleanup** - Wire logger closer into App shutdown, update OTEL health path filter, fix doc.go references (completed 2026-03-30)
+- [ ] **Phase 53.1: Critical Review Fixes** (INSERTED) - 6 CRITICAL findings from 2026-05-09 full-repo review: Cobra single-startup-path, eventbus/cron lock-during-blocking-IO, gRPC reflection defaults (x2), DI singleton init deadlock, GitHub Actions SHA pinning
+- [ ] **Phase 53.2: High and Medium Review Fixes** (INSERTED) - HIGH/MEDIUM cleanup + rule-enforcement automation from 2026-05-09 review: shutdown ctx propagation, mgmt server posture, env-var convention, time.Sleep test sweep, custom linters for Rules 1/6/7/8
 
 ## Phase Details
 
@@ -77,7 +79,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52 → 53
+Phases execute in numeric order: 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 53.1 -> 53.2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -89,6 +91,8 @@ Phases execute in numeric order: 46 → 47 → 48 → 49 → 50 → 51 → 52 �
 | 51. Design and API Improvements | 0/3 | Complete    | 2026-03-30 |
 | 52. Test Coverage and Benchmarks | 0/2 | Complete    | 2026-03-30 |
 | 53. Tech Debt Cleanup | 0/1 | Complete    | 2026-03-30 |
+| 53.1. Critical Review Fixes (INSERTED) | 0/3 | Planned | — |
+| 53.2. High and Medium Review Fixes (INSERTED) | 0/0 | Not planned | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -123,7 +127,7 @@ Plans:
 - [ ] 51-03-PLAN.md — Split app.go into focused files, cron context, shutdown error join, timer leaks
 
 ### Phase 52: Test Coverage and Benchmarks
-**Goal:** Improve test infrastructure: vanguard coverage (74.4% → 90%+), add benchmarks for hot paths, cross-package integration tests, investigate cron timing, add t.Parallel() markers
+**Goal:** Improve test infrastructure: vanguard coverage (74.4% -> 90%+), add benchmarks for hot paths, cross-package integration tests, investigate cron timing, add t.Parallel() markers
 **Depends on:** Phase 51
 **Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05
 **Plans:** 2/2 plans complete
@@ -145,3 +149,39 @@ Plans:
 
 Plans:
 - [ ] 53-01-PLAN.md — Logger closer wiring + OTEL health path filter + doc.go fix
+
+### Phase 53.1: Critical Review Fixes (INSERTED)
+
+**Goal:** Resolve the 6 CRITICAL findings from the 2026-05-09 full-repo review — restore Rule 1, 2, 4, 7, 8 compliance and fix the DI singleton init-under-lock deadlock.
+**Origin:** Full-repo code review 2026-05-09 (every codified rule had at least one active violation).
+**Depends on:** Phase 53
+**Context:** `.planning/milestones/v5.1-phases/53.1-critical-review-fixes/CONTEXT.md`
+**Requirements:** ITEM-01, ITEM-02, ITEM-03, ITEM-04, ITEM-05, ITEM-06, ITEM-07
+**Plans:** 3 plans
+
+Plans:
+- [ ] 53.1-01-PLAN.md — Cobra single startup path (Rule 2) + EventBus lock-during-blocking-IO (Rule 1)
+- [ ] 53.1-02-PLAN.md — Cron lock-during-channel-ops (Rule 1) + DI singleton init-under-lock (Rule 1)
+- [ ] 53.1-03-PLAN.md — Reflection defaults to false (Rule 7) + GitHub Actions SHA pinning (Rule 8)
+
+Items (summary — see CONTEXT.md for fix sketches):
+1. Cobra single startup path — `cobra.go:179-214` reimplements lifecycle; extract `startServices(ctx)` shared helper (Rule 2)
+2. EventBus Publish lock-during-channel-send — `eventbus/bus.go:155-191` (Rule 1)
+3. Cron internal scheduler lock-during-channel x 4 — `cron/internal/cron.go:136,155,181,302` (Rule 1)
+4. gRPC reflection default true — `server/grpc/config.go:62` (Rule 7, BREAKING)
+5. Vanguard reflection default true — `server/vanguard/config.go:106` (Rule 7, BREAKING)
+6. DI singleton GetInstance runs provider while holding mu — `di/service.go:151,297` (Rule 1 + cross-goroutine cycle hang)
+7. GitHub Actions not SHA-pinned — `.github/workflows/ci.yml` (Rule 8)
+
+### Phase 53.2: High and Medium Review Fixes (INSERTED)
+
+**Goal:** Clear the HIGH/MEDIUM review findings, pay down the 98-site `time.Sleep` test debt, and ship rule-enforcement automation so Rules 1/6/7/8 cannot regress silently again.
+**Origin:** Full-repo code review 2026-05-09.
+**Depends on:** Phase 53.1
+**Context:** `.planning/milestones/v5.1-phases/53.2-high-medium-review-fixes/CONTEXT.md`
+**Plans:** 0/0 (not planned yet — run `/gsd-plan-phase 53.2`)
+
+Sections (see CONTEXT.md for full breakdown):
+- A. 17 HIGH-severity items: shutdown ctx propagation (worker.Manager.Stop, eventbus/cron OnStop), force-exit race, ReplaceService Build guard (Rule 4), eager-resolve nondeterminism, h2c TLS guidance, AllowZeroWriteTimeout/CORS defaults, env-var convention split (Rule 5), mgmt server bind address, 98-site time.Sleep sweep (Rule 6).
+- B. 21 MEDIUM-severity cleanups: DI singleton lifecycle hooks under lock, reflect-tag memoization, duplicate-Named detection (and ErrDuplicate wiring), eager discover only-by-type, gRPC server constructor moved to OnStart, Connect rate-limit error code, health timeouts, logger SetDefault side-effect, gaztest panic->error.
+- C. 3 rule-enforcement automation tasks: custom golangci-lint analysispass for lock-during-blocking-IO (Rule 1), shell-grep harness for Rules 6/7/8, doc-reality CI check (Rule 5).
