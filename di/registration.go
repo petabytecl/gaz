@@ -1,5 +1,7 @@
 package di
 
+import "fmt"
+
 // serviceScope defines the lifecycle scope for a registered service.
 type serviceScope int
 
@@ -119,9 +121,21 @@ func (b *RegistrationBuilder[T]) Provider(fn func(*Container) (T, error)) error 
 	}
 
 	if b.allowReplace {
-		b.container.ReplaceService(b.name, svc)
+		if err := b.container.ReplaceService(b.name, svc); err != nil {
+			return err
+		}
 		return nil
 	}
+
+	// B3: Detect duplicate Named registrations.
+	// Named() sets b.name to a custom name different from b.typeName.
+	// For explicit Named() calls, duplicate registration is an error.
+	// For type-based registrations (b.name == b.typeName), Register appends
+	// to support multi-binding (multiple providers for the same type).
+	if b.name != b.typeName && b.container.HasService(b.name) {
+		return fmt.Errorf("%w: %s", ErrDuplicate, b.name)
+	}
+
 	return b.container.Register(b.name, svc)
 }
 
@@ -151,8 +165,16 @@ func (b *RegistrationBuilder[T]) ProviderFunc(fn func(*Container) T) error {
 func (b *RegistrationBuilder[T]) Instance(val T) error {
 	svc := newInstanceService(b.name, b.typeName, val, b.groups...)
 	if b.allowReplace {
-		b.container.ReplaceService(b.name, svc)
+		if err := b.container.ReplaceService(b.name, svc); err != nil {
+			return err
+		}
 		return nil
 	}
+
+	// B3: Detect duplicate Named registrations (same logic as Provider).
+	if b.name != b.typeName && b.container.HasService(b.name) {
+		return fmt.Errorf("%w: %s", ErrDuplicate, b.name)
+	}
+
 	return b.container.Register(b.name, svc)
 }

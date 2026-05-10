@@ -605,16 +605,17 @@ func (s *ContainerSuite) TestRegisterAfterBuild_ReturnsError() {
 	s.Require().ErrorIs(err, ErrAlreadyBuilt)
 }
 
-func (s *ContainerSuite) TestReplaceAfterBuild_Succeeds() {
+func (s *ContainerSuite) TestReplaceServicePostBuildReturnsError() {
 	c := New()
 	_ = For[string](c).Instance("initial")
 	s.Require().NoError(c.Build())
 
-	// ReplaceService is allowed after Build (supports test mocking via Replace())
+	// ReplaceService must return ErrAlreadyBuilt after Build()
 	svc := newInstanceService[string]("replace", "replace", "replaced")
-	s.Require().NotPanics(func() {
-		c.ReplaceService("replace", svc)
-	})
+	err := c.ReplaceService("replace", svc)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, ErrAlreadyBuilt)
+	s.Contains(err.Error(), "replace")
 }
 
 func (s *ContainerSuite) TestRegisterBeforeBuild_Succeeds() {
@@ -635,3 +636,133 @@ func (s *ContainerSuite) TestNilInstanceServiceType_DoesNotPanic() {
 		s.Nil(st)
 	})
 }
+
+// =============================================================================
+// Eager Resolve Order Tests (A8: Deterministic eager resolution)
+// =============================================================================
+
+func (s *ContainerSuite) TestEagerResolveOrder() {
+	c := New()
+	var initOrder []string
+
+	// Register 3 eager services with names that would be unsorted if iterated by map order
+	err := For[*testEagerC](c).Named("c-service").Eager().Provider(func(_ *Container) (*testEagerC, error) {
+		initOrder = append(initOrder, "c-service")
+		return &testEagerC{}, nil
+	})
+	s.Require().NoError(err)
+
+	err = For[*testEagerA](c).Named("a-service").Eager().Provider(func(_ *Container) (*testEagerA, error) {
+		initOrder = append(initOrder, "a-service")
+		return &testEagerA{}, nil
+	})
+	s.Require().NoError(err)
+
+	err = For[*testEagerB](c).Named("b-service").Eager().Provider(func(_ *Container) (*testEagerB, error) {
+		initOrder = append(initOrder, "b-service")
+		return &testEagerB{}, nil
+	})
+	s.Require().NoError(err)
+
+	s.Require().NoError(c.Build())
+
+	// Assert alphabetical order
+	s.Require().Len(initOrder, 3)
+	s.Equal("a-service", initOrder[0])
+	s.Equal("b-service", initOrder[1])
+	s.Equal("c-service", initOrder[2])
+}
+
+// =============================================================================
+// Failed Build Locks Container (A9)
+// =============================================================================
+
+func (s *ContainerSuite) TestFailedBuildLocksContainer() {
+	c := New()
+
+	// Register an eager service with a failing provider
+	err := For[*testFailingService](c).Eager().Provider(func(_ *Container) (*testFailingService, error) {
+		return nil, errors.New("deliberate failure")
+	})
+	s.Require().NoError(err)
+
+	// Build should return an error
+	buildErr := c.Build()
+	s.Require().Error(buildErr)
+	s.Contains(buildErr.Error(), "deliberate failure")
+
+	// After failed Build, Register must return ErrAlreadyBuilt
+	svc := newInstanceService[string]("late", "late", "should-fail")
+	regErr := c.Register("late", svc)
+	s.Require().Error(regErr)
+	s.Require().ErrorIs(regErr, ErrAlreadyBuilt)
+}
+
+// =============================================================================
+// Duplicate Named Registration Tests (B3/B4)
+// =============================================================================
+
+func (s *ContainerSuite) TestDuplicateNamedRegistration() {
+	c := New()
+
+	// First Named registration should succeed
+	err := For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "first"})
+	s.Require().NoError(err)
+
+	// Second Named registration with same name should return ErrDuplicate
+	err = For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "second"})
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Contains(err.Error(), "primary")
+}
+
+func (s *ContainerSuite) TestDuplicateNamedRegistration_DifferentNamesSucceeds() {
+	c := New()
+
+	// Different Named registrations should succeed
+	err := For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "primary"})
+	s.Require().NoError(err)
+
+	err = For[*testNamedDB](c).Named("replica").Instance(&testNamedDB{name: "replica"})
+	s.Require().NoError(err)
+}
+
+func (s *ContainerSuite) TestDuplicateNamedRegistration_ReplaceBypassesDuplicateCheck() {
+	c := New()
+
+	// First Named registration
+	err := For[*testNamedDB](c).Named("primary").Instance(&testNamedDB{name: "first"})
+	s.Require().NoError(err)
+
+	// Replace() should succeed even with same name
+	err = For[*testNamedDB](c).Named("primary").Replace().Instance(&testNamedDB{name: "replaced"})
+	s.Require().NoError(err)
+
+	// Resolve should return the replaced value
+	db, err := Resolve[*testNamedDB](c, Named("primary"))
+	s.Require().NoError(err)
+	s.Equal("replaced", db.name)
+}
+
+// =============================================================================
+// ReplaceService Before Build Tests
+// =============================================================================
+
+func (s *ContainerSuite) TestReplaceServiceBeforeBuild_Succeeds() {
+	c := New()
+
+	// ReplaceService before Build should succeed
+	svc := newInstanceService[string]("replace", "replace", "replaced")
+	err := c.ReplaceService("replace", svc)
+	s.Require().NoError(err)
+}
+
+// =============================================================================
+// Test Helper Types for Eager Order Tests
+// =============================================================================
+
+type (
+	testEagerA struct{}
+	testEagerB struct{}
+	testEagerC struct{}
+)

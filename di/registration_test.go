@@ -122,7 +122,7 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 	s.NoError(err, "expected no error for differently named services")
 }
 
-func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
+func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsErrDuplicate() {
 	c := New()
 
 	// Register "primary" named DB
@@ -131,15 +131,13 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Register another "primary" - should succeed
+	// Register another "primary" - should return ErrDuplicate (B3)
 	err = For[*testRegDB](c).Named("primary").Provider(func(_ *Container) (*testRegDB, error) {
 		return &testRegDB{name: "primary-2"}, nil
 	})
-	s.Require().NoError(err, "second registration failed")
-
-	// Resolution by name should be ambiguous
-	_, err = Resolve[*testRegDB](c, Named("primary"))
-	s.Require().ErrorIs(err, ErrAmbiguous)
+	s.Require().Error(err, "second registration should fail")
+	s.Require().ErrorIs(err, ErrDuplicate)
+	s.Contains(err.Error(), "primary")
 }
 
 // =============================================================================
