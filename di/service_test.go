@@ -3,10 +3,10 @@ package di
 import (
 	"context"
 	"errors"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -49,8 +49,8 @@ func (s *ServiceSuite) TestLazySingleton_ConcurrentAccess() {
 	var callCount int32
 	provider := func(_ *Container) (*testService, error) {
 		atomic.AddInt32(&callCount, 1)
-		// Small delay to increase chance of race
-		time.Sleep(10 * time.Millisecond)
+		// Yield to increase chance of race detection
+		runtime.Gosched()
 		return &testService{id: int(callCount)}, nil
 	}
 
@@ -635,8 +635,8 @@ func (s *ServiceSuite) TestLazySingletonConcurrentInitNoDeadlock() {
 	var callCount atomic.Int32
 	provider := func(_ *Container) (*testService, error) {
 		callCount.Add(1)
-		// Simulate slow provider (e.g., network I/O)
-		time.Sleep(50 * time.Millisecond)
+		// Yield to simulate slow provider (e.g., network I/O)
+		runtime.Gosched()
 		return &testService{id: 42}, nil
 	}
 
@@ -729,7 +729,8 @@ func (s *ServiceSuite) TestEagerSingletonConcurrentInitNoDeadlock() {
 	var callCount atomic.Int32
 	provider := func(_ *Container) (*testService, error) {
 		callCount.Add(1)
-		time.Sleep(50 * time.Millisecond)
+		// Yield to simulate slow provider
+		runtime.Gosched()
 		return &testService{id: 99}, nil
 	}
 

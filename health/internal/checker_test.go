@@ -99,7 +99,7 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 						break
 					}
 				}
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(50 * time.Millisecond) //nolint:timesleep // simulates slow health check to verify parallel execution
 				atomic.AddInt32(&counter, -1)
 				return nil
 			},
@@ -114,7 +114,7 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 						break
 					}
 				}
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(50 * time.Millisecond) //nolint:timesleep // simulates slow health check to verify parallel execution
 				atomic.AddInt32(&counter, -1)
 				return nil
 			},
@@ -129,7 +129,7 @@ func TestNewChecker_MultipleChecksParallel(t *testing.T) {
 						break
 					}
 				}
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(50 * time.Millisecond) //nolint:timesleep // simulates slow health check to verify parallel execution
 				atomic.AddInt32(&counter, -1)
 				return nil
 			},

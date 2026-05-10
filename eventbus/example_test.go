@@ -54,7 +54,6 @@ func ExampleNew() {
 // ExampleSubscribe demonstrates subscribing to events.
 func ExampleSubscribe() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// Subscribe to UserCreated events
 	sub := eventbus.Subscribe(bus, func(ctx context.Context, event UserCreated) {
@@ -67,8 +66,8 @@ func ExampleSubscribe() {
 		Email:  "test@example.com",
 	}, "")
 
-	// Give async handler time to process
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 
 	// Unsubscribe when done
 	sub.Unsubscribe()
@@ -78,7 +77,6 @@ func ExampleSubscribe() {
 // ExampleSubscribe_withTopic demonstrates topic-filtered subscriptions.
 func ExampleSubscribe_withTopic() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// Subscribe only to "admin" topic
 	eventbus.Subscribe(bus, func(ctx context.Context, event UserCreated) {
@@ -91,14 +89,14 @@ func ExampleSubscribe_withTopic() {
 	// This will be received (matching topic)
 	eventbus.Publish(context.Background(), bus, UserCreated{UserID: "admin-user"}, "admin")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Output: Admin user: admin-user
 }
 
 // ExampleSubscribe_withBufferSize demonstrates configuring buffer size.
 func ExampleSubscribe_withBufferSize() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// High-throughput handler with large buffer
 	eventbus.Subscribe(bus, func(ctx context.Context, event OrderPlaced) {
@@ -107,14 +105,14 @@ func ExampleSubscribe_withBufferSize() {
 
 	eventbus.Publish(context.Background(), bus, OrderPlaced{OrderID: "order-1"}, "")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Output: Order: order-1
 }
 
 // ExamplePublish demonstrates publishing events.
 func ExamplePublish() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// Subscribe to events
 	eventbus.Subscribe(bus, func(ctx context.Context, event UserCreated) {
@@ -127,14 +125,14 @@ func ExamplePublish() {
 		Email:  "hello@example.com",
 	}, "")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Output: Received: user-456 (hello@example.com)
 }
 
 // ExamplePublish_withTopic demonstrates publishing with a topic.
 func ExamplePublish_withTopic() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// Wildcard subscriber (all topics)
 	eventbus.Subscribe(bus, func(ctx context.Context, event OrderPlaced) {
@@ -149,7 +147,8 @@ func ExamplePublish_withTopic() {
 	// Publish with topic - both handlers receive it
 	eventbus.Publish(context.Background(), bus, OrderPlaced{OrderID: "priority-1"}, "priority")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Unordered output:
 	// All orders: priority-1
 	// Priority orders: priority-1
@@ -158,32 +157,30 @@ func ExamplePublish_withTopic() {
 // ExampleSubscription_Unsubscribe demonstrates unsubscribing from events.
 func ExampleSubscription_Unsubscribe() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
-	received := 0
-	sub := eventbus.Subscribe(bus, func(ctx context.Context, event UserCreated) {
-		received++
-	})
+	ts := eventbus.NewTestSubscriber[UserCreated](1)
+	sub := eventbus.Subscribe(bus, ts.Handler())
 
 	// Publish first event
 	eventbus.Publish(context.Background(), bus, UserCreated{UserID: "1"}, "")
-	time.Sleep(10 * time.Millisecond)
+	ts.WaitFor(time.Second)
 
 	// Unsubscribe
 	sub.Unsubscribe()
 
 	// This event won't be received
 	eventbus.Publish(context.Background(), bus, UserCreated{UserID: "2"}, "")
-	time.Sleep(10 * time.Millisecond)
 
-	fmt.Printf("Received: %d events\n", received)
+	// Close waits for pending handlers
+	bus.Close()
+
+	fmt.Printf("Received: %d events\n", len(ts.Events()))
 	// Output: Received: 1 events
 }
 
 // Example_typedEvents demonstrates using typed event structs.
 func Example_typedEvents() {
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	// Subscribe using the example PaymentReceived type
 	eventbus.Subscribe(bus, func(ctx context.Context, event PaymentReceived) {
@@ -195,7 +192,8 @@ func Example_typedEvents() {
 		Amount:    99.99,
 	}, "")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Output: Payment: 99.99
 }
 
@@ -237,7 +235,6 @@ func ExampleModule() {
 func ExampleTestBus() {
 	// TestBus creates a bus with a discard logger (no log noise in tests)
 	bus := eventbus.TestBus()
-	defer bus.Close()
 
 	eventbus.Subscribe(bus, func(ctx context.Context, event UserCreated) {
 		fmt.Println("Event received")
@@ -245,7 +242,8 @@ func ExampleTestBus() {
 
 	eventbus.Publish(context.Background(), bus, UserCreated{UserID: "test"}, "")
 
-	time.Sleep(10 * time.Millisecond)
+	// Close waits for all handlers to finish processing
+	bus.Close()
 	// Output: Event received
 }
 

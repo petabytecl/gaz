@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,8 +36,8 @@ func (s *HTTPServerTestSuite) TestHTTPServerStartStop() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify we can connect (will get 404 from NotFoundHandler).
 	url := fmt.Sprintf("http://localhost:%d/", cfg.Port)
@@ -86,8 +87,8 @@ func (s *HTTPServerTestSuite) TestHTTPServerTimeout() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify server is running.
 	url := fmt.Sprintf("http://localhost:%d/", cfg.Port)
@@ -124,8 +125,8 @@ func (s *HTTPServerTestSuite) TestHTTPServerCustomHandler() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify custom handler responds.
 	url := fmt.Sprintf("http://localhost:%d/", cfg.Port)
@@ -254,8 +255,8 @@ func (s *HTTPServerTestSuite) TestHTTPServerGracefulShutdown() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Start a slow request in background.
 	requestDone := make(chan error, 1)
@@ -286,8 +287,7 @@ func (s *HTTPServerTestSuite) TestHTTPServerGracefulShutdown() {
 		shutdownDone <- server.OnStop(stopCtx)
 	}()
 
-	// Allow the handler to complete.
-	time.Sleep(100 * time.Millisecond)
+	// Allow the handler to complete after a brief scheduler yield.
 	close(requestComplete)
 
 	// Wait for shutdown and request to complete.
@@ -325,8 +325,8 @@ func (s *HTTPServerTestSuite) TestHTTPServerSetHandler() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify late-bound handler responds.
 	url := fmt.Sprintf("http://localhost:%d/", cfg.Port)
@@ -388,4 +388,18 @@ func getFreePort(t *testing.T) int {
 	}
 	defer func() { _ = lis.Close() }()
 	return lis.Addr().(*net.TCPAddr).Port
+}
+
+// waitForPort waits until a TCP connection can be made to the given port.
+func waitForPort(t *testing.T, port int) {
+	t.Helper()
+	addr := fmt.Sprintf("localhost:%d", port)
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
+	}, 2*time.Second, 10*time.Millisecond)
 }

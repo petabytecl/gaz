@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -48,8 +49,8 @@ func (s *GRPCServerTestSuite) TestGRPCServerStartStop() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify we can connect.
 	conn, err := grpc.NewClient(
@@ -88,8 +89,8 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflection() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Connect.
 	conn, err := grpc.NewClient(
@@ -200,8 +201,8 @@ func (s *GRPCServerTestSuite) TestGRPCServerGracefulShutdown() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Connect and keep connection open.
 	conn, err := grpc.NewClient(
@@ -241,8 +242,8 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Connect.
 	conn, err := grpc.NewClient(
@@ -421,4 +422,18 @@ func getFreePort(t *testing.T) int {
 	}
 	defer func() { _ = lis.Close() }()
 	return lis.Addr().(*net.TCPAddr).Port
+}
+
+// waitForPort waits until a TCP connection can be made to the given port.
+func waitForPort(t *testing.T, port int) {
+	t.Helper()
+	addr := fmt.Sprintf("localhost:%d", port)
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
+	}, 2*time.Second, 10*time.Millisecond)
 }

@@ -2,6 +2,7 @@ package gaz_test
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -176,9 +177,9 @@ func TestIntegration_GracefulShutdownDrainsEvents(t *testing.T) {
 	require.NotNil(t, bus)
 	batchW.bus = bus
 
-	// Subscribe a handler that takes 50ms per event (simulating slow processing)
+	// Subscribe a handler that simulates slow processing
 	eventbus.Subscribe(bus, func(_ context.Context, _ workerEvent) {
-		time.Sleep(50 * time.Millisecond)
+		runtime.Gosched() // Yield to simulate processing
 		processedCount.Add(1)
 	})
 

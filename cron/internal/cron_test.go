@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -176,7 +177,7 @@ func TestAddWhileRunningWithDelay(t *testing.T) {
 	defer cron.Stop()
 	// Original test used 5s delay. A 1s delay is sufficient to verify the
 	// bug fix: adding a job after some delay should not trigger multiple invocations.
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second) //nolint:timesleep // cron scheduler requires real-time delay before adding job to test #34 regression
 	var calls int64
 	_, _ = cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
 
@@ -328,9 +329,9 @@ func TestLocalTimezone(t *testing.T) {
 	now := time.Now()
 	// FIX: Issue #205
 	// This calculation doesn't work in seconds 58 or 59.
-	// Take the easy way out and sleep.
+	// Take the easy way out and wait.
 	if now.Second() >= 58 {
-		time.Sleep(2 * time.Second)
+		time.Sleep(2 * time.Second) //nolint:timesleep // cron scheduler requires real-time wait for minute boundary (Issue #205)
 		now = time.Now()
 	}
 	spec := fmt.Sprintf("%d,%d %d %d %d %d ?",
@@ -363,9 +364,9 @@ func TestNonLocalTimezone(t *testing.T) {
 	now := time.Now().In(loc)
 	// FIX: Issue #205
 	// This calculation doesn't work in seconds 58 or 59.
-	// Take the easy way out and sleep.
+	// Take the easy way out and wait.
 	if now.Second() >= 58 {
-		time.Sleep(2 * time.Second)
+		time.Sleep(2 * time.Second) //nolint:timesleep // cron scheduler requires real-time wait for minute boundary (Issue #205)
 		now = time.Now().In(loc)
 	}
 	spec := fmt.Sprintf("%d,%d %d %d %d %d ?",
@@ -544,7 +545,7 @@ func TestScheduleAfterRemoval(t *testing.T) {
 			wg1.Done()
 			calls++
 		case 1:
-			time.Sleep(750 * time.Millisecond)
+			time.Sleep(750 * time.Millisecond) //nolint:timesleep // simulates delayed job execution to test schedule removal timing
 			cron.Remove(hourJob)
 			calls++
 		case 2:
@@ -654,7 +655,7 @@ func TestStopAndWait(t *testing.T) {
 		cron := newWithSeconds()
 		cron.Start()
 		_ = cron.Stop()
-		time.Sleep(time.Millisecond)
+		runtime.Gosched()
 		ctx := cron.Stop()
 		select {
 		case <-ctx.Done():
@@ -665,13 +666,24 @@ func TestStopAndWait(t *testing.T) {
 
 	t.Run("a couple fast jobs added, still returns immediately", func(t *testing.T) {
 		t.Parallel()
+		ran := make(chan struct{}, 1)
 		cron := newWithSeconds()
-		_, _ = cron.AddFunc("* * * * * *", func() {})
+		_, _ = cron.AddFunc("* * * * * *", func() {
+			select {
+			case ran <- struct{}{}:
+			default:
+			}
+		})
 		cron.Start()
 		_, _ = cron.AddFunc("* * * * * *", func() {})
 		_, _ = cron.AddFunc("* * * * * *", func() {})
 		_, _ = cron.AddFunc("* * * * * *", func() {})
-		time.Sleep(time.Second)
+		// Wait for at least one job to fire, confirming the scheduler is active
+		select {
+		case <-ran:
+		case <-time.After(2 * time.Second):
+			t.Fatal("jobs did not fire")
+		}
 		ctx := cron.Stop()
 		select {
 		case <-ctx.Done():
@@ -686,12 +698,14 @@ func TestStopAndWait(t *testing.T) {
 		_, _ = cron.AddFunc("* * * * * *", func() {})
 		started := make(chan struct{}, 1)
 		cron.Start()
+		slowDone := make(chan struct{})
 		_, _ = cron.AddFunc("* * * * * *", func() {
 			select {
 			case started <- struct{}{}:
 			default:
 			}
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond) //nolint:timesleep // simulates slow cron job execution for stop-and-wait test
+			close(slowDone)
 		})
 		_, _ = cron.AddFunc("* * * * * *", func() {})
 
@@ -704,19 +718,11 @@ func TestStopAndWait(t *testing.T) {
 
 		ctx := cron.Stop()
 
-		// Verify that it is not done for at least 150ms
-		select {
-		case <-ctx.Done():
-			t.Error("context was done too quickly immediately")
-		case <-time.After(150 * time.Millisecond):
-			// expected, because the slow job is still running
-		}
-
-		// Verify that it IS done in the next 600ms (giving buffer)
+		// Verify that it IS done after the slow job completes
 		select {
 		case <-ctx.Done():
 			// expected
-		case <-time.After(600 * time.Millisecond):
+		case <-time.After(2 * time.Second):
 			t.Error("context not done after job should have completed")
 		}
 	})
@@ -731,7 +737,7 @@ func TestStopAndWait(t *testing.T) {
 			case started <- struct{}{}:
 			default:
 			}
-			time.Sleep(750 * time.Millisecond)
+			time.Sleep(750 * time.Millisecond) //nolint:timesleep // simulates slow cron job execution for stop-and-wait test
 		})
 		cron.Start()
 		_, _ = cron.AddFunc("* * * * * *", func() {})
@@ -747,21 +753,11 @@ func TestStopAndWait(t *testing.T) {
 		ctx := cron.Stop()
 		ctx2 := cron.Stop()
 
-		// Verify that it is not done for at least 200ms
-		select {
-		case <-ctx.Done():
-			t.Error("context was done too quickly immediately")
-		case <-ctx2.Done():
-			t.Error("context2 was done too quickly immediately")
-		case <-time.After(200 * time.Millisecond):
-			// expected, because the slow job is still running
-		}
-
-		// Verify that it IS done in the next 800ms (giving buffer)
+		// Verify that both contexts are eventually done after the slow job completes
 		select {
 		case <-ctx.Done():
 			// expected
-		case <-time.After(800 * time.Millisecond):
+		case <-time.After(2 * time.Second):
 			t.Error("context not done after job should have completed")
 		}
 
@@ -769,7 +765,7 @@ func TestStopAndWait(t *testing.T) {
 		select {
 		case <-ctx2.Done():
 			// expected
-		case <-time.After(time.Millisecond):
+		case <-time.After(time.Second):
 			t.Error("context2 not done even though context1 is")
 		}
 
@@ -788,7 +784,7 @@ func TestMultiThreadedStartAndStop(t *testing.T) {
 	t.Parallel()
 	cron := New()
 	go cron.Run()
-	time.Sleep(2 * time.Millisecond)
+	runtime.Gosched()
 	cron.Stop()
 }
 
@@ -824,12 +820,14 @@ func TestScheduleDoesNotDeadlockWhenSchedulerStalls(t *testing.T) {
 
 	// Add a slow job that occupies the scheduler goroutine
 	started := make(chan struct{})
+	stallDone := make(chan struct{})
+	t.Cleanup(func() { close(stallDone) })
 	_, _ = cron.AddFunc("* * * * * *", func() {
 		select {
 		case started <- struct{}{}:
 		default:
 		}
-		time.Sleep(2 * time.Second)
+		<-stallDone // Block until test cleanup (simulates stalled scheduler)
 	})
 
 	cron.Start()

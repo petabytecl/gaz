@@ -89,10 +89,7 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_Healthy() {
 		_ = adapter.Stop(stopCtx)
 	}()
 
-	// Wait for initial check.
-	time.Sleep(100 * time.Millisecond)
-
-	// Create client and check status.
+	// Wait for initial check by polling gRPC health status.
 	conn, err := grpc.NewClient(
 		lis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -102,12 +99,12 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_Healthy() {
 
 	client := healthpb.NewHealthClient(conn)
 
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer checkCancel()
-
-	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
-	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
+	s.Require().Eventually(func() bool {
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer checkCancel()
+		resp, checkErr := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
+		return checkErr == nil && resp.GetStatus() == healthpb.HealthCheckResponse_SERVING
+	}, 2*time.Second, 20*time.Millisecond)
 }
 
 func (s *HealthAdapterTestSuite) TestHealthAdapter_Unhealthy() {
@@ -144,10 +141,7 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_Unhealthy() {
 		_ = adapter.Stop(stopCtx)
 	}()
 
-	// Wait for initial check.
-	time.Sleep(100 * time.Millisecond)
-
-	// Create client and check status.
+	// Wait for initial check by polling gRPC health status.
 	conn, err := grpc.NewClient(
 		lis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -157,12 +151,12 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_Unhealthy() {
 
 	client := healthpb.NewHealthClient(conn)
 
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer checkCancel()
-
-	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
-	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	s.Require().Eventually(func() bool {
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer checkCancel()
+		resp, checkErr := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
+		return checkErr == nil && resp.GetStatus() == healthpb.HealthCheckResponse_NOT_SERVING
+	}, 2*time.Second, 20*time.Millisecond)
 }
 
 func (s *HealthAdapterTestSuite) TestHealthAdapter_StatusTransition() {
@@ -204,9 +198,6 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_StatusTransition() {
 		_ = adapter.Stop(stopCtx)
 	}()
 
-	// Wait for initial check (healthy).
-	time.Sleep(100 * time.Millisecond)
-
 	// Create client.
 	conn, err := grpc.NewClient(
 		lis.Addr().String(),
@@ -217,25 +208,24 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_StatusTransition() {
 
 	client := healthpb.NewHealthClient(conn)
 
-	// Check initial status is SERVING.
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
-	checkCancel()
-	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
+	// Wait for initial check (healthy) via polling.
+	s.Require().Eventually(func() bool {
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer checkCancel()
+		resp, checkErr := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
+		return checkErr == nil && resp.GetStatus() == healthpb.HealthCheckResponse_SERVING
+	}, 2*time.Second, 20*time.Millisecond)
 
 	// Toggle to unhealthy.
 	healthy.Store(false)
 
-	// Wait for poll interval.
-	time.Sleep(100 * time.Millisecond)
-
-	// Check status is now NOT_SERVING.
-	checkCtx2, checkCancel2 := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err = client.Check(checkCtx2, &healthpb.HealthCheckRequest{Service: ""})
-	checkCancel2()
-	s.Require().NoError(err)
-	s.Equal(healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	// Wait for status transition to NOT_SERVING via polling.
+	s.Require().Eventually(func() bool {
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer checkCancel()
+		resp, checkErr := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
+		return checkErr == nil && resp.GetStatus() == healthpb.HealthCheckResponse_NOT_SERVING
+	}, 2*time.Second, 20*time.Millisecond)
 }
 
 func (s *HealthAdapterTestSuite) TestHealthAdapter_StopCleanly() {
@@ -246,10 +236,7 @@ func (s *HealthAdapterTestSuite) TestHealthAdapter_StopCleanly() {
 	ctx := context.Background()
 	adapter.Start(ctx)
 
-	// Let it run for a bit.
-	time.Sleep(100 * time.Millisecond)
-
-	// Stop should complete within timeout.
+	// Stop should complete within timeout (the adapter starts its poll loop immediately).
 	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -299,9 +286,6 @@ func TestHealthAdapter_DoubleClose(t *testing.T) {
 	ctx := context.Background()
 	adapter.Start(ctx)
 
-	// Let it run briefly.
-	time.Sleep(100 * time.Millisecond)
-
 	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -344,8 +328,6 @@ func TestHealthAdapter_NoChecks_Unknown(t *testing.T) {
 		_ = adapter.Stop(stopCtx)
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-
 	conn, err := grpc.NewClient(
 		lis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -355,10 +337,11 @@ func TestHealthAdapter_NoChecks_Unknown(t *testing.T) {
 
 	client := healthpb.NewHealthClient(conn)
 
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer checkCancel()
-
-	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
-	require.NoError(t, err)
-	assert.Equal(t, healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	// Wait for the health adapter to report NOT_SERVING via polling.
+	require.Eventually(t, func() bool {
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer checkCancel()
+		resp, checkErr := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
+		return checkErr == nil && resp.GetStatus() == healthpb.HealthCheckResponse_NOT_SERVING
+	}, 2*time.Second, 20*time.Millisecond)
 }
