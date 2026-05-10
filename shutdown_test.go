@@ -592,3 +592,40 @@ func (s *ShutdownTestSuite) TestSIGTERMDoesNotEnableDoubleSignal() {
 	logOutput := s.logBuffer.String()
 	s.Contains(logOutput, "Shutting down gracefully", "SIGTERM should trigger graceful shutdown")
 }
+
+// =============================================================================
+// A1 Regression: Force-Exit Race
+// =============================================================================
+
+// TestForceExitRaceSlowShutdown verifies that when shutdown completes just before
+// or concurrent with the global timeout timer firing, the force-exit goroutine
+// re-checks the done channel and does NOT call exitFunc(1).
+func (s *ShutdownTestSuite) TestForceExitRaceSlowShutdown() {
+	// Create app with a service whose OnStop takes slightly less than the global timeout.
+	// The hook completes in ~150ms, global timeout is 200ms. Without the re-check fix,
+	// timer fire + close(done) race could trigger exitFunc(1).
+	app := s.createAppWithSlowHook(
+		150*time.Millisecond, // hook finishes close to timeout
+		5*time.Second,        // per-hook timeout (won't trigger)
+		200*time.Millisecond, // global timeout (close to hook duration)
+	)
+
+	err := app.Build()
+	s.Require().NoError(err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = app.Stop(ctx)
+
+	// The hook should complete in time. With the re-check fix, even if the timer fires
+	// at the same instant as close(done), the goroutine re-checks done and returns cleanly.
+	s.Require().NoError(err, "Stop() should succeed when hook completes within global timeout")
+
+	// Give the force-exit goroutine a moment to settle
+	s.Eventually(func() bool {
+		return true // just wait a bit for goroutine scheduling
+	}, 100*time.Millisecond, 10*time.Millisecond)
+
+	s.False(s.exitCalled.Load(), "exitFunc should NOT be called when shutdown finishes in time")
+}

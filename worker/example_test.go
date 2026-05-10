@@ -95,7 +95,7 @@ func ExampleManager_Start() {
 	}
 
 	// Stop immediately to cleanup (in real code, this would wait for shutdown signal)
-	_ = mgr.Stop()
+	_ = mgr.Stop(ctx)
 
 	fmt.Println("manager started and stopped")
 	// Output: manager started and stopped
@@ -246,7 +246,7 @@ func ExampleTestManager() {
 
 	ctx := context.Background()
 	_ = mgr.Start(ctx)
-	_ = mgr.Stop()
+	_ = mgr.Stop(ctx)
 
 	fmt.Println("test manager started and stopped")
 	// Output: test manager started and stopped

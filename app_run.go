@@ -162,6 +162,9 @@ func (a *App) waitForShutdownSignal(ctx context.Context) error {
 // handleSignalShutdown handles graceful shutdown triggered by a signal.
 // For SIGINT, it spawns a force-exit watcher that exits immediately on second SIGINT.
 // For SIGTERM, it performs graceful shutdown without double-signal behavior.
+//
+// The watcher goroutine is synchronized so it exits before this function returns,
+// ensuring signal.Stop(sigCh) in the caller does not race with the watcher.
 func (a *App) handleSignalShutdown(
 	ctx context.Context,
 	sig os.Signal,
@@ -182,9 +185,13 @@ func (a *App) handleSignalShutdown(
 		shutdownDone <- a.Stop(shutdownCtx)
 	}()
 
-	// If SIGINT, spawn force-exit watcher goroutine
+	// If SIGINT, spawn force-exit watcher goroutine.
+	// watcherDone is closed when the watcher exits, so we can wait for it
+	// before returning (ensuring signal.Stop runs after the watcher).
+	watcherDone := make(chan struct{})
 	if sig == os.Interrupt {
 		go func() {
+			defer close(watcherDone)
 			select {
 			case <-sigCh:
 				// Second SIGINT received - force exit immediately
@@ -194,8 +201,14 @@ func (a *App) handleSignalShutdown(
 				// Normal completion, watcher exits
 			}
 		}()
+	} else {
+		close(watcherDone) // No watcher for non-SIGINT signals
 	}
 
 	// Wait for shutdown to complete
-	return <-shutdownDone
+	err := <-shutdownDone
+	// Ensure watcher goroutine exits before returning, so that
+	// defer signal.Stop(sigCh) in the caller runs after the watcher.
+	<-watcherDone
+	return err
 }

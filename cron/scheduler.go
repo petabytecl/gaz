@@ -88,25 +88,34 @@ func (s *Scheduler) OnStart(ctx context.Context) error {
 // Stops the cron scheduler and waits for all running jobs to complete.
 // This provides graceful shutdown per CRN-05.
 //
-// The context can be used for shutdown deadline enforcement (optional enhancement).
-// This method always returns nil as scheduler stop doesn't fail.
+// The context deadline is respected: if running jobs do not finish before the
+// shutdown context expires, OnStop returns ctx.Err(). The mutex is held only
+// for the state transition and the non-blocking cron.Stop() call; the blocking
+// wait for running jobs happens outside the lock (Rule 1).
 func (s *Scheduler) OnStop(ctx context.Context) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if !s.running {
+		s.mu.Unlock()
 		return nil
 	}
 	s.running = false
 
 	s.logger.InfoContext(ctx, "stopping cron scheduler, waiting for running jobs")
 
-	// Stop() returns context that completes when running jobs finish
+	// Stop() signals the internal cron to stop and returns a context that
+	// completes when running jobs finish. Must be called under lock to prevent
+	// concurrent Stop calls (internal cron.Stop blocks on channel send).
 	cronCtx := s.cron.Stop()
-	<-cronCtx.Done()
+	s.mu.Unlock() // Release lock before blocking wait (Rule 1)
 
-	s.logger.InfoContext(ctx, "cron scheduler stopped")
-	return nil
+	select {
+	case <-cronCtx.Done():
+		s.logger.InfoContext(ctx, "cron scheduler stopped")
+		return nil
+	case <-ctx.Done():
+		s.logger.WarnContext(ctx, "shutdown deadline exceeded waiting for cron jobs")
+		return ctx.Err()
+	}
 }
 
 // RegisterJob registers a job with the scheduler.

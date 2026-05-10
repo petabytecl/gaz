@@ -316,3 +316,54 @@ func TestScheduler_PredefinedSchedules(t *testing.T) {
 		assert.Equal(t, i+1, scheduler.JobCount())
 	}
 }
+
+// TestSchedulerOnStopRespectsContext verifies that OnStop returns ctx.Err() when
+// the shutdown context expires before all running jobs complete (A2 regression).
+func TestSchedulerOnStopRespectsContext(t *testing.T) {
+	resolver := newMockResolver()
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+	logger := slog.Default()
+
+	scheduler := NewScheduler(resolver, appCtx, logger)
+
+	// Register a job that takes a long time to complete
+	longRunning := &mockCronJob{
+		name:     "long-job",
+		schedule: "@every 1s",
+		timeout:  0,
+		runFn: func(ctx context.Context) error {
+			// Simulate a job that blocks for a long time
+			select {
+			case <-time.After(10 * time.Second):
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		},
+	}
+	resolver.services["long-job"] = longRunning
+
+	err := scheduler.RegisterJob("long-job", "long-job", "@every 1s", 0)
+	require.NoError(t, err)
+
+	// Start the scheduler
+	err = scheduler.OnStart(context.Background())
+	require.NoError(t, err)
+
+	// Wait for the job to start running (it will fire after ~1s)
+	require.Eventually(t, func() bool {
+		return longRunning.getRunCount() > 0
+	}, 3*time.Second, 50*time.Millisecond, "job should have started")
+
+	// Call OnStop with a very short deadline
+	shortCtx, shortCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer shortCancel()
+
+	stopErr := scheduler.OnStop(shortCtx)
+
+	// OnStop should return ctx.Err() because the job is still running
+	require.Error(t, stopErr, "OnStop should return error when context expires")
+	assert.ErrorIs(t, stopErr, context.DeadlineExceeded,
+		"OnStop should return DeadlineExceeded when shutdown deadline is exceeded")
+}

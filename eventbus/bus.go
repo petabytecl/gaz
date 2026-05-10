@@ -227,10 +227,11 @@ func (b *EventBus) OnStart(ctx context.Context) error {
 
 // OnStop implements worker.Worker interface.
 //
-// Calls Close() to drain in-flight handlers. Returns nil as stop doesn't fail.
-func (b *EventBus) OnStop(_ context.Context) error {
-	b.Close()
-	return nil
+// Delegates to CloseWithContext so that in-flight handler draining respects
+// the shutdown deadline. Returns ctx.Err() if the deadline is exceeded before
+// all handlers finish.
+func (b *EventBus) OnStop(ctx context.Context) error {
+	return b.CloseWithContext(ctx)
 }
 
 // Close shuts down the EventBus and waits for in-flight handlers.
@@ -238,13 +239,25 @@ func (b *EventBus) OnStop(_ context.Context) error {
 // After Close, Publish is a no-op and Subscribe returns nil.
 // Safe to call multiple times (idempotent).
 //
-// Close waits for all handler goroutines to finish processing their
-// buffered events before returning. This ensures graceful shutdown.
+// Close waits indefinitely for all handler goroutines to finish processing
+// their buffered events. Use CloseWithContext to bound the wait with a
+// shutdown deadline.
 func (b *EventBus) Close() {
+	_ = b.CloseWithContext(context.Background())
+}
+
+// CloseWithContext shuts down the EventBus and waits for in-flight handlers,
+// respecting the provided context deadline.
+//
+// After CloseWithContext, Publish is a no-op and Subscribe returns nil.
+// Safe to call multiple times (idempotent).
+//
+// Returns ctx.Err() if the deadline expires before all handlers finish draining.
+func (b *EventBus) CloseWithContext(ctx context.Context) error {
 	b.mu.Lock()
 	if b.closed {
 		b.mu.Unlock()
-		return
+		return nil
 	}
 	b.closed = true
 
@@ -266,10 +279,18 @@ func (b *EventBus) Close() {
 
 	// Wait for handler goroutines to drain and exit (outside lock)
 	for _, sub := range allSubs {
-		<-sub.done
+		select {
+		case <-sub.done:
+			// Drained successfully
+		case <-ctx.Done():
+			b.logger.Warn("shutdown deadline exceeded, some handlers not drained",
+				"remaining", len(allSubs))
+			return ctx.Err()
+		}
 	}
 
 	b.logger.Info("eventbus stopped", "subscriptions_drained", len(allSubs))
+	return nil
 }
 
 // unsubscribe removes a subscription from the bus.
