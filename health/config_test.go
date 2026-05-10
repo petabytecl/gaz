@@ -39,11 +39,23 @@ func (s *ConfigTestSuite) TestFlags_RegistersExpectedFlags() {
 	}
 }
 
+func (s *ConfigTestSuite) TestDefaultConfig_SecureDefaults() {
+	cfg := DefaultConfig()
+
+	s.Equal(DefaultPort, cfg.Port)
+	s.Equal(DefaultBindAddress, cfg.BindAddress, "BindAddress should default to 127.0.0.1")
+	s.False(cfg.ShowErrors, "ShowErrors should default to false")
+	s.Equal(DefaultLivenessPath, cfg.LivenessPath)
+	s.Equal(DefaultReadinessPath, cfg.ReadinessPath)
+	s.Equal(DefaultStartupPath, cfg.StartupPath)
+}
+
 func (s *ConfigTestSuite) TestSetDefaults_ZeroValues() {
 	cfg := Config{}
 	cfg.SetDefaults()
 
 	s.Equal(DefaultPort, cfg.Port)
+	s.Equal(DefaultBindAddress, cfg.BindAddress, "BindAddress should default to 127.0.0.1")
 	s.Equal(DefaultLivenessPath, cfg.LivenessPath)
 	s.Equal(DefaultReadinessPath, cfg.ReadinessPath)
 	s.Equal(DefaultStartupPath, cfg.StartupPath)

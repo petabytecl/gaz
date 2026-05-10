@@ -22,14 +22,21 @@ func (m *Manager) NewLivenessHandler() http.Handler {
 
 // NewReadinessHandler creates an http.Handler for readiness probes.
 // It returns 503 Service Unavailable on failure to stop traffic routing.
-func (m *Manager) NewReadinessHandler() http.Handler {
+// When showErrors is true, error messages are included in responses;
+// set to false in production to prevent information leakage.
+func (m *Manager) NewReadinessHandler(showErrors bool) http.Handler {
 	checker := m.ReadinessChecker()
+
+	writerOpts := []internal.IETFWriterOption{
+		internal.WithShowDetails(true),
+	}
+	if showErrors {
+		writerOpts = append(writerOpts, internal.WithShowErrors(true))
+	}
+
 	return internal.NewHandler(checker,
 		internal.WithResultWriter(
-			internal.NewIETFResultWriter(
-				internal.WithShowDetails(true),
-				internal.WithShowErrors(true),
-			),
+			internal.NewIETFResultWriter(writerOpts...),
 		),
 		internal.WithStatusCodeUp(http.StatusOK),
 		internal.WithStatusCodeDown(http.StatusServiceUnavailable),

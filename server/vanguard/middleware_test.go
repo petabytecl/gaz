@@ -301,7 +301,7 @@ func (s *MiddlewareTestSuite) TestDefaultCORSConfig_Production() {
 	cfg := DefaultCORSConfig(false)
 
 	s.Empty(cfg.AllowedOrigins, "Production origins must be explicitly configured")
-	s.True(cfg.AllowCredentials)
+	s.False(cfg.AllowCredentials, "Production AllowCredentials should default to false")
 	s.Equal(DefaultCORSMaxAge, cfg.MaxAge)
 	s.Contains(cfg.AllowedHeaders, "Authorization")
 	s.Contains(cfg.AllowedHeaders, "Content-Type")

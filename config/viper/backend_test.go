@@ -234,11 +234,11 @@ func TestBackend_AutomaticEnv(t *testing.T) {
 }
 
 func TestBackend_SetEnvKeyReplacer(t *testing.T) {
-	t.Setenv("APP_DATABASE__HOST", "dbhost")
+	t.Setenv("APP_DATABASE_HOST", "dbhost")
 
 	backend := cfgviper.New()
 	backend.SetEnvPrefix("APP")
-	err := backend.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
+	err := backend.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	require.NoError(t, err)
 	backend.AutomaticEnv()
 	_ = backend.BindEnv("database.host")

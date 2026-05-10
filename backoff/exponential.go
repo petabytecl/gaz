@@ -33,6 +33,9 @@ var SystemClock Clock = systemClock{}
 // ExponentialBackOff implements a [BackOff] that increases the delay
 // exponentially for each retry attempt with optional randomization (jitter).
 //
+// ExponentialBackOff is NOT safe for concurrent use. Create one instance
+// per call site. See backOffTries for the expected usage pattern.
+//
 // The formula for computing the next delay is:
 //
 //	randomized_interval = current_interval * (1 ± randomization_factor)
@@ -44,7 +47,8 @@ var SystemClock Clock = systemClock{}
 // returns [Stop] to signal that retries should cease.
 //
 // The jitter calculation uses [math/rand/v2] top-level functions which are
-// thread-safe and auto-seeded.
+// auto-seeded. While the random source is thread-safe, the backoff state
+// (currentInterval, startTime) is not protected by a mutex.
 type ExponentialBackOff struct {
 	// InitialInterval is the first retry delay.
 	InitialInterval time.Duration
