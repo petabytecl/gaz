@@ -22,17 +22,37 @@ type eventEnvelope struct {
 
 // asyncSubscription holds a subscription's channel and handler.
 type asyncSubscription struct {
-	id      uint64
-	ch      chan eventEnvelope         // Buffered channel for events with context
-	done    chan struct{}              // Closed when handler goroutine exits
-	handler func(context.Context, any) // Type-erased handler
+	id        uint64
+	ch        chan eventEnvelope         // Buffered channel for events with context
+	done      chan struct{}              // Closed when handler goroutine exits
+	tombstone chan struct{}              // Closed when subscription is cancelled; senders short-circuit
+	handler   func(context.Context, any) // Type-erased handler
 }
 
-// run processes events from the channel until it's closed.
+// run processes events from the channel until the tombstone fires or the channel is drained.
 func (s *asyncSubscription) run(logger *slog.Logger) {
 	defer close(s.done)
-	for env := range s.ch {
-		s.safeInvoke(env.ctx, env.event, logger)
+	for {
+		select {
+		case env, ok := <-s.ch:
+			if !ok {
+				return // Channel closed, drain complete
+			}
+			s.safeInvoke(env.ctx, env.event, logger)
+		case <-s.tombstone:
+			// Subscription cancelled. Drain remaining buffered events then exit.
+			for {
+				select {
+				case env, ok := <-s.ch:
+					if !ok {
+						return
+					}
+					s.safeInvoke(env.ctx, env.event, logger)
+				default:
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -119,9 +139,10 @@ func Subscribe[T Event](b *EventBus, handler Handler[T], opts ...SubscribeOption
 
 	// Create async subscription with per-subscriber buffer
 	sub := &asyncSubscription{
-		id:   id,
-		ch:   make(chan eventEnvelope, options.bufferSize),
-		done: make(chan struct{}),
+		id:        id,
+		ch:        make(chan eventEnvelope, options.bufferSize),
+		done:      make(chan struct{}),
+		tombstone: make(chan struct{}),
 		handler: func(ctx context.Context, event any) {
 			//nolint:errcheck // Type is guaranteed by generic Subscribe[T]
 			handler(ctx, event.(T))
@@ -160,7 +181,7 @@ func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
 
 	eventType := reflect.TypeOf(event)
 
-	// Find all matching handlers (exact topic + wildcard)
+	// Snapshot handlers under lock
 	var handlers []*asyncSubscription
 
 	// Exact topic match
@@ -172,22 +193,22 @@ func Publish[T Event](ctx context.Context, b *EventBus, event T, topic string) {
 		wildcardKey := subscriptionKey{eventType: eventType, topic: ""}
 		handlers = append(handlers, b.handlers[wildcardKey]...)
 	}
+	b.mu.RUnlock()
 
-	// Deliver while holding RLock — Close() acquires write lock before closing
-	// channels, so channels cannot be closed while any Publish holds RLock.
-	// This prevents send-on-closed-channel panics.
+	// Deliver OUTSIDE lock — no deadlock possible.
+	// Tombstone channels prevent send-on-closed-channel panics: if a subscription
+	// is cancelled while we are iterating, the tombstone fires and we skip it.
 	env := eventEnvelope{ctx: ctx, event: event}
 	for _, h := range handlers {
 		select {
 		case h.ch <- env:
 			// Delivered
+		case <-h.tombstone:
+			// Subscription cancelled during send — skip
 		case <-ctx.Done():
-			b.mu.RUnlock()
 			return // Context cancelled, stop publishing
 		}
 	}
-
-	b.mu.RUnlock()
 }
 
 // Name implements worker.Worker interface.
@@ -233,16 +254,17 @@ func (b *EventBus) Close() {
 		allSubs = append(allSubs, subs...)
 	}
 
-	// Close channels WHILE holding lock — prevents Publish from sending on closed channel.
-	// A concurrent Publish() holds RLock and checks b.closed; if it sees closed=false and
-	// collects handler refs, it will try to send. By closing channels under the write lock,
-	// no Publish can be in-flight when channels close.
+	// Signal tombstones — in-flight Publish senders (which released their
+	// RLock before sending) will short-circuit via the tombstone select case.
+	// Handler goroutines also watch tombstone and drain remaining buffered events.
+	// We do NOT close ch here because a Publish goroutine that already captured
+	// a handler reference might attempt a send-on-closed-channel panic.
 	for _, sub := range allSubs {
-		close(sub.ch)
+		close(sub.tombstone)
 	}
 	b.mu.Unlock()
 
-	// Wait for handlers outside lock (they only read from ch, no lock needed)
+	// Wait for handler goroutines to drain and exit (outside lock)
 	for _, sub := range allSubs {
 		<-sub.done
 	}
@@ -257,25 +279,39 @@ func (b *EventBus) Close() {
 // and removes the subscription from the handlers map.
 func (b *EventBus) unsubscribe(eventType reflect.Type, topic string, id uint64) {
 	b.mu.Lock()
-	defer b.mu.Unlock()
 
-	// If bus is closed, all subscriptions are already being terminated/closed.
 	if b.closed {
+		b.mu.Unlock()
 		return
 	}
 
 	key := subscriptionKey{eventType: eventType, topic: topic}
 	subs := b.handlers[key]
 
+	var target *asyncSubscription
 	for i, sub := range subs {
 		if sub.id == id {
-			close(sub.ch) // Signal handler to exit
-			<-sub.done    // Wait for handler to finish
+			target = sub
+			// Remove from map under lock
 			b.handlers[key] = append(subs[:i], subs[i+1:]...)
 			if len(b.handlers[key]) == 0 {
 				delete(b.handlers, key)
 			}
-			return
+			break
 		}
 	}
+
+	if target == nil {
+		b.mu.Unlock()
+		return
+	}
+
+	// Signal tombstone under lock so handler goroutine drains and exits.
+	// We do NOT close target.ch — a concurrent Publish with a snapshot reference
+	// might still attempt a send. The handler exits via tombstone drain.
+	close(target.tombstone)
+	b.mu.Unlock()
+
+	// Wait for handler goroutine outside lock
+	<-target.done
 }

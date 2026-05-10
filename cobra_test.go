@@ -386,29 +386,34 @@ var _ worker.Worker = (*testWorkerForCobra)(nil)
 func TestCobraStartServicesMatchesRun(t *testing.T) {
 	t.Parallel()
 
-	// Create a worker that tracks whether it was started
-	w := &testWorkerForCobra{name: "test-worker"}
-
-	// Create a service whose OnStart panics - tests panic recovery
-	panicRecovered := make(chan struct{})
-	panickingService := &cobraTestService{
-		name: "panicking",
-		onStart: func() {
-			panic("intentional panic for testing")
+	// Create a worker that tracks whether it was started via workerMgr.
+	// Use a channel to synchronize - RunE waits for worker startup.
+	workerStarted := make(chan struct{})
+	w := &testWorkerForCobra{
+		name: "test-worker",
+		onStartFn: func(_ context.Context) error {
+			close(workerStarted)
+			return nil
 		},
 	}
-	_ = panickingService
 
 	rootCmd := &cobra.Command{
 		Use: "test",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return nil
+		RunE: func(_ *cobra.Command, _ []string) error {
+			// Wait for worker to be started by workerMgr before returning.
+			// This ensures the supervisor goroutine has time to call OnStart.
+			select {
+			case <-workerStarted:
+				return nil
+			case <-time.After(2 * time.Second):
+				return errors.New("worker was not started within timeout")
+			}
 		},
 	}
 
 	app := New(WithCobra(rootCmd), WithShutdownTimeout(2*time.Second))
 
-	// Register the worker
+	// Register the worker - it gets auto-discovered and registered with workerMgr during Build
 	err := For[worker.Worker](app.Container()).Named("test-worker").Instance(w)
 	require.NoError(t, err)
 
@@ -427,15 +432,11 @@ func TestCobraStartServicesMatchesRun(t *testing.T) {
 	execErr := rootCmd.Execute()
 	require.NoError(t, execErr)
 
-	// Worker should have been started via workerMgr
+	// Worker should have been started via workerMgr (confirmed by channel signal)
 	require.True(t, w.started.Load(), "worker should be started via workerMgr")
 
-	// Normal service should have been started via startServices
+	// Normal service should have been started via startServices (parallel layer startup)
 	require.True(t, svcStarted.Load(), "normal service should be started")
-
-	// Panic recovery: the parallel startup uses goroutines which recover panics
-	// via the error channel pattern. We verified compilation and startup completes.
-	close(panicRecovered) // Signal test completed
 }
 
 // TestCobraStartServicesRollback verifies that when a service fails to start
