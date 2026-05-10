@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"sync/atomic"
 )
 
 // ServiceWrapper is the interface for service lifecycle management.
@@ -106,14 +107,21 @@ func hasLifecycleImpl[T any]() bool {
 }
 
 // lazySingleton is the default service type - creates instance on first resolve,
-// then caches it for all subsequent calls.
+// then caches it for all subsequent calls. Uses sync.Once for exactly-once
+// initialization without holding a lock during provider execution (Rule 1).
 type lazySingleton[T any] struct {
 	baseService
 	provider func(*Container) (T, error)
 
-	mu       sync.Mutex
+	once     sync.Once
 	instance T
-	built    bool
+	err      error
+	built    atomic.Bool
+
+	// initGoid tracks the goroutine ID of the initializer for re-entrant cycle detection.
+	// If the same goroutine tries to resolve this singleton during initialization,
+	// it would deadlock on Once.Do -- fail fast with ErrCycle instead.
+	initGoid atomic.Int64
 }
 
 // newLazySingleton creates a new lazy singleton service wrapper.
@@ -149,47 +157,52 @@ func (s *lazySingleton[T]) ServiceType() reflect.Type {
 }
 
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.built {
+	// Fast path: already built
+	if s.built.Load() {
 		return s.instance, nil
 	}
 
-	instance, err := s.provider(c)
-	if err != nil {
-		return nil, err
+	// Re-entrant cycle detection: if the same goroutine is already initializing this
+	// singleton (via a dependency chain), fail fast instead of deadlocking on Once.Do.
+	currentGoid := getGoroutineID()
+	if initGoid := s.initGoid.Load(); initGoid != 0 && initGoid == currentGoid {
+		return nil, fmt.Errorf("%w: re-entrant resolution of %s", ErrCycle, s.serviceName)
 	}
 
-	// Auto-inject struct fields tagged with gaz:"inject"
-	if err = injectStruct(c, instance, chain); err != nil {
-		return nil, err
-	}
+	s.once.Do(func() {
+		s.initGoid.Store(getGoroutineID())
+		defer s.initGoid.Store(0)
 
-	s.instance = instance
-	s.built = true
-	return instance, nil
+		instance, err := s.provider(c)
+		if err != nil {
+			s.err = err
+			return
+		}
+
+		// Auto-inject struct fields tagged with gaz:"inject"
+		if injectErr := injectStruct(c, instance, chain); injectErr != nil {
+			s.err = injectErr
+			return
+		}
+
+		s.instance = instance
+		s.built.Store(true)
+	})
+
+	return s.instance, s.err
 }
 
 func (s *lazySingleton[T]) Start(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
-
 	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *lazySingleton[T]) Stop(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
-
 	return s.runStopLifecycle(ctx, s.instance)
 }
 
@@ -261,13 +274,17 @@ func (s *transientService[T]) ServiceType() reflect.Type {
 
 // eagerSingleton is like lazySingleton but instantiates at Build() time.
 // The IsEager() method returns true so Build() knows to instantiate it.
+// Uses sync.Once for exactly-once initialization without holding a lock
+// during provider execution (Rule 1).
 type eagerSingleton[T any] struct {
 	baseService
 	provider func(*Container) (T, error)
 
-	mu       sync.Mutex
+	once     sync.Once
 	instance T
-	built    bool
+	err      error
+	built    atomic.Bool
+	initGoid atomic.Int64
 }
 
 // newEagerSingleton creates a new eager singleton service wrapper.
@@ -295,48 +312,52 @@ func (s *eagerSingleton[T]) IsTransient() bool {
 }
 
 func (s *eagerSingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.built {
+	// Fast path: already built
+	if s.built.Load() {
 		return s.instance, nil
 	}
 
-	instance, err := s.provider(c)
-	if err != nil {
-		return nil, err
+	// Re-entrant cycle detection: if the same goroutine is already initializing this
+	// singleton (via a dependency chain), fail fast instead of deadlocking on Once.Do.
+	currentGoid := getGoroutineID()
+	if initGoid := s.initGoid.Load(); initGoid != 0 && initGoid == currentGoid {
+		return nil, fmt.Errorf("%w: re-entrant resolution of %s", ErrCycle, s.serviceName)
 	}
 
-	// Auto-inject struct fields tagged with gaz:"inject"
-	if err = injectStruct(c, instance, chain); err != nil {
-		return nil, err
-	}
+	s.once.Do(func() {
+		s.initGoid.Store(getGoroutineID())
+		defer s.initGoid.Store(0)
 
-	s.instance = instance
-	s.built = true
-	return instance, nil
+		instance, err := s.provider(c)
+		if err != nil {
+			s.err = err
+			return
+		}
+
+		// Auto-inject struct fields tagged with gaz:"inject"
+		if injectErr := injectStruct(c, instance, chain); injectErr != nil {
+			s.err = injectErr
+			return
+		}
+
+		s.instance = instance
+		s.built.Store(true)
+	})
+
+	return s.instance, s.err
 }
 
 func (s *eagerSingleton[T]) Start(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.built {
-		// Should have been built, but just in case
+	if !s.built.Load() {
 		return nil
 	}
-
 	return s.runStartLifecycle(ctx, s.instance)
 }
 
 func (s *eagerSingleton[T]) Stop(ctx context.Context) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if !s.built {
+	if !s.built.Load() {
 		return nil
 	}
-
 	return s.runStopLifecycle(ctx, s.instance)
 }
 
