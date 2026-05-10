@@ -279,9 +279,23 @@ func (s *GRPCServerTestSuite) TestGRPCServerGetGRPCServer() {
 
 	server := NewServer(cfg, logger, container, nil)
 
-	// GRPCServer should return the underlying grpc.Server.
+	// Before OnStart, GRPCServer returns nil (deferred construction).
+	s.Nil(server.GRPCServer(), "GRPCServer should be nil before OnStart")
+
+	// Start the server to create the underlying grpc.Server.
+	ctx := context.Background()
+	err := server.OnStart(ctx)
+	s.Require().NoError(err)
+
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.OnStop(stopCtx)
+	}()
+
+	// After OnStart, GRPCServer should return the underlying grpc.Server.
 	grpcServer := server.GRPCServer()
-	s.Require().NotNil(grpcServer)
+	s.Require().NotNil(grpcServer, "GRPCServer should be available after OnStart")
 }
 
 func (s *GRPCServerTestSuite) TestSkipListenerStartStop() {
