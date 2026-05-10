@@ -27,6 +27,7 @@ type healthAdapter struct {
 	lastStatus healthpb.HealthCheckResponse_ServingStatus
 	stopCh     chan struct{}
 	stopped    chan struct{}
+	stopOnce   sync.Once
 }
 
 // newHealthAdapter creates a new gRPC health adapter.
@@ -69,26 +70,26 @@ func (s *healthAdapter) Start(ctx context.Context) {
 	)
 }
 
-// Stop stops the background polling loop.
+// Stop stops the background polling loop. It is safe to call multiple times;
+// subsequent calls are no-ops (idempotent close via sync.Once).
 func (s *healthAdapter) Stop(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "gRPC health adapter stopping")
 
-	// Signal stop.
-	close(s.stopCh)
+	// Signal stop idempotently to prevent double-close panic.
+	s.stopOnce.Do(func() { close(s.stopCh) })
+
+	// Always mark services as NOT_SERVING on shutdown, even on timeout.
+	defer s.health.Shutdown()
 
 	// Wait for poll loop to exit or context to timeout.
 	select {
 	case <-s.stopped:
 		s.logger.InfoContext(ctx, "gRPC health adapter stopped")
+		return nil
 	case <-ctx.Done():
 		s.logger.WarnContext(ctx, "gRPC health adapter stop timed out")
 		return fmt.Errorf("grpc health adapter stop: %w", ctx.Err())
 	}
-
-	// Mark all services as NOT_SERVING on shutdown.
-	s.health.Shutdown()
-
-	return nil
 }
 
 // pollLoop runs the background polling loop.

@@ -289,6 +289,34 @@ func TestHealthAdapter_InitialUnknown(t *testing.T) {
 	assert.Equal(t, healthpb.HealthCheckResponse_UNKNOWN, adapter.lastStatus)
 }
 
+func TestHealthAdapter_DoubleClose(t *testing.T) {
+	// Calling Stop twice must not panic (sync.Once guards close(stopCh)).
+	manager := gazhealth.NewManager()
+	logger := slog.Default()
+	adapter := newHealthAdapter(manager, 50*time.Millisecond, logger)
+
+	// Start the adapter so the poll loop is running.
+	ctx := context.Background()
+	adapter.Start(ctx)
+
+	// Let it run briefly.
+	time.Sleep(100 * time.Millisecond)
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// First stop should succeed.
+	err := adapter.Stop(stopCtx)
+	require.NoError(t, err)
+
+	// Second stop must not panic.
+	assert.NotPanics(t, func() {
+		stopCtx2, cancel2 := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel2()
+		_ = adapter.Stop(stopCtx2)
+	}, "calling Stop twice should not panic")
+}
+
 func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
 	// Manager with no checks should report as healthy.
 	manager := gazhealth.NewManager()

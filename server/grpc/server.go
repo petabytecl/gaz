@@ -38,6 +38,7 @@ type Registrar interface {
 type Server struct {
 	config        Config
 	server        *grpc.Server
+	serverOpts    []grpc.ServerOption
 	listener      net.Listener
 	container     *di.Container
 	logger        *slog.Logger
@@ -93,7 +94,7 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, tp *sdk
 
 	return &Server{
 		config:      cfg,
-		server:      grpc.NewServer(opts...),
+		serverOpts:  opts,
 		container:   container,
 		logger:      logger,
 		otelEnabled: otelEnabled,
@@ -106,6 +107,9 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, tp *sdk
 // When SkipListener is true, services are registered but no port is bound.
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
+	// Create gRPC server with stored options (deferred from NewServer).
+	s.server = grpc.NewServer(s.serverOpts...)
+
 	if s.config.SkipListener {
 		return s.onStartSkipListener(ctx)
 	}
@@ -209,6 +213,12 @@ func (s *Server) OnStop(ctx context.Context) error {
 		}
 	}
 
+	// Guard against OnStop being called before OnStart (server not yet created).
+	if s.server == nil {
+		s.logger.WarnContext(ctx, "gRPC server not started, nothing to stop")
+		return nil
+	}
+
 	if s.config.SkipListener {
 		// No listener to close; just stop the server directly.
 		s.server.GracefulStop()
@@ -235,6 +245,8 @@ func (s *Server) OnStop(ctx context.Context) error {
 
 // GRPCServer returns the underlying grpc.Server for direct access.
 // This is useful for registering services manually if needed.
+// Returns nil if called before OnStart, since the gRPC server is
+// created during OnStart (deferred construction pattern).
 func (s *Server) GRPCServer() *grpc.Server {
 	return s.server
 }
