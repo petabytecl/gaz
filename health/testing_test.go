@@ -54,17 +54,14 @@ func TestTestManager(t *testing.T) {
 	checker := m.ReadinessChecker()
 	result := checker.Check(context.Background())
 
-	// Empty checker returns StatusUp (matches alexliesenfeld/health behavior)
-	assert.Equal(t, internal.StatusUp, result.Status)
+	// Empty checker returns StatusUnknown (B11: don't assume healthy without checks)
+	assert.Equal(t, internal.StatusUnknown, result.Status)
 }
 
 func TestRequireHealthy(t *testing.T) {
 	m := TestManager()
 
-	// No checks = healthy (matches alexliesenfeld/health behavior)
-	RequireHealthy(t, m)
-
-	// Add a passing check - still healthy
+	// Add a passing check then verify healthy
 	m.AddReadinessCheck("ok", func(ctx context.Context) error { return nil })
 	RequireHealthy(t, m)
 }

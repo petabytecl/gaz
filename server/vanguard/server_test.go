@@ -125,11 +125,18 @@ func (s *ServerTestSuite) TestOnStartHealthAutoMount() {
 	time.Sleep(50 * time.Millisecond)
 
 	// Check health endpoints use health.DefaultConfig paths.
-	for _, endpoint := range []string{"/live", "/ready", "/startup"} {
+	// Liveness always returns 200; readiness/startup return 503 when no checks
+	// are registered (StatusUnknown maps to Down).
+	expectedStatus := map[string]int{
+		"/live":    http.StatusOK,
+		"/ready":   http.StatusServiceUnavailable,
+		"/startup": http.StatusServiceUnavailable,
+	}
+	for endpoint, wantCode := range expectedStatus {
 		resp, reqErr := http.Get(fmt.Sprintf("http://localhost:%d%s", cfg.Port, endpoint))
 		s.Require().NoErrorf(reqErr, "GET %s should not error", endpoint)
 		defer func() { _ = resp.Body.Close() }()
-		s.Equalf(http.StatusOK, resp.StatusCode, "GET %s should return 200", endpoint)
+		s.Equalf(wantCode, resp.StatusCode, "GET %s should return %d", endpoint, wantCode)
 	}
 }
 

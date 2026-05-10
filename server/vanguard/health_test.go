@@ -24,12 +24,17 @@ func (s *HealthTestSuite) TestBuildHealthMux_AllPaths() {
 	mux := buildHealthMux(mgr, nil)
 	s.Require().NotNil(mux)
 
-	// Verify default health paths respond.
-	for _, path := range []string{"/ready", "/live", "/startup"} {
+	// Liveness always 200; readiness/startup return 503 with no checks (StatusUnknown).
+	expected := map[string]int{
+		"/live":    http.StatusOK,
+		"/ready":   http.StatusServiceUnavailable,
+		"/startup": http.StatusServiceUnavailable,
+	}
+	for path, wantCode := range expected {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
-		s.Equalf(http.StatusOK, rec.Code, "GET %s should return 200", path)
+		s.Equalf(wantCode, rec.Code, "GET %s should return %d", path, wantCode)
 	}
 }
 
@@ -42,7 +47,6 @@ func (s *HealthTestSuite) TestMountHealthEndpoints_OnMux() {
 	mgr := health.NewManager()
 	mux := http.NewServeMux()
 
-	// Mount with custom config paths
 	cfg := &health.Config{
 		ReadinessPath: "/custom-ready",
 		LivenessPath:  "/custom-live",
@@ -50,11 +54,16 @@ func (s *HealthTestSuite) TestMountHealthEndpoints_OnMux() {
 	}
 	mountHealthEndpoints(mux, mgr, cfg)
 
-	for _, path := range []string{"/custom-ready", "/custom-live", "/custom-startup"} {
+	expected := map[string]int{
+		"/custom-live":    http.StatusOK,
+		"/custom-ready":   http.StatusServiceUnavailable,
+		"/custom-startup": http.StatusServiceUnavailable,
+	}
+	for path, wantCode := range expected {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
-		s.Equalf(http.StatusOK, rec.Code, "Health endpoint %s should respond with 200", path)
+		s.Equalf(wantCode, rec.Code, "Health endpoint %s should respond with %d", path, wantCode)
 	}
 }
 
@@ -74,10 +83,15 @@ func (s *HealthTestSuite) TestBuildHealthMux_CustomConfig() {
 	mux := buildHealthMux(mgr, cfg)
 	s.Require().NotNil(mux)
 
-	for _, path := range []string{"/r", "/l", "/s"} {
+	expected := map[string]int{
+		"/l": http.StatusOK,
+		"/r": http.StatusServiceUnavailable,
+		"/s": http.StatusServiceUnavailable,
+	}
+	for path, wantCode := range expected {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
-		s.Equalf(http.StatusOK, rec.Code, "GET %s should return 200", path)
+		s.Equalf(wantCode, rec.Code, "GET %s should return %d", path, wantCode)
 	}
 }

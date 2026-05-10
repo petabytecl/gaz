@@ -52,15 +52,17 @@ func TestHealthIntegration(t *testing.T) {
 	port := mgmtServer.Port()
 	require.NotZero(t, port)
 
-	// Verify endpoints
-	endpoints := []string{
-		cfg.Health.LivenessPath,
-		cfg.Health.ReadinessPath,
-		cfg.Health.StartupPath,
+	// Verify endpoints are reachable and return expected status codes.
+	// Liveness/readiness return 200 (readiness has auto-registered checks).
+	// Startup returns 503 when no startup checks registered (StatusUnknown).
+	expectedStatus := map[string]int{
+		cfg.Health.LivenessPath:  http.StatusOK,
+		cfg.Health.ReadinessPath: http.StatusOK,
+		cfg.Health.StartupPath:   http.StatusServiceUnavailable,
 	}
 
-	for _, path := range endpoints {
-		fullURL := fmt.Sprintf("http://localhost:%d%s", port, path)
+	for path, wantCode := range expectedStatus {
+		fullURL := fmt.Sprintf("http://127.0.0.1:%d%s", port, path)
 		require.Eventually(t, func() bool {
 			req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, fullURL, nil)
 			if reqErr != nil {
@@ -72,7 +74,7 @@ func TestHealthIntegration(t *testing.T) {
 			}
 			_ = resp.Body.Close()
 
-			return resp.StatusCode == http.StatusOK
-		}, 2*time.Second, 50*time.Millisecond, "endpoint %s not reachable", fullURL)
+			return resp.StatusCode == wantCode
+		}, 2*time.Second, 50*time.Millisecond, "endpoint %s expected %d", fullURL, wantCode)
 	}
 }

@@ -317,14 +317,13 @@ func TestHealthAdapter_DoubleClose(t *testing.T) {
 	}, "calling Stop twice should not panic")
 }
 
-func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
-	// Manager with no checks should report as healthy.
+func TestHealthAdapter_NoChecks_Unknown(t *testing.T) {
+	// Manager with no checks reports NOT_SERVING (StatusUnknown maps to Down).
 	manager := gazhealth.NewManager()
 	logger := slog.Default()
 
 	adapter := newHealthAdapter(manager, 50*time.Millisecond, logger)
 
-	// Create and start gRPC server.
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	defer func() { _ = lis.Close() }()
@@ -337,7 +336,6 @@ func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
 	}()
 	defer srv.Stop()
 
-	// Start the health adapter.
 	ctx := context.Background()
 	adapter.Start(ctx)
 	defer func() {
@@ -346,10 +344,8 @@ func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
 		_ = adapter.Stop(stopCtx)
 	}()
 
-	// Wait for initial check.
 	time.Sleep(100 * time.Millisecond)
 
-	// Create client and check status.
 	conn, err := grpc.NewClient(
 		lis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -364,5 +360,5 @@ func TestHealthAdapter_NoChecks_Healthy(t *testing.T) {
 
 	resp, err := client.Check(checkCtx, &healthpb.HealthCheckRequest{Service: ""})
 	require.NoError(t, err)
-	assert.Equal(t, healthpb.HealthCheckResponse_SERVING, resp.GetStatus())
+	assert.Equal(t, healthpb.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
 }
