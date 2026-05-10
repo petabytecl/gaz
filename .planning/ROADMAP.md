@@ -29,7 +29,7 @@
 - [x] **Phase 51: Design and API Improvements** - 11 design improvements: split app.go, context propagation, shutdown errors, validation, timer leaks, backoff jitter (completed 2026-03-30)
 - [x] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers (completed 2026-03-30)
 - [x] **Phase 53: Tech Debt Cleanup** - Wire logger closer into App shutdown, update OTEL health path filter, fix doc.go references (completed 2026-03-30)
-- [ ] **Phase 53.1: Critical Review Fixes** (INSERTED) - 6 CRITICAL findings from 2026-05-09 full-repo review: Cobra single-startup-path, eventbus/cron lock-during-blocking-IO, gRPC reflection defaults (x2), DI singleton init deadlock, GitHub Actions SHA pinning
+- [x] **Phase 53.1: Critical Review Fixes** (INSERTED) - 6 CRITICAL findings from 2026-05-09 full-repo review: Cobra single-startup-path, eventbus/cron lock-during-blocking-IO, gRPC reflection defaults (x2), DI singleton init deadlock, GitHub Actions SHA pinning (completed 2026-05-09)
 - [ ] **Phase 53.2: High and Medium Review Fixes** (INSERTED) - HIGH/MEDIUM cleanup + rule-enforcement automation from 2026-05-09 review: shutdown ctx propagation, mgmt server posture, env-var convention, time.Sleep test sweep, custom linters for Rules 1/6/7/8
 
 ## Phase Details
@@ -157,12 +157,12 @@ Plans:
 **Depends on:** Phase 53
 **Context:** `.planning/milestones/v5.1-phases/53.1-critical-review-fixes/CONTEXT.md`
 **Requirements:** ITEM-01, ITEM-02, ITEM-03, ITEM-04, ITEM-05, ITEM-06, ITEM-07
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 53.1-01-PLAN.md — Cobra single startup path (Rule 2) + EventBus lock-during-blocking-IO (Rule 1)
-- [ ] 53.1-02-PLAN.md — Cron lock-during-channel-ops (Rule 1) + DI singleton init-under-lock (Rule 1)
-- [ ] 53.1-03-PLAN.md — Reflection defaults to false (Rule 7) + GitHub Actions SHA pinning (Rule 8)
+- [x] 53.1-01-PLAN.md — Cobra single startup path (Rule 2) + EventBus lock-during-blocking-IO (Rule 1)
+- [x] 53.1-02-PLAN.md — Cron lock-during-channel-ops (Rule 1) + DI singleton init-under-lock (Rule 1)
+- [x] 53.1-03-PLAN.md — Reflection defaults to false (Rule 7) + GitHub Actions SHA pinning (Rule 8)
 
 Items (summary — see CONTEXT.md for fix sketches):
 1. Cobra single startup path — `cobra.go:179-214` reimplements lifecycle; extract `startServices(ctx)` shared helper (Rule 2)

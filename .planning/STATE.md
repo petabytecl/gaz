@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Hardening
 status: in_progress
-stopped_at: "Inserted phases 53.1 + 53.2 from 2026-05-09 full-repo review"
-last_updated: "2026-05-09T00:00:00.000Z"
+stopped_at: "Phase 53.1 complete — all 6 CRITICAL findings fixed"
+last_updated: "2026-05-09T22:10:00.000Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 20
-  completed_plans: 17
-  percent: 80
+  completed_plans: 20
+  percent: 90
 ---
 
 # Project State
@@ -25,17 +25,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 53.1 — critical-review-fixes (INSERTED)
+**Current focus:** Phase 53.2 — high-medium-review-fixes (next)
 
 ## Current Position
 
-Phase: 53.1 (critical-review-fixes) — PLANNED
-Plan: 0 of 3
+Phase: 53.2 (high-medium-review-fixes) — PLANNED
+Plan: 0 of 0 (not yet planned)
 
 - **Milestone:** v5.1 Hardening (reopened 2026-05-09)
-- **Phase:** 53.1 of 53.2
-- **Plan:** Ready to execute — 3 plans in 1 wave
-- **Status:** Ready to execute
+- **Phase:** 53.2 of 53.2
+- **Plan:** Needs planning
+- **Status:** Phase 53.1 complete, ready for 53.2
 - **Last activity:** 2026-05-09
 
 Progress: [████████░░] 80%
