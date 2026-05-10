@@ -17,6 +17,7 @@ type Cron struct {
 	parser    ScheduleParser
 	location  *time.Location
 	stop      chan struct{}
+	done      chan struct{} // closed when run() exits; used as safety valve for senders
 	add       chan *Entry
 	remove    chan EntryID
 	snapshot  chan chan []Entry
@@ -92,6 +93,7 @@ func New(opts ...Option) *Cron {
 		chain:     NewChain(),
 		add:       make(chan *Entry),
 		stop:      make(chan struct{}),
+		done:      make(chan struct{}),
 		snapshot:  make(chan chan []Entry),
 		remove:    make(chan EntryID),
 		running:   false,
@@ -134,7 +136,6 @@ func (c *Cron) AddJob(spec string, cmd Job) (EntryID, error) {
 // The job is wrapped with the configured Chain.
 func (c *Cron) Schedule(schedule Schedule, cmd Job) EntryID {
 	c.runningMu.Lock()
-	defer c.runningMu.Unlock()
 	c.nextID++
 	entry := &Entry{
 		ID:         c.nextID,
@@ -144,8 +145,14 @@ func (c *Cron) Schedule(schedule Schedule, cmd Job) EntryID {
 	}
 	if !c.running {
 		c.entries = append(c.entries, entry)
-	} else {
-		c.add <- entry
+		c.runningMu.Unlock()
+		return entry.ID
+	}
+	c.runningMu.Unlock()
+
+	select {
+	case c.add <- entry:
+	case <-c.done:
 	}
 	return entry.ID
 }
@@ -153,13 +160,20 @@ func (c *Cron) Schedule(schedule Schedule, cmd Job) EntryID {
 // Entries returns a snapshot of the cron entries.
 func (c *Cron) Entries() []Entry {
 	c.runningMu.Lock()
-	defer c.runningMu.Unlock()
-	if c.running {
-		replyChan := make(chan []Entry, 1)
-		c.snapshot <- replyChan
-		return <-replyChan
+	if !c.running {
+		snapshot := c.entrySnapshot()
+		c.runningMu.Unlock()
+		return snapshot
 	}
-	return c.entrySnapshot()
+	c.runningMu.Unlock()
+
+	replyChan := make(chan []Entry, 1)
+	select {
+	case c.snapshot <- replyChan:
+		return <-replyChan
+	case <-c.done:
+		return nil
+	}
 }
 
 // Location gets the time zone location.
@@ -180,11 +194,16 @@ func (c *Cron) Entry(id EntryID) Entry {
 // Remove an entry from being run in the future.
 func (c *Cron) Remove(id EntryID) {
 	c.runningMu.Lock()
-	defer c.runningMu.Unlock()
-	if c.running {
-		c.remove <- id
-	} else {
+	if !c.running {
 		c.removeEntry(id)
+		c.runningMu.Unlock()
+		return
+	}
+	c.runningMu.Unlock()
+
+	select {
+	case c.remove <- id:
+	case <-c.done:
 	}
 }
 
@@ -196,6 +215,7 @@ func (c *Cron) Start() {
 		return
 	}
 	c.running = true
+	c.done = make(chan struct{})
 	go c.run()
 }
 
@@ -207,6 +227,7 @@ func (c *Cron) Run() {
 		return
 	}
 	c.running = true
+	c.done = make(chan struct{})
 	c.runningMu.Unlock()
 	c.run()
 }
@@ -216,6 +237,7 @@ func (c *Cron) Run() {
 //
 //nolint:gocognit // core logic
 func (c *Cron) run() {
+	defer close(c.done)
 	c.logger.Info("start")
 
 	// Figure out the next activation times for each entry.
@@ -301,11 +323,29 @@ func (c *Cron) now() time.Time {
 // A context is returned so the caller can wait for running jobs to complete.
 func (c *Cron) Stop() context.Context {
 	c.runningMu.Lock()
-	defer c.runningMu.Unlock()
-	if c.running {
-		c.stop <- struct{}{}
-		c.running = false
+	if !c.running {
+		c.runningMu.Unlock()
+		// Even when not running, wait for any outstanding jobs to finish.
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			c.jobWaiter.Wait()
+			cancel()
+		}()
+		return ctx
 	}
+	c.runningMu.Unlock()
+
+	// Send stop signal outside the lock. This blocks until run() consumes it,
+	// guaranteeing run() has exited before we proceed. The guard above ensures
+	// run() IS active (c.running was true), so it will eventually read from c.stop.
+	c.stop <- struct{}{}
+
+	// Set running=false AFTER the scheduler has consumed the stop signal (and returned).
+	// This ensures no concurrent caller sees running=false while run() still accesses c.entries.
+	c.runningMu.Lock()
+	c.running = false
+	c.runningMu.Unlock()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		c.jobWaiter.Wait()
