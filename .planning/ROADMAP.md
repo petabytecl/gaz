@@ -92,7 +92,7 @@ Phases execute in numeric order: 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 ->
 | 52. Test Coverage and Benchmarks | 0/2 | Complete    | 2026-03-30 |
 | 53. Tech Debt Cleanup | 0/1 | Complete    | 2026-03-30 |
 | 53.1. Critical Review Fixes (INSERTED) | 3/3 | Complete | 2026-05-09 |
-| 53.2. High and Medium Review Fixes (INSERTED) | 0/7 | Planned | — |
+| 53.2. High and Medium Review Fixes (INSERTED) | 0/8 | Planned | — |
 
 ### Phase 49: Fix Critical Concurrency Bugs
 **Goal:** Fix 5 concurrency bugs found in full codebase review: goroutine closure capture race (app.go), worker OnStop cancelled context, lazySingleton Start/Stop race, Container.Build() race, startup error drain
@@ -180,13 +180,14 @@ Items (summary — see CONTEXT.md for fix sketches):
 **Depends on:** Phase 53.1
 **Context:** `.planning/milestones/v5.1-phases/53.2-high-medium-review-fixes/CONTEXT.md`
 **Requirements:** A1-A17, B1-B21, C1-C3 (41 items from CONTEXT.md)
-**Plans:** 7 plans
+**Plans:** 8 plans
 
 Plans:
 - [ ] 53.2-01-PLAN.md — Shutdown context propagation (A1-A5, A6-verify, A13)
 - [ ] 53.2-02-PLAN.md — DI container hardening (A7-A9, B1-verify, B3, B4, B14)
 - [ ] 53.2-03-PLAN.md — Server security defaults + config fixes (A10-A12, A14-A16, B10)
 - [ ] 53.2-04-PLAN.md — DI + app cleanup (B2, B5, B6, B16-B18)
-- [ ] 53.2-05-PLAN.md — Server + worker + cron + logger + gaztest cleanup (B7-B9, B11-B13, B15, B19-B21)
+- [ ] 53.2-05-PLAN.md — Server fixes: gRPC deferred construction, health adapter, Connect error code (B7-B9)
 - [ ] 53.2-06-PLAN.md — time.Sleep sweep (A17, 103 sites across 18 files)
 - [ ] 53.2-07-PLAN.md — Rule enforcement automation + CHANGELOG (C1-C3)
+- [ ] 53.2-08-PLAN.md — Health, logger, cron, worker, backoff, gaztest cleanup (B11-B13, B15, B19-B21)
