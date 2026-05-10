@@ -40,7 +40,7 @@ func (s *ModuleTestSuite) TestProvideConfigDefaultValues() {
 	cfg := DefaultConfig()
 	s.Equal(DefaultPort, cfg.Port)
 	s.Equal("server", cfg.Namespace())
-	s.True(cfg.Reflection)
+	s.False(cfg.Reflection)
 	s.True(cfg.HealthEnabled)
 	s.False(cfg.DevMode)
 }

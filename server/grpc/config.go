@@ -24,7 +24,7 @@ type Config struct {
 
 	// Reflection enables gRPC reflection for service discovery.
 	// When enabled, tools like grpcurl can introspect available services.
-	// Defaults to true.
+	// Defaults to false. Enable only in dev/staging via WithReflection(true) or config.
 	Reflection bool `json:"reflection" yaml:"reflection" mapstructure:"reflection" gaz:"reflection"`
 
 	// MaxRecvMsgSize is the maximum message size the server can receive.
@@ -59,7 +59,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		Port:                DefaultPort,
-		Reflection:          true,
+		Reflection:          false,
 		MaxRecvMsgSize:      DefaultMaxMsgSize,
 		MaxSendMsgSize:      DefaultMaxMsgSize,
 		HealthEnabled:       true,

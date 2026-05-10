@@ -34,9 +34,11 @@
 //
 // # Reflection
 //
-// gRPC reflection (v1 and v1alpha) is enabled by default for grpcurl
-// compatibility. Reflection handlers are registered as Connect-style
-// services in the Vanguard transcoder.
+// gRPC reflection (v1 and v1alpha) is disabled by default for security.
+// Enable it for development via config:
+//
+//	server:
+//	  reflection: true
 //
 // # Configuration
 //

@@ -44,15 +44,15 @@
 //
 // # Reflection
 //
-// gRPC reflection is enabled by default, allowing tools like grpcurl to
-// introspect available services:
+// gRPC reflection is disabled by default for security (prevents API schema
+// reconnaissance in production). Enable it for development:
 //
-//	grpcurl -plaintext localhost:50051 list
-//	grpcurl -plaintext localhost:50051 describe mypackage.MyService
+//	grpc.NewModule(grpc.WithReflection(true))
 //
-// Disable reflection in production if needed:
+// Or via config file:
 //
-//	grpc.NewModule(grpc.WithReflection(false))
+//	grpc:
+//	  reflection: true
 //
 // # Configuration
 //
