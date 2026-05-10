@@ -5,6 +5,9 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
+	"syscall"
 
 	"github.com/petabytecl/gaz/logger/tint"
 )
@@ -34,7 +37,9 @@ func NewLoggerWithCloser(cfg *Config) (*slog.Logger, io.Closer) {
 
 // NewLoggerWithWriter creates a new slog.Logger writing to the given writer.
 // This is useful for testing or custom output destinations.
-// It sets the default logger to the returned logger.
+//
+// Unlike previous versions, this function no longer calls slog.SetDefault.
+// Use SetGlobal explicitly when the logger should become the process-wide default.
 func NewLoggerWithWriter(cfg *Config, w io.Writer) *slog.Logger {
 	// Create LevelVar for dynamic level changing
 	lvl := new(slog.LevelVar)
@@ -61,10 +66,13 @@ func NewLoggerWithWriter(cfg *Config, w io.Writer) *slog.Logger {
 	// Wrap with ContextHandler to propagate context values
 	handler = NewContextHandler(handler)
 
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
+	return slog.New(handler)
+}
 
-	return logger
+// SetGlobal sets the given logger as the global default via slog.SetDefault.
+// Called once during App.Build(), not on every logger creation.
+func SetGlobal(l *slog.Logger) {
+	slog.SetDefault(l)
 }
 
 // resolveOutputWithCloser resolves the output destination and returns both the writer
@@ -77,8 +85,17 @@ func resolveOutputWithCloser(cfg *Config) (io.Writer, io.Closer) {
 	case "stderr":
 		return os.Stderr, nopCloser{}
 	default:
-		//nolint:gosec // Log files need to be readable by log monitoring tools
-		f, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		cleanPath := filepath.Clean(cfg.Output)
+		if strings.Contains(cleanPath, "..") {
+			_, _ = fmt.Fprintf(os.Stderr, "logger: path must not contain '..': %s\n", cfg.Output)
+			return os.Stdout, nopCloser{}
+		}
+		//nolint:gosec // Log files readable by owner+group only (0o640)
+		f, err := os.OpenFile(
+			cleanPath,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY|syscall.O_NOFOLLOW,
+			0o640,
+		)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "logger: failed to open %s: %v, falling back to stdout\n",
 				cfg.Output, err)

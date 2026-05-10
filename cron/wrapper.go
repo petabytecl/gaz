@@ -77,6 +77,11 @@ func NewJobWrapper(
 // Run implements cron/internal.Job interface.
 // This method is called by cron/internal scheduler on each scheduled execution.
 func (w *diJobWrapper) Run() {
+	// Fast-path: skip execution if app is shutting down.
+	if w.appCtx.Err() != nil {
+		return
+	}
+
 	w.mu.Lock()
 	w.running = true
 	w.mu.Unlock()

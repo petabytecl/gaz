@@ -16,9 +16,10 @@ type App struct {
 	tb      TB
 	timeout time.Duration
 
-	mu      sync.Mutex
-	stopped bool
-	started bool
+	startOnce sync.Once
+	stopOnce  sync.Once
+	started   bool
+	stopped   bool
 }
 
 // RequireStart starts the app or fails the test.
@@ -26,29 +27,24 @@ type App struct {
 // the configured timeout, and calls app.Start(ctx).
 // If start fails, it calls t.Fatalf() to fail the test immediately.
 //
+// RequireStart is idempotent -- calling it multiple times is safe.
+//
 // RequireStart returns the App to support method chaining:
 //
 //	app.RequireStart().DoSomething()
 func (a *App) RequireStart() *App {
 	a.tb.Helper()
 
-	a.mu.Lock()
-	if a.started {
-		a.mu.Unlock()
-		return a // Already started, idempotent
-	}
-	a.mu.Unlock()
+	a.startOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
-	defer cancel()
+		if err := a.app.Start(ctx); err != nil {
+			a.tb.Fatalf("gaztest: app didn't start: %v", err)
+		}
 
-	if err := a.app.Start(ctx); err != nil {
-		a.tb.Fatalf("gaztest: app didn't start: %v", err)
-	}
-
-	a.mu.Lock()
-	a.started = true
-	a.mu.Unlock()
+		a.started = true
+	})
 
 	return a
 }
@@ -58,28 +54,21 @@ func (a *App) RequireStart() *App {
 // the configured timeout, and calls app.Stop(ctx).
 // If stop fails, it calls t.Fatalf() to fail the test immediately.
 //
-// RequireStop is idempotent - calling it multiple times is safe.
+// RequireStop is idempotent -- calling it multiple times is safe.
 // After the first successful stop, subsequent calls return immediately.
 func (a *App) RequireStop() {
 	a.tb.Helper()
 
-	a.mu.Lock()
-	if a.stopped {
-		a.mu.Unlock()
-		return // Already stopped, idempotent
-	}
-	a.mu.Unlock()
+	a.stopOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+		defer cancel()
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
-	defer cancel()
+		if err := a.app.Stop(ctx); err != nil {
+			a.tb.Fatalf("gaztest: app didn't stop: %v", err)
+		}
 
-	if err := a.app.Stop(ctx); err != nil {
-		a.tb.Fatalf("gaztest: app didn't stop: %v", err)
-	}
-
-	a.mu.Lock()
-	a.stopped = true
-	a.mu.Unlock()
+		a.stopped = true
+	})
 }
 
 // cleanup is called by t.Cleanup() to ensure the app is stopped.
@@ -87,23 +76,21 @@ func (a *App) RequireStop() {
 // Unlike RequireStop, it logs errors instead of failing the test,
 // since cleanup runs after the test function returns.
 func (a *App) cleanup() {
-	a.mu.Lock()
-	if a.stopped || !a.started {
-		a.mu.Unlock()
-		return // Nothing to clean up
-	}
-	a.mu.Unlock()
-
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
-	defer cancel()
-
-	if err := a.app.Stop(ctx); err != nil {
-		a.tb.Logf("gaztest cleanup: stop failed: %v", err)
+	if !a.started {
+		return // Never started, nothing to clean up
 	}
 
-	a.mu.Lock()
-	a.stopped = true
-	a.mu.Unlock()
+	// Use stopOnce to ensure idempotency with RequireStop
+	a.stopOnce.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+		defer cancel()
+
+		if err := a.app.Stop(ctx); err != nil {
+			a.tb.Logf("gaztest cleanup: stop failed: %v", err)
+		}
+
+		a.stopped = true
+	})
 }
 
 // Container returns the underlying DI container.
