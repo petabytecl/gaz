@@ -537,6 +537,34 @@ func TestJobWrapper_PanicWithError(t *testing.T) {
 	assert.Contains(t, output, "panic error")
 }
 
+func TestJobWrapper_SkipsOnCancelledCtx(t *testing.T) {
+	resolver := newCountingResolver()
+	executed := false
+	resolver.services["*cron.SkipJob"] = func() any {
+		return &wrapperMockJob{
+			name:     "skip-job",
+			schedule: "@hourly",
+			runFn: func(ctx context.Context) error {
+				executed = true
+				return nil
+			},
+		}
+	}
+
+	// Cancel context before calling Run
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	logger := slog.Default()
+	wrapper := NewJobWrapper(resolver, "*cron.SkipJob", "skip-job", "@hourly", 0, ctx, logger)
+
+	wrapper.Run()
+
+	assert.False(t, executed, "job should not execute when appCtx is cancelled")
+	assert.True(t, wrapper.LastRun().IsZero(), "lastRun should be zero when job was skipped")
+	assert.Equal(t, 0, resolver.getResolveCalls(), "resolver should not be called when appCtx is cancelled")
+}
+
 func TestJobWrapper_DurationLogging(t *testing.T) {
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, nil))

@@ -190,6 +190,16 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	if err := s.worker.OnStart(s.ctx); err != nil {
 		s.logger.Error("worker failed to start", slog.Any("error", err))
 		s.lastError = err
+
+		// Defensive cleanup: call OnStop even after failed OnStart.
+		// Workers may have partially initialized resources that need releasing.
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+		defer stopCancel()
+
+		if stopErr := s.worker.OnStop(stopCtx); stopErr != nil {
+			s.logger.Warn("worker OnStop after failed OnStart", slog.Any("error", stopErr))
+		}
+
 		// Treat start failure as a panic-equivalent (triggers restart logic)
 		panicked = true
 		return panicked

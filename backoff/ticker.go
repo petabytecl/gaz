@@ -85,6 +85,8 @@ func (t *Ticker) send(tick time.Time) <-chan time.Time {
 	case t.times <- tick:
 	case <-t.stop:
 		return nil
+	case <-t.ctx.Done():
+		return nil
 	}
 
 	next := t.backOff.NextBackOff()

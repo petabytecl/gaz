@@ -113,6 +113,47 @@ loop:
 	}
 }
 
+func TestTicker_ContextCancelDuringSend(t *testing.T) {
+	// Verify that cancelling the context while the send is blocked on the
+	// channel (nobody reading) causes the goroutine to exit, preventing a leak.
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use a constant backoff so ticks keep coming
+	b := WithContext(ctx, NewConstantBackOff(10*time.Millisecond))
+	ticker := NewTickerWithTimer(b, &defaultTimer{})
+
+	// Drain the first tick to let the goroutine proceed to the next send
+	select {
+	case <-ticker.C:
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected first tick")
+	}
+
+	// Do NOT drain subsequent ticks -- the send will block on t.times
+
+	// Cancel context; the send's select should pick up t.ctx.Done()
+	cancel()
+
+	// Channel should close (goroutine exits)
+	select {
+	case _, ok := <-ticker.C:
+		if ok {
+			// May get one in-flight tick; wait for close
+			select {
+			case _, ok := <-ticker.C:
+				if ok {
+					t.Error("expected channel to close after context cancel during send")
+				}
+			case <-time.After(200 * time.Millisecond):
+				t.Error("channel not closed after context cancel during send")
+			}
+		}
+		// ok == false means channel closed, success
+	case <-time.After(200 * time.Millisecond):
+		t.Error("channel not closed after context cancel during send")
+	}
+}
+
 func TestTicker_StopIsIdempotent(t *testing.T) {
 	ticker := NewTicker(&StopBackOff{})
 

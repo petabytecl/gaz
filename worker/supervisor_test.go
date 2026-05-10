@@ -590,6 +590,69 @@ func TestWithDeadLetterHandler_SetsOption(t *testing.T) {
 	assert.True(t, called)
 }
 
+// failStartWorker always returns an error from OnStart and tracks OnStop calls.
+type failStartWorker struct {
+	name      string
+	startErr  error
+	stopCount atomic.Int32
+	stopped   chan struct{}
+}
+
+func newFailStartWorker(name string, err error) *failStartWorker {
+	return &failStartWorker{
+		name:     name,
+		startErr: err,
+		stopped:  make(chan struct{}, 1),
+	}
+}
+
+func (w *failStartWorker) OnStart(_ context.Context) error {
+	return w.startErr
+}
+
+func (w *failStartWorker) OnStop(_ context.Context) error {
+	w.stopCount.Add(1)
+	select {
+	case w.stopped <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+func (w *failStartWorker) Name() string { return w.name }
+
+// TestSupervisor_OnStopAfterFailedOnStart verifies that OnStop is called
+// after OnStart returns an error, so partially-initialized resources are released.
+func TestSupervisor_OnStopAfterFailedOnStart(t *testing.T) {
+	logger := slog.Default()
+	w := newFailStartWorker("fail-start", errors.New("init failed"))
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 2
+	opts.CircuitWindow = time.Minute
+	opts.StableRunPeriod = time.Hour
+
+	sup := newSupervisor(w, opts, logger, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sup.start(ctx)
+
+	// Wait for supervisor to stop (circuit breaker trips after MaxRestarts)
+	select {
+	case <-sup.wait():
+	case <-time.After(15 * time.Second):
+		t.Fatal("supervisor did not stop after circuit breaker tripped")
+	}
+
+	// OnStop should have been called once per failed OnStart attempt
+	stopCalls := int(w.stopCount.Load())
+	assert.Equal(t, opts.MaxRestarts, stopCalls,
+		"OnStop should be called once per failed OnStart (MaxRestarts=%d, got=%d)",
+		opts.MaxRestarts, stopCalls)
+}
+
 // contextCheckWorker records whether OnStop receives a live (non-cancelled) context.
 type contextCheckWorker struct {
 	name           string
