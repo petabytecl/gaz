@@ -16,7 +16,7 @@ require (
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/petermattis/goid v0.0.0-20260226131333-17d1149c6ac6
 	github.com/rs/cors v1.11.1
-	github.com/shirou/gopsutil/v4 v4.26.2
+	github.com/shirou/gopsutil/v4 v4.26.4
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
