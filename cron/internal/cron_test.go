@@ -177,7 +177,7 @@ func TestAddWhileRunningWithDelay(t *testing.T) {
 	defer cron.Stop()
 	// Original test used 5s delay. A 1s delay is sufficient to verify the
 	// bug fix: adding a job after some delay should not trigger multiple invocations.
-	time.Sleep(1 * time.Second) //nolint:timesleep // cron scheduler requires real-time delay before adding job to test #34 regression
+	time.Sleep(1 * time.Second) // cron scheduler requires real-time delay before adding job to test #34 regression
 	var calls int64
 	_, _ = cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
 
@@ -331,7 +331,7 @@ func TestLocalTimezone(t *testing.T) {
 	// This calculation doesn't work in seconds 58 or 59.
 	// Take the easy way out and wait.
 	if now.Second() >= 58 {
-		time.Sleep(2 * time.Second) //nolint:timesleep // cron scheduler requires real-time wait for minute boundary (Issue #205)
+		time.Sleep(2 * time.Second) // cron scheduler requires real-time wait for minute boundary (Issue #205)
 		now = time.Now()
 	}
 	spec := fmt.Sprintf("%d,%d %d %d %d %d ?",
@@ -366,7 +366,7 @@ func TestNonLocalTimezone(t *testing.T) {
 	// This calculation doesn't work in seconds 58 or 59.
 	// Take the easy way out and wait.
 	if now.Second() >= 58 {
-		time.Sleep(2 * time.Second) //nolint:timesleep // cron scheduler requires real-time wait for minute boundary (Issue #205)
+		time.Sleep(2 * time.Second) // cron scheduler requires real-time wait for minute boundary (Issue #205)
 		now = time.Now().In(loc)
 	}
 	spec := fmt.Sprintf("%d,%d %d %d %d %d ?",
@@ -545,7 +545,7 @@ func TestScheduleAfterRemoval(t *testing.T) {
 			wg1.Done()
 			calls++
 		case 1:
-			time.Sleep(750 * time.Millisecond) //nolint:timesleep // simulates delayed job execution to test schedule removal timing
+			time.Sleep(750 * time.Millisecond) // simulates delayed job execution to test schedule removal timing
 			cron.Remove(hourJob)
 			calls++
 		case 2:
@@ -704,7 +704,7 @@ func TestStopAndWait(t *testing.T) {
 			case started <- struct{}{}:
 			default:
 			}
-			time.Sleep(500 * time.Millisecond) //nolint:timesleep // simulates slow cron job execution for stop-and-wait test
+			time.Sleep(500 * time.Millisecond) // simulates slow cron job execution for stop-and-wait test
 			close(slowDone)
 		})
 		_, _ = cron.AddFunc("* * * * * *", func() {})
@@ -737,7 +737,7 @@ func TestStopAndWait(t *testing.T) {
 			case started <- struct{}{}:
 			default:
 			}
-			time.Sleep(750 * time.Millisecond) //nolint:timesleep // simulates slow cron job execution for stop-and-wait test
+			time.Sleep(750 * time.Millisecond) // simulates slow cron job execution for stop-and-wait test
 		})
 		cron.Start()
 		_, _ = cron.AddFunc("* * * * * *", func() {})

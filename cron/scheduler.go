@@ -114,7 +114,7 @@ func (s *Scheduler) OnStop(ctx context.Context) error {
 		return nil
 	case <-ctx.Done():
 		s.logger.WarnContext(ctx, "shutdown deadline exceeded waiting for cron jobs")
-		return ctx.Err()
+		return fmt.Errorf("cron scheduler stop: %w", ctx.Err())
 	}
 }
 

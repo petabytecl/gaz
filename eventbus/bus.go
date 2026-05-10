@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"reflect"
 	"runtime/debug"
@@ -283,13 +284,13 @@ func (b *EventBus) CloseWithContext(ctx context.Context) error {
 		case <-sub.done:
 			// Drained successfully
 		case <-ctx.Done():
-			b.logger.Warn("shutdown deadline exceeded, some handlers not drained",
+			b.logger.WarnContext(ctx, "shutdown deadline exceeded, some handlers not drained",
 				"remaining", len(allSubs))
-			return ctx.Err()
+			return fmt.Errorf("eventbus close: %w", ctx.Err())
 		}
 	}
 
-	b.logger.Info("eventbus stopped", "subscriptions_drained", len(allSubs))
+	b.logger.InfoContext(ctx, "eventbus stopped", "subscriptions_drained", len(allSubs))
 	return nil
 }
 

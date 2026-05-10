@@ -149,7 +149,7 @@ func (j *countJob) Run() {
 	j.m.Lock()
 	j.started++
 	j.m.Unlock()
-	time.Sleep(j.delay) //nolint:timesleep // simulates real job execution time, not test synchronization
+	time.Sleep(j.delay) // simulates real job execution time, not test synchronization
 	j.m.Lock()
 	j.done++
 	j.m.Unlock()

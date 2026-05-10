@@ -260,7 +260,7 @@ func (s *ShutdownTestSuite) waitForAppRunning(app *App, timeout time.Duration) b
 		if running {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond) //nolint:timesleep // poll interval for signal-dependent test; signal.Notify registration requires real-time delay
+		time.Sleep(10 * time.Millisecond) // poll interval for signal-dependent test; signal.Notify registration requires real-time delay
 	}
 	return false
 }
@@ -469,7 +469,7 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	// This sleep cannot be replaced with require.Eventually because signal handler
 	// registration and signal delivery between test iterations requires real-time delay
 	// for the OS signal infrastructure to settle.
-	time.Sleep(100 * time.Millisecond) //nolint:timesleep // signal handler test requires real-time wait for OS signal delivery
+	time.Sleep(100 * time.Millisecond) // signal handler test requires real-time wait for OS signal delivery
 
 	// Check log contains hint
 	logOutput := logBuf.String()
@@ -493,7 +493,7 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 
 	// Brief wait to allow force-exit watcher goroutine to exit
 	// after shutdownDone is signaled, ensuring clean state for next test iteration.
-	time.Sleep(10 * time.Millisecond) //nolint:timesleep // required: goroutine cleanup between signal test iterations
+	time.Sleep(10 * time.Millisecond) // required: goroutine cleanup between signal test iterations
 }
 
 // TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT
@@ -531,7 +531,7 @@ func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
 	// Brief yield to allow signal handler to begin processing the first SIGINT.
 	// We need the double-signal watcher goroutine to be active, but we must NOT
 	// wait until shutdown completes (that would make the second signal a no-op).
-	time.Sleep(50 * time.Millisecond) //nolint:timesleep // intentional: double-SIGINT test requires precise inter-signal timing
+	time.Sleep(50 * time.Millisecond) // intentional: double-SIGINT test requires precise inter-signal timing
 
 	// Send second SIGINT
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)

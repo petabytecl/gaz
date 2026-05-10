@@ -18,6 +18,15 @@ const (
 	// DefaultReadHeaderTimeout is the default timeout for reading headers.
 	DefaultReadHeaderTimeout = 5 * time.Second
 
+	// DefaultReadTimeout is the default read timeout for the management server.
+	DefaultReadTimeout = 10 * time.Second
+
+	// DefaultWriteTimeout is the default write timeout for the management server.
+	DefaultWriteTimeout = 10 * time.Second
+
+	// DefaultIdleTimeout is the default idle timeout for the management server.
+	DefaultIdleTimeout = 60 * time.Second
+
 	// DefaultLivenessPath is the default path for the liveness probe.
 	DefaultLivenessPath = "/live"
 

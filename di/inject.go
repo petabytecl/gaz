@@ -54,7 +54,7 @@ func parseTag(tag string) tagOptions {
 // Returns an error if an unexported field has the gaz:"inject" tag.
 func getInjectFields(t reflect.Type) ([]injectField, error) {
 	if cached, ok := injectFieldCache.Load(t); ok {
-		return cached.([]injectField), nil //nolint:forcetypeassert // sync.Map stores []injectField
+		return cached.([]injectField), nil //nolint:forcetypeassert,errcheck // sync.Map stores []injectField exclusively
 	}
 
 	var fields []injectField

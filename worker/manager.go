@@ -152,7 +152,7 @@ func (m *Manager) Stop(ctx context.Context) error {
 	m.running = false
 	m.mu.Unlock()
 
-	m.logger.Info("stopping workers", slog.Int("count", len(m.supervisors)))
+	m.logger.InfoContext(ctx, "stopping workers", slog.Int("count", len(m.supervisors)))
 
 	// Cancel context to signal all supervisors
 	if m.cancel != nil {
@@ -162,11 +162,11 @@ func (m *Manager) Stop(ctx context.Context) error {
 	// Wait for all supervisors to complete with context deadline (Rule 3)
 	select {
 	case <-m.done:
-		m.logger.Info("all workers stopped")
+		m.logger.InfoContext(ctx, "all workers stopped")
 		return nil
 	case <-ctx.Done():
-		m.logger.Warn("worker stop deadline exceeded")
-		return ctx.Err()
+		m.logger.WarnContext(ctx, "worker stop deadline exceeded")
+		return fmt.Errorf("worker manager stop: %w", ctx.Err())
 	}
 }
 
