@@ -2,6 +2,7 @@ package di
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -229,6 +230,53 @@ func (s *InjectSuite) TestInjectStruct_DependencyResolutionError() {
 	err = injectStruct(c, target, nil)
 	s.Error(err, "should propagate resolution error")
 	s.Contains(err.Error(), "provider failed", "should contain original error")
+}
+
+// =============================================================================
+// Inject Field Memoization Tests
+// =============================================================================
+
+func (s *InjectSuite) TestInjectFieldMemoization_CacheHit() {
+	c := New()
+	dep := &testInjectableDep{value: "cached"}
+	s.Require().NoError(For[*testInjectableDep](c).Instance(dep))
+
+	type cachedTarget struct {
+		Dep *testInjectableDep `gaz:"inject"`
+	}
+
+	// First injection parses and caches
+	target1 := &cachedTarget{}
+	err := injectStruct(c, target1, nil)
+	s.NoError(err, "first injection should succeed")
+	s.Same(dep, target1.Dep, "first injection should set the field")
+
+	// Second injection should use cache
+	target2 := &cachedTarget{}
+	err = injectStruct(c, target2, nil)
+	s.NoError(err, "second injection should succeed (cache hit)")
+	s.Same(dep, target2.Dep, "second injection should set the field from cache")
+}
+
+func (s *InjectSuite) TestGetInjectFields_Idempotent() {
+	type idempotentTarget struct {
+		Dep *testInjectableDep `gaz:"inject"`
+	}
+
+	t := reflect.TypeOf(idempotentTarget{})
+
+	fields1, err := getInjectFields(t)
+	s.Require().NoError(err)
+	s.Len(fields1, 1, "should find one inject field")
+	s.NotEmpty(fields1[0].serviceName, "service name should be set")
+
+	// Second call returns same result (from cache)
+	fields2, err := getInjectFields(t)
+	s.Require().NoError(err)
+	s.Len(fields2, 1, "cached result should match")
+	s.Equal(fields1[0].serviceName, fields2[0].serviceName)
+	s.Equal(fields1[0].index, fields2[0].index)
+	s.Equal(fields1[0].optional, fields2[0].optional)
 }
 
 // =============================================================================

@@ -447,3 +447,35 @@ func (s *ResolutionSuite) TestResolveAll_CheckedTypeAssertion_NosPanic() {
 	s.Require().Len(results, 1)
 	s.Equal("hello", results[0])
 }
+
+// =============================================================================
+// ResolveGroup Type Mismatch Test (B18)
+// =============================================================================
+
+func (s *ResolutionSuite) TestResolveGroup_TypeMismatch() {
+	c := New()
+
+	// Register a string service in group "g1"
+	s.Require().NoError(For[string](c).InGroup("g1").Instance("hello"))
+	s.Require().NoError(c.Build())
+
+	// Resolve as wrong type should return ErrTypeMismatch
+	_, err := ResolveGroup[int](c, "g1")
+	s.Require().Error(err, "resolving group as wrong type should error")
+	s.ErrorIs(err, ErrTypeMismatch, "should be ErrTypeMismatch")
+	s.Contains(err.Error(), "ResolveGroup", "error should contain function name")
+}
+
+func (s *ResolutionSuite) TestResolveGroup_CorrectType() {
+	c := New()
+
+	// Register services in group "g2"
+	s.Require().NoError(For[string](c).InGroup("g2").Instance("one"))
+	s.Require().NoError(For[string](c).InGroup("g2").Instance("two"))
+	s.Require().NoError(c.Build())
+
+	// Resolve as correct type should succeed
+	results, err := ResolveGroup[string](c, "g2")
+	s.Require().NoError(err)
+	s.Len(results, 2)
+}

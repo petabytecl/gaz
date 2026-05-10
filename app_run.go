@@ -67,6 +67,10 @@ func (a *App) collectNonWorkerServices() map[string]di.ServiceWrapper {
 func (a *App) startServices(ctx context.Context) error {
 	services := a.collectNonWorkerServices()
 
+	a.mu.Lock()
+	a.cachedNonWorkerServices = services
+	a.mu.Unlock()
+
 	graph := a.container.GetGraph()
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {

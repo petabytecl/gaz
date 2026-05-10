@@ -5,7 +5,21 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 )
+
+// injectFieldCache caches parsed inject field metadata per reflect.Type.
+// This avoids re-parsing struct tags on every injection call for the same type.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var injectFieldCache sync.Map // map[reflect.Type][]injectField
+
+// injectField holds parsed metadata for a single struct field with a gaz:"inject" tag.
+type injectField struct {
+	index       int    // field index in the struct
+	serviceName string // resolved service name (from name= or type name)
+	optional    bool   // allow missing service
+}
 
 // tagOptions holds parsed gaz struct tag options.
 type tagOptions struct {
@@ -33,6 +47,52 @@ func parseTag(tag string) tagOptions {
 	return opts
 }
 
+// getInjectFields returns the cached inject field metadata for the given struct type.
+// On first call for a type, it parses all fields with gaz:"inject" tags, caches the
+// result, and returns it. Subsequent calls return the cached value.
+//
+// Returns an error if an unexported field has the gaz:"inject" tag.
+func getInjectFields(t reflect.Type) ([]injectField, error) {
+	if cached, ok := injectFieldCache.Load(t); ok {
+		return cached.([]injectField), nil //nolint:forcetypeassert // sync.Map stores []injectField
+	}
+
+	var fields []injectField
+	for i := range t.NumField() {
+		field := t.Field(i)
+
+		tagValue, hasTag := field.Tag.Lookup("gaz")
+		if !hasTag {
+			continue
+		}
+
+		opts := parseTag(tagValue)
+		if !opts.inject {
+			continue
+		}
+
+		// Skip unexported fields — they cannot be set via reflect
+		if !field.IsExported() {
+			return nil, fmt.Errorf("%w: field %s.%s is unexported",
+				ErrNotSettable, t.Name(), field.Name)
+		}
+
+		serviceName := opts.name
+		if serviceName == "" {
+			serviceName = typeName(field.Type)
+		}
+
+		fields = append(fields, injectField{
+			index:       i,
+			serviceName: serviceName,
+			optional:    opts.optional,
+		})
+	}
+
+	injectFieldCache.Store(t, fields)
+	return fields, nil
+}
+
 // injectStruct populates tagged fields of a struct with resolved services.
 // target must be a pointer to a struct. If not, injection is skipped silently.
 // chain is the current resolution chain for cycle detection.
@@ -54,40 +114,23 @@ func injectStruct(c *Container, target any, chain []string) error {
 	structVal := val.Elem()
 	structType := structVal.Type()
 
-	for i := range structVal.NumField() {
-		field := structType.Field(i)
-		fieldVal := structVal.Field(i)
+	fields, err := getInjectFields(structType)
+	if err != nil {
+		return err
+	}
 
-		tagValue, hasTag := field.Tag.Lookup("gaz")
-		if !hasTag {
-			continue
-		}
-
-		opts := parseTag(tagValue)
-		if !opts.inject {
-			continue
-		}
-
-		// Check if field is settable (exported)
-		if !fieldVal.CanSet() {
-			return fmt.Errorf("%w: field %s.%s is unexported",
-				ErrNotSettable, structType.Name(), field.Name)
-		}
-
-		// Determine service name
-		serviceName := opts.name
-		if serviceName == "" {
-			serviceName = typeName(field.Type)
-		}
+	for _, f := range fields {
+		fieldVal := structVal.Field(f.index)
+		field := structType.Field(f.index)
 
 		// Resolve the dependency
-		instance, err := c.ResolveByName(serviceName, chain)
-		if err != nil {
-			if opts.optional && errors.Is(err, ErrNotFound) {
+		instance, resolveErr := c.ResolveByName(f.serviceName, chain)
+		if resolveErr != nil {
+			if f.optional && errors.Is(resolveErr, ErrNotFound) {
 				continue // Leave as zero value
 			}
 			return fmt.Errorf("di: injecting field %s.%s: %w",
-				structType.Name(), field.Name, err)
+				structType.Name(), field.Name, resolveErr)
 		}
 
 		// Type check and assign
