@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### BREAKING CHANGES
+
+- **gRPC reflection disabled by default** - Both `server/grpc` and `server/vanguard` modules now default `Reflection` to `false` (was `true`). Applications that relied on reflection being enabled by default must explicitly opt in via config (`reflection: true`) or code (`grpc.WithReflection(true)`). This change prevents unintended API schema exposure in production (Rule 7).
+
+### Security
+
+- **SHA-pinned GitHub Actions** - All CI workflow actions pinned to full commit SHA digests instead of mutable version tags. Dependabot configured for automated update PRs.
+
+### Fixed
+
+- **Cobra startup path divergence** - `Start()` now delegates to the same `startServices()` method as `Run()`, restoring worker supervision, parallel startup, panic recovery, and rollback for all Cobra-based applications (Rule 2).
+- **EventBus lock-during-blocking-IO** - `Publish` now snapshots handlers under lock and delivers outside the lock using tombstone channels, preventing shutdown deadlocks from slow subscribers (Rule 1).
+- **Cron scheduler lock-during-channel-ops** - All four public methods (`Schedule`, `Entries`, `Remove`, `Stop`) release `runningMu` before channel operations (Rule 1).
+- **DI singleton init-under-lock** - Both `lazySingleton` and `eagerSingleton` use `sync.Once` instead of `mu+built` for initialization, with re-entrant cycle detection via goroutine ID (Rule 1).
+
 ## [2.0.0] - 2026-01-28
 
 ### BREAKING CHANGES
