@@ -141,7 +141,7 @@ func (s *RegistrationSuite) TestFor_Named_CreatesSeparateEntry() {
 	s.NoError(err, "expected no error for differently named services")
 }
 
-func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
+func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_ReturnsErrDuplicate() {
 	c := gaz.NewContainer()
 
 	// Register "primary" named DB
@@ -150,15 +150,13 @@ func (s *RegistrationSuite) TestFor_Named_DuplicateSameName_AllowsMultiple() {
 	})
 	s.Require().NoError(err, "first registration failed")
 
-	// Register another "primary" - should succeed
+	// Register another "primary" - should return ErrDuplicate (B3)
 	err = gaz.For[*testDB](c).Named("primary").Provider(func(_ *gaz.Container) (*testDB, error) {
 		return &testDB{name: "primary-2"}, nil
 	})
-	s.Require().NoError(err, "second registration failed")
-
-	// Resolution should be ambiguous
-	_, err = gaz.Resolve[*testDB](c, gaz.Named("primary"))
-	s.Require().ErrorIs(err, gaz.ErrDIAmbiguous)
+	s.Require().Error(err, "second registration should fail")
+	s.Require().ErrorIs(err, gaz.ErrDIDuplicate)
+	s.Contains(err.Error(), "primary")
 }
 
 func (s *RegistrationSuite) TestFor_Transient_CreatesTransientService() {

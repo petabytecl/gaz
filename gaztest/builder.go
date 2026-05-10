@@ -60,7 +60,9 @@ func (b *Builder) WithTimeout(d time.Duration) *Builder {
 
 // WithApp sets a base gaz.App to use for the test.
 // This allows testing with pre-registered services that can be replaced with mocks.
-// The base app should have been built already.
+// The app does not need to be pre-built; gaztest.Build() will call Build() after
+// applying replacements. If the app is already built and no replacements are needed,
+// Build() is idempotent and safe to call again.
 //
 // Note: WithApp cannot be used together with WithModules - they are mutually exclusive.
 // Use either WithApp for pre-built apps or WithModules for module-based registration.
@@ -73,7 +75,7 @@ func (b *Builder) WithApp(app *gaz.App) *Builder {
 // Modules are registered in order via app.Use().
 //
 // Note: WithModules cannot be used together with WithApp - they are mutually exclusive.
-// Build() will panic if both are used.
+// Build() will return an error if both are used.
 //
 // Example:
 //
@@ -130,9 +132,10 @@ func (b *Builder) Replace(instance any) *Builder {
 // It returns an error if:
 //   - Any Replace() call had nil instance
 //   - A replacement type is not registered in the container
+//   - Both WithApp and WithModules are used (mutually exclusive)
 //   - The underlying gaz.App fails to build
 //
-// Build panics if both WithApp and WithModules are used (mutually exclusive).
+// Replacements are applied before Build() to ensure they respect the post-Build guard.
 // Build registers t.Cleanup() to automatically stop the app when the test completes.
 func (b *Builder) Build() (*App, error) {
 	// Check for accumulated errors from Replace() calls
@@ -142,7 +145,8 @@ func (b *Builder) Build() (*App, error) {
 
 	// Check for conflicting patterns: cannot use WithApp and WithModules together
 	if b.baseApp != nil && len(b.modules) > 0 {
-		panic("gaztest: cannot use WithApp and WithModules together - use either a pre-built app or module registration")
+		b.errs = append(b.errs, errors.New("gaztest: cannot use WithApp and WithModules together"))
+		return nil, errors.Join(b.errs...)
 	}
 
 	var gazApp *gaz.App
@@ -176,7 +180,9 @@ func (b *Builder) Build() (*App, error) {
 		}
 		// Create replacement service and register it
 		svc := di.NewInstanceServiceAny(r.typeName, r.typeName, r.instance)
-		gazApp.Container().ReplaceService(r.typeName, svc)
+		if err := gazApp.Container().ReplaceService(r.typeName, svc); err != nil {
+			return nil, fmt.Errorf("gaztest: replace %s: %w", r.typeName, err)
+		}
 	}
 
 	// Build and validate if not already built

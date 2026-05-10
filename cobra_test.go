@@ -266,28 +266,17 @@ func (s *CobraSuite) TestWithCobraArgsInjectionToService() {
 
 	_ = New(WithCobra(rootCmd))
 
-	type argsService struct {
-		args []string
-	}
-
-	// We need to get the app from context since we don't store it
+	// Verify command args are available via DI resolution (CommandArgs is
+	// registered pre-Build by the framework and populated in PersistentPreRunE).
 	rootCmd.RunE = func(cmd *cobra.Command, _ []string) error {
 		gotApp := FromContext(cmd.Context())
 		s.NotNil(gotApp)
 
-		if err := For[*argsService](gotApp.Container()).Replace().Provider(func(c *Container) (*argsService, error) {
-			cmdArgs, resolveErr := Resolve[*CommandArgs](c)
-			if resolveErr != nil {
-				return nil, resolveErr
-			}
-			return &argsService{args: cmdArgs.Args}, nil
-		}); err != nil {
-			return fmt.Errorf("register argsService: %w", err)
+		cmdArgs, err := Resolve[*CommandArgs](gotApp.Container())
+		if err != nil {
+			return fmt.Errorf("resolve CommandArgs: %w", err)
 		}
-
-		svc, err := Resolve[*argsService](gotApp.Container())
-		s.Require().NoError(err)
-		s.Equal([]string{"foo", "bar"}, svc.args)
+		s.Equal([]string{"foo", "bar"}, cmdArgs.Args)
 		return nil
 	}
 

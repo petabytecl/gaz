@@ -114,7 +114,8 @@ func Example_withApp() {
 func Example_replace() {
 	t := &testing.T{}
 
-	// Create base app with "real" service
+	// Create base app with "real" service (do NOT pre-build;
+	// gaztest.Build() applies replacements then builds)
 	baseApp := gaz.New()
 
 	type EmailSender struct {
@@ -126,15 +127,11 @@ func Example_replace() {
 		fmt.Println("register failed:", err)
 		return
 	}
-	if err := baseApp.Build(); err != nil {
-		fmt.Println("base build failed:", err)
-		return
-	}
 
 	// Create mock for testing
 	mockSender := &EmailSender{TestMode: true}
 
-	// Create test app with mock replacement
+	// Create test app with mock replacement (replacements applied before Build)
 	app, err := gaztest.New(t).
 		WithApp(baseApp).
 		Replace(mockSender).
@@ -180,7 +177,7 @@ func TestExample_BasicUsage(t *testing.T) {
 
 // TestExample_MockReplacement demonstrates replacing a service with a mock.
 func TestExample_MockReplacement(t *testing.T) {
-	// Step 1: Create base app with "production" service
+	// Step 1: Create base app with "production" service (do NOT pre-build)
 	type Database struct {
 		Name string
 	}
@@ -190,11 +187,8 @@ func TestExample_MockReplacement(t *testing.T) {
 	if err := gaz.For[*Database](baseApp.Container()).Instance(prodDB); err != nil {
 		t.Fatalf("failed to register: %v", err)
 	}
-	if err := baseApp.Build(); err != nil {
-		t.Fatalf("failed to build base: %v", err)
-	}
 
-	// Step 2: Create test app with mock replacement
+	// Step 2: Create test app with mock replacement (replacements applied before Build)
 	mockDB := &Database{Name: "mock-db"}
 	app, err := gaztest.New(t).
 		WithApp(baseApp).
