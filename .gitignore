@@ -2,6 +2,7 @@
 /bin/
 /dist/
 /gaz
+/custom-gcl
 
 # IDEs
 .idea/
