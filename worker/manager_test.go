@@ -317,3 +317,70 @@ func TestManager_EmptyStart(t *testing.T) {
 	err = mgr.Stop(ctx)
 	assert.NoError(t, err)
 }
+
+// hangingWorker is a worker whose OnStop blocks indefinitely,
+// simulating a worker that cannot be stopped cleanly.
+type hangingWorker struct {
+	name    string
+	started chan struct{}
+}
+
+func newHangingWorker(name string) *hangingWorker {
+	return &hangingWorker{
+		name:    name,
+		started: make(chan struct{}),
+	}
+}
+
+func (w *hangingWorker) OnStart(_ context.Context) error {
+	close(w.started)
+	return nil
+}
+
+func (w *hangingWorker) OnStop(_ context.Context) error {
+	// Block indefinitely, simulating a hung worker
+	select {} //nolint:gosimple // intentional infinite block for test
+}
+
+func (w *hangingWorker) Name() string {
+	return w.name
+}
+
+// TestManagerStopRespectsContext verifies that Stop returns ctx.Err() when
+// the shutdown context expires before all workers finish stopping (A4 regression).
+func TestManagerStopRespectsContext(t *testing.T) {
+	logger := slog.Default()
+	mgr := NewManager(logger)
+
+	hw := newHangingWorker("hanging-worker")
+	require.NoError(t, mgr.Register(hw))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	require.NoError(t, mgr.Start(ctx))
+
+	// Wait for worker to start
+	select {
+	case <-hw.started:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not start")
+	}
+
+	// Call Stop with a short deadline (100ms)
+	shortCtx, shortCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer shortCancel()
+
+	start := time.Now()
+	err := mgr.Stop(shortCtx)
+	elapsed := time.Since(start)
+
+	// Stop should return ctx.Err() because the worker's OnStop hangs
+	require.Error(t, err, "Stop should return error when context expires")
+	assert.ErrorIs(t, err, context.DeadlineExceeded,
+		"Stop should return DeadlineExceeded when workers hang")
+
+	// Should return within a reasonable time (not hang indefinitely)
+	assert.Less(t, elapsed, 500*time.Millisecond,
+		"Stop should return promptly when context expires")
+}

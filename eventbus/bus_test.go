@@ -631,5 +631,75 @@ func TestPublishConcurrentWithClose(t *testing.T) {
 	}
 }
 
+// TestEventBusOnStopRespectsContext verifies that OnStop returns ctx.Err() when
+// the shutdown context expires before all handler goroutines finish draining (A3 regression).
+func TestEventBusOnStopRespectsContext(t *testing.T) {
+	t.Parallel()
+	bus := New(testLogger())
+
+	// Subscribe a handler that blocks for a long time, simulating a slow consumer
+	handlerStarted := make(chan struct{})
+	Subscribe(bus, func(ctx context.Context, e testEvent) {
+		close(handlerStarted)
+		// Block indefinitely (simulating hung handler)
+		select {
+		case <-time.After(30 * time.Second):
+		case <-ctx.Done():
+		}
+	}, WithBufferSize(1))
+
+	// Publish one event to trigger the handler
+	Publish(context.Background(), bus, testEvent{ID: "block"}, "")
+
+	// Wait for the handler to start
+	select {
+	case <-handlerStarted:
+		// Handler is now blocking
+	case <-time.After(2 * time.Second):
+		t.Fatal("handler did not start")
+	}
+
+	// Call OnStop with a short deadline (100ms)
+	shortCtx, shortCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer shortCancel()
+
+	start := time.Now()
+	err := bus.OnStop(shortCtx)
+	elapsed := time.Since(start)
+
+	// OnStop should return ctx.Err() because the handler is still blocked
+	require.Error(t, err, "OnStop should return error when context expires")
+	assert.ErrorIs(t, err, context.DeadlineExceeded,
+		"OnStop should return DeadlineExceeded when handler is still blocked")
+
+	// Should return within a reasonable time (not hang indefinitely)
+	assert.Less(t, elapsed, 500*time.Millisecond,
+		"OnStop should return promptly when context expires")
+}
+
+// TestEventBusCloseWithContextNilDeadline verifies that CloseWithContext with
+// background context behaves like the original Close (waits indefinitely).
+func TestEventBusCloseWithContextNilDeadline(t *testing.T) {
+	t.Parallel()
+	bus := New(testLogger())
+
+	var completed atomic.Bool
+	Subscribe(bus, func(ctx context.Context, e testEvent) {
+		// Short delay to verify Close waits
+		select {
+		case <-time.After(50 * time.Millisecond):
+			completed.Store(true)
+		case <-ctx.Done():
+		}
+	})
+
+	Publish(context.Background(), bus, testEvent{ID: "wait"}, "")
+
+	// CloseWithContext(background) should wait for handler
+	err := bus.CloseWithContext(context.Background())
+	require.NoError(t, err)
+	assert.True(t, completed.Load(), "handler should complete before CloseWithContext returns")
+}
+
 // Run: go test -coverprofile=coverage.out ./eventbus/...
 // Target: 70%+ coverage
