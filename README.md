@@ -76,7 +76,7 @@ func main() {
 - **Background workers** - Supervised workers with restart, circuit breaker, lifecycle integration
 
 ### Server & Transport (v4.1)
-- **gRPC Server** - Interceptors, reflection, service discovery, native health checks
+- **gRPC Server** - Interceptors, service discovery, native health checks, opt-in reflection
 - **HTTP Server** - Configurable timeouts, graceful shutdown
 - **Vanguard** - Unified server: gRPC, Connect, gRPC-Web, REST on a single port
 - **OpenTelemetry** - TracerProvider with OTLP export and server instrumentation

@@ -48,7 +48,7 @@ type Config struct {
 
 	// Reflection enables gRPC reflection via Connect handlers (v1 and v1alpha).
 	// When enabled, tools like grpcurl can introspect available services.
-	// Defaults to true.
+	// Defaults to false. Enable only in dev/staging via config.
 	Reflection bool `json:"reflection" yaml:"reflection" mapstructure:"reflection" gaz:"reflection"`
 
 	// HealthEnabled enables automatic health endpoint mounting.
@@ -103,7 +103,7 @@ func DefaultConfig() Config {
 		WriteTimeout:          0,
 		ReadHeaderTimeout:     DefaultReadHeaderTimeout,
 		IdleTimeout:           DefaultIdleTimeout,
-		Reflection:            true,
+		Reflection:            false,
 		HealthEnabled:         true,
 		DevMode:               false,
 		AllowZeroWriteTimeout: true,

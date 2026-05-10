@@ -25,7 +25,7 @@ func (s *ConfigTestSuite) TestDefaultConfig() {
 	s.Equal(time.Duration(0), cfg.WriteTimeout, "WriteTimeout should be zero for streaming safety")
 	s.Equal(DefaultReadHeaderTimeout, cfg.ReadHeaderTimeout)
 	s.Equal(DefaultIdleTimeout, cfg.IdleTimeout)
-	s.True(cfg.Reflection)
+	s.False(cfg.Reflection)
 	s.True(cfg.HealthEnabled)
 	s.False(cfg.DevMode)
 }
