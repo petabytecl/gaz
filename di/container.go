@@ -86,12 +86,18 @@ func (c *Container) MustRegister(name string, svc ServiceWrapper) {
 }
 
 // ReplaceService replaces all services registered under the given name with the new service.
-// Unlike Register(), this is allowed after Build() to support test mocking via Replace().
+// Returns ErrAlreadyBuilt if the container has already been built via Build().
 // This is used when RegistrationBuilder.Replace() is called.
-func (c *Container) ReplaceService(name string, svc ServiceWrapper) {
+func (c *Container) ReplaceService(name string, svc ServiceWrapper) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	if c.built {
+		return fmt.Errorf("%w: cannot replace %s after Build()", ErrAlreadyBuilt, name)
+	}
+
 	c.services[name] = []ServiceWrapper{svc}
+	return nil
 }
 
 // HasService checks if a service is registered by name.
@@ -200,14 +206,22 @@ func (c *Container) Build() error {
 		}
 		c.mu.RUnlock()
 
+		// A8: Sort eager services by name for deterministic resolution order
+		sort.Slice(eagerServices, func(i, j int) bool {
+			return eagerServices[i].Name() < eagerServices[j].Name()
+		})
+
 		// Instantiate each eager service
 		for _, svc := range eagerServices {
 			if err := c.resolveEager(svc); err != nil {
 				c.buildErr = fmt.Errorf("di: building eager service %s: %w", svc.Name(), err)
-				return
+				break // A9: Fall through to set built=true even on failure
 			}
 		}
 
+		// A9: Always lock down registration, even on failure.
+		// This prevents the container from entering a limbo state where
+		// Build() failed but new registrations are still accepted.
 		c.mu.Lock()
 		c.built = true
 		c.mu.Unlock()

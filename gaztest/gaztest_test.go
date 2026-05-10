@@ -120,19 +120,13 @@ func TestBuilder_Replace(t *testing.T) {
 	// Register a concrete type that can be replaced
 	// Note: Replace infers type from the mock instance using reflection,
 	// so we register and replace the same concrete type.
+	// The app is NOT pre-built; gaztest.Build() applies replacements then builds.
 	realDB := &MockDatabase{queryResult: "original"}
 	baseApp := gaz.New()
 	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(realDB)
 	require.NoError(t, err)
-	err = baseApp.Build()
-	require.NoError(t, err)
 
-	// Verify original value
-	db1, err := gaz.Resolve[*MockDatabase](baseApp.Container())
-	require.NoError(t, err)
-	require.Equal(t, "original", db1.Query())
-
-	// Now test replacement in gaztest
+	// Now test replacement in gaztest (replacements applied before Build)
 	mock := &MockDatabase{queryResult: "mocked"}
 	app, err := gaztest.New(t).
 		WithApp(baseApp).
@@ -364,20 +358,14 @@ func (m *mockTB) Helper() {
 // implementation with a mock, and the mock is returned when resolving.
 func TestReplace_SwapsImplementation(t *testing.T) {
 	// Register a "real" service (using concrete type for Replace compatibility)
+	// App is NOT pre-built; gaztest.Build() applies replacements then builds.
 	realDB := &MockDatabase{queryResult: "production-data"}
 
 	baseApp := gaz.New()
 	err := gaz.For[*MockDatabase](baseApp.Container()).Instance(realDB)
 	require.NoError(t, err)
-	err = baseApp.Build()
-	require.NoError(t, err)
 
-	// Verify original returns production data
-	originalDB, err := gaz.Resolve[*MockDatabase](baseApp.Container())
-	require.NoError(t, err)
-	require.Equal(t, "production-data", originalDB.Query())
-
-	// Create test app with mock replacement
+	// Create test app with mock replacement (replacements applied before Build)
 	mock := &MockDatabase{queryResult: "test-mock-data"}
 	app, err := gaztest.New(t).
 		WithApp(baseApp).
@@ -397,7 +385,7 @@ func TestReplace_SwapsImplementation(t *testing.T) {
 
 // TestReplace_MultipleServices verifies replacing some but not all services.
 func TestReplace_MultipleServices(t *testing.T) {
-	// Create base app with multiple services
+	// Create base app with multiple services (NOT pre-built)
 	baseApp := gaz.New()
 
 	// Service 1: will be replaced
@@ -410,10 +398,8 @@ func TestReplace_MultipleServices(t *testing.T) {
 	err = gaz.For[*LifecycleService](baseApp.Container()).Instance(svc)
 	require.NoError(t, err)
 
-	err = baseApp.Build()
-	require.NoError(t, err)
-
 	// Replace only the database, keep lifecycle service as-is
+	// Replacements applied before Build
 	mockDB := &MockDatabase{queryResult: "db1-mocked"}
 	app, err := gaztest.New(t).
 		WithApp(baseApp).
@@ -603,10 +589,10 @@ func TestBuilder_WithModules_MultipleModules(t *testing.T) {
 }
 
 // =============================================================================
-// TestBuilder_WithApp_AndModules_Panics
+// TestWithAppAndModulesReturnsError
 // =============================================================================
 
-func TestBuilder_WithApp_AndModules_Panics(t *testing.T) {
+func TestWithAppAndModulesReturnsError(t *testing.T) {
 	// Create a base app
 	baseApp := gaz.New()
 	err := baseApp.Build()
@@ -617,13 +603,13 @@ func TestBuilder_WithApp_AndModules_Panics(t *testing.T) {
 		return nil
 	})
 
-	// Using both WithApp and WithModules should panic
-	require.Panics(t, func() {
-		_, _ = gaztest.New(t).
-			WithApp(baseApp).
-			WithModules(testModule).
-			Build()
-	}, "using WithApp and WithModules together should panic")
+	// Using both WithApp and WithModules should return an error, not panic (B14)
+	_, err = gaztest.New(t).
+		WithApp(baseApp).
+		WithModules(testModule).
+		Build()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "cannot use WithApp and WithModules together")
 }
 
 // =============================================================================
