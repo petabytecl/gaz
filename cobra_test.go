@@ -358,13 +358,14 @@ func (s *CobraSuite) TestWithCobraInjectsDefaultRunE() {
 
 // testWorkerForCobra implements worker.Worker for regression tests.
 type testWorkerForCobra struct {
-	name       string
-	started    atomic.Bool
-	stopped    atomic.Bool
+	name      string
+	started   atomic.Bool
+	stopped   atomic.Bool
 	onStartFn func(ctx context.Context) error
 }
 
 func (w *testWorkerForCobra) Name() string { return w.name }
+
 func (w *testWorkerForCobra) OnStart(ctx context.Context) error {
 	w.started.Store(true)
 	if w.onStartFn != nil {
@@ -372,6 +373,7 @@ func (w *testWorkerForCobra) OnStart(ctx context.Context) error {
 	}
 	return nil
 }
+
 func (w *testWorkerForCobra) OnStop(_ context.Context) error {
 	w.stopped.Store(true)
 	return nil
@@ -480,9 +482,7 @@ func TestCobraStartServicesRollback(t *testing.T) {
 	require.ErrorContains(t, execErr, "intentional start failure")
 
 	// The good service should have been rolled back (stopped)
-	require.Eventually(t, func() bool {
-		return stopped.Load()
-	}, 2*time.Second, 10*time.Millisecond, "good service should be stopped during rollback")
+	require.Eventually(t, stopped.Load, 2*time.Second, 10*time.Millisecond, "good service should be stopped during rollback")
 }
 
 // failingStartService is a service whose OnStart always returns an error.

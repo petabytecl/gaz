@@ -156,8 +156,8 @@ func (s *lazySingleton[T]) ServiceType() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
 
+//nolint:dupl // parallel to eagerSingleton.GetInstance — Go generics require separate method bodies per type
 func (s *lazySingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
-	// Fast path: already built
 	if s.built.Load() {
 		return s.instance, nil
 	}
@@ -311,6 +311,7 @@ func (s *eagerSingleton[T]) IsTransient() bool {
 	return false
 }
 
+//nolint:dupl // parallel to lazySingleton.GetInstance — Go generics require separate method bodies per type
 func (s *eagerSingleton[T]) GetInstance(c *Container, chain []string) (any, error) {
 	// Fast path: already built
 	if s.built.Load() {
