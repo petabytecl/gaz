@@ -1,6 +1,6 @@
 COVERAGE_THRESHOLD := 90
 
-.PHONY: help test cover fmt fmt-check lint clean
+.PHONY: help test cover fmt fmt-check lint check clean
 
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' $(MAKEFILE_LIST)
@@ -41,6 +41,10 @@ fmt-check: ## Check formatting
 lint: ## Run linter
 	@command -v golangci-lint >/dev/null || (echo "golangci-lint not installed. Run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest" && exit 1)
 	golangci-lint run
+
+check: ## Run rule enforcement checks (Rules 5/6/7/8)
+	@bash scripts/check-rules.sh
+	@bash scripts/check-sentinel-errors.sh
 
 clean: ## Clean generated files
 	rm -f coverage.out
