@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Hardening
-status: in_progress
-stopped_at: "Phase 53.2 planned — 8 plans in 4 waves, ready to execute"
-last_updated: "2026-05-10T12:00:00.000Z"
+status: complete
+stopped_at: "Phase 53.2 complete — all 8 plans verified, milestone v5.1 done"
+last_updated: "2026-05-10T16:00:00.000Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 10
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 28
-  completed_plans: 20
-  percent: 90
+  completed_plans: 28
+  percent: 100
 ---
 
 # Project State
@@ -25,20 +25,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 53.2 — high-medium-review-fixes (ready to execute)
+**Current focus:** Milestone v5.1 complete
 
 ## Current Position
 
-Phase: 53.2 (high-medium-review-fixes) — Ready to execute
-Plan: 0 of 8 complete
+Phase: 53.2 (high-medium-review-fixes) — Complete
+Plan: 8 of 8 complete
 
-- **Milestone:** v5.1 Hardening (reopened 2026-05-09)
-- **Phase:** 53.2 of 53.2
-- **Plan:** 8 plans in 4 waves
-- **Status:** Planned — verification passed
+- **Milestone:** v5.1 Hardening (completed 2026-05-10)
+- **Phase:** 53.2 of 53.2 — verified
+- **Plan:** 8/8 plans across 4 waves
+- **Status:** Complete — verification passed
 - **Last activity:** 2026-05-10
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Milestones Shipped
 

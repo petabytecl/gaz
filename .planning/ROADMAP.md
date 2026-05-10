@@ -30,7 +30,7 @@
 - [x] **Phase 52: Test Coverage and Benchmarks** - Vanguard coverage 90%+, hot path benchmarks, cross-package integration tests, t.Parallel() markers (completed 2026-03-30)
 - [x] **Phase 53: Tech Debt Cleanup** - Wire logger closer into App shutdown, update OTEL health path filter, fix doc.go references (completed 2026-03-30)
 - [x] **Phase 53.1: Critical Review Fixes** (INSERTED) - 6 CRITICAL findings from 2026-05-09 full-repo review: Cobra single-startup-path, eventbus/cron lock-during-blocking-IO, gRPC reflection defaults (x2), DI singleton init deadlock, GitHub Actions SHA pinning (completed 2026-05-09)
-- [ ] **Phase 53.2: High and Medium Review Fixes** (INSERTED) - HIGH/MEDIUM cleanup + rule-enforcement automation from 2026-05-09 review: shutdown ctx propagation, mgmt server posture, env-var convention, time.Sleep test sweep, custom linters for Rules 1/6/7/8
+- [x] **Phase 53.2: High and Medium Review Fixes** (INSERTED) - HIGH/MEDIUM cleanup + rule-enforcement automation from 2026-05-09 review: shutdown ctx propagation, mgmt server posture, env-var convention, time.Sleep test sweep, custom linters for Rules 1/6/7/8 (completed 2026-05-10)
 
 ## Phase Details
 
