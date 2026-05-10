@@ -155,6 +155,7 @@ linters:
     paths:
       - examples
       - "example.*_test\\.go"
+      - linters
     rules:
       # Exclude dupl in test files (test code often has similar patterns)
       - linters:

@@ -1,0 +1,4 @@
+version: v2.10.1
+plugins:
+  - module: 'github.com/petabytecl/gaz/linters/lockblockingio'
+    path: ./linters/lockblockingio
