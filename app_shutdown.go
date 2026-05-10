@@ -53,7 +53,7 @@ func (a *App) doStop(ctx context.Context) error {
 				a.opts.ShutdownTimeout,
 			)
 			a.getLogger().Error(msg)
-			fmt.Fprintln(os.Stderr, msg)
+			_, _ = fmt.Fprintln(os.Stderr, msg)
 			callExitFunc(1)
 		}
 	}()
@@ -205,5 +205,5 @@ func (a *App) logBlame(hookName string, timeout, elapsed time.Duration) {
 		a.Logger.Error(msg, "hook", hookName, "timeout", timeout, "elapsed", elapsed)
 	}
 	// Always write to stderr as fallback (guaranteed output even if logger is broken)
-	fmt.Fprintln(os.Stderr, msg)
+	_, _ = fmt.Fprintln(os.Stderr, msg)
 }

@@ -80,7 +80,7 @@ func resolveOutputWithCloser(cfg *Config) (io.Writer, io.Closer) {
 		//nolint:gosec // Log files need to be readable by log monitoring tools
 		f, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "logger: failed to open %s: %v, falling back to stdout\n",
+			_, _ = fmt.Fprintf(os.Stderr, "logger: failed to open %s: %v, falling back to stdout\n",
 				cfg.Output, err)
 			return os.Stdout, nopCloser{}
 		}

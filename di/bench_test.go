@@ -90,9 +90,11 @@ func BenchmarkResolve_Parallel(b *testing.B) {
 }
 
 // benchDepA/B/C form a 3-level dependency chain for nested resolution benchmarks.
-type benchDepC struct{}
-type benchDepB struct{ dep *benchDepC }
-type benchDepA struct{ dep *benchDepB }
+type (
+	benchDepC struct{}
+	benchDepB struct{ dep *benchDepC }
+	benchDepA struct{ dep *benchDepB }
+)
 
 func BenchmarkResolve_NestedDependencies(b *testing.B) {
 	b.ReportAllocs()
