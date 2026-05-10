@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/cron"
+	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
@@ -134,6 +136,10 @@ type App struct {
 	// EventBus for pub/sub - nil until Build() is called
 	eventBus *eventbus.EventBus
 
+	// cachedNonWorkerServices stores the service set computed during startServices,
+	// reused by doStop to avoid re-walking the container during shutdown.
+	cachedNonWorkerServices map[string]di.ServiceWrapper
+
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
@@ -250,7 +256,8 @@ func (a *App) getLogger() *slog.Logger {
 // If you only use ConfigProvider pattern for config, you don't need to call this method.
 func (a *App) WithConfig(target any, opts ...config.Option) *App {
 	if a.built {
-		panic("gaz: cannot configure config after Build()")
+		a.buildErrors = append(a.buildErrors, errors.New("gaz: cannot configure config after Build()"))
+		return a
 	}
 
 	// If options provided, recreate config manager with new options
@@ -286,7 +293,7 @@ type configMapMerger interface {
 // Panics if called after Build().
 func (a *App) MergeConfigMap(cfg map[string]any) error {
 	if a.built {
-		panic("gaz: cannot merge config after Build()")
+		return errors.New("gaz: cannot merge config after Build()")
 	}
 	if a.configMgr == nil {
 		return nil

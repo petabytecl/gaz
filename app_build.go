@@ -64,7 +64,9 @@ func (a *App) initializeSubsystems() error {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 			defer cancel()
-			_ = a.Stop(ctx)
+			if err := a.Stop(ctx); err != nil {
+				log.Warn("critical-fail shutdown completed with errors", slog.Any("error", err))
+			}
 		}()
 	})
 

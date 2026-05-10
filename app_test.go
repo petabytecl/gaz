@@ -1063,6 +1063,38 @@ func (s *AppTestSuite) TestGetArgs_WithCommandArgs() {
 	s.Equal([]string{"arg1", "arg2"}, args)
 }
 
+// =============================================================================
+// Tests for WithConfig/MergeConfigMap after Build (B16)
+// =============================================================================
+
+func (s *AppTestSuite) TestWithConfigAfterBuild_ReturnsError() {
+	app := New()
+	s.Require().NoError(app.Build())
+
+	// WithConfig after Build should accumulate error, not panic
+	s.NotPanics(func() {
+		app.WithConfig(nil)
+	}, "WithConfig after Build should not panic")
+
+	// Verify the error was recorded in buildErrors
+	s.Require().Len(app.buildErrors, 1)
+	s.Contains(app.buildErrors[0].Error(), "cannot configure config after Build()")
+}
+
+func (s *AppTestSuite) TestMergeConfigMapAfterBuild_ReturnsError() {
+	app := New()
+	s.Require().NoError(app.Build())
+
+	// MergeConfigMap after Build should return error, not panic
+	var err error
+	s.NotPanics(func() {
+		err = app.MergeConfigMap(map[string]any{"key": "value"})
+	}, "MergeConfigMap after Build should not panic")
+
+	s.Require().Error(err)
+	s.Contains(err.Error(), "cannot merge config after Build()")
+}
+
 // Tests for MergeConfigMap error cases
 
 func (s *AppTestSuite) TestMergeConfigMap_NoConfigManager() {

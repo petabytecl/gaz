@@ -63,10 +63,17 @@ func (a *App) doStop(ctx context.Context) error {
 		}
 	}()
 
+	// Use cached service set from startServices if available,
+	// fallback to re-walking the container if Stop is called without Run/Start.
+	a.mu.Lock()
+	services := a.cachedNonWorkerServices
+	a.mu.Unlock()
+	if services == nil {
+		services = a.collectNonWorkerServices()
+	}
+
 	// Compute shutdown order (reverse of startup)
-	// We need to re-compute because we don't store it.
 	graph := a.container.GetGraph()
-	services := a.collectNonWorkerServices()
 
 	startupOrder, err := ComputeStartupOrder(graph, services)
 	if err != nil {
