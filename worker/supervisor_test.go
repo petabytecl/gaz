@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockWorker is a test helper for simulating worker behavior.
@@ -293,8 +294,10 @@ func TestSupervisor_StopDuringBackoff(t *testing.T) {
 
 	sup.start(ctx)
 
-	// Wait a bit for first panic and backoff to start
-	time.Sleep(100 * time.Millisecond)
+	// Wait for first panic and backoff to start
+	require.Eventually(t, func() bool {
+		return worker.getStartCount() >= 1
+	}, time.Second, 10*time.Millisecond)
 
 	// Cancel context (stop supervisor)
 	cancel()

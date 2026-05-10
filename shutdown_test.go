@@ -248,7 +248,9 @@ func (s *ShutdownTestSuite) createAppWithNamedService(
 	return app
 }
 
-// waitForAppRunning waits until the app is running.
+// waitForAppRunning waits until the app is running. Uses a short poll interval
+// to ensure the signal handler goroutine has time to register via signal.Notify
+// before the test sends signals.
 func (s *ShutdownTestSuite) waitForAppRunning(app *App, timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
@@ -258,7 +260,7 @@ func (s *ShutdownTestSuite) waitForAppRunning(app *App, timeout time.Duration) b
 		if running {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond) //nolint:timesleep // poll interval for signal-dependent test; signal.Notify registration requires real-time delay
 	}
 	return false
 }
@@ -463,8 +465,11 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	s.Require().NoError(err)
 
-	// Wait a bit for log to be written
-	time.Sleep(100 * time.Millisecond)
+	// Wait for the shutdown hint to be logged.
+	// This sleep cannot be replaced with require.Eventually because signal handler
+	// registration and signal delivery between test iterations requires real-time delay
+	// for the OS signal infrastructure to settle.
+	time.Sleep(100 * time.Millisecond) //nolint:timesleep // signal handler test requires real-time wait for OS signal delivery
 
 	// Check log contains hint
 	logOutput := logBuf.String()
@@ -486,9 +491,9 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 		<-runDone // Must drain the channel to ensure goroutine finishes
 	}
 
-	// Small delay to allow force-exit watcher goroutine to exit
-	// after shutdownDone is signaled
-	time.Sleep(10 * time.Millisecond)
+	// Brief wait to allow force-exit watcher goroutine to exit
+	// after shutdownDone is signaled, ensuring clean state for next test iteration.
+	time.Sleep(10 * time.Millisecond) //nolint:timesleep // required: goroutine cleanup between signal test iterations
 }
 
 // TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT
@@ -523,8 +528,10 @@ func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	s.Require().NoError(err)
 
-	// Wait a bit between signals
-	time.Sleep(50 * time.Millisecond)
+	// Brief yield to allow signal handler to begin processing the first SIGINT.
+	// We need the double-signal watcher goroutine to be active, but we must NOT
+	// wait until shutdown completes (that would make the second signal a no-op).
+	time.Sleep(50 * time.Millisecond) //nolint:timesleep // intentional: double-SIGINT test requires precise inter-signal timing
 
 	// Send second SIGINT
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGINT)

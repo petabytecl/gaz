@@ -330,8 +330,12 @@ func (s *CobraSuite) TestWithCobraInjectsDefaultRunE() {
 		done <- cmd.Execute()
 	}()
 
-	// Give it time to start
-	time.Sleep(100 * time.Millisecond)
+	// Wait for app to start running
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	ctx := context.Background()
 	err := app.Stop(ctx)

@@ -81,7 +81,7 @@ func TestNew_ConnectionFailure(t *testing.T) {
 
 func TestNew_ContextCancellation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		time.Sleep(5 * time.Second) // Slow response
+		time.Sleep(5 * time.Second) //nolint:timesleep // intentional: simulates slow HTTP response for timeout testing
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()

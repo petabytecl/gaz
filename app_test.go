@@ -163,8 +163,12 @@ func (s *AppTestSuite) TestSignalHandling() {
 		runErr <- app.Run(context.Background())
 	}()
 
-	// Wait for startup
-	time.Sleep(50 * time.Millisecond)
+	// Wait for startup by polling the running state (behind mutex)
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	// Send signal
 	err := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
@@ -196,7 +200,11 @@ func (s *AppTestSuite) TestRunAlreadyRunning() {
 	}()
 
 	// Wait for startup
-	time.Sleep(50 * time.Millisecond)
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	// Try to run again - should error
 	err := app.Run(context.Background())
@@ -226,7 +234,11 @@ func (s *AppTestSuite) TestRunContextCancelled() {
 	}()
 
 	// Wait for startup
-	time.Sleep(50 * time.Millisecond)
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	// Cancel the context
 	cancel()
@@ -292,7 +304,11 @@ func (s *AppTestSuite) TestStopError() {
 	}()
 
 	// Wait for startup
-	time.Sleep(50 * time.Millisecond)
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	// Stop should collect the error
 	err = app.Stop(context.Background())
@@ -1209,7 +1225,11 @@ func (s *AppTestSuite) TestTimerLeakFixInShutdown() {
 	}()
 
 	// Wait for startup
-	time.Sleep(50 * time.Millisecond)
+	s.Require().Eventually(func() bool {
+		app.mu.Lock()
+		defer app.mu.Unlock()
+		return app.running
+	}, time.Second, 10*time.Millisecond)
 
 	// Stop should complete cleanly without timer leaks
 	err = app.Stop(context.Background())
