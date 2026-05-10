@@ -39,6 +39,9 @@ func (a *App) initializeLogger() error {
 		a.Logger, a.logCloser = logger.NewLoggerWithCloser(&cfg)
 	}
 
+	// Set as process-wide default logger (B12: explicit, not hidden side-effect)
+	logger.SetGlobal(a.Logger)
+
 	// Register Logger in container
 	if regErr := For[*slog.Logger](a.container).Instance(a.Logger); regErr != nil {
 		return fmt.Errorf("register logger: %w", regErr)

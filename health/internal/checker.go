@@ -99,14 +99,17 @@ func WithTimeout(timeout time.Duration) CheckerOption {
 
 // Check runs all configured health checks and returns the result.
 func (c *checker) Check(ctx context.Context) CheckerResult {
-	result := CheckerResult{
-		Status:  StatusUp, // Default to up - no checks = healthy
-		Details: make(map[string]CheckResult),
+	if len(c.checks) == 0 {
+		// No checks configured - status is unknown, not assumed healthy.
+		return CheckerResult{
+			Status:  StatusUnknown,
+			Details: make(map[string]CheckResult),
+		}
 	}
 
-	if len(c.checks) == 0 {
-		// No checks configured - healthy by default (matches alexliesenfeld/health behavior)
-		return result
+	result := CheckerResult{
+		Status:  StatusUp,
+		Details: make(map[string]CheckResult),
 	}
 
 	// Run checks in parallel

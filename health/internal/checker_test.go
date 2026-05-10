@@ -12,8 +12,8 @@ func TestNewChecker_EmptyChecker(t *testing.T) {
 	checker := NewChecker()
 	result := checker.Check(context.Background())
 
-	if result.Status != StatusUp {
-		t.Errorf("expected StatusUp for empty checker (matches alexliesenfeld/health), got %v", result.Status)
+	if result.Status != StatusUnknown {
+		t.Errorf("expected StatusUnknown for empty checker, got %v", result.Status)
 	}
 	if len(result.Details) != 0 {
 		t.Errorf("expected empty details, got %d entries", len(result.Details))
