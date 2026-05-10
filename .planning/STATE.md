@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Hardening
-status: completed
-stopped_at: "Completed quick task 15: make sure the test coverage is over the threshold for the project (90%)"
-last_updated: "2026-03-30T02:03:19.041Z"
-last_activity: 2026-03-30
+status: in_progress
+stopped_at: "Inserted phases 53.1 + 53.2 from 2026-05-09 full-repo review"
+last_updated: "2026-05-09T00:00:00.000Z"
+last_activity: 2026-05-09
 progress:
-  total_phases: 8
+  total_phases: 10
   completed_phases: 8
-  total_plans: 17
+  total_plans: 20
   completed_plans: 17
-  percent: 100
+  percent: 80
 ---
 
 # Project State
@@ -25,20 +25,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Simple, type-safe dependency injection with sane defaults
-**Current focus:** Phase 53 — tech-debt-cleanup
+**Current focus:** Phase 53.1 — critical-review-fixes (INSERTED)
 
 ## Current Position
 
-Phase: 53 (tech-debt-cleanup) — EXECUTING
-Plan: 1 of 1
+Phase: 53.1 (critical-review-fixes) — PLANNED
+Plan: 0 of 3
 
-- **Milestone:** v5.0 Vanguard Unified Server
-- **Phase:** 53 of 48 (test coverage and benchmarks)
-- **Plan:** Not started
-- **Status:** v5.1 milestone complete
-- **Last activity:** 2026-03-30
+- **Milestone:** v5.1 Hardening (reopened 2026-05-09)
+- **Phase:** 53.1 of 53.2
+- **Plan:** Ready to execute — 3 plans in 1 wave
+- **Status:** Ready to execute
+- **Last activity:** 2026-05-09
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Milestones Shipped
 
@@ -68,6 +68,11 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 53.1 inserted after Phase 53 (URGENT) — 6 CRITICAL findings from 2026-05-09 full-repo review (Cobra single-startup-path, eventbus/cron lock-during-blocking-IO, reflection defaults, DI singleton init deadlock, GitHub Actions SHA pinning)
+- Phase 53.2 inserted after Phase 53.1 (URGENT) — HIGH/MEDIUM cleanup + rule-enforcement automation from 2026-05-09 full-repo review
 
 ### Decisions (Cumulative)
 
