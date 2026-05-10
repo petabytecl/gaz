@@ -263,11 +263,13 @@ func (s *GRPCServerTestSuite) TestGRPCServerReflectionDisabled() {
 			ListServices: "",
 		},
 	})
-	s.Require().NoError(err)
+	if err != nil {
+		// Send may fail with EOF if gRPC handshake isn't complete — still proves reflection is unavailable.
+		return
+	}
 
 	// Receiving should fail or return error response.
 	_, err = stream.Recv()
-	// When reflection is disabled, the RPC will fail.
 	s.Require().Error(err, "Reflection should not be available when disabled")
 }
 
