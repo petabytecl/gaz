@@ -47,13 +47,19 @@ func (a *App) doStop(ctx context.Context) error {
 			timer.Stop()
 			return
 		case <-timer.C:
-			msg := fmt.Sprintf(
-				"shutdown: global timeout %s exceeded, forcing exit",
-				a.opts.ShutdownTimeout,
-			)
-			a.getLogger().Error(msg)
-			_, _ = fmt.Fprintln(os.Stderr, msg)
-			callExitFunc(1)
+			// Re-check: shutdown may have finished between timer fire and this point
+			select {
+			case <-done:
+				return // Clean exit won the race
+			default:
+				msg := fmt.Sprintf(
+					"shutdown: global timeout %s exceeded, forcing exit",
+					a.opts.ShutdownTimeout,
+				)
+				a.getLogger().Error(msg)
+				_, _ = fmt.Fprintln(os.Stderr, msg)
+				callExitFunc(1)
+			}
 		}
 	}()
 
@@ -78,7 +84,7 @@ func (a *App) doStop(ctx context.Context) error {
 	// Stop workers first (they may depend on services)
 	log.InfoContext(ctx, "stopping workers")
 	if a.workerMgr != nil {
-		if workerStopErr := a.workerMgr.Stop(); workerStopErr != nil {
+		if workerStopErr := a.workerMgr.Stop(ctx); workerStopErr != nil {
 			errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
 		}
 	}

@@ -195,7 +195,7 @@ func TestExample_WorkerWithSimpleWorker(t *testing.T) {
 	}, time.Second, 10*time.Millisecond, "worker should start")
 
 	// Stop and verify
-	require.NoError(t, mgr.Stop())
+	require.NoError(t, mgr.Stop(ctx))
 	worker.RequireWorkerStopped(t, w)
 }
 

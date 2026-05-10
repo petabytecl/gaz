@@ -26,7 +26,7 @@ import (
 //	}
 //
 //	// Later, during shutdown:
-//	mgr.Stop()
+//	mgr.Stop(ctx)
 type Manager struct {
 	logger      *slog.Logger
 	supervisors []*supervisor
@@ -138,9 +138,12 @@ func (m *Manager) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop signals all workers to stop and waits for them to complete.
-// It cancels the context and waits for all supervisor goroutines to exit.
-func (m *Manager) Stop() error {
+// Stop signals all workers to stop and waits for them to complete, respecting
+// the provided context deadline. It cancels the internal context and waits for
+// all supervisor goroutines to exit.
+//
+// Returns ctx.Err() if the deadline expires before all workers finish stopping.
+func (m *Manager) Stop(ctx context.Context) error {
 	m.mu.Lock()
 	if !m.running {
 		m.mu.Unlock()
@@ -156,11 +159,15 @@ func (m *Manager) Stop() error {
 		m.cancel()
 	}
 
-	// Wait for all supervisors to complete
-	m.wg.Wait()
-
-	m.logger.Info("all workers stopped")
-	return nil
+	// Wait for all supervisors to complete with context deadline (Rule 3)
+	select {
+	case <-m.done:
+		m.logger.Info("all workers stopped")
+		return nil
+	case <-ctx.Done():
+		m.logger.Warn("worker stop deadline exceeded")
+		return ctx.Err()
+	}
 }
 
 // Done returns a channel that closes when all workers have stopped.

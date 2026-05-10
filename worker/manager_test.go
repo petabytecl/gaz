@@ -90,7 +90,7 @@ func TestManager_RegisterAndStart(t *testing.T) {
 	assert.Equal(t, 1, worker.getStartCount())
 
 	// Stop the manager
-	err = mgr.Stop()
+	err = mgr.Stop(ctx)
 	require.NoError(t, err)
 }
 
@@ -122,7 +122,7 @@ func TestManager_Stop(t *testing.T) {
 	}
 
 	// Stop all workers
-	err := mgr.Stop()
+	err := mgr.Stop(ctx)
 	require.NoError(t, err)
 
 	// Wait for done channel
@@ -217,7 +217,7 @@ func TestManager_ConcurrentStart(t *testing.T) {
 	elapsed := time.Since(start)
 	assert.Less(t, elapsed, 500*time.Millisecond, "workers should start concurrently")
 
-	mgr.Stop()
+	_ = mgr.Stop(ctx)
 }
 
 func TestManager_DoubleStart(t *testing.T) {
@@ -247,7 +247,7 @@ func TestManager_DoubleStart(t *testing.T) {
 	// Worker should only have been started once
 	assert.Equal(t, 1, worker.getStartCount())
 
-	mgr.Stop()
+	_ = mgr.Stop(ctx)
 }
 
 func TestManager_RegisterWhileRunning(t *testing.T) {
@@ -275,7 +275,7 @@ func TestManager_RegisterWhileRunning(t *testing.T) {
 	assert.Error(t, err, "registering while running should error")
 	assert.ErrorIs(t, err, ErrManagerAlreadyRunning)
 
-	mgr.Stop()
+	_ = mgr.Stop(ctx)
 }
 
 func TestManager_StopNotRunning(t *testing.T) {
@@ -283,7 +283,7 @@ func TestManager_StopNotRunning(t *testing.T) {
 	mgr := NewManager(logger)
 
 	// Stop without starting should be fine
-	err := mgr.Stop()
+	err := mgr.Stop(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -314,6 +314,6 @@ func TestManager_EmptyStart(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Stop should also be fine
-	err = mgr.Stop()
+	err = mgr.Stop(ctx)
 	assert.NoError(t, err)
 }

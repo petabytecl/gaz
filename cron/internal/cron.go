@@ -321,6 +321,16 @@ func (c *Cron) now() time.Time {
 
 // Stop stops the cron scheduler if it is running; otherwise it does nothing.
 // A context is returned so the caller can wait for running jobs to complete.
+//
+// The returned context should be used with a deadline:
+//
+//	select {
+//	case <-cronCtx.Done():  // jobs finished
+//	case <-parentCtx.Done(): // shutdown deadline exceeded
+//	}
+//
+// Note: if a job hangs indefinitely, the internal waiter goroutine will leak
+// until process exit. Callers should use their shutdown context to bound the wait.
 func (c *Cron) Stop() context.Context {
 	c.runningMu.Lock()
 	if !c.running {
