@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -807,6 +808,159 @@ func stop(cron *Cron) chan bool {
 		ch <- true
 	}()
 	return ch
+}
+
+// =============================================================================
+// Deadlock-freedom regression tests (Rule 1: no lock-during-blocking-IO)
+// =============================================================================
+
+// TestScheduleDoesNotDeadlockWhenSchedulerStalls verifies that Schedule() returns
+// even if the scheduler goroutine is busy and cannot immediately consume from
+// c.add. Before the fix, Schedule held runningMu while sending on c.add,
+// which would deadlock if the scheduler stalled.
+func TestScheduleDoesNotDeadlockWhenSchedulerStalls(t *testing.T) {
+	t.Parallel()
+	cron := newWithSeconds()
+
+	// Add a slow job that occupies the scheduler goroutine
+	started := make(chan struct{})
+	_, _ = cron.AddFunc("* * * * * *", func() {
+		select {
+		case started <- struct{}{}:
+		default:
+		}
+		time.Sleep(2 * time.Second)
+	})
+
+	cron.Start()
+	defer cron.Stop()
+
+	// Wait for the slow job to start running
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("slow job did not start")
+	}
+
+	// Now try to schedule a new job from another goroutine.
+	// Before the fix, this would deadlock because Schedule held the mutex
+	// while trying to send on c.add, but the scheduler is blocked in the job.
+	done := make(chan struct{})
+	go func() {
+		cron.Schedule(Every(time.Hour), FuncJob(func() {}))
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success: Schedule() returned without deadlocking
+	case <-time.After(2 * time.Second):
+		t.Fatal("Schedule() deadlocked when scheduler was busy")
+	}
+}
+
+// TestEntriesDoesNotDeadlockWhenSchedulerBusy verifies that Entries() returns
+// within a reasonable time even when called concurrently with a running job.
+func TestEntriesDoesNotDeadlockWhenSchedulerBusy(t *testing.T) {
+	t.Parallel()
+	cron := newWithSeconds()
+
+	ran := make(chan struct{}, 1)
+	_, _ = cron.AddFunc("* * * * * *", func() {
+		select {
+		case ran <- struct{}{}:
+		default:
+		}
+	})
+
+	cron.Start()
+	defer cron.Stop()
+
+	// Wait for a job to run, confirming the scheduler is active
+	select {
+	case <-ran:
+	case <-time.After(2 * time.Second):
+		t.Fatal("job did not run")
+	}
+
+	// Entries() should return within a reasonable time
+	done := make(chan []Entry)
+	go func() {
+		done <- cron.Entries()
+	}()
+
+	select {
+	case entries := <-done:
+		if len(entries) != 1 {
+			t.Errorf("expected 1 entry, got %d", len(entries))
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Entries() deadlocked when scheduler was busy")
+	}
+}
+
+// TestRemoveDoesNotDeadlockWhenNotRunning verifies that Remove works correctly
+// when the cron is not started (exercises the non-running path).
+func TestRemoveDoesNotDeadlockWhenNotRunning(t *testing.T) {
+	t.Parallel()
+	cron := newWithSeconds()
+
+	id, _ := cron.AddFunc("* * * * * *", func() {})
+
+	// Remove before start -- should return immediately without deadlock
+	done := make(chan struct{})
+	go func() {
+		cron.Remove(id)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(time.Second):
+		t.Fatal("Remove() deadlocked when cron was not running")
+	}
+
+	// Verify it was actually removed
+	entries := cron.Entries()
+	if len(entries) != 0 {
+		t.Errorf("expected 0 entries after Remove, got %d", len(entries))
+	}
+}
+
+// TestStopWhenSchedulerAlreadyExited verifies that calling Stop() multiple
+// times does not deadlock or panic. The second Stop() call should return
+// immediately with an already-cancelled context.
+func TestStopWhenSchedulerAlreadyExited(t *testing.T) {
+	t.Parallel()
+	cron := newWithSeconds()
+	cron.Start()
+
+	// First stop -- should work normally
+	ctx1 := cron.Stop()
+	select {
+	case <-ctx1.Done():
+	case <-time.After(time.Second):
+		t.Fatal("first Stop() context not done in time")
+	}
+
+	// Second stop -- should not deadlock or panic
+	done := make(chan context.Context)
+	go func() {
+		done <- cron.Stop()
+	}()
+
+	select {
+	case ctx2 := <-done:
+		// The context from a second Stop (not running, no outstanding jobs) should resolve quickly
+		select {
+		case <-ctx2.Done():
+		case <-time.After(100 * time.Millisecond):
+			t.Error("second Stop() context was not done quickly")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("second Stop() deadlocked")
+	}
 }
 
 // newWithSeconds returns a Cron with the seconds field enabled.
