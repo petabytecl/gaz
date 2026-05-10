@@ -28,11 +28,25 @@ const (
 	DefaultStartupPath = "/startup"
 )
 
+// DefaultBindAddress is the default bind address for the management server.
+// Binding to loopback prevents external access to health endpoints.
+const DefaultBindAddress = "127.0.0.1"
+
 // Config holds configuration for the management server.
 type Config struct {
 	// Port is the TCP port the management server listens on.
 	// Defaults to 9090 if not set.
 	Port int `json:"port" yaml:"port" mapstructure:"port"`
+
+	// BindAddress is the IP address the management server binds to.
+	// Defaults to "127.0.0.1" (loopback only). Set to "0.0.0.0" to
+	// allow external access (e.g., Kubernetes probes from kubelets).
+	BindAddress string `json:"bind_address" yaml:"bind_address" mapstructure:"bind_address"`
+
+	// ShowErrors controls whether error messages are included in health
+	// check responses. Defaults to false to prevent information leakage.
+	// Enable only in development or staging environments.
+	ShowErrors bool `json:"show_errors" yaml:"show_errors" mapstructure:"show_errors"`
 
 	// LivenessPath is the path for the liveness probe.
 	// Defaults to "/live".
@@ -51,6 +65,8 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		Port:          DefaultPort,
+		BindAddress:   DefaultBindAddress,
+		ShowErrors:    false,
 		LivenessPath:  DefaultLivenessPath,
 		ReadinessPath: DefaultReadinessPath,
 		StartupPath:   DefaultStartupPath,
@@ -75,6 +91,9 @@ func (c *Config) Flags(fs *pflag.FlagSet) {
 func (c *Config) SetDefaults() {
 	if c.Port == 0 {
 		c.Port = DefaultPort
+	}
+	if c.BindAddress == "" {
+		c.BindAddress = DefaultBindAddress
 	}
 	if c.LivenessPath == "" {
 		c.LivenessPath = DefaultLivenessPath

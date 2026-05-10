@@ -37,7 +37,7 @@ func TestHandlers(t *testing.T) {
 
 	// 3. Test Readiness (Expect 503 on failure)
 	t.Run("Readiness", func(t *testing.T) {
-		h := m.NewReadinessHandler()
+		h := m.NewReadinessHandler(true)
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/ready", nil)
 

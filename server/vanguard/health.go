@@ -20,7 +20,7 @@ func buildHealthMux(manager *health.Manager, cfg *health.Config) *http.ServeMux 
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(hcfg.ReadinessPath, manager.NewReadinessHandler())
+	mux.Handle(hcfg.ReadinessPath, manager.NewReadinessHandler(hcfg.ShowErrors))
 	mux.Handle(hcfg.LivenessPath, manager.NewLivenessHandler())
 	if hcfg.StartupPath != "" {
 		mux.Handle(hcfg.StartupPath, manager.NewStartupHandler())
@@ -41,7 +41,7 @@ func mountHealthEndpoints(mux *http.ServeMux, manager *health.Manager, cfg *heal
 		hcfg = *cfg
 	}
 
-	mux.Handle(hcfg.ReadinessPath, manager.NewReadinessHandler())
+	mux.Handle(hcfg.ReadinessPath, manager.NewReadinessHandler(hcfg.ShowErrors))
 	mux.Handle(hcfg.LivenessPath, manager.NewLivenessHandler())
 	if hcfg.StartupPath != "" {
 		mux.Handle(hcfg.StartupPath, manager.NewStartupHandler())

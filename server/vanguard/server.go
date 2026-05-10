@@ -153,6 +153,11 @@ func (s *Server) OnStart(ctx context.Context) error {
 	protocols.SetHTTP1(true)
 	protocols.SetUnencryptedHTTP2(true)
 
+	if !s.config.DevMode && s.config.TLSConfig == nil {
+		s.logger.WarnContext(ctx, "vanguard server running without TLS; "+
+			"ensure a TLS-terminating proxy (envoy, nginx, cloud LB) is in front")
+	}
+
 	s.httpServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.config.Port),
 		Handler:           handler,

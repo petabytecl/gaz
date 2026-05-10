@@ -22,12 +22,15 @@ func (s *ConfigTestSuite) TestDefaultConfig() {
 
 	s.Equal(DefaultPort, cfg.Port)
 	s.Equal(time.Duration(0), cfg.ReadTimeout, "ReadTimeout should be zero for streaming safety")
-	s.Equal(time.Duration(0), cfg.WriteTimeout, "WriteTimeout should be zero for streaming safety")
+	s.Equal(DefaultWriteTimeout, cfg.WriteTimeout, "WriteTimeout should default to 30s for Slowloris protection")
 	s.Equal(DefaultReadHeaderTimeout, cfg.ReadHeaderTimeout)
 	s.Equal(DefaultIdleTimeout, cfg.IdleTimeout)
 	s.False(cfg.Reflection)
 	s.True(cfg.HealthEnabled)
 	s.False(cfg.DevMode)
+	s.False(cfg.AllowZeroWriteTimeout, "AllowZeroWriteTimeout should default to false")
+	s.Nil(cfg.TLSConfig, "TLSConfig should default to nil")
+	s.False(cfg.CORS.AllowCredentials, "CORS AllowCredentials should default to false in prod")
 }
 
 func (s *ConfigTestSuite) TestNamespace() {

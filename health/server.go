@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"time"
 )
 
 // ManagementServer serves health endpoints on a dedicated port.
@@ -31,15 +32,18 @@ func NewManagementServer(
 
 	mux := http.NewServeMux()
 	mux.Handle(config.LivenessPath, manager.NewLivenessHandler())
-	mux.Handle(config.ReadinessPath, manager.NewReadinessHandler())
+	mux.Handle(config.ReadinessPath, manager.NewReadinessHandler(config.ShowErrors))
 	mux.Handle(config.StartupPath, manager.NewStartupHandler())
 
 	return &ManagementServer{
 		config: config,
 		server: &http.Server{
-			Addr:              fmt.Sprintf(":%d", config.Port),
+			Addr:              fmt.Sprintf("%s:%d", config.BindAddress, config.Port),
 			Handler:           mux,
 			ReadHeaderTimeout: DefaultReadHeaderTimeout,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      10 * time.Second,
+			IdleTimeout:       60 * time.Second,
 		},
 		shutdownCheck: shutdownCheck,
 		logger:        logger,

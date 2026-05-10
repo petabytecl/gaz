@@ -14,6 +14,7 @@ func TestManagementServer_StartStop(t *testing.T) {
 	// Setup with port 0 for random available port
 	config := Config{
 		Port:          0,
+		BindAddress:   "127.0.0.1",
 		LivenessPath:  "/live",
 		ReadinessPath: "/ready",
 		StartupPath:   "/startup",
@@ -39,7 +40,7 @@ func TestManagementServer_StartStop(t *testing.T) {
 	require.NotZero(t, port)
 
 	// Verify liveness endpoint is reachable
-	url := fmt.Sprintf("http://localhost:%d/live", port)
+	url := fmt.Sprintf("http://127.0.0.1:%d/live", port)
 	require.Eventually(t, func() bool {
 		req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 		if reqErr != nil {
@@ -53,4 +54,35 @@ func TestManagementServer_StartStop(t *testing.T) {
 
 		return resp.StatusCode == http.StatusOK
 	}, 2*time.Second, 50*time.Millisecond)
+}
+
+func TestManagementServer_Timeouts(t *testing.T) {
+	config := DefaultConfig()
+	config.Port = 0
+	manager := NewManager()
+	shutdownCheck := NewShutdownCheck()
+
+	server := NewManagementServer(config, manager, shutdownCheck, nil)
+
+	require.Equal(t, 10*time.Second, server.server.ReadTimeout, "ReadTimeout should be 10s")
+	require.Equal(t, 10*time.Second, server.server.WriteTimeout, "WriteTimeout should be 10s")
+	require.Equal(t, 60*time.Second, server.server.IdleTimeout, "IdleTimeout should be 60s")
+}
+
+func TestManagementServer_BindAddress(t *testing.T) {
+	config := DefaultConfig()
+	config.Port = 9090
+
+	require.Equal(t, "127.0.0.1", config.BindAddress, "Default BindAddress should be 127.0.0.1")
+
+	manager := NewManager()
+	shutdownCheck := NewShutdownCheck()
+	server := NewManagementServer(config, manager, shutdownCheck, nil)
+
+	require.Equal(t, "127.0.0.1:9090", server.server.Addr)
+}
+
+func TestManagementServer_ShowErrorsDefault(t *testing.T) {
+	config := DefaultConfig()
+	require.False(t, config.ShowErrors, "ShowErrors should default to false")
 }
