@@ -22,7 +22,7 @@ func WithType(t string) Option {
 // WithEnvPrefix sets the environment variable prefix.
 // If set, environment variables will be bound automatically.
 // For example, if prefix is "APP", then the key "database.host" will look
-// for APP_DATABASE__HOST environment variable.
+// for APP_DATABASE_HOST environment variable (single underscore separator).
 func WithEnvPrefix(prefix string) Option {
 	return func(m *Manager) {
 		m.envPrefix = prefix
