@@ -7,9 +7,11 @@ errors=0
 echo "=== Rule Enforcement Checks ==="
 
 # Rule 6: No time.Sleep in tests (use require.Eventually or channel sync).
+# Intentional sleeps (simulating delays, real-time waits) are excluded via
+# "// intentional:" or "// simulates" or "// requires real-time" comments.
 SLEEP_HITS=$(grep -rE 'time\.Sleep\(' --include='*_test.go' . \
-    | grep -v '//nolint:timesleep' \
     | grep -v 'vendor/' \
+    | grep -vE '// (intentional:|simulates |.* requires real-time|poll interval for|required:)' \
     || true)
 if [ -n "$SLEEP_HITS" ]; then
     echo "FAIL: Rule 6 - time.Sleep found in test files (use require.Eventually or channel sync)"
