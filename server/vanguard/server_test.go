@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
@@ -42,8 +43,8 @@ func (s *ServerTestSuite) TestOnStartAndStop() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	// Give server time to bind.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for server to bind.
+	waitForPort(s.T(), cfg.Port)
 
 	// Verify we can connect.
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/nonexistent", cfg.Port))
@@ -87,7 +88,7 @@ func (s *ServerTestSuite) TestOnStartDiscoverConnectServices() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Request the Connect service path — should hit our mock handler via unknown handler.
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/test.Service/Method", cfg.Port))
@@ -122,7 +123,7 @@ func (s *ServerTestSuite) TestOnStartHealthAutoMount() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Check health endpoints use health.DefaultConfig paths.
 	// Liveness always returns 200; readiness/startup return 503 when no checks
@@ -178,7 +179,7 @@ func (s *ServerTestSuite) TestOnStopGracefulShutdown() {
 	err := server.OnStart(ctx)
 	s.Require().NoError(err)
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Graceful shutdown should complete cleanly.
 	stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -223,7 +224,7 @@ func (s *ServerTestSuite) TestSetUnknownHandler() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Request root path — should hit user unknown handler.
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/custom", cfg.Port))
@@ -347,7 +348,7 @@ func (s *ServerTestSuite) TestOnStartWithReflection() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Reflection v1 endpoint should respond.
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", cfg.Port))
@@ -420,7 +421,7 @@ func (s *ServerTestSuite) TestBuildTranscoderNoGRPCServer() {
 		_ = server.OnStop(stopCtx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	waitForPort(s.T(), cfg.Port)
 
 	// Connect service should be reachable even without gRPC.
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/test.PlainConnect/Method", cfg.Port))
@@ -569,4 +570,18 @@ func getFreePort(t *testing.T) int {
 	}
 	defer func() { _ = lis.Close() }()
 	return lis.Addr().(*net.TCPAddr).Port
+}
+
+// waitForPort waits until a TCP connection can be made to the given port.
+func waitForPort(t *testing.T, port int) {
+	t.Helper()
+	addr := fmt.Sprintf("localhost:%d", port)
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
+	}, 2*time.Second, 10*time.Millisecond)
 }

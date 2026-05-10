@@ -30,12 +30,23 @@ func TestWithLogger(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	c := New(WithLogger(logger))
 
-	_, err := c.AddFunc("@every 1s", func() {})
+	ran := make(chan struct{}, 1)
+	_, err := c.AddFunc("@every 1s", func() {
+		select {
+		case ran <- struct{}{}:
+		default:
+		}
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	c.Start()
-	time.Sleep(defaultWait)
+	// Wait for the job to fire at least once
+	select {
+	case <-ran:
+	case <-time.After(2 * time.Second):
+		t.Fatal("job did not run")
+	}
 	ctx := c.Stop()
 	if ctx == nil {
 		t.Error("expected non-nil context")
@@ -53,9 +64,20 @@ func TestWithChain(t *testing.T) {
 	}
 
 	c := New(WithParser(secondParser), WithChain(wrapper))
-	_, _ = c.AddFunc("* * * * * ?", func() {})
+	ran := make(chan struct{}, 1)
+	_, _ = c.AddFunc("* * * * * ?", func() {
+		select {
+		case ran <- struct{}{}:
+		default:
+		}
+	})
 	c.Start()
-	time.Sleep(defaultWait)
+	// Wait for the job to fire at least once
+	select {
+	case <-ran:
+	case <-time.After(2 * time.Second):
+		t.Fatal("job did not run")
+	}
 	c.Stop()
 
 	if !called.Load() {

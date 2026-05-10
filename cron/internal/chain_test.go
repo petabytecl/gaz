@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 type syncBuffer struct {
@@ -64,17 +66,25 @@ func TestDelayIfStillRunningLogs(t *testing.T) {
 
 	// Start first run
 	go wrappedJob.Run()
-	time.Sleep(10 * time.Millisecond)
 
-	// Start second run. It should wait for ~40ms.
-	// 40ms > 10ms, so it should log.
+	// Wait until first job has started before launching the second
+	require.Eventually(t, func() bool {
+		return j.Started() >= 1
+	}, time.Second, time.Millisecond)
+
+	// Start second run. It should wait for the first to finish.
+	// The wait exceeds the 10ms threshold, so it should log.
 	done := make(chan struct{})
 	go func() {
 		wrappedJob.Run()
 		close(done)
 	}()
 
-	<-done
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("second job did not complete within timeout")
+	}
 
 	if !strings.Contains(buf.String(), "delay") {
 		t.Errorf("expected log message about delay, got: %s", buf.String())
@@ -139,7 +149,7 @@ func (j *countJob) Run() {
 	j.m.Lock()
 	j.started++
 	j.m.Unlock()
-	time.Sleep(j.delay)
+	time.Sleep(j.delay) //nolint:timesleep // simulates real job execution time, not test synchronization
 	j.m.Lock()
 	j.done++
 	j.m.Unlock()
@@ -164,25 +174,24 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(2 * time.Millisecond) // Give the job 2ms to complete.
-		if c := j.Done(); c != 1 {
-			t.Errorf("expected job run once, immediately, got %d", c)
-		}
+		require.Eventually(t, func() bool {
+			return j.Done() == 1
+		}, time.Second, time.Millisecond)
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
 		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
-		go func() {
-			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
-			go wrappedJob.Run()
-		}()
-		time.Sleep(3 * time.Millisecond) // Give both jobs 3ms to complete.
-		if c := j.Done(); c != 2 {
-			t.Errorf("expected job run twice, immediately, got %d", c)
-		}
+		go wrappedJob.Run()
+		// Wait for first to complete before launching second
+		require.Eventually(t, func() bool {
+			return j.Done() >= 1
+		}, time.Second, time.Millisecond)
+		go wrappedJob.Run()
+		require.Eventually(t, func() bool {
+			return j.Done() == 2
+		}, time.Second, time.Millisecond)
 	})
 
 	t.Run("second run delayed if first not done", func(t *testing.T) {
@@ -190,26 +199,20 @@ func TestChainDelayIfStillRunning(t *testing.T) {
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(DelayIfStillRunning(newDiscardLogger())).Then(&j)
-		go func() {
-			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
-			go wrappedJob.Run()
-		}()
+		go wrappedJob.Run()
+		// Wait for first to start
+		require.Eventually(t, func() bool {
+			return j.Started() >= 1
+		}, time.Second, time.Millisecond)
+		go wrappedJob.Run()
 
-		// After 5ms, the first job is still in progress, and the second job was
-		// run but should be waiting for it to finish.
-		time.Sleep(5 * time.Millisecond)
-		started, done := j.Started(), j.Done()
-		if started != 1 || done != 0 {
-			t.Error("expected first job started, but not finished, got", started, done)
-		}
+		// First job should be started but not yet done
+		require.Equal(t, 0, j.Done(), "first job should not be done yet")
 
-		// Verify that the second job completes.
-		time.Sleep(25 * time.Millisecond)
-		started, done = j.Started(), j.Done()
-		if started != 2 || done != 2 {
-			t.Error("expected both jobs done, got", started, done)
-		}
+		// Verify that both jobs eventually complete
+		require.Eventually(t, func() bool {
+			return j.Started() == 2 && j.Done() == 2
+		}, time.Second, time.Millisecond)
 	})
 }
 
@@ -220,25 +223,24 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
 		go wrappedJob.Run()
-		time.Sleep(2 * time.Millisecond) // Give the job 2ms to complete.
-		if c := j.Done(); c != 1 {
-			t.Errorf("expected job run once, immediately, got %d", c)
-		}
+		require.Eventually(t, func() bool {
+			return j.Done() == 1
+		}, time.Second, time.Millisecond)
 	})
 
 	t.Run("second run immediate if first done", func(t *testing.T) {
 		t.Parallel()
 		var j countJob
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
-		go func() {
-			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
-			go wrappedJob.Run()
-		}()
-		time.Sleep(3 * time.Millisecond) // Give both jobs 3ms to complete.
-		if c := j.Done(); c != 2 {
-			t.Errorf("expected job run twice, immediately, got %d", c)
-		}
+		go wrappedJob.Run()
+		// Wait for first to complete before launching second
+		require.Eventually(t, func() bool {
+			return j.Done() >= 1
+		}, time.Second, time.Millisecond)
+		go wrappedJob.Run()
+		require.Eventually(t, func() bool {
+			return j.Done() == 2
+		}, time.Second, time.Millisecond)
 	})
 
 	t.Run("second run skipped if first not done", func(t *testing.T) {
@@ -246,26 +248,23 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		var j countJob
 		j.delay = 10 * time.Millisecond
 		wrappedJob := NewChain(SkipIfStillRunning(newDiscardLogger())).Then(&j)
-		go func() {
-			go wrappedJob.Run()
-			time.Sleep(time.Millisecond)
-			go wrappedJob.Run()
-		}()
+		go wrappedJob.Run()
+		// Wait for first to start
+		require.Eventually(t, func() bool {
+			return j.Started() >= 1
+		}, time.Second, time.Millisecond)
+		// Launch second (should be skipped since first is still running)
+		go wrappedJob.Run()
 
-		// After 5ms, the first job is still in progress, and the second job was
-		// already skipped.
-		time.Sleep(5 * time.Millisecond)
-		started, done := j.Started(), j.Done()
-		if started != 1 || done != 0 {
-			t.Error("expected first job started, but not finished, got", started, done)
-		}
+		// Verify that first job started but not done yet
+		require.Equal(t, 0, j.Done(), "first job should not be done yet")
 
-		// Verify that the first job completes and second does not run.
-		time.Sleep(25 * time.Millisecond)
-		started, done = j.Started(), j.Done()
-		if started != 1 || done != 1 {
-			t.Error("expected second job skipped, got", started, done)
-		}
+		// Verify that the first job completes and second was skipped
+		require.Eventually(t, func() bool {
+			return j.Done() == 1
+		}, time.Second, time.Millisecond)
+		// Second job should never have started
+		require.Equal(t, 1, j.Started(), "second job should have been skipped")
 	})
 
 	t.Run("skip 10 jobs on rapid fire", func(t *testing.T) {
@@ -276,11 +275,9 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 		for range 11 {
 			go wrappedJob.Run()
 		}
-		time.Sleep(200 * time.Millisecond)
-		done := j.Done()
-		if done != 1 {
-			t.Error("expected 1 jobs executed, 10 jobs dropped, got", done)
-		}
+		require.Eventually(t, func() bool {
+			return j.Done() == 1
+		}, time.Second, time.Millisecond)
 	})
 
 	t.Run("different jobs independent", func(t *testing.T) {
@@ -295,13 +292,8 @@ func TestChainSkipIfStillRunning(t *testing.T) {
 			go wrappedJob1.Run()
 			go wrappedJob2.Run()
 		}
-		time.Sleep(100 * time.Millisecond)
-		var (
-			done1 = j1.Done()
-			done2 = j2.Done()
-		)
-		if done1 != 1 || done2 != 1 {
-			t.Error("expected both jobs executed once, got", done1, "and", done2)
-		}
+		require.Eventually(t, func() bool {
+			return j1.Done() == 1 && j2.Done() == 1
+		}, time.Second, time.Millisecond)
 	})
 }

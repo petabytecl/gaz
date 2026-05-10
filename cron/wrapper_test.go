@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -229,11 +230,13 @@ func TestJobWrapper_Run_ContextCancelled(t *testing.T) {
 
 	resolver := newCountingResolver()
 	var ctxErr error
+	jobStarted := make(chan struct{})
 	resolver.services["*cron.CancelJob"] = func() any {
 		return &wrapperMockJob{
 			name:     "cancel-job",
 			schedule: "@hourly",
 			runFn: func(ctx context.Context) error {
+				close(jobStarted)
 				<-ctx.Done()
 				ctxErr = ctx.Err()
 				return ctx.Err()
@@ -251,8 +254,12 @@ func TestJobWrapper_Run_ContextCancelled(t *testing.T) {
 		close(done)
 	}()
 
-	// Give the job time to start
-	time.Sleep(50 * time.Millisecond)
+	// Wait for the job to start running
+	select {
+	case <-jobStarted:
+	case <-time.After(time.Second):
+		t.Fatal("job did not start within timeout")
+	}
 
 	// Cancel app context
 	cancel()
@@ -457,7 +464,7 @@ func TestJobWrapper_ConcurrentAccess(t *testing.T) {
 			name:     "concurrent-job",
 			schedule: "@hourly",
 			runFn: func(ctx context.Context) error {
-				time.Sleep(10 * time.Millisecond)
+				runtime.Gosched() // Yield to increase contention window
 				return nil
 			},
 		}
@@ -575,7 +582,8 @@ func TestJobWrapper_DurationLogging(t *testing.T) {
 			name:     "duration-job",
 			schedule: "@hourly",
 			runFn: func(ctx context.Context) error {
-				time.Sleep(50 * time.Millisecond)
+				// Small busy-loop to ensure non-zero duration in logs
+				runtime.Gosched()
 				return nil
 			},
 		}
