@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"reflect"
 	"sync"
 	"time"
 
@@ -26,11 +25,6 @@ const (
 	defaultShutdownTimeout = 30 * time.Second
 	defaultPerHookTimeout  = 10 * time.Second
 )
-
-// configProviderType is cached for efficient interface checks.
-//
-//nolint:gochecknoglobals // Package-level for reflect type caching.
-var configProviderType = reflect.TypeOf((*ConfigProvider)(nil)).Elem()
 
 // exitFunc is the function called for force exit. Variable for testability.
 // Protected by exitFuncMu for thread-safe access during tests.
@@ -115,14 +109,12 @@ type App struct {
 	strictConfig bool // enables strict config validation
 
 	// Provider config tracking
-	providerConfigs []providerConfigEntry // collected from ConfigProvider implementers
+	providerConfigIntake *providerConfigIntake
 
 	// Idempotency tracking for operations that may run during RegisterCobraFlags
-	configLoaded             bool
-	providerValuesRegistered bool
-	providerConfigsCollected bool
-	loggerInitialized        bool      // tracks if initializeLogger was called
-	logCloser                io.Closer // logger file handle closer (nil for stdout/stderr)
+	configLoaded      bool
+	loggerInitialized bool      // tracks if initializeLogger was called
+	logCloser         io.Closer // logger file handle closer (nil for stdout/stderr)
 
 	// Worker management - nil until Build() is called
 	workerMgr *worker.Manager
@@ -146,13 +138,6 @@ type App struct {
 	// Stop idempotency
 	stopOnce sync.Once
 	stopErr  error
-}
-
-// providerConfigEntry stores config information from a ConfigProvider.
-type providerConfigEntry struct {
-	providerName string       // type name of the provider
-	namespace    string       // from ConfigNamespace()
-	flags        []ConfigFlag // from ConfigFlags()
 }
 
 // New creates a new App with the given options.

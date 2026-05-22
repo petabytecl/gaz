@@ -1,11 +1,9 @@
 package gaz
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
@@ -121,140 +119,27 @@ func (a *App) applyConfigFlags() error {
 // This allows providers to inject *ProviderValues as a dependency.
 // This method is idempotent - subsequent calls return nil after first registration.
 func (a *App) registerProviderValuesEarly() error {
-	if a.providerValuesRegistered {
-		return nil // Already registered
-	}
-	if a.configMgr == nil {
-		return nil
-	}
-	pv := &ProviderValues{backend: a.configMgr.Backend()}
-	if err := a.registerInstance(pv); err != nil {
-		return err
-	}
-	a.providerValuesRegistered = true
-	return nil
-}
-
-// getSortedServiceNames returns service names in sorted order for deterministic iteration.
-func (a *App) getSortedServiceNames() []string {
-	return a.container.List()
+	return a.providerConfigIntakeModule().registerProviderValues()
 }
 
 // collectProviderConfigs iterates registered services, collects config from ConfigProvider
 // implementers, detects key collisions, registers provider flags with ConfigManager,
-// validates required fields, and registers ProviderValues.
+// and validates required fields. ProviderValues must be registered before this runs.
 // This method is idempotent - subsequent calls return nil after first collection.
 func (a *App) collectProviderConfigs() error {
-	if a.providerConfigsCollected {
-		return nil // Already collected
-	}
-	keyOwners := make(map[string]string)
-	var collisionErrors []error
-
-	// Iterate in sorted order for deterministic dependency graph recording
-	for _, typeName := range a.getSortedServiceNames() {
-		wrapper, exists := a.container.GetService(typeName)
-		if !exists {
-			continue
-		}
-
-		if wrapper.IsTransient() {
-			continue
-		}
-
-		// Check if service type implements ConfigProvider BEFORE instantiation
-		// This avoids side effects of instantiating non-ConfigProvider services
-		serviceType := wrapper.ServiceType()
-		if serviceType == nil {
-			continue
-		}
-
-		// For pointer types, check both pointer and element type
-		if !serviceType.Implements(configProviderType) {
-			// Also check pointer-to-type in case methods are on *T
-			if serviceType.Kind() != reflect.Ptr {
-				ptrType := reflect.PointerTo(serviceType)
-				if !ptrType.Implements(configProviderType) {
-					continue
-				}
-			} else {
-				continue
-			}
-		}
-
-		// Only now instantiate - we know it implements ConfigProvider
-		instance, err := a.container.ResolveByName(typeName, nil)
-		if err != nil {
-			continue // Skip services that fail to resolve
-		}
-
-		cp, ok := instance.(ConfigProvider)
-		if !ok {
-			// This shouldn't happen if type check above is correct, but be defensive
-			continue
-		}
-
-		namespace := cp.ConfigNamespace()
-		flags := cp.ConfigFlags()
-
-		a.providerConfigs = append(a.providerConfigs, providerConfigEntry{
-			providerName: typeName,
-			namespace:    namespace,
-			flags:        flags,
-		})
-
-		// Check for collisions
-		for _, flag := range flags {
-			fullKey := namespace + "." + flag.Key
-			if existingProvider, found := keyOwners[fullKey]; found {
-				collisionErrors = append(collisionErrors, fmt.Errorf(
-					"%w: key %q registered by both %q and %q",
-					ErrConfigKeyCollision, fullKey, existingProvider, typeName,
-				))
-			} else {
-				keyOwners[fullKey] = typeName
-			}
-		}
-	}
-
-	if len(collisionErrors) > 0 {
-		return errors.Join(collisionErrors...)
-	}
-
-	// Set flag BEFORE registerProviderFlags to avoid re-entry issues
-	a.providerConfigsCollected = true
-	return a.registerProviderFlags()
+	return a.providerConfigIntakeModule().collect()
 }
 
-// registerProviderFlags registers collected provider flags with ConfigManager and validates.
-// Note: ProviderValues is already registered by registerProviderValuesEarly().
-func (a *App) registerProviderFlags() error {
-	if a.configMgr == nil {
-		return nil
+func (a *App) providerConfigIntakeModule() *providerConfigIntake {
+	if a.providerConfigIntake == nil {
+		a.providerConfigIntake = newProviderConfigIntake(
+			a.container,
+			func() *config.Manager {
+				return a.configMgr
+			},
+			a.registerInstance,
+		)
 	}
 
-	var validationErrors []error
-	for _, entry := range a.providerConfigs {
-		// Convert gaz.ConfigFlag to config.ConfigFlag
-		cfgFlags := make([]config.ConfigFlag, len(entry.flags))
-		for i, f := range entry.flags {
-			cfgFlags[i] = config.ConfigFlag{
-				Key:      f.Key,
-				Default:  f.Default,
-				Required: f.Required,
-			}
-		}
-
-		if err := a.configMgr.RegisterProviderFlags(entry.namespace, cfgFlags); err != nil {
-			return fmt.Errorf("registering provider flags for %s: %w", entry.namespace, err)
-		}
-		errs := a.configMgr.ValidateProviderFlags(entry.namespace, cfgFlags)
-		validationErrors = append(validationErrors, errs...)
-	}
-
-	if len(validationErrors) > 0 {
-		return errors.Join(validationErrors...)
-	}
-
-	return nil
+	return a.providerConfigIntake
 }

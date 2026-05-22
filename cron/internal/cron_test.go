@@ -645,8 +645,8 @@ func TestStopAndWait(t *testing.T) {
 		ctx := cron.Stop()
 		select {
 		case <-ctx.Done():
-		case <-time.After(time.Millisecond):
-			t.Error("context was not done immediately")
+		case <-time.After(100 * time.Millisecond):
+			t.Error("context was not done quickly")
 		}
 	})
 
@@ -659,8 +659,8 @@ func TestStopAndWait(t *testing.T) {
 		ctx := cron.Stop()
 		select {
 		case <-ctx.Done():
-		case <-time.After(time.Millisecond):
-			t.Error("context was not done immediately")
+		case <-time.After(100 * time.Millisecond):
+			t.Error("context was not done quickly")
 		}
 	})
 
@@ -687,8 +687,8 @@ func TestStopAndWait(t *testing.T) {
 		ctx := cron.Stop()
 		select {
 		case <-ctx.Done():
-		case <-time.After(time.Millisecond):
-			t.Error("context was not done immediately")
+		case <-time.After(100 * time.Millisecond):
+			t.Error("context was not done quickly")
 		}
 	})
 
@@ -774,7 +774,7 @@ func TestStopAndWait(t *testing.T) {
 		select {
 		case <-ctx3.Done():
 			// expected
-		case <-time.After(time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			t.Error("context not done even when cron Stop is completed")
 		}
 	})

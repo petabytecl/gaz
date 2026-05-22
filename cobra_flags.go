@@ -2,13 +2,8 @@ package gaz
 
 import (
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
-	"github.com/petabytecl/gaz/config"
 )
 
 // RegisterCobraFlags registers ConfigProvider flags as persistent pflags on the command.
@@ -39,7 +34,7 @@ func (a *App) RegisterCobraFlags(cmd *cobra.Command) error {
 		return fmt.Errorf("registering provider values: %w", err)
 	}
 
-	// Collect ConfigProvider info (idempotent) - populates a.providerConfigs
+	// Collect ConfigProvider info (idempotent)
 	if err := a.collectProviderConfigs(); err != nil {
 		return fmt.Errorf("collecting provider configs: %w", err)
 	}
@@ -50,64 +45,5 @@ func (a *App) RegisterCobraFlags(cmd *cobra.Command) error {
 
 // registerPFlags registers pflags on the command and binds to viper.
 func (a *App) registerPFlags(cmd *cobra.Command) error {
-	fs := cmd.PersistentFlags()
-
-	// Get FlagBinder from backend
-	fb, ok := a.configMgr.Backend().(config.FlagBinder)
-	if !ok {
-		// Backend doesn't support individual flag binding, skip
-		return nil
-	}
-
-	for _, entry := range a.providerConfigs {
-		for _, flag := range entry.flags {
-			fullKey := entry.namespace + "." + flag.Key
-			flagName := configKeyToFlagName(fullKey)
-
-			// Skip if already registered (collision prevention)
-			if fs.Lookup(flagName) != nil {
-				continue
-			}
-
-			// Register typed flag with default and description
-			registerTypedFlag(fs, flag, flagName)
-
-			// Bind to viper with ORIGINAL dot-notation key
-			if err := fb.BindPFlag(fullKey, fs.Lookup(flagName)); err != nil {
-				return fmt.Errorf("binding flag %s to key %s: %w", flagName, fullKey, err)
-			}
-		}
-	}
-	return nil
-}
-
-// configKeyToFlagName transforms a config key to a POSIX flag name.
-// Example: "server.host" -> "server-host".
-func configKeyToFlagName(key string) string {
-	return strings.ReplaceAll(key, ".", "-")
-}
-
-// registerTypedFlag registers a typed pflag based on ConfigFlag.Type.
-func registerTypedFlag(fs *pflag.FlagSet, flag ConfigFlag, name string) {
-	switch flag.Type {
-	case ConfigFlagTypeString:
-		def, _ := flag.Default.(string)
-		fs.String(name, def, flag.Description)
-	case ConfigFlagTypeInt:
-		def, _ := flag.Default.(int)
-		fs.Int(name, def, flag.Description)
-	case ConfigFlagTypeBool:
-		def, _ := flag.Default.(bool)
-		fs.Bool(name, def, flag.Description)
-	case ConfigFlagTypeDuration:
-		def, _ := flag.Default.(time.Duration)
-		fs.Duration(name, def, flag.Description)
-	case ConfigFlagTypeFloat:
-		def, _ := flag.Default.(float64)
-		fs.Float64(name, def, flag.Description)
-	default:
-		// Unknown type, treat as string
-		def, _ := flag.Default.(string)
-		fs.String(name, def, flag.Description)
-	}
+	return a.providerConfigIntakeModule().registerPFlags(cmd.PersistentFlags())
 }
