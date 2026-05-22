@@ -9,3 +9,9 @@ A lifecycle plan is the application runtime plan derived from the DI container's
 The lifecycle plan is distinct from lifecycle execution. Planning decides what should happen and in what order; execution starts, stops, rolls back, logs, and enforces context deadlines.
 
 The lifecycle plan also owns runtime participant classification for App-managed workers, cron jobs, and framework participants such as the event bus and scheduler. Worker supervision remains the worker manager's implementation concern; the lifecycle plan decides which workers the App runtime hands to that manager.
+
+### Configured module registration
+
+Configured module registration is the shared App-module pattern for wiring a module-owned configuration type into DI. The module owns its public adapter and flags, while the internal configured-module helper owns the repeated mechanics: start from defaults, overlay ProviderValues when available, apply the module's defaulting policy, and validate before exposing the config.
+
+This keeps package-level modules stable as public entry points while centralizing the registration rule that makes flags, config files, environment values, and DI providers agree on one typed config instance.

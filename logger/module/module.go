@@ -2,9 +2,8 @@
 package module
 
 import (
-	"fmt"
-
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 	"github.com/petabytecl/gaz/logger"
 )
 
@@ -29,26 +28,10 @@ func New() gaz.Module {
 
 	return gaz.NewModule("logger").
 		Flags(defaultCfg.Flags).
-		Provide(func(c *gaz.Container) error {
-			return gaz.For[logger.Config](c).Provider(func(c *gaz.Container) (logger.Config, error) {
-				cfg := defaultCfg
-
-				// Try to load from config manager if available
-				pv, pvErr := gaz.Resolve[*gaz.ProviderValues](c)
-				if pvErr == nil {
-					if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), &cfg); unmarshalErr != nil {
-						// Ignore error, use defaults (key may not exist)
-						_ = unmarshalErr
-					}
-				}
-
-				cfg.SetDefaults()
-				if validateErr := cfg.Validate(); validateErr != nil {
-					return cfg, fmt.Errorf("validate logger config: %w", validateErr)
-				}
-
-				return cfg, nil
-			})
-		}).
+		Provide(configuredmodule.ProvideDefaulted[logger.Config, *logger.Config](
+			&defaultCfg,
+			"logger config",
+			"validate logger config",
+		)).
 		Build()
 }

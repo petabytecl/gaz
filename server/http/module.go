@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 )
 
 // NewModule creates an HTTP module.
@@ -27,27 +28,11 @@ func NewModule() gaz.Module {
 
 	return gaz.NewModule("http").
 		Flags(defaultCfg.Flags).
-		Provide(func(c *gaz.Container) error {
-			// Register Config provider
-			return gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
-				// Start with the default configuration which has flags bound to it
-				cfg := defaultCfg
-
-				// Resolve ProviderValues to load config
-				if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
-					if unmarshalErr := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); unmarshalErr != nil {
-						// ignore error, use defaults
-						_ = unmarshalErr
-					}
-				}
-
-				if err := cfg.Validate(); err != nil {
-					return Config{}, fmt.Errorf("http config validate: %w", err)
-				}
-
-				return cfg, nil
-			})
-		}).
+		Provide(configuredmodule.ProvideValidated[Config, *Config](
+			&defaultCfg,
+			"http config",
+			"http config validate",
+		)).
 		Provide(func(c *gaz.Container) error {
 			// Register Server
 			return gaz.For[*Server](c).
