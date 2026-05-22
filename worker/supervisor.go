@@ -38,10 +38,12 @@ type supervisor struct {
 	lastPanicStack string
 
 	// Lifecycle
-	ctx    context.Context
-	cancel context.CancelFunc
-	done   chan struct{}
-	wg     sync.WaitGroup
+	ctx       context.Context
+	cancel    context.CancelFunc
+	started   chan struct{}
+	startOnce sync.Once
+	done      chan struct{}
+	wg        sync.WaitGroup
 
 	// Callback for critical worker failure
 	onCriticalFail func()
@@ -59,6 +61,7 @@ func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCritica
 			backoff.WithRandomizationFactor(defaultRandomizationFactor),
 		),
 		logger:         logger.With(slog.String("worker", w.Name())),
+		started:        make(chan struct{}),
 		done:           make(chan struct{}),
 		onCriticalFail: onCriticalFail,
 	}
@@ -87,6 +90,19 @@ func (s *supervisor) wait() <-chan struct{} {
 	return s.done
 }
 
+// waitStarted returns a channel that closes after the first OnStart attempt
+// completes, or after the supervisor exits before starting because its context
+// was already cancelled.
+func (s *supervisor) waitStarted() <-chan struct{} {
+	return s.started
+}
+
+func (s *supervisor) signalStarted() {
+	s.startOnce.Do(func() {
+		close(s.started)
+	})
+}
+
 // supervise is the main supervision loop. It runs the worker with panic recovery,
 // restarts on panic with exponential backoff, and trips the circuit breaker
 // after too many failures.
@@ -98,6 +114,7 @@ func (s *supervisor) supervise() {
 		// Check if context is cancelled before starting
 		select {
 		case <-s.ctx.Done():
+			s.signalStarted()
 			s.logger.Info("supervisor stopping", slog.String("reason", "context cancelled"))
 			return
 		default:
@@ -173,8 +190,18 @@ func (s *supervisor) supervise() {
 // runWithRecovery runs the worker and recovers from any panic.
 // Returns true if the worker panicked or failed to start, false if it exited normally.
 func (s *supervisor) runWithRecovery() (panicked bool) {
+	started := false
+	signalStarted := func() {
+		if started {
+			return
+		}
+		started = true
+		s.signalStarted()
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
+			signalStarted()
 			stack := debug.Stack()
 			s.logger.Error("worker panicked",
 				slog.Any("panic", r),
@@ -188,6 +215,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 
 	s.logger.Info("worker OnStart")
 	if err := s.worker.OnStart(s.ctx); err != nil {
+		signalStarted()
 		s.logger.Error("worker failed to start", slog.Any("error", err))
 		s.lastError = err
 
@@ -204,6 +232,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 		panicked = true
 		return panicked
 	}
+	signalStarted()
 
 	// Wait for context cancellation (shutdown signal)
 	<-s.ctx.Done()

@@ -66,6 +66,38 @@ func (w *simpleWorker) getStopCount() int {
 	return int(atomic.LoadInt32(&w.stopCount))
 }
 
+type blockingStartWorker struct {
+	name    string
+	entered chan struct{}
+	release chan struct{}
+}
+
+func newBlockingStartWorker(name string) *blockingStartWorker {
+	return &blockingStartWorker{
+		name:    name,
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+}
+
+func (w *blockingStartWorker) OnStart(ctx context.Context) error {
+	close(w.entered)
+	select {
+	case <-w.release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (w *blockingStartWorker) OnStop(context.Context) error {
+	return nil
+}
+
+func (w *blockingStartWorker) Name() string {
+	return w.name
+}
+
 func TestManager_RegisterAndStart(t *testing.T) {
 	logger := slog.Default()
 	mgr := NewManager(logger)
@@ -248,6 +280,46 @@ func TestManager_DoubleStart(t *testing.T) {
 	assert.Equal(t, 1, worker.getStartCount())
 
 	_ = mgr.Stop(ctx)
+}
+
+func TestManagerStartWaitsForInitialOnStart(t *testing.T) {
+	logger := slog.Default()
+	mgr := NewManager(logger)
+
+	worker := newBlockingStartWorker("blocking-start-worker")
+	require.NoError(t, mgr.Register(worker))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	startErr := make(chan error, 1)
+	go func() {
+		startErr <- mgr.Start(ctx)
+	}()
+
+	select {
+	case <-worker.entered:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not enter OnStart")
+	}
+
+	select {
+	case err := <-startErr:
+		close(worker.release)
+		t.Fatalf("Start returned before OnStart completed: %v", err)
+	default:
+	}
+
+	close(worker.release)
+
+	select {
+	case err := <-startErr:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("Start did not return after OnStart completed")
+	}
+
+	require.NoError(t, mgr.Stop(context.Background()))
 }
 
 func TestManager_RegisterWhileRunning(t *testing.T) {

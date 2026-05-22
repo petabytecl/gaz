@@ -103,7 +103,7 @@ func (m *Manager) Register(w Worker, opts ...WorkerOption) error {
 }
 
 // Start begins all registered workers concurrently.
-// It returns immediately after spawning supervisor goroutines.
+// It returns after every supervisor has completed its first OnStart attempt.
 // The context controls the lifetime of all workers.
 func (m *Manager) Start(ctx context.Context) error {
 	m.mu.Lock()
@@ -134,6 +134,18 @@ func (m *Manager) Start(ctx context.Context) error {
 		m.wg.Wait()
 		close(m.done)
 	}()
+
+	for _, sup := range m.supervisors {
+		select {
+		case <-sup.waitStarted():
+		case <-ctx.Done():
+			if m.cancel != nil {
+				m.cancel()
+			}
+			m.running = false
+			return fmt.Errorf("worker manager start: %w", ctx.Err())
+		}
+	}
 
 	return nil
 }

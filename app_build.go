@@ -136,6 +136,9 @@ func (a *App) discoverWorkers() {
 		}
 
 		if w, ok := instance.(worker.Worker); ok {
+			if a.eventBus != nil && instance == a.eventBus {
+				return
+			}
 			// Register with default options
 			// Providers can customize via WithWorkerOptions in future
 			if regErr := a.workerMgr.Register(w); regErr != nil {
