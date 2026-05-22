@@ -227,7 +227,12 @@ func (p *lifecyclePlan) registerWorkers(
 		}
 
 		if regErr := workerMgr.Register(w); regErr != nil {
-			errs = append(errs, fmt.Errorf("registering worker %s: %w", w.Name(), regErr))
+			errs = append(errs, fmt.Errorf(
+				"registering worker participant %s (worker %s): %w",
+				participant.serviceName,
+				w.Name(),
+				regErr,
+			))
 		}
 	}
 
@@ -291,7 +296,12 @@ func (p *lifecyclePlan) registerCronJobs(
 			job.Schedule(),
 			job.Timeout(),
 		); regErr != nil {
-			errs = append(errs, fmt.Errorf("registering cron job %s: %w", job.Name(), regErr))
+			errs = append(errs, fmt.Errorf(
+				"registering cron job participant %s (job %s): %w",
+				participant.serviceName,
+				job.Name(),
+				regErr,
+			))
 		}
 	}
 

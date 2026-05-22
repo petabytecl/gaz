@@ -705,7 +705,7 @@ func (s *AppTestSuite) TestDiscoverCronJobs_InvalidSchedule() {
 	// Invalid schedules fail Build so broken cron jobs are not silently dropped.
 	buildErr := app.Build()
 	s.Require().Error(buildErr)
-	s.Contains(buildErr.Error(), "registering cron job invalid-job")
+	s.Contains(buildErr.Error(), "registering cron job participant invalid-job (job invalid-job)")
 	s.Contains(buildErr.Error(), "invalid schedule")
 }
 

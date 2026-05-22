@@ -3,6 +3,8 @@ package gaz
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -378,8 +380,35 @@ func TestAppBuildFailsWhenCronScheduleIsInvalid(t *testing.T) {
 
 	err := app.Build()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "registering cron job invalid-cron-job")
+	assert.Contains(t, err.Error(), "registering cron job participant invalid-cron (job invalid-cron-job)")
 	assert.Contains(t, err.Error(), "invalid schedule")
+}
+
+func TestRegisterWorkersErrorIncludesServiceAndWorkerNames(t *testing.T) {
+	c := NewContainer()
+	require.NoError(t, For[*lifecyclePlanWorker](c).Named("worker-binding").
+		Instance(&lifecyclePlanWorker{name: "runtime-worker"}))
+
+	mgr := worker.NewManager(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	require.NoError(t, mgr.Start(context.Background()))
+	t.Cleanup(func() {
+		require.NoError(t, mgr.Stop(context.Background()))
+	})
+
+	plan := &lifecyclePlan{
+		workerParticipants: []lifecycleWorkerParticipant{{
+			serviceName: "worker-binding",
+		}},
+	}
+
+	errs := plan.registerWorkers(c, mgr)
+	require.Len(t, errs, 1)
+	assert.ErrorIs(t, errs[0], worker.ErrManagerAlreadyRunning)
+	assert.Contains(
+		t,
+		errs[0].Error(),
+		"registering worker participant worker-binding (worker runtime-worker)",
+	)
 }
 
 func flattenLifecycleOrder(order [][]string) []string {
