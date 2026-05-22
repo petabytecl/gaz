@@ -3,7 +3,6 @@ package gaz
 import (
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
@@ -16,19 +15,45 @@ type lifecyclePlan struct {
 	services           map[string]di.ServiceWrapper
 	startupOrder       [][]string
 	shutdownOrder      [][]string
-	workerParticipants []worker.Worker
+	workerParticipants []lifecycleWorkerParticipant
 	cronJobs           []lifecycleCronJob
+}
+
+type lifecycleWorkerParticipant struct {
+	serviceName string
 }
 
 type lifecycleCronJob struct {
 	serviceName string
-	jobName     string
-	schedule    string
-	timeout     time.Duration
 	transient   bool
 }
 
 const runtimeParticipantErrorCapacity = 2
+
+func (a *App) lifecyclePlan() (*lifecyclePlan, error) {
+	a.mu.Lock()
+	plan := a.cachedLifecyclePlan
+	a.mu.Unlock()
+	if plan != nil {
+		return plan, nil
+	}
+
+	planned, err := newLifecyclePlan(a.container)
+	if err != nil {
+		return nil, err
+	}
+
+	a.mu.Lock()
+	if a.cachedLifecyclePlan == nil {
+		a.cachedLifecyclePlan = planned
+		plan = planned
+	} else {
+		plan = a.cachedLifecyclePlan
+	}
+	a.mu.Unlock()
+
+	return plan, nil
+}
 
 func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
 	services, err := collectLifecyclePlanServices(container, true)
@@ -41,19 +66,15 @@ func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
 		return nil, err
 	}
 
-	return &lifecyclePlan{
-		services:      services,
-		startupOrder:  startupOrder,
-		shutdownOrder: ComputeShutdownOrder(startupOrder),
-	}, nil
-}
-
-func newRuntimeParticipantPlan(container *Container) *lifecyclePlan {
 	workerParticipants, cronJobs := collectRuntimeParticipants(container)
+
 	return &lifecyclePlan{
+		services:           services,
+		startupOrder:       startupOrder,
+		shutdownOrder:      ComputeShutdownOrder(startupOrder),
 		workerParticipants: workerParticipants,
 		cronJobs:           cronJobs,
-	}
+	}, nil
 }
 
 func collectLifecyclePlanServices(
@@ -87,8 +108,8 @@ func collectLifecyclePlanServices(
 	return services, resolveErr
 }
 
-func collectRuntimeParticipants(container *Container) ([]worker.Worker, []lifecycleCronJob) {
-	var workerParticipants []worker.Worker
+func collectRuntimeParticipants(container *Container) ([]lifecycleWorkerParticipant, []lifecycleCronJob) {
+	var workerParticipants []lifecycleWorkerParticipant
 	var cronJobs []lifecycleCronJob
 
 	container.ForEachService(func(name string, svc di.ServiceWrapper) {
@@ -96,11 +117,13 @@ func collectRuntimeParticipants(container *Container) ([]worker.Worker, []lifecy
 			if isFrameworkEventBus(svc) {
 				return
 			}
-			workerParticipants = appendWorkerParticipant(container, name, workerParticipants)
+			workerParticipants = append(workerParticipants, lifecycleWorkerParticipant{
+				serviceName: name,
+			})
 			return
 		}
 
-		cronJobs = appendCronJobParticipant(container, name, svc, cronJobs)
+		cronJobs = appendCronJobParticipant(name, svc, cronJobs)
 	})
 
 	return workerParticipants, cronJobs
@@ -125,23 +148,7 @@ func isCronJobParticipant(svc di.ServiceWrapper) bool {
 	return st != nil && st.Implements(cronJobType)
 }
 
-func appendWorkerParticipant(
-	container *Container,
-	name string,
-	participants []worker.Worker,
-) []worker.Worker {
-	instance, err := container.ResolveByName(name, nil)
-	if err != nil {
-		return participants
-	}
-	if w, ok := instance.(worker.Worker); ok {
-		return append(participants, w)
-	}
-	return participants
-}
-
 func appendCronJobParticipant(
-	container *Container,
 	name string,
 	svc di.ServiceWrapper,
 	jobs []lifecycleCronJob,
@@ -150,26 +157,14 @@ func appendCronJobParticipant(
 		return jobs
 	}
 
-	instance, err := container.ResolveByName(name, nil)
-	if err != nil {
-		return jobs
-	}
-
-	job, ok := instance.(cron.CronJob)
-	if !ok {
-		return jobs
-	}
-
 	return append(jobs, lifecycleCronJob{
 		serviceName: name,
-		jobName:     job.Name(),
-		schedule:    job.Schedule(),
-		timeout:     job.Timeout(),
 		transient:   svc.IsTransient(),
 	})
 }
 
 func (p *lifecyclePlan) registerRuntimeParticipants(
+	container *Container,
 	workerMgr *worker.Manager,
 	eventBus worker.Worker,
 	scheduler *cron.Scheduler,
@@ -180,19 +175,33 @@ func (p *lifecyclePlan) registerRuntimeParticipants(
 	}
 
 	errs := make([]error, 0, runtimeParticipantErrorCapacity)
-	p.registerWorkers(workerMgr, log)
+	p.registerWorkers(container, workerMgr, log)
 	errs = append(errs, p.registerEventBus(workerMgr, eventBus)...)
-	p.registerCronJobs(scheduler, log)
+	p.registerCronJobs(container, scheduler, log)
 	errs = append(errs, p.registerScheduler(workerMgr, scheduler)...)
 	return errs
 }
 
-func (p *lifecyclePlan) registerWorkers(workerMgr *worker.Manager, log *slog.Logger) {
+func (p *lifecyclePlan) registerWorkers(
+	container *Container,
+	workerMgr *worker.Manager,
+	log *slog.Logger,
+) {
 	if workerMgr == nil {
 		return
 	}
 
-	for _, w := range p.workerParticipants {
+	for _, participant := range p.workerParticipants {
+		instance, err := container.ResolveByName(participant.serviceName, nil)
+		if err != nil {
+			continue
+		}
+
+		w, ok := instance.(worker.Worker)
+		if !ok {
+			continue
+		}
+
 		if regErr := workerMgr.Register(w); regErr != nil {
 			log.Warn("failed to register worker",
 				"name", w.Name(),
@@ -216,26 +225,40 @@ func (p *lifecyclePlan) registerEventBus(
 	return nil
 }
 
-func (p *lifecyclePlan) registerCronJobs(scheduler *cron.Scheduler, log *slog.Logger) {
+func (p *lifecyclePlan) registerCronJobs(
+	container *Container,
+	scheduler *cron.Scheduler,
+	log *slog.Logger,
+) {
 	if scheduler == nil {
 		return
 	}
 
-	for _, job := range p.cronJobs {
-		if !job.transient {
+	for _, participant := range p.cronJobs {
+		instance, err := container.ResolveByName(participant.serviceName, nil)
+		if err != nil {
+			continue
+		}
+
+		job, ok := instance.(cron.CronJob)
+		if !ok {
+			continue
+		}
+
+		if !participant.transient {
 			log.Warn("CronJob should be transient",
-				"name", job.serviceName,
+				"name", participant.serviceName,
 			)
 		}
 
 		if regErr := scheduler.RegisterJob(
-			job.serviceName,
-			job.jobName,
-			job.schedule,
-			job.timeout,
+			participant.serviceName,
+			job.Name(),
+			job.Schedule(),
+			job.Timeout(),
 		); regErr != nil {
 			log.Warn("failed to register cron job",
-				"name", job.jobName,
+				"name", job.Name(),
 				"error", regErr,
 			)
 		}

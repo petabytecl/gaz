@@ -63,19 +63,11 @@ func (a *App) doStop(ctx context.Context) error {
 		}
 	}()
 
-	// Use cached lifecycle plan from startServices if available,
-	// fallback to planning now if Stop is called without Run/Start.
-	a.mu.Lock()
-	plan := a.cachedLifecyclePlan
-	a.mu.Unlock()
-	if plan == nil {
-		var err error
-		plan, err = newLifecyclePlan(a.container)
-		if err != nil {
-			close(done)
-			// Should not happen if Build passed, unless graph changed (impossible after Build)
-			return err
-		}
+	plan, err := a.lifecyclePlan()
+	if err != nil {
+		close(done)
+		// Should not happen if Build passed, unless graph changed (impossible after Build)
+		return err
 	}
 
 	var errs []error

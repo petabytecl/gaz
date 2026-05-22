@@ -198,8 +198,18 @@ func (a *App) Build() error {
 	}
 
 	if len(errs) == 0 {
-		plan := newRuntimeParticipantPlan(a.container)
+		plan, planErr := newLifecyclePlan(a.container)
+		if planErr != nil {
+			errs = append(errs, planErr)
+		} else {
+			a.cachedLifecyclePlan = plan
+		}
+	}
+
+	if len(errs) == 0 {
+		plan := a.cachedLifecyclePlan
 		errs = append(errs, plan.registerRuntimeParticipants(
+			a.container,
 			a.workerMgr,
 			a.eventBus,
 			a.scheduler,
