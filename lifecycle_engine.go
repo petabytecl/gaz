@@ -16,6 +16,8 @@ func ComputeStartupOrder(
 	graph map[string][]string,
 	services map[string]di.ServiceWrapper,
 ) ([][]string, error) {
+	graph = projectGraphOntoServices(graph, services)
+
 	// 1. Build reverse graph (dependency -> dependents) and pending counts (dependent -> count)
 	reverseGraph := make(map[string][]string)
 	pendingCounts := make(map[string]int)
@@ -98,6 +100,46 @@ func ComputeStartupOrder(
 	}
 
 	return filteredOrder, nil
+}
+
+func projectGraphOntoServices(
+	graph map[string][]string,
+	services map[string]di.ServiceWrapper,
+) map[string][]string {
+	projected := make(map[string][]string, len(services))
+	for name := range services {
+		deps := make(map[string]struct{})
+		collectProjectedDeps(name, graph, services, deps, make(map[string]struct{}))
+
+		projected[name] = make([]string, 0, len(deps))
+		for dep := range deps {
+			projected[name] = append(projected[name], dep)
+		}
+		sort.Strings(projected[name])
+	}
+
+	return projected
+}
+
+func collectProjectedDeps(
+	node string,
+	graph map[string][]string,
+	services map[string]di.ServiceWrapper,
+	deps map[string]struct{},
+	visited map[string]struct{},
+) {
+	for _, dep := range graph[node] {
+		if _, exists := services[dep]; exists {
+			deps[dep] = struct{}{}
+			continue
+		}
+
+		if _, seen := visited[dep]; seen {
+			continue
+		}
+		visited[dep] = struct{}{}
+		collectProjectedDeps(dep, graph, services, deps, visited)
+	}
 }
 
 // ComputeShutdownOrder reverses the startup order for safe shutdown.
