@@ -31,10 +31,7 @@ type lifecycleCronJob struct {
 const runtimeParticipantErrorCapacity = 2
 
 func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
-	services, workerParticipants, cronJobs, err := collectLifecyclePlanParticipants(
-		container,
-		true,
-	)
+	services, err := collectLifecyclePlanServices(container, true)
 	if err != nil {
 		return nil, err
 	}
@@ -45,29 +42,25 @@ func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
 	}
 
 	return &lifecyclePlan{
-		services:           services,
-		startupOrder:       startupOrder,
-		shutdownOrder:      ComputeShutdownOrder(startupOrder),
-		workerParticipants: workerParticipants,
-		cronJobs:           cronJobs,
+		services:      services,
+		startupOrder:  startupOrder,
+		shutdownOrder: ComputeShutdownOrder(startupOrder),
 	}, nil
 }
 
 func newRuntimeParticipantPlan(container *Container) *lifecyclePlan {
-	_, workerParticipants, cronJobs, _ := collectLifecyclePlanParticipants(container, false)
+	workerParticipants, cronJobs := collectRuntimeParticipants(container)
 	return &lifecyclePlan{
 		workerParticipants: workerParticipants,
 		cronJobs:           cronJobs,
 	}
 }
 
-func collectLifecyclePlanParticipants(
+func collectLifecyclePlanServices(
 	container *Container,
 	resolveLifecycle bool,
-) (map[string]di.ServiceWrapper, []worker.Worker, []lifecycleCronJob, error) {
+) (map[string]di.ServiceWrapper, error) {
 	services := make(map[string]di.ServiceWrapper)
-	var workerParticipants []worker.Worker
-	var cronJobs []lifecycleCronJob
 	var resolveErr error
 
 	container.ForEachService(func(name string, svc di.ServiceWrapper) {
@@ -75,19 +68,13 @@ func collectLifecyclePlanParticipants(
 			return
 		}
 		if svc.IsTransient() {
-			cronJobs = appendCronJobParticipant(container, name, svc, cronJobs)
 			return
 		}
 
-		if isWorkerParticipant(svc) {
-			if isFrameworkEventBus(svc) {
-				return
-			}
-			workerParticipants = appendWorkerParticipant(container, name, workerParticipants)
+		if isWorkerParticipant(svc) || isCronJobParticipant(svc) {
 			return
 		}
 
-		cronJobs = appendCronJobParticipant(container, name, svc, cronJobs)
 		if resolveLifecycle && svc.HasLifecycle() {
 			if _, err := container.ResolveByName(name, nil); err != nil {
 				resolveErr = fmt.Errorf("lifecycle plan resolving %s: %w", name, err)
@@ -97,7 +84,26 @@ func collectLifecyclePlanParticipants(
 		services[name] = svc
 	})
 
-	return services, workerParticipants, cronJobs, resolveErr
+	return services, resolveErr
+}
+
+func collectRuntimeParticipants(container *Container) ([]worker.Worker, []lifecycleCronJob) {
+	var workerParticipants []worker.Worker
+	var cronJobs []lifecycleCronJob
+
+	container.ForEachService(func(name string, svc di.ServiceWrapper) {
+		if isWorkerParticipant(svc) {
+			if isFrameworkEventBus(svc) {
+				return
+			}
+			workerParticipants = appendWorkerParticipant(container, name, workerParticipants)
+			return
+		}
+
+		cronJobs = appendCronJobParticipant(container, name, svc, cronJobs)
+	})
+
+	return workerParticipants, cronJobs
 }
 
 func isWorkerParticipant(svc di.ServiceWrapper) bool {
@@ -108,6 +114,15 @@ func isWorkerParticipant(svc di.ServiceWrapper) bool {
 func isFrameworkEventBus(svc di.ServiceWrapper) bool {
 	st := svc.ServiceType()
 	return st == eventBusType
+}
+
+func isCronJobParticipant(svc di.ServiceWrapper) bool {
+	if svc.TypeName() != di.TypeName[cron.CronJob]() {
+		return false
+	}
+
+	st := svc.ServiceType()
+	return st != nil && st.Implements(cronJobType)
 }
 
 func appendWorkerParticipant(
@@ -131,12 +146,7 @@ func appendCronJobParticipant(
 	svc di.ServiceWrapper,
 	jobs []lifecycleCronJob,
 ) []lifecycleCronJob {
-	if svc.TypeName() != di.TypeName[cron.CronJob]() {
-		return jobs
-	}
-
-	st := svc.ServiceType()
-	if st == nil || !st.Implements(cronJobType) {
+	if !isCronJobParticipant(svc) {
 		return jobs
 	}
 

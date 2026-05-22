@@ -48,6 +48,8 @@ func (j *lifecyclePlanCronJob) Run(context.Context) error { return nil }
 
 type lifecyclePlanLazyPlain struct{}
 
+type lifecyclePlanRuntimeHelper struct{}
+
 func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	c := NewContainer()
 
@@ -104,13 +106,14 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	assert.NotContains(t, flattened, "worker")
 	assert.NotContains(t, flattened, "cron-job")
 
-	require.Len(t, plan.workerParticipants, 1)
-	assert.Equal(t, "worker", plan.workerParticipants[0].Name())
+	runtimePlan := newRuntimeParticipantPlan(c)
+	require.Len(t, runtimePlan.workerParticipants, 1)
+	assert.Equal(t, "worker", runtimePlan.workerParticipants[0].Name())
 
-	require.Len(t, plan.cronJobs, 1)
-	assert.Equal(t, "cron-job", plan.cronJobs[0].serviceName)
-	assert.Equal(t, "cron-job", plan.cronJobs[0].jobName)
-	assert.True(t, plan.cronJobs[0].transient)
+	require.Len(t, runtimePlan.cronJobs, 1)
+	assert.Equal(t, "cron-job", runtimePlan.cronJobs[0].serviceName)
+	assert.Equal(t, "cron-job", runtimePlan.cronJobs[0].jobName)
+	assert.True(t, runtimePlan.cronJobs[0].transient)
 }
 
 func TestLifecyclePlanDoesNotResolvePlainServicesDuringPlanning(t *testing.T) {
@@ -131,6 +134,49 @@ func TestLifecyclePlanDoesNotResolvePlainServicesDuringPlanning(t *testing.T) {
 	assert.Zero(t, resolutions.Load())
 	assert.Contains(t, plan.services, "lazy-plain")
 	assert.Empty(t, plan.startupOrder)
+}
+
+func TestLifecyclePlanDoesNotResolveRuntimeParticipantsDuringPlanning(t *testing.T) {
+	c := NewContainer()
+	var workerResolutions atomic.Int32
+	var cronResolutions atomic.Int32
+
+	require.NoError(t, For[*lifecyclePlanRuntimeHelper](c).Named("runtime-helper").
+		ProviderFunc(func(*Container) *lifecyclePlanRuntimeHelper {
+			return &lifecyclePlanRuntimeHelper{}
+		}))
+
+	require.NoError(t, For[*lifecyclePlanWorker](c).Named("worker").
+		Provider(func(c *Container) (*lifecyclePlanWorker, error) {
+			workerResolutions.Add(1)
+			_, err := Resolve[*lifecyclePlanRuntimeHelper](c, Named("runtime-helper"))
+			if err != nil {
+				return nil, err
+			}
+			return &lifecyclePlanWorker{name: "worker"}, nil
+		}))
+
+	require.NoError(t, For[cron.CronJob](c).Named("cron-job").Transient().
+		ProviderFunc(func(*Container) cron.CronJob {
+			cronResolutions.Add(1)
+			return &lifecyclePlanCronJob{}
+		}))
+
+	require.NoError(t, c.Build())
+
+	plan, err := newLifecyclePlan(c)
+	require.NoError(t, err)
+
+	assert.Zero(t, workerResolutions.Load())
+	assert.Zero(t, cronResolutions.Load())
+	assert.NotContains(t, plan.services, "worker")
+	assert.NotContains(t, plan.services, "cron-job")
+
+	runtimePlan := newRuntimeParticipantPlan(c)
+	require.Len(t, runtimePlan.workerParticipants, 1)
+	require.Len(t, runtimePlan.cronJobs, 1)
+	assert.Equal(t, int32(1), workerResolutions.Load())
+	assert.Equal(t, int32(1), cronResolutions.Load())
 }
 
 func flattenLifecycleOrder(order [][]string) []string {

@@ -108,6 +108,43 @@ func (s *LifecycleEngineSuite) TestComputeStartupOrder_FilterNoLifecycle() {
 	s.Equal([]string{"A"}, order[1])
 }
 
+func (s *LifecycleEngineSuite) TestComputeStartupOrder_IgnoresExcludedGraphCycles() {
+	graph := map[string][]string{
+		"A":      {},
+		"worker": {"transient"},
+		"cron":   {"worker"},
+		"helper": {"cron"},
+		"transient": {
+			"helper",
+		},
+	}
+
+	services := map[string]di.ServiceWrapper{
+		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
+	}
+
+	order, err := ComputeStartupOrder(graph, services)
+	s.Require().NoError(err)
+	s.Equal([][]string{{"A"}}, order)
+}
+
+func (s *LifecycleEngineSuite) TestComputeStartupOrder_PreservesDepsThroughExcludedNodes() {
+	graph := map[string][]string{
+		"A":         {"transient"},
+		"transient": {"C"},
+		"C":         {},
+	}
+
+	services := map[string]di.ServiceWrapper{
+		"A": &mockServiceWrapper{nameVal: "A", hasLifecycleVal: true},
+		"C": &mockServiceWrapper{nameVal: "C", hasLifecycleVal: true},
+	}
+
+	order, err := ComputeStartupOrder(graph, services)
+	s.Require().NoError(err)
+	s.Equal([][]string{{"C"}, {"A"}}, order)
+}
+
 func (s *LifecycleEngineSuite) TestComputeShutdownOrder() {
 	startupOrder := [][]string{
 		{"C"},
