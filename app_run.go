@@ -9,9 +9,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/petabytecl/gaz/di"
-	"github.com/petabytecl/gaz/worker"
 )
 
 // Run executes the application lifecycle.
@@ -43,49 +40,28 @@ func (a *App) Run(ctx context.Context) error {
 	return a.waitForShutdownSignal(ctx)
 }
 
-// collectNonWorkerServices returns all non-transient services that are not workers.
-// Workers have their own lifecycle via WorkerManager and should not be started/stopped
-// by the DI layer directly.
-func (a *App) collectNonWorkerServices() map[string]di.ServiceWrapper {
-	services := make(map[string]di.ServiceWrapper)
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		if !svc.IsTransient() {
-			if instance, err := a.container.ResolveByName(name, nil); err == nil {
-				if _, isWorker := instance.(worker.Worker); isWorker {
-					return
-				}
-			}
-		}
-		services[name] = svc
-	})
-	return services
-}
-
 // startServices computes the startup order from the dependency graph, starts services
 // layer by layer in parallel, and then starts the worker manager. On failure at any
 // stage it rolls back by stopping already-started services.
 func (a *App) startServices(ctx context.Context) error {
-	services := a.collectNonWorkerServices()
-
-	a.mu.Lock()
-	a.cachedNonWorkerServices = services
-	a.mu.Unlock()
-
-	graph := a.container.GetGraph()
-	startupOrder, err := ComputeStartupOrder(graph, services)
+	plan, err := newLifecyclePlan(a.container)
 	if err != nil {
 		return err
 	}
 
-	a.Logger.InfoContext(ctx, "starting application", "services_count", len(services))
+	a.mu.Lock()
+	a.cachedLifecyclePlan = plan
+	a.mu.Unlock()
+
+	a.Logger.InfoContext(ctx, "starting application", "services_count", len(plan.services))
 
 	// Start services layer by layer
-	for _, layer := range startupOrder {
+	for _, layer := range plan.startupOrder {
 		var wg sync.WaitGroup
 		errCh := make(chan error, len(layer))
 
 		for _, name := range layer {
-			svc := services[name]
+			svc := plan.services[name]
 			wg.Add(1)
 			go func() {
 				defer wg.Done()

@@ -17,7 +17,6 @@ import (
 	"github.com/petabytecl/gaz/config"
 	cfgviper "github.com/petabytecl/gaz/config/viper"
 	"github.com/petabytecl/gaz/cron"
-	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
@@ -136,9 +135,9 @@ type App struct {
 	// EventBus for pub/sub - nil until Build() is called
 	eventBus *eventbus.EventBus
 
-	// cachedNonWorkerServices stores the service set computed during startServices,
+	// cachedLifecyclePlan stores the plan computed during startServices,
 	// reused by doStop to avoid re-walking the container during shutdown.
-	cachedNonWorkerServices map[string]di.ServiceWrapper
+	cachedLifecyclePlan *lifecyclePlan
 
 	mu      sync.Mutex
 	running bool

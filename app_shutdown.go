@@ -63,25 +63,20 @@ func (a *App) doStop(ctx context.Context) error {
 		}
 	}()
 
-	// Use cached service set from startServices if available,
-	// fallback to re-walking the container if Stop is called without Run/Start.
+	// Use cached lifecycle plan from startServices if available,
+	// fallback to planning now if Stop is called without Run/Start.
 	a.mu.Lock()
-	services := a.cachedNonWorkerServices
+	plan := a.cachedLifecyclePlan
 	a.mu.Unlock()
-	if services == nil {
-		services = a.collectNonWorkerServices()
+	if plan == nil {
+		var err error
+		plan, err = newLifecyclePlan(a.container)
+		if err != nil {
+			close(done)
+			// Should not happen if Build passed, unless graph changed (impossible after Build)
+			return err
+		}
 	}
-
-	// Compute shutdown order (reverse of startup)
-	graph := a.container.GetGraph()
-
-	startupOrder, err := ComputeStartupOrder(graph, services)
-	if err != nil {
-		close(done)
-		// Should not happen if Build passed, unless graph changed (impossible after Build)
-		return err
-	}
-	shutdownOrder := ComputeShutdownOrder(startupOrder)
 
 	var errs []error
 
@@ -96,7 +91,7 @@ func (a *App) doStop(ctx context.Context) error {
 		}
 	}
 
-	if serviceStopErr := a.stopServices(ctx, shutdownOrder, services); serviceStopErr != nil {
+	if serviceStopErr := a.stopServices(ctx, plan.shutdownOrder, plan.services); serviceStopErr != nil {
 		errs = append(errs, serviceStopErr)
 	}
 
