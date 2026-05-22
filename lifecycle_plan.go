@@ -189,9 +189,9 @@ func (p *lifecyclePlan) registerRuntimeParticipants(
 	}
 
 	errs := make([]error, 0, runtimeParticipantErrorCapacity)
-	p.registerWorkers(container, workerMgr, log)
+	errs = append(errs, p.registerWorkers(container, workerMgr)...)
 	errs = append(errs, p.registerEventBus(workerMgr, eventBus)...)
-	p.registerCronJobs(container, scheduler, log)
+	errs = append(errs, p.registerCronJobs(container, scheduler, log)...)
 	errs = append(errs, p.registerScheduler(workerMgr, scheduler)...)
 	return errs
 }
@@ -199,30 +199,39 @@ func (p *lifecyclePlan) registerRuntimeParticipants(
 func (p *lifecyclePlan) registerWorkers(
 	container *Container,
 	workerMgr *worker.Manager,
-	log *slog.Logger,
-) {
+) []error {
 	if workerMgr == nil {
-		return
+		return nil
 	}
 
+	errs := make([]error, 0, len(p.workerParticipants))
 	for _, participant := range p.workerParticipants {
 		instance, err := container.ResolveByName(participant.serviceName, nil)
 		if err != nil {
+			errs = append(errs, fmt.Errorf(
+				"registering worker participant %s: resolve: %w",
+				participant.serviceName,
+				err,
+			))
 			continue
 		}
 
 		w, ok := instance.(worker.Worker)
 		if !ok {
+			errs = append(errs, fmt.Errorf(
+				"registering worker participant %s: resolved %T does not implement worker.Worker",
+				participant.serviceName,
+				instance,
+			))
 			continue
 		}
 
 		if regErr := workerMgr.Register(w); regErr != nil {
-			log.Warn("failed to register worker",
-				"name", w.Name(),
-				"error", regErr,
-			)
+			errs = append(errs, fmt.Errorf("registering worker %s: %w", w.Name(), regErr))
 		}
 	}
+
+	return errs
 }
 
 func (p *lifecyclePlan) registerEventBus(
@@ -243,19 +252,30 @@ func (p *lifecyclePlan) registerCronJobs(
 	container *Container,
 	scheduler *cron.Scheduler,
 	log *slog.Logger,
-) {
+) []error {
 	if scheduler == nil {
-		return
+		return nil
 	}
 
+	errs := make([]error, 0, len(p.cronJobs))
 	for _, participant := range p.cronJobs {
 		instance, err := container.ResolveByName(participant.serviceName, nil)
 		if err != nil {
+			errs = append(errs, fmt.Errorf(
+				"registering cron job participant %s: resolve: %w",
+				participant.serviceName,
+				err,
+			))
 			continue
 		}
 
 		job, ok := instance.(cron.CronJob)
 		if !ok {
+			errs = append(errs, fmt.Errorf(
+				"registering cron job participant %s: resolved %T does not implement cron.CronJob",
+				participant.serviceName,
+				instance,
+			))
 			continue
 		}
 
@@ -271,12 +291,11 @@ func (p *lifecyclePlan) registerCronJobs(
 			job.Schedule(),
 			job.Timeout(),
 		); regErr != nil {
-			log.Warn("failed to register cron job",
-				"name", job.Name(),
-				"error", regErr,
-			)
+			errs = append(errs, fmt.Errorf("registering cron job %s: %w", job.Name(), regErr))
 		}
 	}
+
+	return errs
 }
 
 func (p *lifecyclePlan) registerScheduler(

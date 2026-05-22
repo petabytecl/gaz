@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/petabytecl/gaz/cron"
+	"github.com/petabytecl/gaz/worker"
 )
 
 type lifecyclePlanDependency struct{}
@@ -46,6 +48,13 @@ func (j *lifecyclePlanCronJob) Name() string              { return "cron-job" }
 func (j *lifecyclePlanCronJob) Schedule() string          { return "@every 1m" }
 func (j *lifecyclePlanCronJob) Timeout() time.Duration    { return time.Second }
 func (j *lifecyclePlanCronJob) Run(context.Context) error { return nil }
+
+type lifecyclePlanInvalidCronJob struct{}
+
+func (j *lifecyclePlanInvalidCronJob) Name() string              { return "invalid-cron-job" }
+func (j *lifecyclePlanInvalidCronJob) Schedule() string          { return "not-a-schedule" }
+func (j *lifecyclePlanInvalidCronJob) Timeout() time.Duration    { return time.Second }
+func (j *lifecyclePlanInvalidCronJob) Run(context.Context) error { return nil }
 
 type lifecyclePlanLazyPlain struct{}
 
@@ -293,6 +302,84 @@ func TestAppBuildDoesNotResolveLifecycleServices(t *testing.T) {
 	assert.Equal(t, []string{"z-dependency", "a-dependent"}, started)
 
 	require.NoError(t, app.Stop(context.Background()))
+}
+
+func TestAppBuildFailsWhenWorkerParticipantCannotResolve(t *testing.T) {
+	app := New()
+	workerErr := errors.New("worker provider failed")
+
+	require.NoError(t, For[*lifecyclePlanWorker](app.Container()).Named("broken-worker").
+		Provider(func(*Container) (*lifecyclePlanWorker, error) {
+			return nil, workerErr
+		}))
+
+	err := app.Build()
+	require.Error(t, err)
+	assert.ErrorIs(t, err, workerErr)
+	assert.Contains(t, err.Error(), "registering worker participant broken-worker: resolve")
+}
+
+func TestAppBuildFailsWhenWorkerParticipantResolvesWrongType(t *testing.T) {
+	app := New()
+
+	require.NoError(t, For[worker.Worker](app.Container()).Named("nil-worker").
+		ProviderFunc(func(*Container) worker.Worker {
+			return nil
+		}))
+
+	err := app.Build()
+	require.Error(t, err)
+	assert.Contains(
+		t,
+		err.Error(),
+		"registering worker participant nil-worker: resolved <nil> does not implement worker.Worker",
+	)
+}
+
+func TestAppBuildFailsWhenCronParticipantCannotResolve(t *testing.T) {
+	app := New()
+	cronErr := errors.New("cron provider failed")
+
+	require.NoError(t, For[cron.CronJob](app.Container()).Named("broken-cron").Transient().
+		Provider(func(*Container) (cron.CronJob, error) {
+			return nil, cronErr
+		}))
+
+	err := app.Build()
+	require.Error(t, err)
+	assert.ErrorIs(t, err, cronErr)
+	assert.Contains(t, err.Error(), "registering cron job participant broken-cron: resolve")
+}
+
+func TestAppBuildFailsWhenCronParticipantResolvesWrongType(t *testing.T) {
+	app := New()
+
+	require.NoError(t, For[cron.CronJob](app.Container()).Named("nil-cron").Transient().
+		ProviderFunc(func(*Container) cron.CronJob {
+			return nil
+		}))
+
+	err := app.Build()
+	require.Error(t, err)
+	assert.Contains(
+		t,
+		err.Error(),
+		"registering cron job participant nil-cron: resolved <nil> does not implement cron.CronJob",
+	)
+}
+
+func TestAppBuildFailsWhenCronScheduleIsInvalid(t *testing.T) {
+	app := New()
+
+	require.NoError(t, For[cron.CronJob](app.Container()).Named("invalid-cron").Transient().
+		ProviderFunc(func(*Container) cron.CronJob {
+			return &lifecyclePlanInvalidCronJob{}
+		}))
+
+	err := app.Build()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "registering cron job invalid-cron-job")
+	assert.Contains(t, err.Error(), "invalid schedule")
 }
 
 func flattenLifecycleOrder(order [][]string) []string {

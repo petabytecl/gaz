@@ -22,6 +22,8 @@
 // Workers are responsible for their own goroutine management. OnStart() must be
 // non-blocking; the worker should spawn its own goroutine for long-running work.
 // OnStop() signals the worker to shut down; the worker decides when to return.
+// app.Build() returns an error if a discovered worker cannot be resolved or
+// resolves to a value that does not implement Worker.
 //
 // Example of a simple worker:
 //

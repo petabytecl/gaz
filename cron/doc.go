@@ -62,6 +62,8 @@
 //
 //	di.For[cron.CronJob](c).Transient().Provider(NewCleanupJob)
 //
+// app.Build() returns an error if a discovered job cannot be resolved, resolves
+// to a value that does not implement CronJob, or returns an invalid schedule.
 // Jobs returning an empty string from Schedule() are not scheduled (soft disable).
 //
 // # Concurrency and Lifecycle
