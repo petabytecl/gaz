@@ -113,104 +113,16 @@ func (a *App) registerInstance(instance any) error {
 //nolint:gochecknoglobals // Package-level for reflect type caching.
 var workerType = reflect.TypeOf((*worker.Worker)(nil)).Elem()
 
-// discoverWorkers iterates registered services and registers those implementing
-// worker.Worker interface with the WorkerManager. Uses ServiceType() to check
-// interface compliance before resolving, avoiding unnecessary singleton instantiation.
-func (a *App) discoverWorkers() {
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		// Skip transient services
-		if svc.IsTransient() {
-			return
-		}
-
-		// Type check before resolve to avoid unnecessary singleton instantiation
-		st := svc.ServiceType()
-		if st == nil || !st.Implements(workerType) {
-			return // Not a worker, skip without resolving
-		}
-
-		// Resolve the worker instance
-		instance, err := a.container.ResolveByName(name, nil)
-		if err != nil {
-			return // Skip services that fail to resolve
-		}
-
-		if w, ok := instance.(worker.Worker); ok {
-			if a.eventBus != nil && instance == a.eventBus {
-				return
-			}
-			// Register with default options
-			// Providers can customize via WithWorkerOptions in future
-			if regErr := a.workerMgr.Register(w); regErr != nil {
-				a.getLogger().Warn("failed to register worker",
-					"name", name,
-					"error", regErr,
-				)
-			}
-		}
-	})
-}
+// eventBusType is cached so the lifecycle plan can recognize the framework
+// EventBus registration without resolving it as a user worker.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var eventBusType = reflect.TypeOf((*eventbus.EventBus)(nil))
 
 // cronJobType is cached for efficient interface checks during discovery.
 //
 //nolint:gochecknoglobals // Package-level for reflect type caching.
 var cronJobType = reflect.TypeOf((*cron.CronJob)(nil)).Elem()
-
-// discoverCronJobs iterates registered services and registers those implementing
-// cron.CronJob interface with the Scheduler. Uses ServiceType() to verify interface
-// compliance before resolving, avoiding unnecessary instantiation.
-//
-// CronJobs should be registered using one of:
-//
-//	gaz.For[cron.CronJob](c).Transient().Provider(NewMyJob)
-//	gaz.For[cron.CronJob](c).Named("job-name").Transient().Provider(NewMyJob)
-//
-// This ensures the service is registered with the CronJob interface type,
-// allowing discovery without resolving unrelated transient services.
-func (a *App) discoverCronJobs() {
-	cronJobTypeName := di.TypeName[cron.CronJob]()
-
-	a.container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		// Only process services registered as cron.CronJob interface
-		if svc.TypeName() != cronJobTypeName {
-			return
-		}
-
-		// Type check before resolve to avoid unnecessary instantiation
-		st := svc.ServiceType()
-		if st == nil || !st.Implements(cronJobType) {
-			return // Not a CronJob, skip without resolving
-		}
-
-		// CronJobs should be transient (new instance per execution)
-		if !svc.IsTransient() {
-			a.getLogger().Warn("CronJob should be transient",
-				"name", name,
-			)
-		}
-
-		// Resolve the CronJob instance
-		instance, err := a.container.ResolveByName(name, nil)
-		if err != nil {
-			return // Skip services that fail to resolve
-		}
-
-		if job, ok := instance.(cron.CronJob); ok {
-			// Register with scheduler using service name for later resolution
-			if regErr := a.scheduler.RegisterJob(
-				name,           // serviceName for container resolution
-				job.Name(),     // human name for logging
-				job.Schedule(), // cron expression
-				job.Timeout(),  // execution timeout
-			); regErr != nil {
-				a.getLogger().Warn("failed to register cron job",
-					"name", job.Name(),
-					"error", regErr,
-				)
-			}
-		}
-	})
-}
 
 // Build validates all registrations and instantiates eager services.
 // It aggregates all errors and returns them using errors.Join.
@@ -280,27 +192,19 @@ func (a *App) Build() error {
 		}
 	}
 
-	// Discover workers from registered services
-	a.discoverWorkers()
-
-	// Register EventBus with worker manager for lifecycle management
-	if err := a.workerMgr.Register(a.eventBus); err != nil {
-		errs = append(errs, fmt.Errorf("registering eventbus: %w", err))
-	}
-
-	// Discover cron jobs from registered services
-	a.discoverCronJobs()
-
-	// Register scheduler with worker manager (only if jobs exist)
-	if a.scheduler.JobCount() > 0 {
-		if err := a.workerMgr.Register(a.scheduler); err != nil {
-			errs = append(errs, fmt.Errorf("registering scheduler: %w", err))
-		}
-	}
-
 	// Delegate to container.Build() for eager instantiation
 	if err := a.container.Build(); err != nil {
 		errs = append(errs, err)
+	}
+
+	if len(errs) == 0 {
+		plan := newRuntimeParticipantPlan(a.container)
+		errs = append(errs, plan.registerRuntimeParticipants(
+			a.workerMgr,
+			a.eventBus,
+			a.scheduler,
+			a.getLogger(),
+		)...)
 	}
 
 	if len(errs) > 0 {

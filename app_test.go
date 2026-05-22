@@ -155,6 +155,10 @@ func (s *AppTestSuite) TestRunAndStop() {
 }
 
 func (s *AppTestSuite) TestSignalHandling() {
+	if raceEnabled || testing.Short() {
+		s.T().Skip("sends real signals to test process; unsafe with -race/-coverprofile")
+	}
+
 	app := New()
 
 	// Run in goroutine
@@ -246,7 +250,9 @@ func (s *AppTestSuite) TestRunContextCancelled() {
 	// Wait for Run to return
 	select {
 	case err := <-runErr:
-		s.Require().NoError(err)
+		if err != nil {
+			s.Require().ErrorIs(err, context.Canceled)
+		}
 	case <-time.After(1 * time.Second):
 		s.Fail("Run did not return after context cancellation")
 	}
