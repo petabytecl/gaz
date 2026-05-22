@@ -3,13 +3,14 @@ package gaz
 import (
 	"fmt"
 	"log/slog"
+	"sort"
 
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/worker"
 )
 
-// lifecyclePlan is the pure runtime plan derived from the DI container graph.
+// lifecyclePlan is the structural runtime plan derived from the DI container graph.
 // It owns lifecycle policy; App owns execution, logging, rollback, and deadlines.
 type lifecyclePlan struct {
 	services           map[string]di.ServiceWrapper
@@ -56,10 +57,7 @@ func (a *App) lifecyclePlan() (*lifecyclePlan, error) {
 }
 
 func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
-	services, err := collectLifecyclePlanServices(container, true)
-	if err != nil {
-		return nil, err
-	}
+	services := collectLifecyclePlanServices(container)
 
 	startupOrder, err := ComputeStartupOrder(container.GetGraph(), services)
 	if err != nil {
@@ -77,17 +75,10 @@ func newLifecyclePlan(container *Container) (*lifecyclePlan, error) {
 	}, nil
 }
 
-func collectLifecyclePlanServices(
-	container *Container,
-	resolveLifecycle bool,
-) (map[string]di.ServiceWrapper, error) {
+func collectLifecyclePlanServices(container *Container) map[string]di.ServiceWrapper {
 	services := make(map[string]di.ServiceWrapper)
-	var resolveErr error
 
 	container.ForEachService(func(name string, svc di.ServiceWrapper) {
-		if resolveErr != nil {
-			return
-		}
 		if svc.IsTransient() {
 			return
 		}
@@ -96,16 +87,39 @@ func collectLifecyclePlanServices(
 			return
 		}
 
-		if resolveLifecycle && svc.HasLifecycle() {
-			if _, err := container.ResolveByName(name, nil); err != nil {
-				resolveErr = fmt.Errorf("lifecycle plan resolving %s: %w", name, err)
-				return
-			}
-		}
 		services[name] = svc
 	})
 
-	return services, resolveErr
+	return services
+}
+
+func (p *lifecyclePlan) resolveLifecycleServices(container *Container) error {
+	names := p.lifecycleServiceNames()
+	for _, name := range names {
+		if _, err := container.ResolveByName(name, nil); err != nil {
+			return fmt.Errorf("lifecycle plan resolving %s: %w", name, err)
+		}
+	}
+
+	startupOrder, err := ComputeStartupOrder(container.GetGraph(), p.services)
+	if err != nil {
+		return err
+	}
+
+	p.startupOrder = startupOrder
+	p.shutdownOrder = ComputeShutdownOrder(startupOrder)
+	return nil
+}
+
+func (p *lifecyclePlan) lifecycleServiceNames() []string {
+	names := make([]string, 0, len(p.services))
+	for name, svc := range p.services {
+		if svc.HasLifecycle() {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 func collectRuntimeParticipants(container *Container) ([]lifecycleWorkerParticipant, []lifecycleCronJob) {

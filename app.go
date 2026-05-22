@@ -127,8 +127,8 @@ type App struct {
 	// EventBus for pub/sub - nil until Build() is called
 	eventBus *eventbus.EventBus
 
-	// cachedLifecyclePlan stores the runtime plan computed during Build,
-	// reused by start and stop so App execution does not re-walk the container.
+	// cachedLifecyclePlan stores the structural runtime plan computed during Build.
+	// Start resolves lifecycle services into it before execution; Stop reuses it.
 	cachedLifecyclePlan *lifecyclePlan
 
 	mu      sync.Mutex

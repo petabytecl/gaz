@@ -49,6 +49,10 @@ func (a *App) startServices(ctx context.Context) error {
 		return err
 	}
 
+	if err = plan.resolveLifecycleServices(a.container); err != nil {
+		return err
+	}
+
 	a.Logger.InfoContext(ctx, "starting application", "services_count", len(plan.services))
 
 	// Start services layer by layer
