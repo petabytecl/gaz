@@ -44,19 +44,13 @@ func (a *App) Run(ctx context.Context) error {
 // layer by layer in parallel, and then starts the worker manager. On failure at any
 // stage it rolls back by stopping already-started services.
 func (a *App) startServices(ctx context.Context) error {
-	a.mu.Lock()
-	plan := a.cachedLifecyclePlan
-	a.mu.Unlock()
-	if plan == nil {
-		var err error
-		plan, err = newLifecyclePlan(a.container)
-		if err != nil {
-			return err
-		}
+	plan, err := a.lifecyclePlan()
+	if err != nil {
+		return err
+	}
 
-		a.mu.Lock()
-		a.cachedLifecyclePlan = plan
-		a.mu.Unlock()
+	if err = plan.resolveLifecycleServices(a.container); err != nil {
+		return err
 	}
 
 	a.Logger.InfoContext(ctx, "starting application", "services_count", len(plan.services))
