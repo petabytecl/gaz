@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -86,7 +87,7 @@ func (w *blockingStartWorker) OnStart(ctx context.Context) error {
 	case <-w.release:
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("blocking start worker: %w", ctx.Err())
 	}
 }
 

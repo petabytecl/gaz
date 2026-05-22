@@ -31,13 +31,9 @@ type lifecyclePlanWorker struct {
 	name string
 }
 
-func (w *lifecyclePlanWorker) Name() string { return w.name }
-func (w *lifecyclePlanWorker) OnStart(context.Context) error {
-	return nil
-}
-func (w *lifecyclePlanWorker) OnStop(context.Context) error {
-	return nil
-}
+func (w *lifecyclePlanWorker) Name() string                  { return w.name }
+func (w *lifecyclePlanWorker) OnStart(context.Context) error { return nil }
+func (w *lifecyclePlanWorker) OnStop(context.Context) error  { return nil }
 
 func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	c := NewContainer()
@@ -90,7 +86,12 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 }
 
 func flattenLifecycleOrder(order [][]string) []string {
-	result := make([]string, 0)
+	size := 0
+	for _, layer := range order {
+		size += len(layer)
+	}
+
+	result := make([]string, 0, size)
 	for _, layer := range order {
 		result = append(result, layer...)
 	}
