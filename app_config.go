@@ -124,7 +124,7 @@ func (a *App) registerProviderValuesEarly() error {
 
 // collectProviderConfigs iterates registered services, collects config from ConfigProvider
 // implementers, detects key collisions, registers provider flags with ConfigManager,
-// validates required fields, and registers ProviderValues.
+// and validates required fields. ProviderValues must be registered before this runs.
 // This method is idempotent - subsequent calls return nil after first collection.
 func (a *App) collectProviderConfigs() error {
 	return a.providerConfigIntakeModule().collect()
