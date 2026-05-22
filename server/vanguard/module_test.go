@@ -70,7 +70,7 @@ func (s *ModuleTestSuite) TestProvideConfig_RegistersConfig() {
 	cfg := DefaultConfig()
 	cfg.AllowZeroWriteTimeout = true // Explicit opt-in for streaming-safe zero timeout.
 
-	err := provideConfig(cfg)(container)
+	err := provideConfig(&cfg)(container)
 	s.Require().NoError(err)
 
 	// Resolve the config provider — it should produce a valid Config.
@@ -83,7 +83,7 @@ func (s *ModuleTestSuite) TestProvideConfig_InvalidConfig() {
 	container := di.New()
 	cfg := Config{Port: 0} // Invalid — port must be > 0.
 
-	err := provideConfig(cfg)(container)
+	err := provideConfig(&cfg)(container)
 	s.Require().NoError(err, "registration should succeed")
 
 	// Resolution should fail due to validation.
@@ -277,7 +277,7 @@ func (s *ModuleTestSuite) TestProvideConfig_WithProviderValues() {
 	// Register ProviderValues to trigger the unmarshal path.
 	// Since we don't have a real ProviderValues, we just verify the config
 	// resolves correctly without one.
-	err := provideConfig(cfg)(container)
+	err := provideConfig(&cfg)(container)
 	s.Require().NoError(err)
 
 	resolved, resolveErr := di.Resolve[Config](container)
@@ -289,7 +289,7 @@ func (s *ModuleTestSuite) TestProvideConfig_ResolveTwiceReturnsCachedSingleton()
 	container := di.New()
 	cfg := DefaultConfig()
 
-	err := provideConfig(cfg)(container)
+	err := provideConfig(&cfg)(container)
 	s.Require().NoError(err)
 
 	r1, err1 := di.Resolve[Config](container)

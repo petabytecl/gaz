@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 )
 
 // Config holds configuration for the config module.
@@ -107,26 +108,10 @@ func New() gaz.Module {
 
 	return gaz.NewModule("config-flags").
 		Flags(defaultCfg.Flags).
-		Provide(func(c *gaz.Container) error {
-			return gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
-				cfg := defaultCfg
-
-				// Try to load from config manager if available
-				pv, pvErr := gaz.Resolve[*gaz.ProviderValues](c)
-				if pvErr == nil {
-					if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), &cfg); unmarshalErr != nil {
-						// Ignore error, use defaults (key may not exist)
-						_ = unmarshalErr
-					}
-				}
-
-				cfg.SetDefaults()
-				if validateErr := cfg.Validate(); validateErr != nil {
-					return cfg, fmt.Errorf("validate config module: %w", validateErr)
-				}
-
-				return cfg, nil
-			})
-		}).
+		Provide(configuredmodule.ProvideDefaulted[Config, *Config](
+			&defaultCfg,
+			"config module",
+			"validate config module",
+		)).
 		Build()
 }

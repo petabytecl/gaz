@@ -7,6 +7,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 )
 
 // resolveLogger attempts to resolve a logger from the container, falling back to slog.Default().
@@ -18,24 +19,12 @@ func resolveLogger(c *gaz.Container) *slog.Logger {
 }
 
 // provideConfig creates a Config provider function.
-func provideConfig(defaultCfg Config) func(*gaz.Container) error {
-	return func(c *gaz.Container) error {
-		return gaz.For[Config](c).Provider(func(c *gaz.Container) (Config, error) {
-			cfg := defaultCfg
-
-			if pv, err := gaz.Resolve[*gaz.ProviderValues](c); err == nil {
-				if unmarshalErr := pv.UnmarshalKey(defaultCfg.Namespace(), &cfg); unmarshalErr != nil {
-					_ = unmarshalErr
-				}
-			}
-
-			if err := cfg.Validate(); err != nil {
-				return Config{}, fmt.Errorf("grpc config validate: %w", err)
-			}
-
-			return cfg, nil
-		})
-	}
+func provideConfig(defaultCfg *Config) func(*gaz.Container) error {
+	return configuredmodule.ProvideValidated[Config, *Config](
+		defaultCfg,
+		"grpc config",
+		"grpc config validate",
+	)
 }
 
 // provideLoggingBundle creates a LoggingBundle provider function.
@@ -177,7 +166,7 @@ func NewModule() gaz.Module {
 
 	return gaz.NewModule("grpc").
 		Flags(defaultCfg.Flags).
-		Provide(provideConfig(defaultCfg)).
+		Provide(provideConfig(&defaultCfg)).
 		Provide(provideLoggingBundle).
 		Provide(provideRateLimitBundle).
 		Provide(provideAuthBundle).

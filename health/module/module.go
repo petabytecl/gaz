@@ -2,10 +2,9 @@
 package module
 
 import (
-	"fmt"
-
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/health"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 )
 
 // New creates a health module that provides health.Config with CLI flags.
@@ -30,29 +29,11 @@ func New() gaz.Module {
 
 	return gaz.NewModule("health-flags").
 		Flags(defaultCfg.Flags).
-		Provide(func(c *gaz.Container) error {
-			// Register Config provider
-			return gaz.For[health.Config](c).Provider(func(c *gaz.Container) (health.Config, error) {
-				// Start with the default configuration which has flags bound to it
-				cfg := defaultCfg
-
-				// Try to load from config manager if available
-				pv, pvErr := gaz.Resolve[*gaz.ProviderValues](c)
-				if pvErr == nil {
-					if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), &cfg); unmarshalErr != nil {
-						// Ignore error, use defaults (key may not exist)
-						_ = unmarshalErr
-					}
-				}
-
-				cfg.SetDefaults()
-				if validateErr := cfg.Validate(); validateErr != nil {
-					return cfg, fmt.Errorf("validate health config: %w", validateErr)
-				}
-
-				return cfg, nil
-			})
-		}).
+		Provide(configuredmodule.ProvideDefaulted[health.Config, *health.Config](
+			&defaultCfg,
+			"health config",
+			"validate health config",
+		)).
 		Provide(health.Module).
 		Build()
 }
