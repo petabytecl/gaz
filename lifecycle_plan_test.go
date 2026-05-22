@@ -2,10 +2,14 @@ package gaz
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/petabytecl/gaz/cron"
 )
 
 type lifecyclePlanDependency struct{}
@@ -34,6 +38,15 @@ type lifecyclePlanWorker struct {
 func (w *lifecyclePlanWorker) Name() string                  { return w.name }
 func (w *lifecyclePlanWorker) OnStart(context.Context) error { return nil }
 func (w *lifecyclePlanWorker) OnStop(context.Context) error  { return nil }
+
+type lifecyclePlanCronJob struct{}
+
+func (j *lifecyclePlanCronJob) Name() string              { return "cron-job" }
+func (j *lifecyclePlanCronJob) Schedule() string          { return "@every 1m" }
+func (j *lifecyclePlanCronJob) Timeout() time.Duration    { return time.Second }
+func (j *lifecyclePlanCronJob) Run(context.Context) error { return nil }
+
+type lifecyclePlanLazyPlain struct{}
 
 func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	c := NewContainer()
@@ -65,6 +78,11 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	require.NoError(t, For[*lifecyclePlanWorker](c).Named("worker").
 		Instance(&lifecyclePlanWorker{name: "worker"}))
 
+	require.NoError(t, For[cron.CronJob](c).Named("cron-job").Transient().
+		ProviderFunc(func(*Container) cron.CronJob {
+			return &lifecyclePlanCronJob{}
+		}))
+
 	require.NoError(t, c.Build())
 
 	plan, err := newLifecyclePlan(c)
@@ -75,6 +93,7 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	assert.Contains(t, plan.services, "plain")
 	assert.NotContains(t, plan.services, "transient")
 	assert.NotContains(t, plan.services, "worker")
+	assert.NotContains(t, plan.services, "cron-job")
 
 	assert.Equal(t, [][]string{{"dependency"}, {"dependent"}}, plan.startupOrder)
 	assert.Equal(t, [][]string{{"dependent"}, {"dependency"}}, plan.shutdownOrder)
@@ -83,6 +102,35 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	assert.NotContains(t, flattened, "plain")
 	assert.NotContains(t, flattened, "transient")
 	assert.NotContains(t, flattened, "worker")
+	assert.NotContains(t, flattened, "cron-job")
+
+	require.Len(t, plan.workerParticipants, 1)
+	assert.Equal(t, "worker", plan.workerParticipants[0].Name())
+
+	require.Len(t, plan.cronJobs, 1)
+	assert.Equal(t, "cron-job", plan.cronJobs[0].serviceName)
+	assert.Equal(t, "cron-job", plan.cronJobs[0].jobName)
+	assert.True(t, plan.cronJobs[0].transient)
+}
+
+func TestLifecyclePlanDoesNotResolvePlainServicesDuringPlanning(t *testing.T) {
+	c := NewContainer()
+	var resolutions atomic.Int32
+
+	require.NoError(t, For[*lifecyclePlanLazyPlain](c).Named("lazy-plain").
+		ProviderFunc(func(*Container) *lifecyclePlanLazyPlain {
+			resolutions.Add(1)
+			return &lifecyclePlanLazyPlain{}
+		}))
+
+	require.NoError(t, c.Build())
+
+	plan, err := newLifecyclePlan(c)
+	require.NoError(t, err)
+
+	assert.Zero(t, resolutions.Load())
+	assert.Contains(t, plan.services, "lazy-plain")
+	assert.Empty(t, plan.startupOrder)
 }
 
 func flattenLifecycleOrder(order [][]string) []string {
