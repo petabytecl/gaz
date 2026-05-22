@@ -48,6 +48,10 @@ func provide[T any, PT namespacedValidatedConfig[T]](
 	beforeValidate func(PT),
 ) func(*gaz.Container) error {
 	return func(c *gaz.Container) error {
+		if defaults == nil {
+			return fmt.Errorf("register %s: defaults must not be nil", registrationName)
+		}
+
 		if err := gaz.For[T](c).Provider(func(c *gaz.Container) (T, error) {
 			cfg := *defaults
 			cfgPtr := PT(&cfg)

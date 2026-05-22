@@ -140,3 +140,44 @@ func TestProviderUsesLatestDefaultValues(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mutatedEndpoint, cfg.Endpoint)
 }
+
+func TestProvidersRejectNilDefaults(t *testing.T) {
+	tests := []struct {
+		name    string
+		provide func() func(*gaz.Container) error
+	}{
+		{
+			name: "validated",
+			provide: func() func(*gaz.Container) error {
+				return ProvideValidated[sampleValidatedConfig, *sampleValidatedConfig](
+					nil,
+					"validated config",
+					"validated config validate",
+				)
+			},
+		},
+		{
+			name: "defaulted",
+			provide: func() func(*gaz.Container) error {
+				return ProvideDefaulted[sampleDefaultedConfig, *sampleDefaultedConfig](
+					nil,
+					"defaulted config",
+					"validate defaulted config",
+				)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := gaz.New()
+			app.Use(gaz.NewModule(tt.name).
+				Provide(tt.provide()).
+				Build())
+
+			err := app.Build()
+			require.Error(t, err)
+			require.ErrorContains(t, err, "defaults must not be nil")
+		})
+	}
+}
