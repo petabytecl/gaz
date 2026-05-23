@@ -12,7 +12,6 @@ require (
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/go-viper/mapstructure/v2 v2.5.0
-	github.com/golangci/plugin-module-register v0.1.2
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/petermattis/goid v0.0.0-20260330135022-df67b199bc81
@@ -22,8 +21,8 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/valkey-io/valkey-go v1.0.74
-	github.com/valkey-io/valkey-go/mock v1.0.74
+	github.com/valkey-io/valkey-go v1.0.75
+	github.com/valkey-io/valkey-go/mock v1.0.75
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.68.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0
 	go.opentelemetry.io/otel v1.43.0
@@ -31,9 +30,8 @@ require (
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/term v0.43.0
-	golang.org/x/tools v0.45.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260504160031-60b97b32f348
-	google.golang.org/grpc v1.81.0
+	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -77,7 +75,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a // indirect
-	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect

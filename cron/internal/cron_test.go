@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -175,16 +174,39 @@ func TestAddWhileRunningWithDelay(t *testing.T) {
 	cron := newWithSeconds()
 	cron.Start()
 	defer cron.Stop()
-	// Original test used 5s delay. A 1s delay is sufficient to verify the
-	// bug fix: adding a job after some delay should not trigger multiple invocations.
-	time.Sleep(1 * time.Second) // cron scheduler requires real-time delay before adding job to test #34 regression
-	var calls int64
-	_, _ = cron.AddFunc("* * * * * *", func() { atomic.AddInt64(&calls, 1) })
 
-	<-time.After(defaultWait)
-	if atomic.LoadInt64(&calls) != 1 {
-		t.Errorf("called %d times, expected 1\n", calls)
+	// Force a round-trip through run() so the add below happens after Start.
+	_ = cron.Entries()
+
+	calls := make(chan struct{}, 2)
+	cron.Schedule(&runOnceAfterSchedule{delay: 10 * time.Millisecond}, FuncJob(func() {
+		calls <- struct{}{}
+	}))
+
+	select {
+	case <-calls:
+	case <-time.After(defaultWait):
+		t.Fatal("expected delayed job to run")
 	}
+
+	select {
+	case <-calls:
+		t.Fatal("expected delayed job to run once")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+type runOnceAfterSchedule struct {
+	delay time.Duration
+	used  bool
+}
+
+func (s *runOnceAfterSchedule) Next(t time.Time) time.Time {
+	if s.used {
+		return time.Time{}
+	}
+	s.used = true
+	return t.Add(s.delay)
 }
 
 // Add a job, remove a job, start cron, expect nothing runs.
