@@ -249,7 +249,7 @@ func TestAppBuildCachesFullLifecyclePlan(t *testing.T) {
 	assert.Equal(t, "cron-job", plan.cronJobs[0].serviceName)
 }
 
-func TestAppBuildDoesNotResolveLifecycleServices(t *testing.T) {
+func TestBuildResolvesLifecycleServicesBeforeStart(t *testing.T) {
 	app := New()
 	var dependencyResolutions atomic.Int32
 	var dependentResolutions atomic.Int32
@@ -286,8 +286,11 @@ func TestAppBuildDoesNotResolveLifecycleServices(t *testing.T) {
 		}))
 
 	require.NoError(t, app.Build())
-	assert.Zero(t, dependencyResolutions.Load())
-	assert.Zero(t, dependentResolutions.Load())
+
+	// Lifecycle services are resolved during Build so the plan is immutable
+	// before Start/Stop can access it (prevents data races).
+	assert.Equal(t, int32(1), dependencyResolutions.Load())
+	assert.Equal(t, int32(1), dependentResolutions.Load())
 
 	plan := app.cachedLifecyclePlan
 	require.NotNil(t, plan)
@@ -295,6 +298,8 @@ func TestAppBuildDoesNotResolveLifecycleServices(t *testing.T) {
 	assert.Contains(t, plan.services, "a-dependent")
 
 	require.NoError(t, app.Start(context.Background()))
+
+	// Resolution count stays at 1 — singletons resolved once in Build.
 	assert.Equal(t, int32(1), dependencyResolutions.Load())
 	assert.Equal(t, int32(1), dependentResolutions.Load())
 

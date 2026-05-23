@@ -11,6 +11,7 @@ import (
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/health"
+	healthmod "github.com/petabytecl/gaz/health/module"
 )
 
 // testConfig implements health.HealthConfigProvider for auto-registration.
@@ -77,4 +78,28 @@ func TestHealthIntegration(t *testing.T) {
 			return resp.StatusCode == wantCode
 		}, 2*time.Second, 50*time.Millisecond, "endpoint %s expected %d", fullURL, wantCode)
 	}
+}
+
+func TestHealthExplicitModulePlusConfigProviderDoesNotDoubleApply(t *testing.T) {
+	cfg := &testConfig{
+		Health: health.DefaultConfig(),
+	}
+
+	app := gaz.New()
+	app.Use(healthmod.New())
+	app.WithConfig(cfg)
+
+	// Build (not Start) is sufficient — we only need to verify the module
+	// was applied exactly once without duplicate errors.
+	err := app.Build()
+	require.NoError(t, err)
+
+	_, err = gaz.Resolve[*health.ManagementServer](app.Container())
+	require.NoError(t, err)
+
+	_, err = gaz.Resolve[*health.Manager](app.Container())
+	require.NoError(t, err)
+
+	_, err = gaz.Resolve[*health.ShutdownCheck](app.Container())
+	require.NoError(t, err)
 }

@@ -40,16 +40,15 @@ func (a *App) Run(ctx context.Context) error {
 	return a.waitForShutdownSignal(ctx)
 }
 
-// startServices computes the startup order from the dependency graph, starts services
-// layer by layer in parallel, and then starts the worker manager. On failure at any
-// stage it rolls back by stopping already-started services.
+// startServices starts services layer by layer in parallel, and then starts
+// the worker manager. On failure at any stage it rolls back by stopping
+// already-started services.
+//
+// The lifecycle plan is already resolved during Build(), so plan data
+// (startupOrder, shutdownOrder, services) is immutable here.
 func (a *App) startServices(ctx context.Context) error {
 	plan, err := a.lifecyclePlan()
 	if err != nil {
-		return err
-	}
-
-	if err = plan.resolveLifecycleServices(a.container); err != nil {
 		return err
 	}
 
