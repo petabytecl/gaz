@@ -49,7 +49,12 @@ type supervisor struct {
 	onCriticalFail func()
 }
 
-// newSupervisor creates a new supervisor for the given worker.
+// newSupervisor creates and initializes a supervisor for a worker.
+// It wires the worker `w` with its runtime options `opts`, uses `logger`
+// to create a worker-scoped logger, and registers `onCriticalFail` as the
+// callback to invoke when the worker reaches a critical failure condition.
+// It returns a configured *supervisor with default backoff settings and
+// lifecycle channels ready for start().
 func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCriticalFail func()) *supervisor {
 	return &supervisor{
 		worker: w,
