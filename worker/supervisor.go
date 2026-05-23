@@ -209,6 +209,9 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	}
 
 	stopTimeout := defaultStopTimeout
+	if s.opts.StopTimeout > 0 {
+		stopTimeout = s.opts.StopTimeout
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
