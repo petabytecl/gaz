@@ -26,11 +26,23 @@ type Server struct {
 	config             Config
 	httpServer         *http.Server
 	container          *di.Container
-	grpcServer         *grpc.Server
+	grpcServerSource   grpcServerSource
 	logger             *slog.Logger
 	healthManager      *health.Manager
 	healthConfig       *health.Config
 	userUnknownHandler http.Handler
+}
+
+type grpcServerSource interface {
+	GRPCServer() *grpc.Server
+}
+
+type staticGRPCServerSource struct {
+	server *grpc.Server
+}
+
+func (s staticGRPCServerSource) GRPCServer() *grpc.Server {
+	return s.server
 }
 
 // NewServer creates a new Vanguard server with the given configuration.
@@ -42,6 +54,15 @@ type Server struct {
 //   - container: DI container for service discovery
 //   - grpcServer: The raw *grpc.Server from the gRPC module (for vanguardgrpc bridge)
 func NewServer(cfg Config, logger *slog.Logger, container *di.Container, grpcServer *grpc.Server) *Server {
+	return newServerWithGRPCSource(cfg, logger, container, staticGRPCServerSource{server: grpcServer})
+}
+
+func newServerWithGRPCSource(
+	cfg Config,
+	logger *slog.Logger,
+	container *di.Container,
+	grpcSource grpcServerSource,
+) *Server {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -59,13 +80,20 @@ func NewServer(cfg Config, logger *slog.Logger, container *di.Container, grpcSer
 	}
 
 	return &Server{
-		config:        cfg,
-		container:     container,
-		grpcServer:    grpcServer,
-		logger:        logger,
-		healthManager: healthMgr,
-		healthConfig:  healthCfg,
+		config:           cfg,
+		container:        container,
+		grpcServerSource: grpcSource,
+		logger:           logger,
+		healthManager:    healthMgr,
+		healthConfig:     healthCfg,
 	}
+}
+
+func (s *Server) grpcServer() *grpc.Server {
+	if s.grpcServerSource == nil {
+		return nil
+	}
+	return s.grpcServerSource.GRPCServer()
 }
 
 // SetUnknownHandler sets a user-defined handler for non-RPC HTTP routes.
@@ -80,6 +108,8 @@ func (s *Server) SetUnknownHandler(h http.Handler) {
 // over h2c on the configured port.
 // Implements di.Starter.
 func (s *Server) OnStart(ctx context.Context) error {
+	grpcServer := s.grpcServer()
+
 	// 0. Collect Connect interceptors from DI.
 	connectInterceptors := connectpkg.CollectInterceptors(s.container, s.logger)
 	var handlerOpts []connect.HandlerOption
@@ -106,8 +136,8 @@ func (s *Server) OnStart(ctx context.Context) error {
 	}
 
 	// 3. Collect gRPC service names for reflection.
-	if s.grpcServer != nil {
-		for name := range s.grpcServer.GetServiceInfo() {
+	if grpcServer != nil {
+		for name := range grpcServer.GetServiceInfo() {
 			serviceNames = append(serviceNames, name)
 		}
 	}
@@ -140,7 +170,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 	}
 
 	// 8. Build the transcoder.
-	handler, transcoderErr := s.buildTranscoder(transcoderOpts)
+	handler, transcoderErr := s.buildTranscoder(grpcServer, transcoderOpts)
 	if transcoderErr != nil {
 		return transcoderErr
 	}
@@ -182,7 +212,7 @@ func (s *Server) OnStart(ctx context.Context) error {
 		slog.Int("connect_interceptors", len(connectInterceptors)),
 		slog.Bool("reflection", s.config.Reflection),
 		slog.Bool("health", s.healthManager != nil),
-		slog.Bool("grpc_bridge", s.grpcServer != nil),
+		slog.Bool("grpc_bridge", grpcServer != nil),
 	)
 
 	// 11. Start serving in goroutine.
@@ -197,9 +227,12 @@ func (s *Server) OnStart(ctx context.Context) error {
 
 // buildTranscoder creates the Vanguard transcoder.
 // Uses vanguardgrpc if a gRPC server is available, otherwise uses plain vanguard transcoder.
-func (s *Server) buildTranscoder(opts []vanguard.TranscoderOption) (http.Handler, error) {
-	if s.grpcServer != nil {
-		transcoder, err := vanguardgrpc.NewTranscoder(s.grpcServer, opts...)
+func (s *Server) buildTranscoder(
+	grpcServer *grpc.Server,
+	opts []vanguard.TranscoderOption,
+) (http.Handler, error) {
+	if grpcServer != nil {
+		transcoder, err := vanguardgrpc.NewTranscoder(grpcServer, opts...)
 		if err != nil {
 			return nil, fmt.Errorf("vanguard: build grpc transcoder: %w", err)
 		}
