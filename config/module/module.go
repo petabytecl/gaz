@@ -3,11 +3,11 @@ package module
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/pflag"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/internal/configuredmodule"
 )
 
@@ -69,22 +69,9 @@ func (c *Config) SetDefaults() {
 }
 
 // GetSearchPaths returns the search paths for auto-discovery mode.
-// Returns cwd first, then XDG config directory.
+// Delegates to config.DefaultSearchPaths for the shared convention.
 func (c *Config) GetSearchPaths(appName string) []string {
-	paths := []string{"."}
-
-	// Add XDG config directory
-	xdgConfig := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfig == "" {
-		if home, err := os.UserHomeDir(); err == nil {
-			xdgConfig = filepath.Join(home, ".config")
-		}
-	}
-	if xdgConfig != "" && appName != "" {
-		paths = append(paths, filepath.Join(xdgConfig, appName))
-	}
-
-	return paths
+	return config.DefaultSearchPaths(appName)
 }
 
 // New creates a config module that provides Config with CLI flags.

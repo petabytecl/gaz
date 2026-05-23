@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/petabytecl/gaz/config"
 )
 
 func TestInterpretConfigFlags_ExplicitConfigPath(t *testing.T) {
@@ -51,10 +53,11 @@ func TestInterpretConfigFlags_EnvPrefix(t *testing.T) {
 	require.NotEmpty(t, result.options)
 }
 
-func TestInterpretConfigFlags_StrictTrue(t *testing.T) {
+func TestInterpretConfigFlags_StrictExplicitTrue(t *testing.T) {
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	fs.String("config", "", "")
-	fs.Bool("config-strict", true, "")
+	fs.Bool("config-strict", false, "")
+	require.NoError(t, fs.Parse([]string{"--config-strict=true"}))
 
 	result, err := interpretConfigFlags(fs, "myapp")
 	require.NoError(t, err)
@@ -62,15 +65,26 @@ func TestInterpretConfigFlags_StrictTrue(t *testing.T) {
 	assert.True(t, *result.strictMode)
 }
 
-func TestInterpretConfigFlags_StrictFalse(t *testing.T) {
+func TestInterpretConfigFlags_StrictExplicitFalse(t *testing.T) {
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	fs.String("config", "", "")
-	fs.Bool("config-strict", false, "")
+	fs.Bool("config-strict", true, "")
+	require.NoError(t, fs.Parse([]string{"--config-strict=false"}))
 
 	result, err := interpretConfigFlags(fs, "myapp")
 	require.NoError(t, err)
 	require.NotNil(t, result.strictMode)
 	assert.False(t, *result.strictMode)
+}
+
+func TestInterpretConfigFlags_StrictDefaultIsNil(t *testing.T) {
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fs.String("config", "", "")
+	fs.Bool("config-strict", true, "")
+
+	result, err := interpretConfigFlags(fs, "myapp")
+	require.NoError(t, err)
+	assert.Nil(t, result.strictMode, "strictMode should be nil when flag was not explicitly set")
 }
 
 func TestInterpretConfigFlags_NoConfigFlagIsNoOp(t *testing.T) {
@@ -82,24 +96,24 @@ func TestInterpretConfigFlags_NoConfigFlagIsNoOp(t *testing.T) {
 	assert.Nil(t, result.strictMode)
 }
 
-func TestConfigSearchPaths_IncludesCwd(t *testing.T) {
-	paths := configSearchPaths("myapp")
+func TestDefaultSearchPaths_IncludesCwd(t *testing.T) {
+	paths := config.DefaultSearchPaths("myapp")
 	require.NotEmpty(t, paths)
 	assert.Equal(t, ".", paths[0])
 }
 
-func TestConfigSearchPaths_IncludesXDGDir(t *testing.T) {
+func TestDefaultSearchPaths_IncludesXDGDir(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "/tmp/xdg-test")
 
-	paths := configSearchPaths("myapp")
+	paths := config.DefaultSearchPaths("myapp")
 	require.Len(t, paths, 2)
 	assert.Equal(t, "/tmp/xdg-test/myapp", paths[1])
 }
 
-func TestConfigSearchPaths_EmptyAppNameSkipsXDG(t *testing.T) {
+func TestDefaultSearchPaths_EmptyAppNameSkipsXDG(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "/tmp/xdg-test")
 
-	paths := configSearchPaths("")
+	paths := config.DefaultSearchPaths("")
 	assert.Len(t, paths, 1)
 	assert.Equal(t, ".", paths[0])
 }

@@ -1,9 +1,9 @@
 package gaz
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/pflag"
 
@@ -14,7 +14,7 @@ import (
 // configFlagResult holds the output of config flag interpretation.
 type configFlagResult struct {
 	options    []config.Option
-	strictMode *bool // nil = unchanged from app default
+	strictMode *bool // nil when the flag was not explicitly set by the user
 }
 
 // interpretConfigFlags reads Cobra config flags (--config, --env-prefix,
@@ -31,12 +31,12 @@ func interpretConfigFlags(flags *pflag.FlagSet, appName string) (configFlagResul
 
 	configPath := configFlag.Value.String()
 	if configPath != "" {
-		if _, err := os.Stat(configPath); err != nil {
-			return configFlagResult{}, fmt.Errorf("config: file not found: %s", configPath)
+		if err := validateConfigFile(configPath); err != nil {
+			return configFlagResult{}, err
 		}
 		opts = append(opts, config.WithConfigFile(configPath))
 	} else {
-		opts = append(opts, config.WithSearchPaths(configSearchPaths(appName)...))
+		opts = append(opts, config.WithSearchPaths(config.DefaultSearchPaths(appName)...))
 	}
 
 	if envPrefixFlag := flags.Lookup("env-prefix"); envPrefixFlag != nil {
@@ -46,7 +46,7 @@ func interpretConfigFlags(flags *pflag.FlagSet, appName string) (configFlagResul
 	}
 
 	var strict *bool
-	if strictFlag := flags.Lookup("config-strict"); strictFlag != nil {
+	if strictFlag := flags.Lookup("config-strict"); strictFlag != nil && strictFlag.Changed {
 		switch strictFlag.Value.String() {
 		case "true":
 			v := true
@@ -60,18 +60,16 @@ func interpretConfigFlags(flags *pflag.FlagSet, appName string) (configFlagResul
 	return configFlagResult{options: opts, strictMode: strict}, nil
 }
 
-func configSearchPaths(appName string) []string {
-	paths := []string{"."}
-
-	xdgConfig := os.Getenv("XDG_CONFIG_HOME")
-	if xdgConfig == "" {
-		if home, err := os.UserHomeDir(); err == nil {
-			xdgConfig = filepath.Join(home, ".config")
+func validateConfigFile(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("config: file not found: %s", path)
 		}
+		return fmt.Errorf("config: cannot access %s: %w", path, err)
 	}
-	if xdgConfig != "" && appName != "" {
-		paths = append(paths, filepath.Join(xdgConfig, appName))
+	if info.IsDir() {
+		return fmt.Errorf("config: path is a directory, not a file: %s", path)
 	}
-
-	return paths
+	return nil
 }
