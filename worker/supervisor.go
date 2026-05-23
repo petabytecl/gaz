@@ -103,7 +103,9 @@ func (s *supervisor) waitStarted() <-chan struct{} {
 }
 
 // signalStarted closes the started channel exactly once using sync.Once
-// to indicate the supervisor has completed its first OnStart attempt.
+// to indicate that waiters should stop waiting: either the supervisor has
+// completed its first OnStart attempt, or it exited before starting because
+// its context was already cancelled.
 func (s *supervisor) signalStarted() {
 	s.startOnce.Do(func() {
 		close(s.started)
