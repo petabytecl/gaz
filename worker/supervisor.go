@@ -75,11 +75,13 @@ func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCritica
 // start begins supervising the worker. It returns immediately.
 // The supervision runs until the context is cancelled or the circuit breaker trips.
 func (s *supervisor) start(ctx context.Context) {
-	s.ctx, s.cancel = context.WithCancel(ctx)
-	s.windowStart = time.Now()
+	s.startOnce.Do(func() {
+		s.ctx, s.cancel = context.WithCancel(ctx)
+		s.windowStart = time.Now()
 
-	s.wg.Add(1)
-	go s.supervise()
+		s.wg.Add(1)
+		go s.supervise()
+	})
 }
 
 // stop signals the supervisor to stop and waits for completion.
