@@ -46,34 +46,51 @@ func TestBuildPhaseOrder_ContainerBuildBeforeLifecyclePlan(t *testing.T) {
 
 	bc := phaseIndex(phases, "build-container")
 	lp := phaseIndex(phases, "create-lifecycle-plan")
-	rp := phaseIndex(phases, "register-runtime-participants")
 
 	require.NotEqual(t, -1, bc)
 	require.NotEqual(t, -1, lp)
-	require.NotEqual(t, -1, rp)
 	assert.Less(t, bc, lp)
-	assert.Less(t, lp, rp)
+}
+
+func TestBuildPhaseOrder_LifecyclePlanBeforeResolveBeforeParticipants(t *testing.T) {
+	app := New()
+	phases := app.buildPhaseOrder()
+
+	lp := phaseIndex(phases, "create-lifecycle-plan")
+	rs := phaseIndex(phases, "resolve-lifecycle-services")
+	rp := phaseIndex(phases, "register-runtime-participants")
+
+	require.NotEqual(t, -1, lp)
+	require.NotEqual(t, -1, rs)
+	require.NotEqual(t, -1, rp)
+	assert.Less(t, lp, rs)
+	assert.Less(t, rs, rp)
 }
 
 func TestBuildPhaseOrder_GatedPhasesAreAfterNonGated(t *testing.T) {
 	app := New()
 	phases := app.buildPhaseOrder()
 
+	var gatedCount, nonGatedCount int
 	lastNonGated := -1
 	firstGated := len(phases)
 
 	for i, p := range phases {
 		if p.gated {
+			gatedCount++
 			if i < firstGated {
 				firstGated = i
 			}
 		} else {
+			nonGatedCount++
 			if i > lastNonGated {
 				lastNonGated = i
 			}
 		}
 	}
 
+	require.Greater(t, gatedCount, 0, "at least one gated phase must exist")
+	require.Greater(t, nonGatedCount, 0, "at least one non-gated phase must exist")
 	assert.Less(t, lastNonGated, firstGated,
 		"all non-gated phases must precede gated phases")
 }
@@ -89,34 +106,11 @@ func TestRunBuildPhases_GatedPhasesSkippedOnError(t *testing.T) {
 	app := New()
 	app.buildErrors = []error{assert.AnError}
 
-	var ran []string
-	original := app.buildPhaseOrder()
+	err := app.runBuildPhases()
+	require.Error(t, err)
 
-	phases := make([]buildPhase, len(original))
-	for i, p := range original {
-		name := p.name
-		gated := p.gated
-		phases[i] = buildPhase{
-			name:  name,
-			gated: gated,
-			run: func() error {
-				ran = append(ran, name)
-				return nil
-			},
-		}
-	}
-
-	for _, phase := range phases {
-		if phase.gated && len(app.buildErrors) > 0 {
-			break
-		}
-		_ = phase.run()
-	}
-
-	for _, name := range ran {
-		idx := phaseIndex(original, name)
-		require.NotEqual(t, -1, idx)
-		assert.False(t, original[idx].gated,
-			"gated phase %q should not have run", name)
-	}
+	// Verify gated phases did not execute by checking their side effects:
+	// lifecycle plan should be nil because createLifecyclePlan is gated.
+	assert.Nil(t, app.cachedLifecyclePlan,
+		"gated phase create-lifecycle-plan should not have run")
 }
