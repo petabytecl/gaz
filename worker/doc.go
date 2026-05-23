@@ -65,6 +65,7 @@
 //   - [WithStableRunPeriod] - Duration of stable run before backoff resets
 //   - [WithMaxRestarts] - Maximum restarts before circuit breaker trips
 //   - [WithCircuitWindow] - Time window for circuit breaker tracking
+//   - [WithStopTimeout] - Maximum duration allowed for each OnStop call
 //
 // # Panic Recovery and Restart
 //

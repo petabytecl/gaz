@@ -15,6 +15,7 @@ func TestDefaultWorkerOptions_ReturnsSensibleDefaults(t *testing.T) {
 	assert.Equal(t, 30*time.Second, opts.StableRunPeriod)
 	assert.Equal(t, 5, opts.MaxRestarts)
 	assert.Equal(t, 10*time.Minute, opts.CircuitWindow)
+	assert.Equal(t, defaultStopTimeout, opts.StopTimeout)
 }
 
 func TestWithPoolSize_SetsPoolSize(t *testing.T) {
@@ -108,6 +109,20 @@ func TestWithCircuitWindow_IgnoresZero(t *testing.T) {
 	assert.Equal(t, 10*time.Minute, opts.CircuitWindow) // Default unchanged
 }
 
+func TestWithStopTimeout_SetsTimeout(t *testing.T) {
+	opts := DefaultWorkerOptions()
+	opts.ApplyOptions(WithStopTimeout(15 * time.Second))
+
+	assert.Equal(t, 15*time.Second, opts.StopTimeout)
+}
+
+func TestWithStopTimeout_IgnoresZero(t *testing.T) {
+	opts := DefaultWorkerOptions()
+	opts.ApplyOptions(WithStopTimeout(0))
+
+	assert.Equal(t, defaultStopTimeout, opts.StopTimeout) // Default unchanged
+}
+
 func TestApplyOptions_ChainsMultipleOptions(t *testing.T) {
 	opts := DefaultWorkerOptions()
 	opts.ApplyOptions(
@@ -116,6 +131,7 @@ func TestApplyOptions_ChainsMultipleOptions(t *testing.T) {
 		WithMaxRestarts(10),
 		WithStableRunPeriod(time.Minute),
 		WithCircuitWindow(15*time.Minute),
+		WithStopTimeout(20*time.Second),
 	)
 
 	assert.Equal(t, 8, opts.PoolSize)
@@ -123,4 +139,5 @@ func TestApplyOptions_ChainsMultipleOptions(t *testing.T) {
 	assert.Equal(t, 10, opts.MaxRestarts)
 	assert.Equal(t, time.Minute, opts.StableRunPeriod)
 	assert.Equal(t, 15*time.Minute, opts.CircuitWindow)
+	assert.Equal(t, 20*time.Second, opts.StopTimeout)
 }

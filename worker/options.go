@@ -62,6 +62,10 @@ type WorkerOptions struct {
 	// Default: 10 minutes
 	CircuitWindow time.Duration
 
+	// StopTimeout bounds each worker OnStop call.
+	// Default: 30 seconds
+	StopTimeout time.Duration
+
 	// OnDeadLetter is called when the circuit breaker trips.
 	// Use this to log, alert, or persist failed worker info.
 	// The handler is wrapped in recover() for safety.
@@ -79,6 +83,7 @@ type WorkerOption func(*WorkerOptions)
 //   - StableRunPeriod: 30 seconds
 //   - MaxRestarts: 5
 //   - CircuitWindow: 10 minutes
+//   - StopTimeout: 30 seconds
 func DefaultWorkerOptions() *WorkerOptions {
 	return &WorkerOptions{
 		PoolSize:        1,
@@ -86,6 +91,7 @@ func DefaultWorkerOptions() *WorkerOptions {
 		StableRunPeriod: 30 * time.Second,
 		MaxRestarts:     5,
 		CircuitWindow:   10 * time.Minute,
+		StopTimeout:     defaultStopTimeout,
 	}
 }
 
@@ -170,6 +176,19 @@ func WithCircuitWindow(d time.Duration) WorkerOption {
 	return func(o *WorkerOptions) {
 		if d > 0 {
 			o.CircuitWindow = d
+		}
+	}
+}
+
+// WithStopTimeout sets the maximum duration allowed for each worker OnStop call.
+//
+// Example:
+//
+//	manager.Register(worker, WithStopTimeout(15*time.Second))
+func WithStopTimeout(d time.Duration) WorkerOption {
+	return func(o *WorkerOptions) {
+		if d > 0 {
+			o.StopTimeout = d
 		}
 	}
 }

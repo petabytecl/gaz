@@ -361,6 +361,45 @@ func TestSupervisor_StopBeforeStart(t *testing.T) {
 	assert.Equal(t, 0, worker.getStopCount(), "worker should not have stopped")
 }
 
+func TestSupervisor_StartSignalsStarted(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("start-signals-started")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	sup.start(context.Background())
+
+	select {
+	case <-sup.waitStarted():
+	case <-time.After(time.Second):
+		t.Fatal("supervisor did not signal startup completion")
+	}
+
+	sup.stop()
+}
+
+func TestSupervisor_StartIsIdempotent(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("start-idempotent")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	sup.start(context.Background())
+	select {
+	case <-sup.waitStarted():
+	case <-time.After(time.Second):
+		t.Fatal("supervisor did not signal startup completion")
+	}
+
+	sup.start(context.Background())
+	sup.stop()
+
+	assert.Equal(t, 1, worker.getStartCount(), "worker should start once")
+	assert.Equal(t, 1, worker.getStopCount(), "worker should stop once")
+}
+
 // TestPooledWorker_OnStartOnStop tests the pooledWorker delegate methods.
 func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	worker := newMockWorker("base-worker")

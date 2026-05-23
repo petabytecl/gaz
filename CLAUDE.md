@@ -36,7 +36,7 @@ go test -race ./di/
 
 - **`config/`** - Configuration with `Backend` interface (Viper implementation). Manager runs `Defaulter.Default()` -> validate with `go-playground/validator` -> `Validator.Validate()`. Strict mode rejects unknown keys.
 
-- **`worker/`** - Long-running background tasks. Supervisor wraps workers with panic recovery, exponential backoff (1s-5m, 2x, jitter), and circuit breaker. Options: `WithPoolSize`, `WithCritical`, `WithMaxRestarts`.
+- **`worker/`** - Long-running background tasks. Supervisor wraps workers with panic recovery, exponential backoff (1s-5m, 2x, jitter), and circuit breaker. Options: `WithPoolSize`, `WithCritical`, `WithMaxRestarts`, `WithStopTimeout`.
 
 - **`cron/`** - Scheduled jobs via `robfig/cron/v3`. Implements `CronJob` interface (Name/Schedule/Timeout/Run). SkipIfStillRunning by default. Return empty `Schedule()` to disable.
 

@@ -58,10 +58,11 @@ Workers can be registered with options:
 
 ```go
 worker.WithPoolSize(4)        // Multiple worker instances
-worker.WithCritical(true)     // App crashes if worker exhausts retries
+worker.WithCritical()         // App crashes if worker exhausts retries
 worker.WithStableRunPeriod(5*time.Minute)  // Duration before backoff resets
 worker.WithMaxRestarts(10)    // Max restarts before circuit trips
 worker.WithCircuitWindow(time.Minute)      // Circuit breaker window
+worker.WithStopTimeout(15*time.Second)     // Per-worker graceful stop timeout
 ```
 
 ## Backoff Configuration

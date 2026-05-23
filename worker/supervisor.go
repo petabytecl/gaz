@@ -38,12 +38,13 @@ type supervisor struct {
 	lastPanicStack string
 
 	// Lifecycle
-	ctx       context.Context
-	cancel    context.CancelFunc
-	started   chan struct{}
-	startOnce sync.Once
-	done      chan struct{}
-	wg        sync.WaitGroup
+	ctx         context.Context
+	cancel      context.CancelFunc
+	started     chan struct{}
+	startOnce   sync.Once
+	startedOnce sync.Once
+	done        chan struct{}
+	wg          sync.WaitGroup
 
 	// Callback for critical worker failure
 	onCriticalFail func()
@@ -109,7 +110,7 @@ func (s *supervisor) waitStarted() <-chan struct{} {
 // completed its first OnStart attempt, or it exited before starting because
 // its context was already cancelled.
 func (s *supervisor) signalStarted() {
-	s.startOnce.Do(func() {
+	s.startedOnce.Do(func() {
 		close(s.started)
 	})
 }
