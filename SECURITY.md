@@ -14,7 +14,7 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Please report suspected security vulnerabilities to **security@example.com**.
+Please report suspected security vulnerabilities to **security@petabyte.cl**.
 Do **not** open public issues for security reports.
 
 Include, when possible:
