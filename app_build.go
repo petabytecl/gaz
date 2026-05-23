@@ -1,7 +1,6 @@
 package gaz
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -52,36 +51,21 @@ func (a *App) initializeLogger() error {
 // initializeSubsystems creates WorkerManager, Scheduler, EventBus.
 // Called during Build() after logger is initialized.
 func (a *App) initializeSubsystems() error {
-	// Use slog.Default() if Logger is nil (shouldn't happen after initializeLogger)
-	log := a.Logger
-	if log == nil {
-		log = slog.Default()
-	}
-
-	// WorkerManager
-	a.workerMgr = worker.NewManager(log)
-	a.workerMgr.SetCriticalFailHandler(func() {
-		log.Error("critical worker failed, initiating shutdown")
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
-			defer cancel()
-			if err := a.Stop(ctx); err != nil {
-				log.Warn("critical-fail shutdown completed with errors", slog.Any("error", err))
-			}
-		}()
+	subs, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          a.Logger,
+		container:       a.container,
+		shutdownTimeout: a.opts.ShutdownTimeout,
+		stopFunc:        a.Stop,
 	})
-
-	// Scheduler with cancellable context
-	a.cronCtx, a.cronCancel = context.WithCancel(context.Background())
-	a.scheduler = cron.NewScheduler(a.container, a.cronCtx, log)
-
-	// EventBus
-	a.eventBus = eventbus.New(log)
-
-	// Register EventBus in container
-	if err := For[*eventbus.EventBus](a.container).Instance(a.eventBus); err != nil {
-		return fmt.Errorf("register eventbus: %w", err)
+	if err != nil {
+		return err
 	}
+
+	a.workerMgr = subs.workerMgr
+	a.scheduler = subs.scheduler
+	a.cronCtx = subs.cronCtx
+	a.cronCancel = subs.cronCancel
+	a.eventBus = subs.eventBus
 	return nil
 }
 
