@@ -14,8 +14,20 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+Please report suspected security vulnerabilities to **security@example.com**.
+Do **not** open public issues for security reports.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Include, when possible:
+- A description of the issue and potential impact.
+- Steps to reproduce (proof of concept, payload, or screenshots/logs).
+- Affected versions, environments, and configuration details.
+- Any suggested remediation or mitigation.
+
+What you can expect from us:
+- **Acknowledgement:** within 3 business days.
+- **Initial triage/update:** within 7 business days after acknowledgement.
+- **Resolution target:** based on severity and complexity.
+
+If the report is accepted, we will work on a fix, coordinate disclosure timing,
+and credit you (if desired). If the report is declined, we will share a brief
+rationale (for example: out of scope, non-reproducible, or expected behavior).
