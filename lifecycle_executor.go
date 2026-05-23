@@ -87,7 +87,7 @@ func (e *lifecycleExecutor) startLayer(ctx context.Context, layer []string) erro
 
 	for _, name := range layer {
 		svc := e.plan.services[name]
-		go func() {
+		go func(name string, svc di.ServiceWrapper) {
 			defer func() { doneCh <- struct{}{} }()
 			start := time.Now()
 			if err := svc.Start(ctx); err != nil {
@@ -106,7 +106,7 @@ func (e *lifecycleExecutor) startLayer(ctx context.Context, layer []string) erro
 				"name", name,
 				"duration", time.Since(start),
 			)
-		}()
+		}(name, svc)
 	}
 
 	for range layer {
