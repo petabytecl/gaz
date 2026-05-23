@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -499,6 +500,34 @@ func (s *ShutdownTestSuite) TestFirstSIGINTLogsHint() {
 	time.Sleep(10 * time.Millisecond) // required: goroutine cleanup between signal test iterations
 }
 
+func (s *ShutdownTestSuite) TestHandleSIGINTReturnsAfterGracefulShutdown() {
+	app := s.createAppWithSlowHook(10*time.Millisecond, time.Second, time.Second)
+
+	logBuf := &syncBuffer{}
+	handler := slog.NewTextHandler(logBuf, &slog.HandlerOptions{Level: slog.LevelDebug})
+	app.Logger = slog.New(handler)
+	app.loggerInitialized = true
+
+	err := app.Build()
+	s.Require().NoError(err)
+
+	sigCh := make(chan os.Signal, 1)
+	done := make(chan error, 1)
+	go func() {
+		done <- app.handleSignalShutdown(context.Background(), os.Interrupt, sigCh)
+	}()
+
+	select {
+	case runErr := <-done:
+		s.Require().NoError(runErr)
+	case <-time.After(500 * time.Millisecond):
+		s.Fail("SIGINT graceful shutdown should return without a second signal")
+	}
+
+	s.False(s.exitCalled.Load(), "exitFunc should not be called for graceful shutdown")
+	s.Contains(logBuf.String(), "Ctrl+C again", "SIGINT should log force-exit hint")
+}
+
 // TestDoubleSIGINTForcesImmediateExit verifies that a second SIGINT
 // triggers immediate exitFunc(1) without waiting for graceful shutdown.
 func (s *ShutdownTestSuite) TestDoubleSIGINTForcesImmediateExit() {
@@ -607,6 +636,7 @@ func (s *ShutdownTestSuite) TestSIGTERMDoesNotEnableDoubleSignal() {
 	// SIGTERM should still log the shutdown message but the hint is for interactive use
 	logOutput := s.logBuffer.String()
 	s.Contains(logOutput, "Shutting down gracefully", "SIGTERM should trigger graceful shutdown")
+	s.NotContains(logOutput, "Ctrl+C again", "SIGTERM should not log the SIGINT force-exit hint")
 }
 
 // =============================================================================
