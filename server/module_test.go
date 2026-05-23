@@ -1,13 +1,20 @@
 package server
 
 import (
+	"context"
+	"fmt"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
+	googlegrpc "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
-	"github.com/petabytecl/gaz/server/grpc"
+	hello "github.com/petabytecl/gaz/examples/vanguard/proto"
+	servergrpc "github.com/petabytecl/gaz/server/grpc"
 	"github.com/petabytecl/gaz/server/vanguard"
 )
 
@@ -26,7 +33,7 @@ func TestNewModule(t *testing.T) {
 		c := app.Container()
 
 		// Verify servers were registered.
-		require.True(t, di.Has[*grpc.Server](c))
+		require.True(t, di.Has[*servergrpc.Server](c))
 		require.True(t, di.Has[*vanguard.Server](c))
 	})
 
@@ -43,7 +50,7 @@ func TestNewModule(t *testing.T) {
 
 		c := app.Container()
 
-		cfg, err := di.Resolve[grpc.Config](c)
+		cfg, err := di.Resolve[servergrpc.Config](c)
 		require.NoError(t, err)
 		require.True(t, cfg.SkipListener, "gRPC SkipListener must be true when using server module")
 	})
@@ -53,4 +60,89 @@ func TestNewModule(t *testing.T) {
 		module := NewModule()
 		require.Equal(t, "server", module.Name())
 	})
+}
+
+func TestNewModule_BridgesGRPCServicesThroughVanguard(t *testing.T) {
+	app := gaz.New()
+	app.Use(NewModule())
+
+	cfg := vanguard.DefaultConfig()
+	cfg.Port = getFreePort(t)
+	cfg.HealthEnabled = false
+	cfg.Reflection = false
+	cfg.DevMode = true
+	require.NoError(t, gaz.For[vanguard.Config](app.Container()).Replace().Instance(cfg))
+
+	require.NoError(t, gaz.For[*bridgeGreeterService](app.Container()).Instance(&bridgeGreeterService{}))
+
+	require.NoError(t, app.Build())
+	require.NoError(t, app.Start(context.Background()))
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		require.NoError(t, app.Stop(ctx))
+	})
+
+	waitForPort(t, cfg.Port)
+
+	conn, err := googlegrpc.NewClient(
+		fmt.Sprintf("localhost:%d", cfg.Port),
+		googlegrpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, conn.Close())
+	})
+
+	client := hello.NewGreeterClient(conn)
+	var reply *hello.HelloReply
+	var callErr error
+	require.Eventually(t, func() bool {
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+
+		reply, callErr = client.SayHello(ctx, &hello.HelloRequest{Name: "Bridge"})
+		return callErr == nil && reply.GetMessage() == "Hello from gRPC, Bridge!"
+	}, 2*time.Second, 20*time.Millisecond, "last gRPC error: %v", callErr)
+}
+
+type bridgeGreeterService struct {
+	hello.UnimplementedGreeterServer
+}
+
+func (s *bridgeGreeterService) SayHello(
+	_ context.Context,
+	req *hello.HelloRequest,
+) (*hello.HelloReply, error) {
+	return &hello.HelloReply{Message: fmt.Sprintf("Hello from gRPC, %s!", req.GetName())}, nil
+}
+
+func (s *bridgeGreeterService) RegisterService(registrar googlegrpc.ServiceRegistrar) {
+	hello.RegisterGreeterServer(registrar, s)
+}
+
+func getFreePort(t *testing.T) int {
+	t.Helper()
+
+	lis, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, lis.Close())
+	}()
+
+	return lis.Addr().(*net.TCPAddr).Port
+}
+
+func waitForPort(t *testing.T, port int) {
+	t.Helper()
+
+	addr := fmt.Sprintf("localhost:%d", port)
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return false
+		}
+		_ = conn.Close()
+		return true
+	}, 2*time.Second, 10*time.Millisecond)
 }

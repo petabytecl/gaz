@@ -189,7 +189,7 @@ func provideServer(c *gaz.Container) error {
 				return nil, fmt.Errorf("resolve grpc server: %w", err)
 			}
 
-			return NewServer(cfg, resolveLogger(c), c, grpcSrv.GRPCServer()), nil
+			return newServerWithGRPCSource(cfg, resolveLogger(c), c, grpcSrv), nil
 		}); err != nil {
 		return fmt.Errorf("register vanguard server: %w", err)
 	}
