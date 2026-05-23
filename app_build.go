@@ -2,7 +2,6 @@ package gaz
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -131,79 +130,15 @@ func (a *App) Build() error {
 	defer a.mu.Unlock()
 
 	if a.built {
-		return nil // Already built, idempotent
+		return nil
 	}
 
-	// Load configuration first
 	if err := a.loadConfig(); err != nil {
 		return err
 	}
 
-	// Collect any registration errors
-	var errs []error
-	errs = append(errs, a.buildErrors...)
-
-	// Register ProviderValues EARLY so providers can inject it
-	if err := a.registerProviderValuesEarly(); err != nil {
-		errs = append(errs, err)
-	}
-
-	// Initialize Logger BEFORE collecting provider configs
-	// This allows logger config from modules to be used
-	if err := a.initializeLogger(); err != nil {
-		errs = append(errs, err)
-	}
-
-	// Initialize subsystems (WorkerManager, Scheduler, EventBus) after logger
-	if err := a.initializeSubsystems(); err != nil {
-		errs = append(errs, err)
-	}
-
-	// Collect provider configs from registered services
-	// Now providers can inject *ProviderValues as a dependency
-	if err := a.collectProviderConfigs(); err != nil {
-		errs = append(errs, err)
-	}
-
-	// Auto-register health module if config implements HealthConfigProvider
-	// and health module is not already registered
-	if err := a.autoRegisterHealth(); err != nil {
-		errs = append(errs, err)
-	}
-
-	// Delegate to container.Build() for eager instantiation
-	if err := a.container.Build(); err != nil {
-		errs = append(errs, err)
-	}
-
-	if len(errs) == 0 {
-		plan, planErr := newLifecyclePlan(a.container)
-		if planErr != nil {
-			errs = append(errs, planErr)
-		} else {
-			a.cachedLifecyclePlan = plan
-		}
-	}
-
-	if len(errs) == 0 {
-		if resolveErr := a.cachedLifecyclePlan.resolveLifecycleServices(a.container); resolveErr != nil {
-			errs = append(errs, resolveErr)
-		}
-	}
-
-	if len(errs) == 0 {
-		plan := a.cachedLifecyclePlan
-		errs = append(errs, plan.registerRuntimeParticipants(
-			a.container,
-			a.workerMgr,
-			a.eventBus,
-			a.scheduler,
-			a.getLogger(),
-		)...)
-	}
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
+	if err := a.runBuildPhases(); err != nil {
+		return err
 	}
 
 	a.built = true
