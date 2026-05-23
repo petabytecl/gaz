@@ -49,7 +49,12 @@ type supervisor struct {
 	onCriticalFail func()
 }
 
-// newSupervisor creates a new supervisor for the given worker.
+// newSupervisor creates and initializes a supervisor for a worker.
+// It wires the worker `w` with its runtime options `opts`, uses `logger`
+// to create a worker-scoped logger, and registers `onCriticalFail` as the
+// callback to invoke when the worker reaches a critical failure condition.
+// It returns a configured *supervisor with default backoff settings and
+// lifecycle channels ready for start().
 func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCriticalFail func()) *supervisor {
 	return &supervisor{
 		worker: w,
@@ -97,6 +102,10 @@ func (s *supervisor) waitStarted() <-chan struct{} {
 	return s.started
 }
 
+// signalStarted closes the started channel exactly once using sync.Once
+// to indicate that waiters should stop waiting: either the supervisor has
+// completed its first OnStart attempt, or it exited before starting because
+// its context was already cancelled.
 func (s *supervisor) signalStarted() {
 	s.startOnce.Do(func() {
 		close(s.started)
@@ -199,6 +208,8 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 		s.signalStarted()
 	}
 
+	stopTimeout := defaultStopTimeout
+
 	defer func() {
 		if r := recover(); r != nil {
 			signalStarted()
@@ -221,7 +232,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 
 		// Defensive cleanup: call OnStop even after failed OnStart.
 		// Workers may have partially initialized resources that need releasing.
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 		defer stopCancel()
 
 		if stopErr := s.worker.OnStop(stopCtx); stopErr != nil {
@@ -240,7 +251,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	// Create a fresh context for OnStop — the supervisor context is cancelled,
 	// but workers need a live context to perform graceful cleanup (flush buffers,
 	// close connections, deregister from service discovery, etc.).
-	stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 	defer stopCancel()
 
 	s.logger.Info("worker OnStop")
