@@ -10,7 +10,6 @@ import (
 	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
-	"github.com/petabytecl/gaz/health"
 	"github.com/petabytecl/gaz/logger"
 	"github.com/petabytecl/gaz/worker"
 )
@@ -168,28 +167,8 @@ func (a *App) Build() error {
 
 	// Auto-register health module if config implements HealthConfigProvider
 	// and health module is not already registered
-	if a.configTarget != nil {
-		if hp, ok := a.configTarget.(health.HealthConfigProvider); ok {
-			// Only auto-register if health module not already applied
-			if !a.modules["health"] {
-				cfg := hp.HealthConfig()
-
-				// Register health.Config in container
-				if err := For[health.Config](a.container).Instance(cfg); err != nil {
-					errs = append(errs, fmt.Errorf("register health config: %w", err))
-				} else {
-					// Create and apply health module
-					healthModule := NewModule("health").
-						Provide(health.Module).
-						Build()
-					if applyErr := healthModule.Apply(a); applyErr != nil {
-						errs = append(errs, fmt.Errorf("apply health module: %w", applyErr))
-					} else {
-						a.modules["health"] = true
-					}
-				}
-			}
-		}
+	if err := a.autoRegisterHealth(); err != nil {
+		errs = append(errs, err)
 	}
 
 	// Delegate to container.Build() for eager instantiation

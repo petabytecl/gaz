@@ -27,7 +27,7 @@ import (
 func New() gaz.Module {
 	defaultCfg := health.DefaultConfig()
 
-	return gaz.NewModule("health-flags").
+	return gaz.NewModule(health.ModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(configuredmodule.ProvideDefaulted[health.Config, *health.Config](
 			&defaultCfg,
