@@ -97,6 +97,8 @@ func (s *supervisor) waitStarted() <-chan struct{} {
 	return s.started
 }
 
+// signalStarted closes the started channel exactly once using sync.Once
+// to indicate the supervisor has completed its first OnStart attempt.
 func (s *supervisor) signalStarted() {
 	s.startOnce.Do(func() {
 		close(s.started)
