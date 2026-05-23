@@ -2,11 +2,8 @@ package gaz
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/petabytecl/gaz/config"
-	cfgviper "github.com/petabytecl/gaz/config/viper"
 )
 
 // loadConfig loads the configuration from all sources.
@@ -54,62 +51,17 @@ func (a *App) applyConfigFlags() error {
 		return nil
 	}
 
-	flags := a.cobraCmd.Flags()
-
-	// Only apply if config module registered --config flag
-	configFlag := flags.Lookup("config")
-	if configFlag == nil {
-		return nil
+	result, err := interpretConfigFlags(a.cobraCmd.Flags(), a.cobraCmd.Root().Name())
+	if err != nil {
+		return err
 	}
 
-	var opts []config.Option
-	opts = append(opts, config.WithBackend(cfgviper.New()))
-
-	// --config flag: explicit config file path
-	configPath := configFlag.Value.String()
-	if configPath != "" {
-		// Explicit config file - validate exists
-		if _, statErr := os.Stat(configPath); statErr != nil {
-			return fmt.Errorf("config: file not found: %s", configPath)
-		}
-		opts = append(opts, config.WithConfigFile(configPath))
-	} else {
-		// Auto-search: cwd first, then XDG config dir
-		xdgConfig := os.Getenv("XDG_CONFIG_HOME")
-		if xdgConfig == "" {
-			if home, homeErr := os.UserHomeDir(); homeErr == nil {
-				xdgConfig = filepath.Join(home, ".config")
-			}
-		}
-		searchPaths := []string{"."}
-		if xdgConfig != "" {
-			appName := a.cobraCmd.Root().Name()
-			if appName != "" {
-				searchPaths = append(searchPaths, filepath.Join(xdgConfig, appName))
-			}
-		}
-		opts = append(opts, config.WithSearchPaths(searchPaths...))
+	if len(result.options) > 0 {
+		a.configMgr = config.New(result.options...)
 	}
-
-	// --env-prefix flag
-	if envPrefixFlag := flags.Lookup("env-prefix"); envPrefixFlag != nil {
-		envPrefix := envPrefixFlag.Value.String()
-		if envPrefix != "" {
-			opts = append(opts, config.WithEnvPrefix(envPrefix))
-		}
+	if result.strictMode != nil {
+		a.strictConfig = *result.strictMode
 	}
-
-	// --config-strict flag
-	if strictFlag := flags.Lookup("config-strict"); strictFlag != nil {
-		if strictFlag.Value.String() == "true" {
-			a.strictConfig = true
-		} else if strictFlag.Value.String() == "false" {
-			a.strictConfig = false
-		}
-	}
-
-	// Recreate config manager with collected options
-	a.configMgr = config.New(opts...)
 
 	return nil
 }

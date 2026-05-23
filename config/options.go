@@ -1,5 +1,10 @@
 package config
 
+import (
+	"os"
+	"path/filepath"
+)
+
 // Option configures a Manager.
 type Option func(*Manager)
 
@@ -75,4 +80,22 @@ func WithConfigFile(path string) Option {
 	return func(m *Manager) {
 		m.configFile = path
 	}
+}
+
+// DefaultSearchPaths returns the convention-based config search paths:
+// current directory first, then XDG config directory for the given app name.
+func DefaultSearchPaths(appName string) []string {
+	paths := []string{"."}
+
+	xdgConfig := os.Getenv("XDG_CONFIG_HOME")
+	if xdgConfig == "" {
+		if home, err := os.UserHomeDir(); err == nil {
+			xdgConfig = filepath.Join(home, ".config")
+		}
+	}
+	if xdgConfig != "" && appName != "" {
+		paths = append(paths, filepath.Join(xdgConfig, appName))
+	}
+
+	return paths
 }
