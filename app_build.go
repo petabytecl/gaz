@@ -186,6 +186,12 @@ func (a *App) Build() error {
 	}
 
 	if len(errs) == 0 {
+		if resolveErr := a.cachedLifecyclePlan.resolveLifecycleServices(a.container); resolveErr != nil {
+			errs = append(errs, resolveErr)
+		}
+	}
+
+	if len(errs) == 0 {
 		plan := a.cachedLifecyclePlan
 		errs = append(errs, plan.registerRuntimeParticipants(
 			a.container,
