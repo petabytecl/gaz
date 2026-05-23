@@ -3,12 +3,9 @@ package gaz
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
-	"time"
 )
 
 // Run executes the application lifecycle.
@@ -52,66 +49,7 @@ func (a *App) startServices(ctx context.Context) error {
 		return err
 	}
 
-	a.Logger.InfoContext(ctx, "starting application", "services_count", len(plan.services))
-
-	// Start services layer by layer
-	for _, layer := range plan.startupOrder {
-		var wg sync.WaitGroup
-		errCh := make(chan error, len(layer))
-
-		for _, name := range layer {
-			svc := plan.services[name]
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				start := time.Now()
-				if startErr := svc.Start(ctx); startErr != nil {
-					a.Logger.ErrorContext(
-						ctx,
-						"failed to start service",
-						"name", name,
-						"error", startErr,
-					)
-					errCh <- fmt.Errorf("starting service %s: %w", name, startErr)
-				} else {
-					a.Logger.InfoContext(
-						ctx,
-						"service started",
-						"name", name,
-						"duration", time.Since(start),
-					)
-				}
-			}()
-		}
-		wg.Wait()
-		close(errCh)
-
-		// Drain all errors — multiple services in the same layer may fail.
-		var startupErrors []error
-		for e := range errCh {
-			startupErrors = append(startupErrors, e)
-		}
-		if len(startupErrors) > 0 {
-			startupErr := errors.Join(startupErrors...)
-			// Rollback: stop everything we started.
-			shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
-			defer cancel()
-			stopErr := a.Stop(shutdownCtx)
-			return errors.Join(startupErr, stopErr)
-		}
-	}
-
-	// Start workers after all services started
-	a.Logger.InfoContext(ctx, "starting workers")
-	if workerErr := a.workerMgr.Start(ctx); workerErr != nil {
-		// Rollback
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
-		defer cancel()
-		stopErr := a.Stop(shutdownCtx)
-		return errors.Join(fmt.Errorf("starting workers: %w", workerErr), stopErr)
-	}
-
-	return nil
+	return a.lifecycleExecutor(plan).Start(ctx, a.Stop)
 }
 
 // waitForShutdownSignal blocks until a shutdown trigger (signal, context cancel, or Stop call).
@@ -149,19 +87,23 @@ func (a *App) handleSignalShutdown(
 	sig os.Signal,
 	sigCh <-chan os.Signal,
 ) error {
-	// Log hint message about force exit option
-	a.Logger.InfoContext(ctx, "Shutting down gracefully...", "hint", "Ctrl+C again to force")
+	if sig == os.Interrupt {
+		a.Logger.InfoContext(ctx, "Shutting down gracefully...", "hint", "Ctrl+C again to force")
+	} else {
+		a.Logger.InfoContext(ctx, "Shutting down gracefully...", "signal", sig.String())
+	}
 
 	// Create shutdown context
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
 	defer cancel()
 
-	// Channel to receive shutdown result
-	shutdownDone := make(chan error, 1)
+	shutdownErr := make(chan error, 1)
+	shutdownDone := make(chan struct{})
 
 	// Start graceful shutdown in goroutine so we can continue listening for signals
 	go func() {
-		shutdownDone <- a.Stop(shutdownCtx)
+		defer close(shutdownDone)
+		shutdownErr <- a.Stop(shutdownCtx)
 	}()
 
 	// If SIGINT, spawn force-exit watcher goroutine.
@@ -185,7 +127,7 @@ func (a *App) handleSignalShutdown(
 	}
 
 	// Wait for shutdown to complete
-	err := <-shutdownDone
+	err := <-shutdownErr
 	// Ensure watcher goroutine exits before returning, so that
 	// defer signal.Stop(sigCh) in the caller runs after the watcher.
 	<-watcherDone

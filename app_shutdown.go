@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/petabytecl/gaz/di"
 )
 
 // Stop initiates graceful shutdown of the application.
@@ -71,20 +69,8 @@ func (a *App) doStop(ctx context.Context) error {
 	}
 
 	var errs []error
-
-	// Get logger safely (uses slog.Default() if nil)
-	log := a.getLogger()
-
-	// Stop workers first (they may depend on services)
-	log.InfoContext(ctx, "stopping workers")
-	if a.workerMgr != nil {
-		if workerStopErr := a.workerMgr.Stop(ctx); workerStopErr != nil {
-			errs = append(errs, fmt.Errorf("stopping workers: %w", workerStopErr))
-		}
-	}
-
-	if serviceStopErr := a.stopServices(ctx, plan.shutdownOrder, plan.services); serviceStopErr != nil {
-		errs = append(errs, serviceStopErr)
+	if stopErr := a.lifecycleExecutor(plan).Stop(ctx); stopErr != nil {
+		errs = append(errs, stopErr)
 	}
 
 	// Close logger file handle (if any) — after all services stopped, before exit
@@ -113,83 +99,4 @@ func (a *App) doStop(ctx context.Context) error {
 		return errors.Join(errs...)
 	}
 	return nil
-}
-
-// stopServices stops services sequentially with per-hook timeout and blame logging.
-func (a *App) stopServices(
-	ctx context.Context,
-	order [][]string,
-	services map[string]di.ServiceWrapper,
-) error {
-	var errs []error
-
-	// Stop services layer by layer, sequentially within each layer
-	for _, layer := range order {
-		for _, name := range layer {
-			svc := services[name]
-
-			// Create per-hook timeout context
-			timeout := a.opts.PerHookTimeout
-			hookCtx, cancel := context.WithTimeout(ctx, timeout)
-
-			// Run hook in goroutine so we can detect timeout
-			start := time.Now()
-			errCh := make(chan error, 1)
-			go func() {
-				errCh <- svc.Stop(hookCtx)
-			}()
-
-			// Wait for hook completion or timeout
-			select {
-			case stopErr := <-errCh:
-				cancel()
-				elapsed := time.Since(start)
-				if stopErr != nil {
-					a.Logger.ErrorContext(
-						ctx,
-						"failed to stop service",
-						"name", name,
-						"error", stopErr,
-						"elapsed", elapsed,
-					)
-					errs = append(errs, fmt.Errorf("stopping service %s: %w", name, stopErr))
-				} else {
-					a.Logger.InfoContext(
-						ctx,
-						"service stopped",
-						"name", name,
-						"duration", elapsed,
-					)
-				}
-			case <-hookCtx.Done():
-				cancel()
-				elapsed := time.Since(start)
-				// Blame logging: hook exceeded timeout
-				a.logBlame(name, timeout, elapsed)
-				errs = append(
-					errs,
-					fmt.Errorf("stopping service %s: %w", name, context.DeadlineExceeded),
-				)
-				// Continue to next hook (don't wait for the timed-out hook)
-			}
-		}
-	}
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-	return nil
-}
-
-// logBlame logs blame information when a hook exceeds its timeout.
-// Uses Logger first, falls back to stderr if Logger fails.
-func (a *App) logBlame(hookName string, timeout, elapsed time.Duration) {
-	msg := fmt.Sprintf("shutdown: %s exceeded %s timeout (elapsed: %s)", hookName, timeout, elapsed)
-
-	// Try structured logger first
-	if a.Logger != nil {
-		a.Logger.Error(msg, "hook", hookName, "timeout", timeout, "elapsed", elapsed)
-	}
-	// Always write to stderr as fallback (guaranteed output even if logger is broken)
-	_, _ = fmt.Fprintln(os.Stderr, msg)
 }
