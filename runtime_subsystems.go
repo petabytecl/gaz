@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -36,6 +37,16 @@ func newRuntimeSubsystems(deps runtimeSubsystemsDeps) (*runtimeSubsystems, error
 	log := deps.logger
 	if log == nil {
 		log = slog.Default()
+	}
+
+	if deps.container == nil {
+		return nil, errors.New("runtime subsystems: container is required")
+	}
+	if deps.stopFunc == nil {
+		return nil, errors.New("runtime subsystems: stop function is required")
+	}
+	if Has[*eventbus.EventBus](deps.container) {
+		return nil, fmt.Errorf("%w: %s", ErrDIDuplicate, TypeName[*eventbus.EventBus]())
 	}
 
 	mgr := worker.NewManager(log)

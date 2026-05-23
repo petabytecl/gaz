@@ -104,5 +104,27 @@ func TestNewRuntimeSubsystems_DuplicateEventBusReturnsError(t *testing.T) {
 		shutdownTimeout: 5 * time.Second,
 		stopFunc:        func(context.Context) error { return nil },
 	})
-	require.NoError(t, err)
+	require.ErrorIs(t, err, ErrDIDuplicate)
+}
+
+func TestNewRuntimeSubsystems_NilContainerReturnsError(t *testing.T) {
+	_, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       nil,
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        func(context.Context) error { return nil },
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "container is required")
+}
+
+func TestNewRuntimeSubsystems_NilStopFuncReturnsError(t *testing.T) {
+	_, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       NewContainer(),
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        nil,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "stop function is required")
 }
