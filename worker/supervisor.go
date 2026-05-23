@@ -199,6 +199,11 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 		s.signalStarted()
 	}
 
+	stopTimeout := s.opts.StopTimeout
+	if stopTimeout <= 0 {
+		stopTimeout = defaultStopTimeout
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			signalStarted()
@@ -221,7 +226,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 
 		// Defensive cleanup: call OnStop even after failed OnStart.
 		// Workers may have partially initialized resources that need releasing.
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 		defer stopCancel()
 
 		if stopErr := s.worker.OnStop(stopCtx); stopErr != nil {
@@ -240,7 +245,7 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	// Create a fresh context for OnStop — the supervisor context is cancelled,
 	// but workers need a live context to perform graceful cleanup (flush buffers,
 	// close connections, deregister from service discovery, etc.).
-	stopCtx, stopCancel := context.WithTimeout(context.Background(), defaultStopTimeout)
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 	defer stopCancel()
 
 	s.logger.Info("worker OnStop")
