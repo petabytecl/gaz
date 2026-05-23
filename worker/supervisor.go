@@ -140,13 +140,14 @@ func (s *supervisor) supervise() {
 		}
 
 		// Worker panicked - check circuit breaker
-		s.failures++
-
 		// Reset circuit breaker window if it has expired
 		if time.Since(s.windowStart) > s.opts.CircuitWindow {
-			s.failures = 1
+			s.failures = 0
 			s.windowStart = time.Now()
 		}
+
+		// Count this panic within the current circuit window
+		s.failures++
 
 		// Check if circuit breaker should trip
 		if s.failures >= s.opts.MaxRestarts {
