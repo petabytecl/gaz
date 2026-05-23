@@ -38,12 +38,13 @@ type supervisor struct {
 	lastPanicStack string
 
 	// Lifecycle
-	ctx       context.Context
-	cancel    context.CancelFunc
-	started   chan struct{}
-	startOnce sync.Once
-	done      chan struct{}
-	wg        sync.WaitGroup
+	ctx         context.Context
+	cancel      context.CancelFunc
+	started     chan struct{}
+	startOnce   sync.Once
+	startedOnce sync.Once
+	done        chan struct{}
+	wg          sync.WaitGroup
 
 	// Callback for critical worker failure
 	onCriticalFail func()
@@ -75,11 +76,13 @@ func newSupervisor(w Worker, opts *WorkerOptions, logger *slog.Logger, onCritica
 // start begins supervising the worker. It returns immediately.
 // The supervision runs until the context is cancelled or the circuit breaker trips.
 func (s *supervisor) start(ctx context.Context) {
-	s.ctx, s.cancel = context.WithCancel(ctx)
-	s.windowStart = time.Now()
+	s.startOnce.Do(func() {
+		s.ctx, s.cancel = context.WithCancel(ctx)
+		s.windowStart = time.Now()
 
-	s.wg.Add(1)
-	go s.supervise()
+		s.wg.Add(1)
+		go s.supervise()
+	})
 }
 
 // stop signals the supervisor to stop and waits for completion.
@@ -107,7 +110,7 @@ func (s *supervisor) waitStarted() <-chan struct{} {
 // completed its first OnStart attempt, or it exited before starting because
 // its context was already cancelled.
 func (s *supervisor) signalStarted() {
-	s.startOnce.Do(func() {
+	s.startedOnce.Do(func() {
 		close(s.started)
 	})
 }
@@ -140,13 +143,14 @@ func (s *supervisor) supervise() {
 		}
 
 		// Worker panicked - check circuit breaker
-		s.failures++
-
 		// Reset circuit breaker window if it has expired
 		if time.Since(s.windowStart) > s.opts.CircuitWindow {
-			s.failures = 1
+			s.failures = 0
 			s.windowStart = time.Now()
 		}
+
+		// Count this panic within the current circuit window
+		s.failures++
 
 		// Check if circuit breaker should trip
 		if s.failures >= s.opts.MaxRestarts {
@@ -209,6 +213,9 @@ func (s *supervisor) runWithRecovery() (panicked bool) {
 	}
 
 	stopTimeout := defaultStopTimeout
+	if s.opts.StopTimeout > 0 {
+		stopTimeout = s.opts.StopTimeout
+	}
 
 	defer func() {
 		if r := recover(); r != nil {

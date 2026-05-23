@@ -361,6 +361,45 @@ func TestSupervisor_StopBeforeStart(t *testing.T) {
 	assert.Equal(t, 0, worker.getStopCount(), "worker should not have stopped")
 }
 
+func TestSupervisor_StartSignalsStarted(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("start-signals-started")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	sup.start(context.Background())
+
+	select {
+	case <-sup.waitStarted():
+	case <-time.After(time.Second):
+		t.Fatal("supervisor did not signal startup completion")
+	}
+
+	sup.stop()
+}
+
+func TestSupervisor_StartIsIdempotent(t *testing.T) {
+	logger := slog.Default()
+	worker := newMockWorker("start-idempotent")
+
+	opts := DefaultWorkerOptions()
+	sup := newSupervisor(worker, opts, logger, nil)
+
+	sup.start(context.Background())
+	select {
+	case <-sup.waitStarted():
+	case <-time.After(time.Second):
+		t.Fatal("supervisor did not signal startup completion")
+	}
+
+	sup.start(context.Background())
+	sup.stop()
+
+	assert.Equal(t, 1, worker.getStartCount(), "worker should start once")
+	assert.Equal(t, 1, worker.getStopCount(), "worker should stop once")
+}
+
 // TestPooledWorker_OnStartOnStop tests the pooledWorker delegate methods.
 func TestPooledWorker_OnStartOnStop(t *testing.T) {
 	worker := newMockWorker("base-worker")
@@ -689,6 +728,54 @@ func (w *contextCheckWorker) OnStop(ctx context.Context) error {
 
 func (w *contextCheckWorker) Name() string { return w.name }
 
+// stopTimeoutWorker blocks in OnStop until its context is cancelled.
+type stopTimeoutWorker struct {
+	name       string
+	startErr   error
+	started    chan struct{}
+	stopped    chan struct{}
+	stopCount  atomic.Int32
+	stopCtxErr atomic.Value
+}
+
+func newStopTimeoutWorker(name string, startErr error) *stopTimeoutWorker {
+	return &stopTimeoutWorker{
+		name:     name,
+		startErr: startErr,
+		started:  make(chan struct{}),
+		stopped:  make(chan struct{}, 1),
+	}
+}
+
+func (w *stopTimeoutWorker) OnStart(_ context.Context) error {
+	if w.startErr != nil {
+		return w.startErr
+	}
+	close(w.started)
+	return nil
+}
+
+func (w *stopTimeoutWorker) OnStop(ctx context.Context) error {
+	w.stopCount.Add(1)
+	<-ctx.Done()
+	w.stopCtxErr.Store(ctx.Err().Error())
+	select {
+	case w.stopped <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+func (w *stopTimeoutWorker) Name() string { return w.name }
+
+func (w *stopTimeoutWorker) stopContextError() string {
+	value := w.stopCtxErr.Load()
+	if value == nil {
+		return ""
+	}
+	return value.(string)
+}
+
 func TestSupervisor_OnStop_FreshContext(t *testing.T) {
 	logger := slog.Default()
 	w := newContextCheckWorker("context-check")
@@ -727,4 +814,58 @@ func TestSupervisor_OnStop_FreshContext(t *testing.T) {
 
 	// OnStop must have received a live context (not the cancelled supervisor context)
 	assert.True(t, w.stopCtxAlive.Load(), "OnStop should receive a live (non-cancelled) context")
+}
+
+func TestSupervisor_OnStopUsesConfiguredTimeout_NormalShutdown(t *testing.T) {
+	logger := slog.Default()
+	w := newStopTimeoutWorker("stop-timeout-normal", nil)
+
+	opts := DefaultWorkerOptions()
+	opts.StopTimeout = 25 * time.Millisecond
+
+	sup := newSupervisor(w, opts, logger, nil)
+	sup.start(context.Background())
+
+	select {
+	case <-w.started:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not start in time")
+	}
+
+	stopped := make(chan struct{})
+	go func() {
+		sup.stop()
+		close(stopped)
+	}()
+
+	select {
+	case <-stopped:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("supervisor did not stop with configured timeout")
+	}
+
+	assert.Equal(t, int32(1), w.stopCount.Load())
+	assert.Equal(t, context.DeadlineExceeded.Error(), w.stopContextError())
+}
+
+func TestSupervisor_OnStopUsesConfiguredTimeout_AfterFailedOnStart(t *testing.T) {
+	logger := slog.Default()
+	w := newStopTimeoutWorker("stop-timeout-failed-start", errors.New("init failed"))
+
+	opts := DefaultWorkerOptions()
+	opts.MaxRestarts = 1
+	opts.CircuitWindow = time.Minute
+	opts.StopTimeout = 25 * time.Millisecond
+
+	sup := newSupervisor(w, opts, logger, nil)
+	sup.start(context.Background())
+
+	select {
+	case <-sup.wait():
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("supervisor did not stop with configured timeout after failed OnStart")
+	}
+
+	assert.Equal(t, int32(1), w.stopCount.Load())
+	assert.Equal(t, context.DeadlineExceeded.Error(), w.stopContextError())
 }
