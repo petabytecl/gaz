@@ -68,24 +68,6 @@ func (w *mockWorker) getStopCount() int {
 	return int(atomic.LoadInt32(&w.stopCount))
 }
 
-// panicWorker panics on every start.
-type panicWorker struct {
-	name       string
-	startCount int32
-}
-
-func (w *panicWorker) OnStart(ctx context.Context) error {
-	atomic.AddInt32(&w.startCount, 1)
-	panic("intentional panic")
-}
-
-func (w *panicWorker) OnStop(ctx context.Context) error { return nil }
-
-func (w *panicWorker) Name() string { return w.name }
-
-func (w *panicWorker) getStartCount() int {
-	return int(atomic.LoadInt32(&w.startCount))
-}
 
 // errorWorker always returns an error from OnStart (no panic).
 type errorWorker struct {
