@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/petabytecl/gaz/cron"
+	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/worker"
 )
 
@@ -153,6 +154,25 @@ func TestLifecyclePlanOwnsSelectionAndOrderPolicy(t *testing.T) {
 	require.Len(t, plan.cronJobs, 1)
 	assert.Equal(t, "cron-job", plan.cronJobs[0].serviceName)
 	assert.True(t, plan.cronJobs[0].transient)
+}
+
+func TestLifecyclePlanExcludesFrameworkRuntimeParticipants(t *testing.T) {
+	c := NewContainer()
+
+	require.NoError(t, For[*worker.Manager](c).Instance(worker.NewManager(slog.Default())))
+	require.NoError(t, For[*cron.Scheduler](c).Instance(
+		cron.NewScheduler(c, context.Background(), slog.Default()),
+	))
+	require.NoError(t, For[*eventbus.EventBus](c).Instance(eventbus.New(slog.Default())))
+
+	require.NoError(t, c.Build())
+
+	plan, err := newLifecyclePlan(c)
+	require.NoError(t, err)
+
+	assert.Empty(t, plan.services)
+	assert.Empty(t, plan.workerParticipants)
+	assert.Empty(t, plan.cronJobs)
 }
 
 func TestLifecyclePlanDoesNotResolvePlainServicesDuringPlanning(t *testing.T) {

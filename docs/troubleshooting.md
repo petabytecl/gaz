@@ -255,15 +255,12 @@ app.Module("cache", ...)
 
 **Problem:** Registered worker never starts.
 
-**Cause:** Worker not properly registered or module not loaded.
+**Cause:** Worker not properly registered, or the app was built but never run.
 
 **Solution:**
 
 ```go
-// Register worker module
-app.UseDI(worker.NewModule())
-
-// Register your worker
+// Register your worker. gaz.App owns the runtime worker manager.
 gaz.For[worker.Worker](app.Container()).
     Named("my-worker").
     Provider(NewMyWorker)

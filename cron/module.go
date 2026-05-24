@@ -11,6 +11,10 @@ import (
 // Module registers cron infrastructure into the DI container.
 // It provides a *Scheduler that can schedule and execute cron jobs.
 //
+// When registered before gaz.App.Build, the App-managed runtime publishes its
+// scheduler as *Scheduler so DI resolution matches the scheduler App starts and
+// stops. Standalone DI usage keeps the scheduler created here.
+//
 // The logger is optional - if not registered, slog.Default() is used.
 // The di.Container is used as the Resolver since it implements ResolveByName.
 //

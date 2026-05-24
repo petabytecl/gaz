@@ -25,6 +25,7 @@ Already completed:
 - Config flag interpretation moved behind a private config flag policy.
 - Runtime subsystem construction moved behind a private runtime-subsystems module.
 - Explicit EventBus module registration composes with App runtime construction by reusing the registered bus.
+- App-managed worker manager and cron scheduler are published through DI as the same instances App starts and stops.
 - Lifecycle session orchestration moved behind a private lifecycle session.
 - Feature module identities are exposed by the owning packages; config keeps a deliberately separate `config-flags` adapter identity.
 
@@ -345,9 +346,52 @@ Suggested tests:
 - The App EventBus accessor and DI resolution return the same reused bus.
 - A failing explicit EventBus provider returns actionable build context.
 
+## Priority 9: Publish App Runtime Subsystems Through DI
+
+Recommendation strength: Strong
+
+Status: Completed.
+
+Files:
+
+- `runtime_subsystems.go`
+- `runtime_subsystems_test.go`
+- `lifecycle_plan.go`
+- `lifecycle_plan_test.go`
+- `app_build.go`
+- `app_test.go`
+- `worker/module.go`
+- `worker/module/module.go`
+- `cron/module.go`
+- `cron/module/module.go`
+- `examples/background-workers/main.go`
+- `examples/microservice/main.go`
+- `docs/troubleshooting.md`
+
+Problem:
+
+The fresh review found the same adapter mismatch around worker and cron runtime infrastructure. App owned private runtime instances for `*worker.Manager` and `*cron.Scheduler`, while the worker and cron modules registered separately resolvable instances in DI. That made `app.Use(workermod.New())` and `app.Use(cronmod.New())` appear to affect App-managed runtime behavior even though App started and stopped different objects.
+
+Solution:
+
+Publish the App-managed worker manager and cron scheduler into DI during runtime subsystem construction. If a worker manager was explicitly registered, reuse it and apply App's critical worker failure handler. Always publish the App-managed cron scheduler so jobs receive the App shutdown context. Extend lifecycle plan classification so these framework runtime registrations are not reclassified as user workers.
+
+Benefits:
+
+- DI resolution now returns the same runtime objects App starts and stops.
+- Worker and cron module adapters become honest App composition points instead of parallel standalone infrastructure.
+- Lifecycle planning keeps a clearer distinction between framework runtime participants and user workers/jobs.
+
+Suggested tests:
+
+- App-managed worker manager and cron scheduler resolve from DI after Build.
+- An explicitly registered worker manager is reused by runtime subsystem construction.
+- A pre-registered cron scheduler is replaced by the App-managed scheduler.
+- Lifecycle planning excludes framework runtime participants from user worker classification.
+
 ## Current Architecture Review Status
 
-The architecture backlog created from the earlier review is now exhausted. Priorities 1 through 8 are complete. Before selecting another implementation slice, run a fresh architecture review against current `main` and create a new short backlog from live friction instead of continuing from this historical queue.
+The architecture backlog created from the earlier review is now exhausted. Priorities 1 through 9 are complete. Before selecting another implementation slice, run a fresh architecture review against current `main` and create a new short backlog from live friction instead of continuing from this historical queue.
 
 ## Suggested Resume Order
 

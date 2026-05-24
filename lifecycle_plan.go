@@ -83,6 +83,10 @@ func collectLifecyclePlanServices(container *Container) map[string]di.ServiceWra
 			return
 		}
 
+		if isFrameworkRuntimeService(svc) {
+			return
+		}
+
 		if isWorkerParticipant(svc) || isCronJobParticipant(svc) {
 			return
 		}
@@ -128,7 +132,7 @@ func collectRuntimeParticipants(container *Container) ([]lifecycleWorkerParticip
 
 	container.ForEachService(func(name string, svc di.ServiceWrapper) {
 		if isWorkerParticipant(svc) {
-			if isFrameworkEventBus(svc) {
+			if isFrameworkRuntimeWorker(svc) {
 				return
 			}
 			workerParticipants = append(workerParticipants, lifecycleWorkerParticipant{
@@ -148,9 +152,13 @@ func isWorkerParticipant(svc di.ServiceWrapper) bool {
 	return st != nil && st.Implements(workerType)
 }
 
-func isFrameworkEventBus(svc di.ServiceWrapper) bool {
+func isFrameworkRuntimeWorker(svc di.ServiceWrapper) bool {
+	return isFrameworkRuntimeService(svc)
+}
+
+func isFrameworkRuntimeService(svc di.ServiceWrapper) bool {
 	st := svc.ServiceType()
-	return st == eventBusType
+	return st == eventBusType || st == workerManagerType || st == cronSchedulerType
 }
 
 func isCronJobParticipant(svc di.ServiceWrapper) bool {

@@ -10,6 +10,9 @@ import (
 // Module registers worker infrastructure into the DI container.
 // It provides a *Manager that can coordinate background workers.
 //
+// When registered before gaz.App.Build, the App-managed runtime reuses this
+// Manager and applies its critical worker failure handler.
+//
 // The logger is optional - if not registered, slog.Default() is used.
 //
 // For CLI/App integration with flags, use the worker/module subpackage:

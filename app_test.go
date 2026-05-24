@@ -18,6 +18,7 @@ import (
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 	"github.com/petabytecl/gaz/logger"
+	"github.com/petabytecl/gaz/worker"
 )
 
 type AppTestSuite struct {
@@ -517,6 +518,19 @@ func (s *AppTestSuite) TestEventBus() {
 	resolvedEventBus, err := Resolve[*eventbus.EventBus](app.Container())
 	s.Require().NoError(err)
 	s.Same(eventBusAfter, resolvedEventBus, "Resolved EventBus should be the same as accessor")
+}
+
+func (s *AppTestSuite) TestRuntimeSubsystemsResolvableFromDI() {
+	app := New()
+	s.Require().NoError(app.Build())
+
+	resolvedManager, err := Resolve[*worker.Manager](app.Container())
+	s.Require().NoError(err)
+	s.Same(app.workerMgr, resolvedManager)
+
+	resolvedScheduler, err := Resolve[*cron.Scheduler](app.Container())
+	s.Require().NoError(err)
+	s.Same(app.scheduler, resolvedScheduler)
 }
 
 func (s *AppTestSuite) TestWithLoggerConfig() {

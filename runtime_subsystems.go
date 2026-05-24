@@ -45,11 +45,17 @@ func newRuntimeSubsystems(deps runtimeSubsystemsDeps) (*runtimeSubsystems, error
 	if deps.stopFunc == nil {
 		return nil, errors.New("runtime subsystems: stop function is required")
 	}
-	mgr := worker.NewManager(log)
-	mgr.SetCriticalFailHandler(criticalFailHandler(log, deps.shutdownTimeout, deps.stopFunc))
+	mgr, err := runtimeWorkerManager(deps.container, log, deps.shutdownTimeout, deps.stopFunc)
+	if err != nil {
+		return nil, err
+	}
 
 	cronCtx, cronCancel := context.WithCancel(context.Background())
 	sched := cron.NewScheduler(deps.container, cronCtx, log)
+	if regErr := registerRuntimeScheduler(deps.container, sched); regErr != nil {
+		cronCancel()
+		return nil, regErr
+	}
 
 	bus, err := runtimeEventBus(deps.container, log)
 	if err != nil {
@@ -64,6 +70,39 @@ func newRuntimeSubsystems(deps runtimeSubsystemsDeps) (*runtimeSubsystems, error
 		cronCancel: cronCancel,
 		eventBus:   bus,
 	}, nil
+}
+
+func runtimeWorkerManager(
+	container *Container,
+	log *slog.Logger,
+	shutdownTimeout time.Duration,
+	stopFunc func(context.Context) error,
+) (*worker.Manager, error) {
+	if Has[*worker.Manager](container) {
+		mgr, err := Resolve[*worker.Manager](container)
+		if err != nil {
+			return nil, fmt.Errorf("resolve worker manager: %w", err)
+		}
+		if mgr == nil {
+			return nil, fmt.Errorf("%w: %s resolved to nil", ErrDIInvalidProvider, TypeName[*worker.Manager]())
+		}
+		mgr.SetCriticalFailHandler(criticalFailHandler(log, shutdownTimeout, stopFunc))
+		return mgr, nil
+	}
+
+	mgr := worker.NewManager(log)
+	mgr.SetCriticalFailHandler(criticalFailHandler(log, shutdownTimeout, stopFunc))
+	if err := For[*worker.Manager](container).Instance(mgr); err != nil {
+		return nil, fmt.Errorf("register worker manager: %w", err)
+	}
+	return mgr, nil
+}
+
+func registerRuntimeScheduler(container *Container, scheduler *cron.Scheduler) error {
+	if err := For[*cron.Scheduler](container).Replace().Instance(scheduler); err != nil {
+		return fmt.Errorf("register cron scheduler: %w", err)
+	}
+	return nil
 }
 
 func runtimeEventBus(container *Container, log *slog.Logger) (*eventbus.EventBus, error) {
