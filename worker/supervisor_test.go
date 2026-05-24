@@ -15,14 +15,12 @@ import (
 
 // mockWorker is a test helper for simulating worker behavior.
 type mockWorker struct {
-	name         string
-	startCount   int32
-	stopCount    int32
-	started      chan struct{}
-	stopped      chan struct{}
-	stopCh       chan struct{}
-	panicOnStart bool
-	mu           sync.Mutex
+	name       string
+	startCount int32
+	stopCount  int32
+	started    chan struct{}
+	stopped    chan struct{}
+	mu         sync.Mutex
 }
 
 func newMockWorker(name string) *mockWorker {
@@ -30,15 +28,11 @@ func newMockWorker(name string) *mockWorker {
 		name:    name,
 		started: make(chan struct{}),
 		stopped: make(chan struct{}),
-		stopCh:  make(chan struct{}),
 	}
 }
 
 func (w *mockWorker) OnStart(ctx context.Context) error {
 	atomic.AddInt32(&w.startCount, 1)
-	if w.panicOnStart {
-		panic("intentional panic for testing")
-	}
 	close(w.started)
 	return nil
 }

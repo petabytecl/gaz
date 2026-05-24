@@ -17,3 +17,9 @@ Runtime participant registration is part of the lifecycle plan's policy surface.
 Configured module registration is the shared App-module pattern for wiring a module-owned configuration type into DI. The module owns its public adapter and flags, while the internal configured-module helper owns the repeated mechanics: start from defaults, overlay ProviderValues when available, apply the module's defaulting policy, and validate before exposing the config.
 
 This keeps package-level modules stable as public entry points while centralizing the registration rule that makes flags, config files, environment values, and DI providers agree on one typed config instance.
+
+### Unified server bridge
+
+The unified server bridge is the App-module pattern for installing the transport stack on one port. It owns the policy that makes the gRPC server register services without binding its own listener, then hands that gRPC adapter to Vanguard so Vanguard serves gRPC, Connect, gRPC-Web, REST transcoding, and non-RPC HTTP routes from the single public listener.
+
+Standalone transport modules remain valid on their own. The unified server bridge only owns the extra composition rule needed when callers choose the single-port default.
