@@ -282,7 +282,7 @@ Suggested tests:
 
 Recommendation strength: Speculative
 
-Status: Next.
+Status: Completed.
 
 Files:
 
@@ -293,14 +293,11 @@ Files:
 
 Problem:
 
-`config.NewModule()` is currently a placeholder. The deletion test suggests it is shallow: deleting it would remove little behavior, but the public API may already imply that it has meaning.
+`config.NewModule()` was a placeholder. The deletion test showed it was shallow: deleting it would remove little behavior, but the public API already implied that it had meaning.
 
 Solution:
 
-Make an explicit decision:
-
-- Give it real behavior, such as registering config infrastructure or a documented config manager adapter.
-- Or document it as deprecated/no-op compatibility and stop presenting it as an advanced module.
+Document it as deprecated/no-op compatibility and stop presenting it as an advanced module.
 
 Benefits:
 
@@ -310,17 +307,20 @@ Benefits:
 
 Suggested tests:
 
-- If kept: assert the concrete behavior it owns.
-- If deprecated/no-op: assert it remains harmless and update docs to be explicit.
+- Assert it remains harmless and update docs to be explicit.
+
+## Current Architecture Review Status
+
+The architecture backlog created from the earlier review is now exhausted. Priorities 1 through 7 are complete. Before selecting another implementation slice, run a fresh architecture review against current `main` and create a new short backlog from live friction instead of continuing from this historical queue.
 
 ## Suggested Resume Order
 
 1. Create branch from updated `main`.
-2. Implement Priority 7 only.
+2. Run a fresh architecture review against current `main`.
 3. Run local gates.
 4. Push and monitor remote CI and CodeQL.
 5. Address review comments and resolve conversations.
 6. Rebase/pull `main` after merge.
 7. Refresh this backlog before selecting the next slice.
 
-Avoid mixing the speculative `config.NewModule()` decision with unrelated runtime changes. It is a public API question and should be reviewed on its own.
+Avoid inventing new work from this exhausted backlog. New work should come from current code evidence.

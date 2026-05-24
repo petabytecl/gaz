@@ -9,13 +9,13 @@ import (
 )
 
 func TestNewModule(t *testing.T) {
-	t.Run("zero arguments works with defaults", func(t *testing.T) {
+	t.Run("is compatibility no-op", func(t *testing.T) {
 		c := di.New()
 
-		// Register module
 		module := NewModule()
 		err := module.Register(c)
 		require.NoError(t, err)
+		require.Empty(t, c.List())
 	})
 
 	t.Run("returns valid di.Module", func(t *testing.T) {
@@ -24,13 +24,13 @@ func TestNewModule(t *testing.T) {
 		require.Equal(t, ModuleName, mod.Name())
 	})
 
-	t.Run("accepts options", func(t *testing.T) {
-		// Test that options can be passed (even if none are currently defined)
-		mod := NewModule()
+	t.Run("ignores nil options", func(t *testing.T) {
+		mod := NewModule(nil)
 		require.NotNil(t, mod)
 
 		c := di.New()
 		err := mod.Register(c)
 		require.NoError(t, err)
+		require.Empty(t, c.List())
 	})
 }
