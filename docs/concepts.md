@@ -244,6 +244,8 @@ Features:
 - Cobra integration
 - Structured logging
 
+Use `gaz.New().WithConfig(...)` for App-managed configuration. The `config.NewModule()` compatibility module is deprecated and intentionally registers nothing.
+
 ### Container (Libraries/Testing)
 
 Use `Container` directly for libraries or test scenarios:

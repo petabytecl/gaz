@@ -4,46 +4,35 @@ import (
 	"github.com/petabytecl/gaz/di"
 )
 
-// ModuleOption configures the config module.
+// ModuleOption configures the deprecated compatibility config module.
+//
+// Deprecated: [NewModule] is a no-op compatibility module. Use gaz.App
+// WithConfig for application configuration, the config/module package for
+// Cobra config flags, or [New] for standalone configuration loading.
 type ModuleOption func(*moduleConfig)
 
-type moduleConfig struct {
-	// Currently no configurable options exposed
-	// Placeholder for future extensibility (e.g., WithWatcher)
-}
+type moduleConfig struct{}
 
-func defaultModuleConfig() *moduleConfig {
-	return &moduleConfig{}
-}
-
-// NewModule creates a config module with the given options.
-// Returns a di.Module that provides configuration infrastructure.
+// NewModule returns a no-op DI module kept for source compatibility.
 //
-// Note: Configuration is typically set up via gaz.App.WithConfig().
-// This module provides explicit opt-in for advanced use cases like
-// additional config sources or watchers.
+// The config package owns standalone configuration loading through [New].
+// gaz.App owns application configuration through WithConfig, and the
+// config/module package owns Cobra config flags. This compatibility module
+// deliberately registers no services.
 //
 // Example:
 //
 //	app := gaz.New()
 //	app.UseDI(config.NewModule())
+//
+// Deprecated: NewModule does not register configuration infrastructure. Use
+// gaz.App WithConfig for application configuration, the config/module package
+// for Cobra config flags, or [New] for standalone configuration loading.
 func NewModule(opts ...ModuleOption) di.Module {
-	cfg := defaultModuleConfig()
-	for _, opt := range opts {
-		opt(cfg)
-	}
+	_ = opts
 
 	return di.NewModuleFunc(ModuleName, func(c *di.Container) error {
-		// Config infrastructure is set up in gaz.New() and
-		// configured via WithConfig(). This module provides
-		// a placeholder for future extensions like:
-		// - Additional config sources
-		// - Config watchers
-		// - Remote config providers
-
-		_ = c   // Future: use container for registration
-		_ = cfg // Future: use cfg for configuration
-
+		_ = c
 		return nil
 	})
 }

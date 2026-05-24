@@ -178,6 +178,8 @@ func main() {
 }
 ```
 
+Do not use `config.NewModule()` for new code. It is a deprecated compatibility no-op and does not register configuration infrastructure. Use `gaz.New().WithConfig(...)` for App-managed configuration, `config/module.New()` for Cobra config flags, or `config.New(...)` for standalone loading.
+
 **Supported file formats:**
 
 - YAML (`.yaml`, `.yml`)
