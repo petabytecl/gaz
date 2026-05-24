@@ -1,6 +1,6 @@
 # Architecture Recommendations Backlog
 
-Last updated: 2026-05-22
+Last updated: 2026-05-24
 
 This document captures the remaining architecture recommendations for `gaz` after the merged lifecycle/config refactor series. It is meant as a resume point for future Codex sessions.
 
@@ -8,6 +8,7 @@ Use the vocabulary in `CONTEXT.md`:
 
 - A **lifecycle plan** owns runtime policy: which services participate, which runtime participants are handed to App-managed managers, and what startup/shutdown order is used.
 - **Configured module registration** owns the shared rule for module-owned config values.
+- **Module identity** owns the stable name used for duplicate detection, auto-registration skip logic, and diagnostics.
 - Architecture recommendations should deepen modules: put policy behind smaller interfaces, improve locality, and keep behavior testable through the public or private module seam.
 
 ## Current Baseline
@@ -19,6 +20,12 @@ Already completed:
 - Configured module registration was centralized under `internal/configuredmodule`.
 - Runtime participant classification moved into the lifecycle plan.
 - Worker and cron participant registration now fails `App.Build()` when a participant cannot resolve, resolves to the wrong type, or cannot register.
+- Health auto-registration moved behind a dedicated private module.
+- The App build sequence is named and testable through private build phases.
+- Config flag interpretation moved behind a private config flag policy.
+- Runtime subsystem construction moved behind a private runtime-subsystems module.
+- Lifecycle session orchestration moved behind a private lifecycle session.
+- Feature module identities are exposed by the owning packages; config keeps a deliberately separate `config-flags` adapter identity.
 
 Quality gate expectation for future PRs:
 
@@ -33,6 +40,8 @@ Quality gate expectation for future PRs:
 ## Priority 1: Extract Health Auto-Registration Policy
 
 Recommendation strength: Strong
+
+Status: Completed.
 
 Files:
 
@@ -77,6 +86,8 @@ This is the smallest remaining high-leverage slice. It removes feature-specific 
 ## Priority 2: Deepen the App Build Sequence
 
 Recommendation strength: Strong, after Priority 1
+
+Status: Completed.
 
 Files:
 
@@ -123,6 +134,8 @@ Suggested tests:
 
 Recommendation strength: Worth exploring
 
+Status: Completed.
+
 Files:
 
 - `app_config.go`
@@ -155,6 +168,8 @@ Suggested tests:
 ## Priority 4: Deepen Runtime Subsystem Initialization
 
 Recommendation strength: Worth exploring
+
+Status: Completed.
 
 Files:
 
@@ -197,6 +212,8 @@ Suggested tests:
 
 Recommendation strength: Worth exploring
 
+Status: Completed.
+
 Files:
 
 - `app_run.go`
@@ -231,6 +248,8 @@ Suggested tests:
 
 Recommendation strength: Worth exploring
 
+Status: Completed.
+
 Files:
 
 - `app_use.go`
@@ -241,11 +260,11 @@ Files:
 
 Problem:
 
-Feature modules do not currently have a clear naming convention for "feature is installed" versus "flags adapter is installed". Health exposes this most clearly: `health/module.New()` uses the module name `health-flags`, while App auto-registration checks `health`.
+Feature modules did not have a clear naming convention for "feature is installed" versus "flags adapter is installed". Health originally exposed this most clearly: `health/module.New()` used the module name `health-flags`, while App auto-registration checked `health`.
 
 Solution:
 
-Define a convention for module identity. A feature module should expose one stable identity for duplicate detection and auto-registration skip logic. If flags are a separate adapter, encode that deliberately instead of relying on ad hoc string checks.
+Define a convention for module identity. A feature module exposes one stable identity for duplicate detection and auto-registration skip logic. If flags are a separate adapter, encode that deliberately instead of relying on ad hoc string checks.
 
 Benefits:
 
@@ -262,6 +281,8 @@ Suggested tests:
 ## Priority 7: Decide Whether `config.NewModule()` Should Exist
 
 Recommendation strength: Speculative
+
+Status: Next.
 
 Files:
 
@@ -295,11 +316,11 @@ Suggested tests:
 ## Suggested Resume Order
 
 1. Create branch from updated `main`.
-2. Implement Priority 1 only.
+2. Implement Priority 7 only.
 3. Run local gates.
 4. Push and monitor remote CI and CodeQL.
 5. Address review comments and resolve conversations.
 6. Rebase/pull `main` after merge.
-7. Continue with Priority 2.
+7. Refresh this backlog before selecting the next slice.
 
-Avoid doing Priorities 2-6 in one PR. The App runtime is central; smaller PRs make review comments and CI failures easier to isolate.
+Avoid mixing the speculative `config.NewModule()` decision with unrelated runtime changes. It is a public API question and should be reviewed on its own.

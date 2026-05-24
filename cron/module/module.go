@@ -19,7 +19,7 @@ import (
 // The module provides:
 //   - *cron.Scheduler for scheduling cron jobs
 func New() gaz.Module {
-	return gaz.NewModule("cron").
+	return gaz.NewModule(cron.ModuleName).
 		Provide(cron.Module).
 		Build()
 }

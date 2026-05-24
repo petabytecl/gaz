@@ -21,7 +21,7 @@ func TestNewModule(t *testing.T) {
 	t.Run("returns valid di.Module", func(t *testing.T) {
 		mod := NewModule()
 		require.NotNil(t, mod)
-		require.Equal(t, "config", mod.Name())
+		require.Equal(t, ModuleName, mod.Name())
 	})
 
 	t.Run("accepts options", func(t *testing.T) {

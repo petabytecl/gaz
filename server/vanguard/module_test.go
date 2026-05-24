@@ -33,7 +33,7 @@ func (s *ModuleTestSuite) TestNewModuleCreatesModule() {
 
 func (s *ModuleTestSuite) TestNewModuleName() {
 	mod := NewModule()
-	s.Equal("vanguard", mod.Name())
+	s.Equal(ModuleName, mod.Name())
 }
 
 func (s *ModuleTestSuite) TestProvideConfigDefaultValues() {

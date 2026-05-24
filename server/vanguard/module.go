@@ -223,7 +223,7 @@ func provideServer(c *gaz.Container) error {
 func NewModule() gaz.Module {
 	defaultCfg := DefaultConfig()
 
-	return gaz.NewModule("vanguard").
+	return gaz.NewModule(ModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(provideConfig(&defaultCfg)).
 		Provide(provideCORSMiddleware).

@@ -11,6 +11,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Run("uses canonical module identity", func(t *testing.T) {
+		require.Equal(t, health.ModuleName, New().Name())
+	})
+
 	t.Run("creates module with default config", func(t *testing.T) {
 		app := gaz.New()
 		app.Use(New())

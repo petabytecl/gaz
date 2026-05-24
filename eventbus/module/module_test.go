@@ -13,6 +13,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates valid module", func(t *testing.T) {
 		mod := New()
 		require.NotNil(t, mod)
+		require.Equal(t, eventbus.ModuleName, mod.Name())
 	})
 
 	// Note: gaz.App auto-registers *eventbus.EventBus in initializeSubsystems(),

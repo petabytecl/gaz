@@ -41,6 +41,10 @@ func (s *LoggerModuleTestSuite) TestModuleRegistration() {
 	s.Equal("info", cfg.LevelName())
 }
 
+func (s *LoggerModuleTestSuite) TestModuleName() {
+	s.Equal(logger.ModuleName, loggermod.New().Name())
+}
+
 func (s *LoggerModuleTestSuite) TestDefaultConfig() {
 	cfg := logger.DefaultConfig()
 

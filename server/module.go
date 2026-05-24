@@ -30,6 +30,6 @@ import (
 //	app.Use(server.NewModule())
 func NewModule() gaz.Module {
 	return newUnifiedServerBridge().
-		configure(gaz.NewModule(unifiedServerBridgeModuleName)).
+		configure(gaz.NewModule(ModuleName)).
 		Build()
 }

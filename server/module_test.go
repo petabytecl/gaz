@@ -58,7 +58,7 @@ func TestNewModule(t *testing.T) {
 	// Test module name.
 	t.Run("module name", func(t *testing.T) {
 		module := NewModule()
-		require.Equal(t, "server", module.Name())
+		require.Equal(t, ModuleName, module.Name())
 	})
 }
 

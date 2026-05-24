@@ -19,7 +19,7 @@ import (
 // The module provides:
 //   - *worker.Manager for coordinating background workers
 func New() gaz.Module {
-	return gaz.NewModule("worker").
+	return gaz.NewModule(worker.ModuleName).
 		Provide(worker.Module).
 		Build()
 }

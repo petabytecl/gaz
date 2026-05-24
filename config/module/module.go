@@ -93,7 +93,7 @@ func (c *Config) GetSearchPaths(appName string) []string {
 func New() gaz.Module {
 	defaultCfg := DefaultConfig()
 
-	return gaz.NewModule("config-flags").
+	return gaz.NewModule(config.FlagsModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(configuredmodule.ProvideDefaulted[Config, *Config](
 			&defaultCfg,

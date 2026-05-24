@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 	configmod "github.com/petabytecl/gaz/config/module"
 )
 
@@ -36,6 +37,10 @@ func (s *ConfigModuleSuite) TestDefaultConfig() {
 func (s *ConfigModuleSuite) TestConfigNamespace() {
 	cfg := configmod.DefaultConfig()
 	s.Equal("config", cfg.Namespace())
+}
+
+func (s *ConfigModuleSuite) TestModuleName() {
+	s.Equal(config.FlagsModuleName, configmod.New().Name())
 }
 
 func (s *ConfigModuleSuite) TestConfigSetDefaults() {

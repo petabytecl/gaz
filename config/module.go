@@ -33,7 +33,7 @@ func NewModule(opts ...ModuleOption) di.Module {
 		opt(cfg)
 	}
 
-	return di.NewModuleFunc("config", func(c *di.Container) error {
+	return di.NewModuleFunc(ModuleName, func(c *di.Container) error {
 		// Config infrastructure is set up in gaz.New() and
 		// configured via WithConfig(). This module provides
 		// a placeholder for future extensions like:

@@ -29,3 +29,9 @@ This keeps package-level modules stable as public entry points while centralizin
 The unified server bridge is the App-module pattern for installing the transport stack on one port. It owns the policy that makes the gRPC server register services without binding its own listener, then hands that gRPC adapter to Vanguard so Vanguard serves gRPC, Connect, gRPC-Web, REST transcoding, and non-RPC HTTP routes from the single public listener.
 
 Standalone transport modules remain valid on their own. The unified server bridge only owns the extra composition rule needed when callers choose the single-port default.
+
+### Module identity
+
+Module identity is the stable name a module uses for duplicate detection, auto-registration skip logic, and diagnostics. The owning package exposes the identity when callers or sibling adapter packages need to reason about whether the feature module is installed.
+
+A flags adapter may have its own module identity when applying the adapter is not the same thing as installing the feature infrastructure. That distinction must be explicit instead of encoded as an ad hoc string in the adapter.

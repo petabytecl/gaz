@@ -19,7 +19,7 @@ import (
 // The module provides:
 //   - *eventbus.EventBus for in-process pub/sub messaging
 func New() gaz.Module {
-	return gaz.NewModule("eventbus").
+	return gaz.NewModule(eventbus.ModuleName).
 		Provide(eventbus.Module).
 		Build()
 }
