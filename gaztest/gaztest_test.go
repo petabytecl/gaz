@@ -560,6 +560,23 @@ func TestBuilder_WithModules(t *testing.T) {
 	require.Equal(t, "test-value-from-module", value)
 }
 
+func TestBuilder_WithModules_GazModule(t *testing.T) {
+	testModule := gaz.NewModule("gaz-module").
+		Provide(func(c *gaz.Container) error {
+			return gaz.For[string](c).Instance("test-value-from-gaz-module")
+		}).
+		Build()
+
+	app, err := gaztest.New(t).
+		WithGazModules(testModule).
+		Build()
+	require.NoError(t, err)
+
+	value, err := gaz.Resolve[string](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "test-value-from-gaz-module", value)
+}
+
 // =============================================================================
 // TestBuilder_WithModules_MultipleModules
 // =============================================================================

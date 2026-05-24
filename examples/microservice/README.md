@@ -73,7 +73,7 @@ Shutdown complete
 
 ## Key Patterns
 
-1. **Health Module:** `health.NewModule()` provides readiness/liveness probes
+1. **Health Module:** `health/module.New()` provides readiness/liveness probes
 2. **Event-Driven:** Workers communicate via typed events
 3. **Lifecycle Integration:** Workers implement `worker.Worker` interface
 4. **Dependency Injection:** EventBus is injected into workers

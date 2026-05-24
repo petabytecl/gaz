@@ -18,11 +18,11 @@
 //
 // # With Modules (v3 Pattern)
 //
-// Use WithModules for testing modules without a pre-built app:
+// Use WithGazModules for testing feature modules without a pre-built app:
 //
 //	func TestWithModules(t *testing.T) {
 //	    app, err := gaztest.New(t).
-//	        WithModules(worker.NewModule()).
+//	        WithGazModules(workermod.New()).
 //	        Build()
 //	    require.NoError(t, err)
 //

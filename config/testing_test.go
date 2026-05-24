@@ -232,20 +232,24 @@ func TestRequireConfigIsSet(t *testing.T) {
 func TestMapBackend_Unmarshal(t *testing.T) {
 	t.Parallel()
 	backend := config.NewMapBackend(map[string]any{
-		"host": "localhost",
-		"port": 8080,
+		"host":           "localhost",
+		"port":           8080,
+		"nested.enabled": true,
 	})
 
-	// Unmarshal is a no-op for MapBackend but should not error
 	type cfg struct {
-		Host string
-		Port int
+		Host   string
+		Port   int
+		Nested struct {
+			Enabled bool `mapstructure:"enabled"`
+		} `mapstructure:"nested"`
 	}
 	var c cfg
 	err := backend.Unmarshal(&c)
 	require.NoError(t, err)
-	// Note: MapBackend.Unmarshal is a no-op, so values won't be populated
-	// This is documented behavior - use Get* methods instead
+	assert.Equal(t, "localhost", c.Host)
+	assert.Equal(t, 8080, c.Port)
+	assert.True(t, c.Nested.Enabled)
 }
 
 func TestMapBackend_UnmarshalKey(t *testing.T) {
@@ -255,7 +259,6 @@ func TestMapBackend_UnmarshalKey(t *testing.T) {
 		"database.port": 5432,
 	})
 
-	// UnmarshalKey is a no-op for MapBackend but should not error
 	type dbCfg struct {
 		Host string
 		Port int
@@ -263,7 +266,38 @@ func TestMapBackend_UnmarshalKey(t *testing.T) {
 	var db dbCfg
 	err := backend.UnmarshalKey("database", &db)
 	require.NoError(t, err)
-	// Note: MapBackend.UnmarshalKey is a no-op
+	assert.Equal(t, "dbhost", db.Host)
+	assert.Equal(t, 5432, db.Port)
+}
+
+func TestMapBackend_UnmarshalKeyMissing(t *testing.T) {
+	t.Parallel()
+	backend := config.NewMapBackend(nil)
+
+	var db struct {
+		Host string
+	}
+	err := backend.UnmarshalKey("database", &db)
+	require.ErrorIs(t, err, config.ErrKeyNotFound)
+}
+
+func TestMapBackend_UnmarshalKeyWithGazTag(t *testing.T) {
+	t.Parallel()
+	backend := config.NewMapBackend(map[string]any{
+		"server.host": "gazhost",
+		"server.port": 8081,
+	})
+
+	var cfg struct {
+		Host string `gaz:"host"`
+		Port int    `gaz:"port"`
+	}
+	err := backend.UnmarshalKeyWithGazTag("server", &cfg)
+	require.NoError(t, err)
+	assert.Equal(t, "gazhost", cfg.Host)
+	assert.Equal(t, 8081, cfg.Port)
+	assert.True(t, backend.HasKey("server"))
+	assert.False(t, backend.HasKey("missing"))
 }
 
 // =============================================================================

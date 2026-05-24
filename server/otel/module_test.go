@@ -10,6 +10,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/di"
 )
 
@@ -59,6 +60,17 @@ func TestNewModule_EnvFallback(t *testing.T) {
 	assert.Equal(t, "localhost:4317", cfg.Endpoint, "should use env var as fallback")
 }
 
+func TestNewModule_MalformedProviderOverlayFailsBuild(t *testing.T) {
+	app := gaz.New().WithConfig(nil, config.WithBackend(config.NewMapBackend(map[string]any{
+		"otel": "not-a-config-map",
+	})))
+	app.Use(NewModule())
+
+	err := app.Build()
+	require.Error(t, err)
+	require.ErrorContains(t, err, "load provider config \"otel\"")
+}
+
 func TestNewModule_TracerStopper(t *testing.T) {
 	app := gaz.New()
 
@@ -72,17 +84,26 @@ func TestNewModule_TracerStopper(t *testing.T) {
 
 	c := app.Container()
 
-	// Stopper should be resolvable (may be nil if tracing disabled)
-	stopper, err := di.Resolve[*tracerProviderStopper](c)
+	// Runtime should be resolvable and non-nil even when tracing is disabled.
+	runtime, err := di.Resolve[*tracerRuntime](c)
 	require.NoError(t, err)
-	assert.Nil(t, stopper, "stopper should be nil when tracing disabled")
+	require.NotNil(t, runtime)
+	assert.Nil(t, runtime.TracerProvider(), "tracer provider should be nil when tracing disabled")
 }
 
-func TestTracerProviderStopper_OnStop(t *testing.T) {
-	// Test the stopper with nil provider
-	stopper := &tracerProviderStopper{tp: nil}
+func TestNewModule_DisabledRuntimeStopsCleanly(t *testing.T) {
+	app := gaz.New()
+	app.Use(NewModule())
 
-	err := stopper.OnStop(context.Background())
+	require.NoError(t, app.Build())
+	require.NoError(t, app.Start(context.Background()))
+	require.NoError(t, app.Stop(context.Background()))
+}
+
+func TestTracerRuntime_OnStopDisabled(t *testing.T) {
+	runtime := &tracerRuntime{tp: nil}
+
+	err := runtime.OnStop(context.Background())
 	assert.NoError(t, err, "stopping nil provider should succeed")
 }
 
@@ -114,12 +135,12 @@ func TestNewModule_ModuleName(t *testing.T) {
 	assert.Equal(t, ModuleName, module.Name())
 }
 
-// Verify that the stopper implements proper cleanup.
-func TestTracerProviderStopper_Interface(t *testing.T) {
-	// Verify tracerProviderStopper has OnStop method (di.Stopper)
+// Verify that the runtime implements proper cleanup.
+func TestTracerRuntime_Interface(t *testing.T) {
+	// Verify tracerRuntime has OnStop method (di.Stopper)
 	var _ interface {
 		OnStop(context.Context) error
-	} = &tracerProviderStopper{}
+	} = &tracerRuntime{}
 }
 
 func TestNewModule_TracerProvider_WhenEnabled(t *testing.T) {
@@ -143,39 +164,38 @@ func TestNewModule_TracerProvider_WhenEnabled(t *testing.T) {
 	// May be non-nil even if endpoint unreachable
 	if tp != nil {
 		// Clean up
-		stopper, _ := di.Resolve[*tracerProviderStopper](c)
-		if stopper != nil {
-			_ = stopper.OnStop(context.Background())
+		runtime, _ := di.Resolve[*tracerRuntime](c)
+		if runtime != nil {
+			_ = runtime.OnStop(context.Background())
 		}
 	}
 }
 
-func TestRegisterTracerProvider_MissingConfig(t *testing.T) {
+func TestRegisterTracerRuntime_MissingConfig(t *testing.T) {
 	c := di.New()
 
 	// Register logger but NOT Config
 	err := di.For[*slog.Logger](c).Instance(slog.Default())
 	require.NoError(t, err)
 
-	// Register tracer provider - registration should succeed
-	err = registerTracerProvider(c)
+	// Register tracer runtime - registration should succeed
+	err = registerTracerRuntime(c)
 	require.NoError(t, err)
 
 	// Resolving should fail due to missing Config
-	_, err = di.Resolve[*sdktrace.TracerProvider](c)
+	_, err = di.Resolve[*tracerRuntime](c)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "config")
 }
 
-func TestRegisterTracerStopper_MissingProvider(t *testing.T) {
+func TestRegisterTracerProvider_MissingRuntime(t *testing.T) {
 	c := di.New()
 
-	// Don't register TracerProvider
-	// Register stopper - registration should succeed
-	err := registerTracerStopper(c)
+	// Don't register tracerRuntime.
+	err := registerTracerProvider(c)
 	require.NoError(t, err)
 
-	// Resolving should fail due to missing TracerProvider
-	_, err = di.Resolve[*tracerProviderStopper](c)
+	// Resolving should fail due to missing runtime.
+	_, err = di.Resolve[*sdktrace.TracerProvider](c)
 	require.Error(t, err)
 }

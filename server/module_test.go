@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 	"github.com/petabytecl/gaz/di"
 	hello "github.com/petabytecl/gaz/examples/vanguard/proto"
 	servergrpc "github.com/petabytecl/gaz/server/grpc"
@@ -87,6 +88,17 @@ func TestNewModule_ForcesGRPCServiceRegistrationOnly(t *testing.T) {
 	require.Equal(t, 1024, cfg.MaxRecvMsgSize)
 	require.Equal(t, 2048, cfg.MaxSendMsgSize)
 	require.True(t, cfg.SkipListener)
+}
+
+func TestNewModule_RejectsMalformedGRPCOverlay(t *testing.T) {
+	app := gaz.New().WithConfig(nil, config.WithBackend(config.NewMapBackend(map[string]any{
+		"grpc": "not-a-config-map",
+	})))
+	app.Use(NewModule())
+
+	err := app.Build()
+	require.Error(t, err)
+	require.ErrorContains(t, err, "load provider config \"grpc\"")
 }
 
 func TestNewModule_BridgesGRPCServicesThroughVanguard(t *testing.T) {

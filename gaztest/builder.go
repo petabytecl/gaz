@@ -30,6 +30,10 @@ type replacement struct {
 	instance any
 }
 
+type testModule struct {
+	apply func(*gaz.App)
+}
+
 // Builder configures a test application.
 // Create with New(t), configure with fluent methods, and call Build() to get the App.
 type Builder struct {
@@ -37,7 +41,7 @@ type Builder struct {
 	timeout      time.Duration
 	replacements []replacement
 	baseApp      *gaz.App
-	modules      []di.Module
+	modules      []testModule
 	configMap    map[string]any
 	errs         []error
 }
@@ -71,8 +75,8 @@ func (b *Builder) WithApp(app *gaz.App) *Builder {
 	return b
 }
 
-// WithModules registers the given modules with the test app during build.
-// Modules are registered in order via app.Use().
+// WithModules registers the given DI modules with the test app during build.
+// Use WithGazModules for feature packages that return gaz.Module values.
 //
 // Note: WithModules cannot be used together with WithApp - they are mutually exclusive.
 // Build() will return an error if both are used.
@@ -80,11 +84,65 @@ func (b *Builder) WithApp(app *gaz.App) *Builder {
 // Example:
 //
 //	app, err := gaztest.New(t).
-//	    WithModules(worker.NewModule()).
+//	    WithModules(di.NewModuleFunc("worker", registerWorker)).
 //	    Build()
-func (b *Builder) WithModules(m ...di.Module) *Builder {
-	b.modules = append(b.modules, m...)
+func (b *Builder) WithModules(modules ...di.Module) *Builder {
+	for _, module := range modules {
+		adapted, err := adaptDIModule(module)
+		if err != nil {
+			b.errs = append(b.errs, err)
+			continue
+		}
+		b.modules = append(b.modules, adapted)
+	}
 	return b
+}
+
+// WithGazModules registers the given gaz modules with the test app during build.
+// This is for feature modules that are normally applied through app.Use().
+//
+// Note: WithGazModules cannot be used together with WithApp - they are mutually exclusive.
+// Build() will return an error if both are used.
+//
+// Example:
+//
+//	app, err := gaztest.New(t).
+//	    WithGazModules(workermod.New()).
+//	    Build()
+func (b *Builder) WithGazModules(modules ...gaz.Module) *Builder {
+	for _, module := range modules {
+		adapted, err := adaptGazModule(module)
+		if err != nil {
+			b.errs = append(b.errs, err)
+			continue
+		}
+		b.modules = append(b.modules, adapted)
+	}
+	return b
+}
+
+func adaptDIModule(module di.Module) (testModule, error) {
+	if module == nil {
+		return testModule{}, errors.New("gaztest: WithModules: module cannot be nil")
+	}
+
+	return testModule{
+		apply: func(app *gaz.App) {
+			app.UseDI(module)
+		},
+	}, nil
+}
+
+func adaptGazModule(module gaz.Module) (testModule, error) {
+	if module == nil {
+		return testModule{}, errors.New("gaztest: WithGazModules: module cannot be nil")
+	}
+
+	return testModule{
+		apply: func(app *gaz.App) {
+			app.Use(module)
+		},
+	}, nil
 }
 
 // WithConfigMap injects raw config values for testing.
@@ -162,7 +220,7 @@ func (b *Builder) Build() (*App, error) {
 
 		// Register modules if provided
 		for _, m := range b.modules {
-			gazApp.UseDI(m)
+			m.apply(gazApp)
 		}
 	}
 

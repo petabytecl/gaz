@@ -38,10 +38,12 @@ func (a *App) autoRegisterHealth() error {
 	mod := NewModule(health.ModuleName).
 		Provide(health.Module).
 		Build()
+	if err := a.registerModuleIdentity(health.ModuleName); err != nil {
+		return err
+	}
 	if err := mod.Apply(a); err != nil {
 		return fmt.Errorf("auto-register health module: %w", err)
 	}
-	a.modules[health.ModuleName] = true
 
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/config"
 )
 
 const (
@@ -119,6 +120,44 @@ func TestProvideValidatedLoadsProviderValues(t *testing.T) {
 	cfg, err := gaz.Resolve[sampleValidatedConfig](app.Container())
 	require.NoError(t, err)
 	require.Equal(t, "https://example.test", cfg.Endpoint)
+}
+
+func TestProvideValidatedKeepsDefaultsWhenProviderNamespaceMissing(t *testing.T) {
+	app := gaz.New().WithConfig(nil, config.WithBackend(config.NewMapBackend(nil)))
+	defaults := sampleValidatedConfig{Endpoint: "https://default.example.test"}
+	app.Use(gaz.NewModule("validated").
+		Provide(ProvideValidated[sampleValidatedConfig, *sampleValidatedConfig](
+			&defaults,
+			"validated config",
+			"validated config validate",
+		)).
+		Build())
+
+	require.NoError(t, app.Build())
+
+	cfg, err := gaz.Resolve[sampleValidatedConfig](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, "https://default.example.test", cfg.Endpoint)
+}
+
+func TestProvideValidatedRejectsMalformedProviderOverlay(t *testing.T) {
+	app := gaz.New().WithConfig(nil, config.WithBackend(config.NewMapBackend(map[string]any{
+		"validated.endpoint": map[string]any{"not": "a string"},
+	})))
+	defaults := sampleValidatedConfig{Endpoint: "https://default.example.test"}
+	app.Use(gaz.NewModule("validated").
+		Provide(ProvideValidated[sampleValidatedConfig, *sampleValidatedConfig](
+			&defaults,
+			"validated config",
+			"validated config validate",
+		)).
+		Build())
+
+	require.NoError(t, app.Build())
+
+	_, err := gaz.Resolve[sampleValidatedConfig](app.Container())
+	require.Error(t, err)
+	require.ErrorContains(t, err, "load provider config \"validated\"")
 }
 
 func TestProviderUsesLatestDefaultValues(t *testing.T) {

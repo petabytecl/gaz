@@ -16,6 +16,18 @@ func phaseIndex(phases []buildPhase, name string) int {
 	return -1
 }
 
+func TestBuildPhaseOrder_LoadConfigBeforeProviderValues(t *testing.T) {
+	app := New()
+	phases := app.buildPhaseOrder()
+
+	lc := phaseIndex(phases, "load-config")
+	pv := phaseIndex(phases, "register-provider-values")
+
+	require.NotEqual(t, -1, lc)
+	require.NotEqual(t, -1, pv)
+	assert.Less(t, lc, pv)
+}
+
 func TestBuildPhaseOrder_ProviderValuesBeforeCollectConfigs(t *testing.T) {
 	app := New()
 	phases := app.buildPhaseOrder()

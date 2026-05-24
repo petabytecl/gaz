@@ -10,7 +10,7 @@ app, err := gaztest.New(t).Build()
 app.RequireStart()
 defer app.RequireStop()
 
-// With modules (v3 pattern)
+// With modules (v3 pattern; accepts gaz.Module and di.Module)
 app, err := gaztest.New(t).
     WithModules(myModule).
     Build()
@@ -63,15 +63,18 @@ func TestUserService_Create(t *testing.T) {
 
 ### Integration Testing with Modules
 
-When testing module interactions, use WithModules:
+When testing module interactions, use `WithGazModules` for feature modules
+that return `gaz.Module`, and `WithModules` for lower-level `di.Module`
+adapters:
 
 ```go
 func TestHealthModule_Integration(t *testing.T) {
     cfg := health.TestConfig()
-    module := health.NewModule(health.WithConfig(cfg))
-    
+    module := healthmod.New()
+
     app, err := gaztest.New(t).
-        WithModules(module).
+        WithConfigMap(map[string]any{"health": cfg}).
+        WithGazModules(module).
         Build()
     require.NoError(t, err)
     

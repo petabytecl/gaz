@@ -3,16 +3,13 @@ package di
 // Module represents a reusable bundle of providers that register
 // services in a DI container.
 //
-// This interface is defined in the di package to allow subsystem packages
-// (like health, worker, cron) to return Module without importing the gaz
-// package, which would create an import cycle.
-//
-// Use with gaz.App.Use() which accepts di.Module via the gaz.Module type alias.
+// This interface is defined in the di package for adapters that should register
+// directly into a DI container. Use gaz.App.UseDI() to apply one to an App.
 //
 // Example:
 //
-//	module := worker.NewModule()
-//	app := gaz.New().Use(module)
+//	module := di.NewModuleFunc("custom", registerCustom)
+//	app := gaz.New().UseDI(module)
 type Module interface {
 	// Name returns the module's identifier for debugging and error messages.
 	Name() string
