@@ -10,9 +10,9 @@ app, err := gaztest.New(t).Build()
 app.RequireStart()
 defer app.RequireStop()
 
-// With modules (v3 pattern; accepts gaz.Module and di.Module)
+// With DI modules (use WithGazModules for gaz.Module)
 app, err := gaztest.New(t).
-    WithModules(myModule).
+    WithModules(diModule).
     Build()
 
 // Type-safe resolution that fails on error
