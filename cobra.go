@@ -2,8 +2,6 @@ package gaz
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -66,126 +64,15 @@ func WithCobra(cmd *cobra.Command) Option {
 		originalPreRunE := cmd.PersistentPreRunE
 		originalPostRunE := cmd.PersistentPostRunE
 
-		cmd.PersistentPreRunE = a.makePreRunE(originalPreRunE)
-		cmd.PersistentPostRunE = a.makePostRunE(originalPostRunE)
+		session := a.lifecycleSession()
+		cmd.PersistentPreRunE = session.makePreRunE(originalPreRunE)
+		cmd.PersistentPostRunE = session.makePostRunE(originalPostRunE)
 
 		// Inject default RunE if no Run/RunE is defined
 		if cmd.Run == nil && cmd.RunE == nil {
 			cmd.RunE = func(c *cobra.Command, _ []string) error {
-				return a.waitForShutdownSignal(c.Context())
+				return session.waitForShutdownSignal(c.Context())
 			}
 		}
 	}
-}
-
-// makePreRunE creates the PersistentPreRunE hook that bootstraps the app.
-func (a *App) makePreRunE(original func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
-	return func(c *cobra.Command, args []string) error {
-		if original != nil {
-			if err := original(c, args); err != nil {
-				return err
-			}
-		}
-
-		ctx := c.Context()
-		if ctx == nil {
-			ctx = context.Background()
-		}
-
-		if err := a.bootstrap(ctx, c, args); err != nil {
-			return err
-		}
-
-		c.SetContext(context.WithValue(ctx, contextKey{}, a))
-		return nil
-	}
-}
-
-// makePostRunE creates the PersistentPostRunE hook that stops the app.
-func (a *App) makePostRunE(original func(*cobra.Command, []string) error) func(*cobra.Command, []string) error {
-	return func(c *cobra.Command, args []string) error {
-		stopCtx, cancel := context.WithTimeout(context.Background(), a.opts.ShutdownTimeout)
-		defer cancel()
-
-		stopErr := a.Stop(stopCtx)
-
-		a.mu.Lock()
-		a.running = false
-		a.mu.Unlock()
-
-		if original != nil {
-			if err := original(c, args); err != nil {
-				return errors.Join(stopErr, err)
-			}
-		}
-
-		return stopErr
-	}
-}
-
-func (a *App) bootstrap(ctx context.Context, cmd *cobra.Command, args []string) error {
-	// Register CommandArgs
-	_ = For[*CommandArgs](a.container).Instance(&CommandArgs{
-		Command: cmd,
-		Args:    args,
-	})
-
-	// Bind flags if ConfigManager is available
-	if a.configMgr != nil {
-		if err := a.configMgr.BindFlags(cmd.Flags()); err != nil {
-			return fmt.Errorf("failed to bind flags: %w", err)
-		}
-	}
-
-	// Initialize run state similar to App.Run
-	a.mu.Lock()
-	if a.running {
-		a.mu.Unlock()
-		return errors.New("app is already running")
-	}
-	a.stopCh = make(chan struct{})
-	a.running = true
-	a.mu.Unlock()
-
-	// Ensure we clean up if start fails
-	success := false
-	defer func() {
-		if !success {
-			a.mu.Lock()
-			a.running = false
-			a.mu.Unlock()
-		}
-	}()
-
-	// Build the app (validates registrations)
-	if err := a.Build(); err != nil {
-		return fmt.Errorf("app build failed: %w", err)
-	}
-
-	// Start lifecycle hooks
-	if err := a.Start(ctx); err != nil {
-		return fmt.Errorf("app start failed: %w", err)
-	}
-
-	success = true
-	return nil
-}
-
-// Start initiates the application lifecycle.
-// This is called automatically by WithCobra() or can be called manually.
-// It delegates to startServices() which provides worker filtering, parallel layer
-// startup, panic recovery, rollback on failure, and worker manager start.
-func (a *App) Start(ctx context.Context) error {
-	// Ensure Build() was called first
-	a.mu.Lock()
-	if !a.built {
-		a.mu.Unlock()
-		if err := a.Build(); err != nil {
-			return err
-		}
-		a.mu.Lock()
-	}
-	a.mu.Unlock()
-
-	return a.startServices(ctx)
 }

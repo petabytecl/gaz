@@ -12,6 +12,12 @@ The lifecycle plan also owns runtime participant classification for App-managed 
 
 Runtime participant registration is part of the lifecycle plan's policy surface. A classified worker or cron job must resolve and register successfully during `App.Build()`; otherwise the application fails to build with an actionable error instead of silently dropping the participant.
 
+### Lifecycle session
+
+A lifecycle session is one run of a built App. It owns the runtime orchestration policy around entering the running state, waiting for shutdown triggers, invoking lifecycle execution, enforcing process-level shutdown deadlines, and leaving the running state.
+
+The lifecycle session is distinct from the lifecycle plan and lifecycle execution. The lifecycle plan decides what should run; lifecycle execution starts and stops planned participants; the lifecycle session coordinates when execution begins and how shutdown is triggered and finalized.
+
 ### Configured module registration
 
 Configured module registration is the shared App-module pattern for wiring a module-owned configuration type into DI. The module owns its public adapter and flags, while the internal configured-module helper owns the repeated mechanics: start from defaults, overlay ProviderValues when available, apply the module's defaulting policy, and validate before exposing the config.
