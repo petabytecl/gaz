@@ -62,6 +62,33 @@ func TestNewModule(t *testing.T) {
 	})
 }
 
+func TestNewModule_ForcesGRPCServiceRegistrationOnly(t *testing.T) {
+	app := gaz.New()
+	app.Use(NewModule())
+
+	require.NoError(t, app.MergeConfigMap(map[string]any{
+		"grpc": map[string]any{
+			"port":              43210,
+			"reflection":        true,
+			"health_enabled":    false,
+			"max_recv_msg_size": 1024,
+			"max_send_msg_size": 2048,
+			"skip_listener":     false,
+		},
+	}))
+
+	require.NoError(t, app.Build())
+
+	cfg, err := di.Resolve[servergrpc.Config](app.Container())
+	require.NoError(t, err)
+	require.Equal(t, 43210, cfg.Port)
+	require.True(t, cfg.Reflection)
+	require.False(t, cfg.HealthEnabled)
+	require.Equal(t, 1024, cfg.MaxRecvMsgSize)
+	require.Equal(t, 2048, cfg.MaxSendMsgSize)
+	require.True(t, cfg.SkipListener)
+}
+
 func TestNewModule_BridgesGRPCServicesThroughVanguard(t *testing.T) {
 	app := gaz.New()
 	app.Use(NewModule())
