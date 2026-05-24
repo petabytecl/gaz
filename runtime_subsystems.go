@@ -45,21 +45,16 @@ func newRuntimeSubsystems(deps runtimeSubsystemsDeps) (*runtimeSubsystems, error
 	if deps.stopFunc == nil {
 		return nil, errors.New("runtime subsystems: stop function is required")
 	}
-	if Has[*eventbus.EventBus](deps.container) {
-		return nil, fmt.Errorf("%w: %s", ErrDIDuplicate, TypeName[*eventbus.EventBus]())
-	}
-
 	mgr := worker.NewManager(log)
 	mgr.SetCriticalFailHandler(criticalFailHandler(log, deps.shutdownTimeout, deps.stopFunc))
 
 	cronCtx, cronCancel := context.WithCancel(context.Background())
 	sched := cron.NewScheduler(deps.container, cronCtx, log)
 
-	bus := eventbus.New(log)
-
-	if err := For[*eventbus.EventBus](deps.container).Instance(bus); err != nil {
+	bus, err := runtimeEventBus(deps.container, log)
+	if err != nil {
 		cronCancel()
-		return nil, fmt.Errorf("register eventbus: %w", err)
+		return nil, err
 	}
 
 	return &runtimeSubsystems{
@@ -69,6 +64,25 @@ func newRuntimeSubsystems(deps runtimeSubsystemsDeps) (*runtimeSubsystems, error
 		cronCancel: cronCancel,
 		eventBus:   bus,
 	}, nil
+}
+
+func runtimeEventBus(container *Container, log *slog.Logger) (*eventbus.EventBus, error) {
+	if Has[*eventbus.EventBus](container) {
+		bus, err := Resolve[*eventbus.EventBus](container)
+		if err != nil {
+			return nil, fmt.Errorf("resolve eventbus: %w", err)
+		}
+		if bus == nil {
+			return nil, fmt.Errorf("%w: %s resolved to nil", ErrDIInvalidProvider, TypeName[*eventbus.EventBus]())
+		}
+		return bus, nil
+	}
+
+	bus := eventbus.New(log)
+	if err := For[*eventbus.EventBus](container).Instance(bus); err != nil {
+		return nil, fmt.Errorf("register eventbus: %w", err)
+	}
+	return bus, nil
 }
 
 func criticalFailHandler(log *slog.Logger, timeout time.Duration, stopFunc func(context.Context) error) func() {

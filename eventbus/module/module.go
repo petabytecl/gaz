@@ -7,7 +7,8 @@ import (
 )
 
 // New creates an eventbus module that provides eventbus.EventBus.
-// This module registers the in-process pub/sub infrastructure.
+// This module registers the in-process pub/sub infrastructure. When used with
+// gaz.App, the App-managed runtime reuses this EventBus for lifecycle handling.
 //
 // Usage:
 //

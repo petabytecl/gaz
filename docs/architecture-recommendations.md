@@ -24,6 +24,7 @@ Already completed:
 - The App build sequence is named and testable through private build phases.
 - Config flag interpretation moved behind a private config flag policy.
 - Runtime subsystem construction moved behind a private runtime-subsystems module.
+- Explicit EventBus module registration composes with App runtime construction by reusing the registered bus.
 - Lifecycle session orchestration moved behind a private lifecycle session.
 - Feature module identities are exposed by the owning packages; config keeps a deliberately separate `config-flags` adapter identity.
 
@@ -309,9 +310,44 @@ Suggested tests:
 
 - Assert it remains harmless and update docs to be explicit.
 
+## Priority 8: Reuse Explicit EventBus Module Registrations
+
+Recommendation strength: Worth exploring
+
+Status: Completed.
+
+Files:
+
+- `runtime_subsystems.go`
+- `runtime_subsystems_test.go`
+- `eventbus/module.go`
+- `eventbus/module/module.go`
+- `eventbus/module/module_test.go`
+- `eventbus/doc.go`
+
+Problem:
+
+The fresh review found a runtime adapter mismatch: `eventbus/module.New()` told App callers to install the EventBus module, while the App runtime already auto-registered the framework EventBus during subsystem construction. Because subsystem construction rejected any existing `*eventbus.EventBus` registration, the documented `app.Use(eventbusmod.New())` composition failed instead of behaving as an explicit version of the same runtime participant.
+
+Solution:
+
+Move EventBus acquisition behind the runtime subsystem module. If the container already has `*eventbus.EventBus`, resolve and reuse it as the App-managed framework EventBus. If not, create and register the default bus as before.
+
+Benefits:
+
+- Runtime subsystem construction owns the EventBus composition rule instead of leaking it as a duplicate-registration surprise.
+- The public EventBus module becomes an honest App adapter as well as a standalone DI adapter.
+- Tests cover the App-facing contract directly.
+
+Suggested tests:
+
+- App builds successfully when `app.Use(eventbusmod.New())` is applied.
+- The App EventBus accessor and DI resolution return the same reused bus.
+- A failing explicit EventBus provider returns actionable build context.
+
 ## Current Architecture Review Status
 
-The architecture backlog created from the earlier review is now exhausted. Priorities 1 through 7 are complete. Before selecting another implementation slice, run a fresh architecture review against current `main` and create a new short backlog from live friction instead of continuing from this historical queue.
+The architecture backlog created from the earlier review is now exhausted. Priorities 1 through 8 are complete. Before selecting another implementation slice, run a fresh architecture review against current `main` and create a new short backlog from live friction instead of continuing from this historical queue.
 
 ## Suggested Resume Order
 
