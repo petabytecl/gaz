@@ -11,10 +11,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/petabytecl/gaz/cron"
 	"github.com/petabytecl/gaz/eventbus"
+	"github.com/petabytecl/gaz/worker"
 )
 
-func TestNewRuntimeSubsystems_RegistersEventBusInDI(t *testing.T) {
+func TestNewRuntimeSubsystems_RegistersRuntimeParticipantsInDI(t *testing.T) {
 	container := NewContainer()
 
 	subs, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
@@ -24,9 +26,19 @@ func TestNewRuntimeSubsystems_RegistersEventBusInDI(t *testing.T) {
 		stopFunc:        func(context.Context) error { return nil },
 	})
 	require.NoError(t, err)
+	require.NotNil(t, subs.workerMgr)
+	require.NotNil(t, subs.scheduler)
 	require.NotNil(t, subs.eventBus)
 
 	require.NoError(t, container.Build())
+
+	resolvedManager, resolveManagerErr := Resolve[*worker.Manager](container)
+	require.NoError(t, resolveManagerErr)
+	assert.Same(t, subs.workerMgr, resolvedManager)
+
+	resolvedScheduler, resolveSchedulerErr := Resolve[*cron.Scheduler](container)
+	require.NoError(t, resolveSchedulerErr)
+	assert.Same(t, subs.scheduler, resolvedScheduler)
 
 	resolved, resolveErr := Resolve[*eventbus.EventBus](container)
 	require.NoError(t, resolveErr)
@@ -72,6 +84,67 @@ func TestNewRuntimeSubsystems_SchedulerContextCancellable(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("context should be cancelled after cronCancel()")
 	}
+}
+
+func TestNewRuntimeSubsystems_ReusesRegisteredWorkerManager(t *testing.T) {
+	container := NewContainer()
+	existing := worker.NewManager(slog.Default())
+	require.NoError(t, For[*worker.Manager](container).Instance(existing))
+
+	subs, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       container,
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        func(context.Context) error { return nil },
+	})
+	require.NoError(t, err)
+	require.Same(t, existing, subs.workerMgr)
+
+	require.NoError(t, container.Build())
+
+	resolved, resolveErr := Resolve[*worker.Manager](container)
+	require.NoError(t, resolveErr)
+	assert.Same(t, existing, resolved)
+}
+
+func TestNewRuntimeSubsystems_RegisteredWorkerManagerResolveError(t *testing.T) {
+	container := NewContainer()
+	resolveErr := errors.New("worker manager provider failed")
+	require.NoError(t, For[*worker.Manager](container).Provider(
+		func(*Container) (*worker.Manager, error) {
+			return nil, resolveErr
+		},
+	))
+
+	_, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       container,
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        func(context.Context) error { return nil },
+	})
+	require.ErrorIs(t, err, resolveErr)
+	require.Contains(t, err.Error(), "resolve worker manager")
+}
+
+func TestNewRuntimeSubsystems_ReplacesRegisteredCronScheduler(t *testing.T) {
+	container := NewContainer()
+	existing := cron.NewScheduler(container, context.Background(), slog.Default())
+	require.NoError(t, For[*cron.Scheduler](container).Instance(existing))
+
+	subs, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       container,
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        func(context.Context) error { return nil },
+	})
+	require.NoError(t, err)
+	require.NotSame(t, existing, subs.scheduler)
+
+	require.NoError(t, container.Build())
+
+	resolved, resolveErr := Resolve[*cron.Scheduler](container)
+	require.NoError(t, resolveErr)
+	assert.Same(t, subs.scheduler, resolved)
 }
 
 func TestCriticalFailHandler_TriggersShutdown(t *testing.T) {

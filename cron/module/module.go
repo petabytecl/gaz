@@ -8,6 +8,8 @@ import (
 
 // New creates a cron module that provides cron.Scheduler.
 // This module registers the cron infrastructure for scheduling jobs.
+// When used with gaz.App, DI resolution returns the App-managed scheduler
+// that receives the App shutdown context.
 //
 // Usage:
 //

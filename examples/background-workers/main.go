@@ -19,7 +19,6 @@ import (
 
 	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/worker"
-	workermod "github.com/petabytecl/gaz/worker/module"
 )
 
 // EmailWorker processes an email queue in the background.
@@ -136,9 +135,6 @@ var (
 
 func run(ctx context.Context) error {
 	app := gaz.New()
-
-	// Register worker module (provides worker.Manager)
-	app.Use(workermod.New())
 
 	// Register EmailWorker as an eager singleton.
 	// Eager() ensures OnStart() is called during app.Run().

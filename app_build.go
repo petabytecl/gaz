@@ -101,6 +101,18 @@ var workerType = reflect.TypeOf((*worker.Worker)(nil)).Elem()
 //nolint:gochecknoglobals // Package-level for reflect type caching.
 var eventBusType = reflect.TypeOf((*eventbus.EventBus)(nil))
 
+// workerManagerType is cached so the lifecycle plan can recognize the
+// framework worker manager registration without registering it with itself.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var workerManagerType = reflect.TypeOf((*worker.Manager)(nil))
+
+// cronSchedulerType is cached so the lifecycle plan can recognize the
+// framework scheduler registration without registering it as a user worker.
+//
+//nolint:gochecknoglobals // Package-level for reflect type caching.
+var cronSchedulerType = reflect.TypeOf((*cron.Scheduler)(nil))
+
 // cronJobType is cached for efficient interface checks during discovery.
 //
 //nolint:gochecknoglobals // Package-level for reflect type caching.

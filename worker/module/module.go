@@ -8,6 +8,8 @@ import (
 
 // New creates a worker module that provides worker.Manager.
 // This module registers the worker infrastructure for managing background workers.
+// When used with gaz.App, the App-managed runtime reuses this Manager and
+// applies its critical worker failure handler.
 //
 // Usage:
 //
