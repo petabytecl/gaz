@@ -38,7 +38,7 @@ func (t *tracerProviderStopper) OnStop(ctx context.Context) error {
 func NewModule() gaz.Module {
 	defaultCfg := DefaultConfig()
 
-	return gaz.NewModule("otel").
+	return gaz.NewModule(ModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(func(c *gaz.Container) error {
 			// Register Config provider

@@ -111,7 +111,7 @@ func TestNewModule_ModuleName(t *testing.T) {
 	module := NewModule()
 
 	// Module should have a name for debugging/logging
-	assert.Equal(t, "otel", module.Name())
+	assert.Equal(t, ModuleName, module.Name())
 }
 
 // Verify that the stopper implements proper cleanup.

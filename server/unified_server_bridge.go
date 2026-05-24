@@ -8,8 +8,6 @@ import (
 	"github.com/petabytecl/gaz/server/vanguard"
 )
 
-const unifiedServerBridgeModuleName = "server"
-
 // unifiedServerBridge owns the single-port transport composition rule.
 //
 // Standalone gRPC and Vanguard modules remain usable on their own. The bridge

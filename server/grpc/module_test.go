@@ -16,6 +16,7 @@ func TestNewModule(t *testing.T) {
 
 		// Register module
 		module := NewModule()
+		require.Equal(t, ModuleName, module.Name())
 		// Apply module to app
 		err := module.Apply(app)
 		require.NoError(t, err)

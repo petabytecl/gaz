@@ -13,6 +13,7 @@ func TestNew(t *testing.T) {
 	t.Run("creates valid module", func(t *testing.T) {
 		mod := New()
 		require.NotNil(t, mod)
+		require.Equal(t, worker.ModuleName, mod.Name())
 	})
 
 	t.Run("integrates with gaz.App", func(t *testing.T) {

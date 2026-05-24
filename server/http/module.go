@@ -26,7 +26,7 @@ import (
 func NewModule() gaz.Module {
 	defaultCfg := DefaultConfig()
 
-	return gaz.NewModule("http").
+	return gaz.NewModule(ModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(configuredmodule.ProvideValidated[Config, *Config](
 			&defaultCfg,

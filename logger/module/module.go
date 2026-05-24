@@ -26,7 +26,7 @@ import (
 func New() gaz.Module {
 	defaultCfg := logger.DefaultConfig()
 
-	return gaz.NewModule("logger").
+	return gaz.NewModule(logger.ModuleName).
 		Flags(defaultCfg.Flags).
 		Provide(configuredmodule.ProvideDefaulted[logger.Config, *logger.Config](
 			&defaultCfg,

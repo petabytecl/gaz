@@ -15,6 +15,7 @@ func TestNewModule(t *testing.T) {
 		app := gaz.New()
 
 		module := NewModule()
+		require.Equal(t, ModuleName, module.Name())
 		err := module.Apply(app)
 		require.NoError(t, err)
 
