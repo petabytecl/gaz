@@ -1,9 +1,13 @@
 package config
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-viper/mapstructure/v2"
 )
 
 // =============================================================================
@@ -123,19 +127,118 @@ func (b *MapBackend) IsSet(key string) bool {
 	return ok
 }
 
-// Unmarshal unmarshals the entire config into a struct.
-// For testing, this performs a simple field matching by key.
-// It does not support nested structs or complex types.
-func (b *MapBackend) Unmarshal(_ any) error {
-	// Simple implementation - in tests, values are typically accessed directly
-	// or the test uses a viper backend for complex unmarshaling needs.
+// Unmarshal unmarshals the entire config into a struct using mapstructure tags.
+func (b *MapBackend) Unmarshal(target any) error {
+	return b.decode(target, b.nestedValues(), "mapstructure")
+}
+
+// UnmarshalKey unmarshals a specific key into a struct using mapstructure tags.
+func (b *MapBackend) UnmarshalKey(key string, target any) error {
+	value, ok := b.valueForKey(key)
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrKeyNotFound, key)
+	}
+	return b.decode(target, value, "mapstructure")
+}
+
+// UnmarshalWithGazTag unmarshals the entire config into a struct using gaz tags.
+func (b *MapBackend) UnmarshalWithGazTag(target any) error {
+	return b.decode(target, b.nestedValues(), "gaz")
+}
+
+// UnmarshalKeyWithGazTag unmarshals a specific key into a struct using gaz tags.
+func (b *MapBackend) UnmarshalKeyWithGazTag(key string, target any) error {
+	value, ok := b.valueForKey(key)
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrKeyNotFound, key)
+	}
+	return b.decode(target, value, "gaz")
+}
+
+// HasKey returns true when the exact key or a child namespace is present.
+func (b *MapBackend) HasKey(key string) bool {
+	_, ok := b.valueForKey(key)
+	return ok
+}
+
+func (b *MapBackend) decode(target, value any, tagName string) error {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:           target,
+		TagName:          tagName,
+		WeaklyTypedInput: true,
+	})
+	if err != nil {
+		return fmt.Errorf("config: create decoder: %w", err)
+	}
+	if decodeErr := decoder.Decode(value); decodeErr != nil {
+		return fmt.Errorf("config: unmarshal: %w", decodeErr)
+	}
 	return nil
 }
 
-// UnmarshalKey unmarshals a specific key into a struct.
-// For testing, this is a no-op - use Get* methods for value access.
-func (b *MapBackend) UnmarshalKey(_ string, _ any) error {
-	return nil
+func (b *MapBackend) valueForKey(key string) (any, bool) {
+	values := b.mergedValues()
+	if value, ok := values[key]; ok {
+		return value, true
+	}
+
+	prefix := key + "."
+	nested := make(map[string]any)
+	found := false
+	for valueKey, value := range values {
+		if strings.HasPrefix(valueKey, prefix) {
+			found = true
+			assignNested(nested, strings.TrimPrefix(valueKey, prefix), value)
+		}
+	}
+	if found {
+		return nested, true
+	}
+
+	return nil, false
+}
+
+func (b *MapBackend) nestedValues() map[string]any {
+	nested := make(map[string]any)
+	for key, value := range b.mergedValues() {
+		assignNested(nested, key, value)
+	}
+	return nested
+}
+
+func (b *MapBackend) mergedValues() map[string]any {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	values := make(map[string]any, len(b.defaults)+len(b.values))
+	for key, value := range b.defaults {
+		values[key] = value
+	}
+	for key, value := range b.values {
+		values[key] = value
+	}
+	return values
+}
+
+func assignNested(root map[string]any, key string, value any) {
+	parts := strings.Split(key, ".")
+	current := root
+	for index, part := range parts {
+		if part == "" {
+			continue
+		}
+		if index == len(parts)-1 {
+			current[part] = value
+			return
+		}
+
+		child, ok := current[part].(map[string]any)
+		if !ok {
+			child = make(map[string]any)
+			current[part] = child
+		}
+		current = child
+	}
 }
 
 // =============================================================================

@@ -129,10 +129,6 @@ func (a *App) Build() error {
 		return nil
 	}
 
-	if err := a.loadConfig(); err != nil {
-		return err
-	}
-
 	if err := a.runBuildPhases(); err != nil {
 		return err
 	}

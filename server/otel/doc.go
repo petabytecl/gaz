@@ -13,7 +13,8 @@
 // # Configuration
 //
 // The package can be configured via:
-//   - Module options (WithEndpoint, WithServiceName, WithSampleRatio)
+//   - Module flags (--otel-endpoint, --otel-service-name, --otel-sample-ratio)
+//   - App config files and ProviderValues under the "otel" namespace
 //   - Environment variables (OTEL_EXPORTER_OTLP_ENDPOINT as fallback)
 //
 // # Usage
@@ -21,10 +22,7 @@
 // Use NewModule to register the TracerProvider with the DI container:
 //
 //	app := gaz.New()
-//	app.Use(otel.NewModule(
-//	    otel.WithEndpoint("localhost:4317"),
-//	    otel.WithServiceName("my-service"),
-//	))
+//	app.Use(otel.NewModule())
 //
 // The TracerProvider is automatically shut down when the application stops.
 //

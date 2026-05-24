@@ -7,15 +7,17 @@ import (
 
 // buildPhase names a unit of work in the build pipeline.
 type buildPhase struct {
-	name  string
-	run   func() error
-	gated bool // only runs if no prior phase produced an error
+	name        string
+	run         func() error
+	gated       bool // only runs if no prior phase produced an error
+	stopOnError bool // stops later phases when this phase fails
 }
 
 // buildPhaseOrder returns the named build phases in their required execution
 // order. The ordering contracts documented here are verified by tests.
 //
 // Ordering contracts:
+//   - load-config before register-provider-values
 //   - register-provider-values before collect-provider-configs
 //   - initialize-logger before initialize-subsystems
 //   - build-container before create-lifecycle-plan
@@ -23,6 +25,7 @@ type buildPhase struct {
 //   - resolve-lifecycle-services before register-runtime-participants
 func (a *App) buildPhaseOrder() []buildPhase {
 	return []buildPhase{
+		{name: "load-config", run: a.loadConfig, stopOnError: true},
 		{name: "register-provider-values", run: a.registerProviderValuesEarly},
 		{name: "initialize-logger", run: a.initializeLogger},
 		{name: "initialize-subsystems", run: a.initializeSubsystems},
@@ -48,6 +51,9 @@ func (a *App) runBuildPhases() error {
 		}
 		if err := phase.run(); err != nil {
 			errs = append(errs, err)
+			if phase.stopOnError {
+				break
+			}
 		}
 	}
 

@@ -9,10 +9,8 @@ import (
 // Use applies a module to the app's container.
 // Modules bundle providers, configs, and other modules for reuse.
 //
-// Use accepts both gaz.Module (built via gaz.NewModule().Build()) and
-// di.Module (returned by subsystem packages like worker.NewModule()).
-// This allows subsystem packages to export modules without importing gaz,
-// avoiding import cycles.
+// Use accepts gaz.Module values built via gaz.NewModule().Build() or returned
+// by feature module packages.
 //
 // Child modules bundled via ModuleBuilder.Use() are applied BEFORE the
 // parent module's providers. This is for composition convenience, not
@@ -35,7 +33,6 @@ import (
 //
 //	app := gaz.New().
 //	    Use(module).
-//	    Use(worker.NewModule()).    // di.Module from subsystem
 //	    Use(cacheModule).
 //	    Build()
 func (a *App) Use(m Module) *App {
@@ -45,13 +42,10 @@ func (a *App) Use(m Module) *App {
 
 	name := m.Name()
 
-	// Check for duplicate module name
-	if a.modules[name] {
-		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
+	if err := a.registerModuleIdentity(name); err != nil {
+		a.buildErrors = append(a.buildErrors, err)
 		return a
 	}
-	a.modules[name] = true
 
 	// Apply the module (which applies child modules first, then providers)
 	if err := m.Apply(a); err != nil {
@@ -63,8 +57,6 @@ func (a *App) Use(m Module) *App {
 }
 
 // UseDI applies a di.Module to the app's container.
-// This is for subsystem packages (health, worker, cron, eventbus) that
-// return di.Module to avoid import cycles with the gaz package.
 //
 // The di.Module interface has Register(c *Container) instead of Apply(app *App),
 // which allows subsystem packages to export modules without importing gaz.
@@ -72,7 +64,7 @@ func (a *App) Use(m Module) *App {
 // Example:
 //
 //	app := gaz.New().
-//	    UseDI(worker.NewModule()).
+//	    UseDI(di.NewModuleFunc("custom", registerCustom)).
 //	    Build()
 func (a *App) UseDI(m di.Module) *App {
 	if a.built {
@@ -81,13 +73,10 @@ func (a *App) UseDI(m di.Module) *App {
 
 	name := m.Name()
 
-	// Check for duplicate module name
-	if a.modules[name] {
-		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
+	if err := a.registerModuleIdentity(name); err != nil {
+		a.buildErrors = append(a.buildErrors, err)
 		return a
 	}
-	a.modules[name] = true
 
 	// Apply the module by calling Register on the container
 	if err := m.Register(a.container); err != nil {

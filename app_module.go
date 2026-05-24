@@ -1,8 +1,6 @@
 package gaz
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Module registers a named group of providers.
 // The name is used for debugging and error messages.
@@ -24,13 +22,10 @@ func (a *App) Module(name string, registrations ...func(*Container) error) *App 
 		panic("gaz: cannot add modules after Build()")
 	}
 
-	// Check for duplicate module name
-	if a.modules[name] {
-		a.buildErrors = append(a.buildErrors,
-			fmt.Errorf("%w: %s", ErrModuleDuplicate, name))
+	if err := a.registerModuleIdentity(name); err != nil {
+		a.buildErrors = append(a.buildErrors, err)
 		return a
 	}
-	a.modules[name] = true
 
 	// Register each provider with module context
 	for _, reg := range registrations {

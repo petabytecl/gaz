@@ -161,11 +161,9 @@ func (m *builtModule) Apply(app *App) error {
 	for _, child := range m.childModules {
 		childName := child.Name()
 
-		// Check for duplicate child module name
-		if app.modules[childName] {
-			return fmt.Errorf("%w: %s", ErrModuleDuplicate, childName)
+		if err := app.registerModuleIdentity(childName); err != nil {
+			return err
 		}
-		app.modules[childName] = true
 
 		if err := child.Apply(app); err != nil {
 			return fmt.Errorf("child module %s: %w", childName, err)

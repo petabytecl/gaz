@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/petabytecl/gaz"
+	"github.com/petabytecl/gaz/internal/configuredmodule"
 	"github.com/petabytecl/gaz/server/grpc"
 	"github.com/petabytecl/gaz/server/vanguard"
 )
@@ -42,7 +43,9 @@ func forceGRPCServiceRegistrationOnly(c *gaz.Container) error {
 
 func grpcBridgeConfig(c *gaz.Container) (grpc.Config, error) {
 	cfg := grpc.DefaultConfig()
-	overlayGRPCProviderValues(c, &cfg)
+	if err := overlayGRPCProviderValues(c, &cfg); err != nil {
+		return grpc.Config{}, err
+	}
 
 	cfg.SkipListener = true
 
@@ -52,12 +55,9 @@ func grpcBridgeConfig(c *gaz.Container) (grpc.Config, error) {
 	return cfg, nil
 }
 
-func overlayGRPCProviderValues(c *gaz.Container, cfg *grpc.Config) {
-	pv, err := gaz.Resolve[*gaz.ProviderValues](c)
-	if err != nil {
-		return
+func overlayGRPCProviderValues(c *gaz.Container, cfg *grpc.Config) error {
+	if err := configuredmodule.OverlayProviderValues(c, cfg); err != nil {
+		return fmt.Errorf("overlay grpc provider values: %w", err)
 	}
-	if unmarshalErr := pv.UnmarshalKey(cfg.Namespace(), cfg); unmarshalErr != nil {
-		return
-	}
+	return nil
 }
