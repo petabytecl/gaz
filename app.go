@@ -130,6 +130,7 @@ type App struct {
 	// cachedLifecyclePlan stores the structural runtime plan computed during Build.
 	// Start resolves lifecycle services into it before execution; Stop reuses it.
 	cachedLifecyclePlan *lifecyclePlan
+	session             *lifecycleSession
 
 	mu      sync.Mutex
 	running bool
