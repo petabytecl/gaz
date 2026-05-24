@@ -43,6 +43,10 @@
 // system. It starts automatically with app.Run() and stops gracefully on shutdown,
 // draining in-flight events before returning.
 //
+// gaz.App creates an EventBus by default. If callers explicitly install
+// eventbus/module before Build, the App runtime reuses that bus instead of
+// creating a second one.
+//
 // # Usage Example
 //
 //	// Define an event

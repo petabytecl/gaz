@@ -2,6 +2,7 @@ package gaz
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync/atomic"
 	"testing"
@@ -94,9 +95,37 @@ func TestCriticalFailHandler_TriggersShutdown(t *testing.T) {
 	require.Eventually(t, stopCalled.Load, 2*time.Second, 10*time.Millisecond)
 }
 
-func TestNewRuntimeSubsystems_DuplicateEventBusReturnsError(t *testing.T) {
+func TestNewRuntimeSubsystems_ReusesRegisteredEventBus(t *testing.T) {
 	container := NewContainer()
-	require.NoError(t, For[*eventbus.EventBus](container).Instance(eventbus.New(slog.Default())))
+	existing := eventbus.New(slog.Default())
+	defer existing.Close()
+
+	require.NoError(t, For[*eventbus.EventBus](container).Instance(existing))
+
+	subs, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
+		logger:          slog.Default(),
+		container:       container,
+		shutdownTimeout: 5 * time.Second,
+		stopFunc:        func(context.Context) error { return nil },
+	})
+	require.NoError(t, err)
+	require.Same(t, existing, subs.eventBus)
+
+	require.NoError(t, container.Build())
+
+	resolved, resolveErr := Resolve[*eventbus.EventBus](container)
+	require.NoError(t, resolveErr)
+	assert.Same(t, existing, resolved)
+}
+
+func TestNewRuntimeSubsystems_RegisteredEventBusResolveError(t *testing.T) {
+	container := NewContainer()
+	resolveErr := errors.New("eventbus provider failed")
+	require.NoError(t, For[*eventbus.EventBus](container).Provider(
+		func(*Container) (*eventbus.EventBus, error) {
+			return nil, resolveErr
+		},
+	))
 
 	_, err := newRuntimeSubsystems(runtimeSubsystemsDeps{
 		logger:          slog.Default(),
@@ -104,7 +133,8 @@ func TestNewRuntimeSubsystems_DuplicateEventBusReturnsError(t *testing.T) {
 		shutdownTimeout: 5 * time.Second,
 		stopFunc:        func(context.Context) error { return nil },
 	})
-	require.ErrorIs(t, err, ErrDIDuplicate)
+	require.ErrorIs(t, err, resolveErr)
+	require.Contains(t, err.Error(), "resolve eventbus")
 }
 
 func TestNewRuntimeSubsystems_NilContainerReturnsError(t *testing.T) {

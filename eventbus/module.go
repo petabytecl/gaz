@@ -10,7 +10,10 @@ import (
 // Module registers eventbus infrastructure into the DI container.
 // It provides a *EventBus for in-process pub/sub messaging.
 //
-// If *EventBus is already registered (e.g., by gaz.App), this is a no-op.
+// If *EventBus is already registered, this is a no-op. When this module is
+// registered before gaz.App.Build, the App-managed runtime reuses the provided
+// EventBus instead of creating a second bus.
+//
 // The logger is optional - if not registered, slog.Default() is used.
 //
 // For CLI/App integration with flags, use the eventbus/module subpackage:

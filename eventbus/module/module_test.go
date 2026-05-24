@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/petabytecl/gaz"
 	"github.com/petabytecl/gaz/di"
 	"github.com/petabytecl/gaz/eventbus"
 )
@@ -16,9 +17,20 @@ func TestNew(t *testing.T) {
 		require.Equal(t, eventbus.ModuleName, mod.Name())
 	})
 
-	// Note: gaz.App auto-registers *eventbus.EventBus in initializeSubsystems(),
-	// so using eventbusmod.New() with gaz.App is redundant. The module is intended
-	// for di.Container usage or when the auto-registration behavior changes.
+	t.Run("works with gaz.App", func(t *testing.T) {
+		app := gaz.New()
+		app.Use(New())
+
+		require.NoError(t, app.Build())
+		require.NotNil(t, app.EventBus())
+
+		bus, err := gaz.Resolve[*eventbus.EventBus](app.Container())
+		require.NoError(t, err)
+		require.Same(t, app.EventBus(), bus)
+
+		bus.Close()
+	})
+
 	t.Run("works with di.Container directly", func(t *testing.T) {
 		c := di.New()
 
